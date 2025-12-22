@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Gestore Spese</title>
+
+    <!-- Manifest relativo -->
+    <link rel="manifest" href="manifest.json" />
+
+    <meta name="theme-color" content="#4f46e5" />
+
+    <!-- Tailwind via CDN: Semplice e funzionante -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Import map per dipendenze esterne (necessario in questo ambiente) -->
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.3.1",
+          "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+          "react/": "https://esm.sh/react@18.3.1/",
+          "react-dom/": "https://esm.sh/react-dom@18.3.1/",
+          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
+          "recharts": "https://esm.sh/recharts@2.12.7",
+          "idb": "https://cdn.jsdelivr.net/npm/idb@8/+esm",
+          "react-dom": "https://esm.sh/react-dom@18.3.1",
+          "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs",
+          "react-qr-code": "https://esm.sh/react-qr-code@2.0.15"
+        }
+      }
+    </script>
+
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      body {
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: env(safe-area-inset-left, 0px);
+        overscroll-behavior-y: contain;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        background-color: #f1f5f9;
+      }
+
+      /* Animations */
+      @keyframes fade-in-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in-up { animation: fade-in-up 0.08s ease-out forwards; }
+
+      @keyframes fade-in-down {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in-down { animation: fade-in-down 0.08s ease-out forwards; }
+
+      .recharts-pie-sector:focus { outline: none !important; }
+    </style>
+  </head>
+  <body class="bg-slate-100">
+    <div id="root"></div>
+    <div id="toast-portal"></div>
+
+    <!-- Entry point -->
+    <script type="module" src="/index.tsx"></script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('service-worker.js')
+            .then((registration) => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch((err) => {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
