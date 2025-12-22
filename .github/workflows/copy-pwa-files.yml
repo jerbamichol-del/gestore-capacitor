@@ -1,0 +1,56 @@
+name: Copy PWA Files Automatically
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copy-files:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout gestore-capacitor
+        uses: actions/checkout@v4
+        with:
+          path: capacitor
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout gestore (PWA)
+        uses: actions/checkout@v4
+        with:
+          repository: jerbamichol-del/gestore
+          path: pwa
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy all PWA files
+        run: |
+          cd capacitor
+          
+          # Copia cartelle
+          cp -r ../pwa/components ./
+          cp -r ../pwa/screens ./
+          cp -r ../pwa/services ./
+          cp -r ../pwa/hooks ./
+          cp -r ../pwa/utils ./
+          cp -r ../pwa/types ./
+          cp -r ../pwa/public ./
+          cp -r ../pwa/share-target ./
+          
+          # Copia file singoli
+          cp ../pwa/metadata.json ./
+          
+          echo "✅ Tutti i file copiati!"
+
+      - name: Commit and push
+        run: |
+          cd capacitor
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "🚀 Auto-copy all PWA files from gestore repo" || echo "No changes to commit"
+          git push
+
+      - name: Summary
+        run: |
+          echo "✅ Setup completato!"
+          echo "📦 Tutti i file dalla PWA sono stati copiati"
+          echo "🔥 Ora aggiungi il secret GEMINI_API_KEY per abilitare le build APK"
