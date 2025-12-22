@@ -12,7 +12,7 @@ import {
   isBiometricsAvailable,
   registerBiometric,
   setBiometricsOptOut,
-} from '../services/biometrics';
+} from '../services/biometrics-native';
 
 const BIO_SNOOZE_KEY = 'bio.snooze';
 const clearBiometricSnooze = () => { try { sessionStorage.removeItem(BIO_SNOOZE_KEY); } catch {} };
@@ -263,8 +263,8 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
       case 'bio_offer': {
         return (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Vuoi abilitare l’impronta / FaceID?</h2>
-            <p className="text-slate-500 h-10 flex items-center justify-center">Potrai sbloccare l’app senza inserire il PIN.</p>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Vuoi abilitare l'impronta / FaceID?</h2>
+            <p className="text-slate-500 h-10 flex items-center justify-center">Potrai sbloccare l'app senza inserire il PIN.</p>
             <div className="mt-4 p-3 rounded-lg border border-slate-200 bg-slate-50 text-left inline-block">
               <p className="text-sm text-slate-700">Abilita ora lo sblocco biometrico?</p>
               <div className="flex gap-3 mt-2">
