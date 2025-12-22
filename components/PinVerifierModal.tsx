@@ -3,7 +3,7 @@ import { XMarkIcon } from './icons/XMarkIcon';
 import { BackspaceIcon } from './icons/BackspaceIcon';
 import { FingerprintIcon } from './icons/FingerprintIcon'; 
 import { verifyPin } from '../utils/auth';
-import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics'; 
+import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics-native'; 
 
 interface PinVerifierModalProps {
   isOpen: boolean;
