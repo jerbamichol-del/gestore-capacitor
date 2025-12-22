@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import XMarkIcon from './icons/XMarkIcon';
-import BackspaceIcon from './icons/BackspaceIcon';
-import FingerprintIcon from './icons/FingerprintIcon';
+import { XMarkIcon } from './icons/XMarkIcon';
+import { BackspaceIcon } from './icons/BackspaceIcon';
+import { FingerprintIcon } from './icons/FingerprintIcon';
 
-import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics';
+import { verifyPin } from '../utils/auth';
+import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics-native';
 
 interface PinVerifierModalProps {
   isOpen: boolean;
@@ -67,31 +68,26 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
     setError(false);
   };
 
-  const validatePin = async (inputPin: string) => {
-    try {
-      const apiMod = await import('../utils/api');
-      const authMod = await import('../utils/auth');
-
-      const userList = apiMod.getUsers();
+  const validatePin = (inputPin: string) => {
+    const users = import('../utils/api').then((mod) => {
+      const userList = mod.getUsers();
       const user = userList[email.toLowerCase()];
-
-      if (!user) {
-        setError(true);
-        return;
-      }
-
-      const isValid = await authMod.verifyPin(inputPin, user.pinHash, user.pinSalt);
-      if (isValid) {
-        onSuccess();
+      if (user) {
+        import('../utils/auth').then((authMod) => {
+          authMod.verifyPin(inputPin, user.pinHash, user.pinSalt).then((isValid) => {
+            if (isValid) {
+              onSuccess();
+            } else {
+              setError(true);
+              if (navigator.vibrate) navigator.vibrate(200);
+              setTimeout(() => setPin(''), 500);
+            }
+          });
+        });
       } else {
-        setError(true);
-        if (navigator.vibrate) navigator.vibrate(200);
-        setTimeout(() => setPin(''), 500);
+        setError(true); // User not found
       }
-    } catch (e) {
-      console.log('Errore verifica PIN', e);
-      setError(true);
-    }
+    });
   };
 
   if (!isOpen) return null;
@@ -118,7 +114,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
         <div className="p-4 flex flex-col items-center flex-grow">
           <p className="text-slate-500 text-xs mb-6 text-center">Per visualizzare i dati sensibili</p>
 
-          {/* Pallini PIN */}
+          {/* Pallini PIN (Ora sono 4) */}
           <div className="flex gap-3 mb-6">
             {[0, 1, 2, 3].map((i) => (
               <div
@@ -132,7 +128,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
 
           {error && <p className="text-red-500 text-xs font-medium mb-4 animate-shake">PIN non corretto</p>}
 
-          {/* Tastierino */}
+          {/* Tastierino Compatto */}
           <div className="w-full max-w-[240px] grid grid-cols-3 gap-y-4 gap-x-6 mb-2">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <button
