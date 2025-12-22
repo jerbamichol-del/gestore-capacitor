@@ -1,4 +1,4 @@
-import { NativeBiometric, BiometryType } from '@capgo/capacitor-native-biometric';
+import { NativeBiometric, BiometryType } from 'capacitor-native-biometric';
 import { Capacitor } from '@capacitor/core';
 
 export interface BiometricResult {
@@ -132,8 +132,6 @@ export async function authenticateWithBiometrics(
       title: 'Autenticazione',
       subtitle: reason,
       description: 'Usa la tua impronta o Face ID',
-      negativeButtonText: 'Annulla',
-      maxAttempts: 3,
     });
 
     return { success: true };
