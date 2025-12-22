@@ -9,7 +9,7 @@ permissions:
 jobs:
   copy-files:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout gestore-capacitor
         uses: actions/checkout@v4
@@ -25,24 +25,31 @@ jobs:
           path: pwa
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Copy all PWA files
+      - name: Copy all PWA files (preserve native biometrics)
         run: |
           cd capacitor
-          
-          # Copia cartelle
-          cp -r ../pwa/components ./
-          cp -r ../pwa/screens ./
-          cp -r ../pwa/services ./
-          cp -r ../pwa/hooks ./
-          cp -r ../pwa/utils ./
-          cp -r ../pwa/types ./
-          cp -r ../pwa/public ./
-          cp -r ../pwa/share-target ./
-          
-          # Copia file singoli
+
+          # Copia cartelle principali (sync pulito)
+          rsync -a --delete ../pwa/components/ ./components/
+          rsync -a --delete ../pwa/screens/ ./screens/
+          rsync -a --delete ../pwa/hooks/ ./hooks/
+          rsync -a --delete ../pwa/utils/ ./utils/
+          rsync -a --delete ../pwa/types/ ./types/
+          rsync -a --delete ../pwa/public/ ./public/
+          rsync -a --delete ../pwa/share-target/ ./share-target/
+
+          # services: copia tutto TRANNE biometrics.ts (che in Capacitor è nativo)
+          rsync -a --delete --exclude 'biometrics.ts' ../pwa/services/ ./services/
+
+          # File singoli
           cp ../pwa/metadata.json ./
-          
-          echo "✅ Tutti i file copiati!"
+
+          # Ripristina biometrics nativo (che NON deve arrivare dalla PWA)
+          # Devi creare questo file nella repo capacitor:
+          # capacitor/services-capacitor/biometrics.ts
+          cp -f ./services-capacitor/biometrics.ts ./services/biometrics.ts
+
+          echo "✅ Tutti i file copiati! (biometrics nativo preservato)"
 
       - name: Commit and push
         run: |
@@ -57,4 +64,5 @@ jobs:
         run: |
           echo "✅ Setup completato!"
           echo "📦 Tutti i file dalla PWA sono stati copiati"
+          echo "🔒 Biometria nativa preservata (services/biometrics.ts)"
           echo "🔥 Ora aggiungi il secret GEMINI_API_KEY per abilitare le build APK"
