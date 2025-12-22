@@ -34,6 +34,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run build
 
+      - name: Add Android platform
+        run: npx cap add android
+
       - name: Capacitor sync
         run: npx cap sync android
 
@@ -42,11 +45,6 @@ jobs:
           cd android
           chmod +x ./gradlew
           ./gradlew assembleRelease --no-daemon
-
-      - name: Sign APK (optional)
-        if: false
-        run: |
-          echo "Firma APK con jarsigner (richiede secrets KEYSTORE)"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
