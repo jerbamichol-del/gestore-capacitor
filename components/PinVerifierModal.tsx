@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon } from './icons/XMarkIcon';
-import { BackspaceIcon } from './icons/BackspaceIcon';
-import { FingerprintIcon } from './icons/FingerprintIcon'; 
-import { verifyPin } from '../utils/auth';
-import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics-native'; 
+import XMarkIcon from './icons/XMarkIcon';
+import BackspaceIcon from './icons/BackspaceIcon';
+import FingerprintIcon from './icons/FingerprintIcon';
+
+import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics';
 
 interface PinVerifierModalProps {
   isOpen: boolean;
@@ -23,13 +23,14 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
       setError(false);
       checkBiometrics();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const checkBiometrics = async () => {
     const available = await isBiometricsAvailable();
     const enabled = isBiometricsEnabled();
     setIsBioAvailable(available && enabled);
-    
+
     if (available && enabled) {
       setTimeout(() => {
         handleBiometricScan();
@@ -45,7 +46,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
         setPin('');
       }
     } catch (e) {
-      console.log("Biometria non usata o fallita", e);
+      console.log('Biometria non usata o fallita', e);
     }
   };
 
@@ -54,7 +55,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
       const newPin = pin + digit;
       setPin(newPin);
       setError(false);
-      
+
       if (newPin.length === 4) {
         setTimeout(() => validatePin(newPin), 100);
       }
@@ -62,58 +63,52 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
   };
 
   const handleDelete = () => {
-    setPin(prev => prev.slice(0, -1));
+    setPin((prev) => prev.slice(0, -1));
     setError(false);
   };
 
-  const validatePin = (inputPin: string) => {
-    // Note: In a real app, this should check against the user's stored PIN hash using email.
-    // For simplicity here, we assume it checks global or context auth.
-    // However, verifyPin requires hash/salt. 
-    // Since this modal is generic, we might need to fetch the user.
-    // BUT the original code simply called verifyPin(inputPin) which was wrong/incomplete in context of `utils/auth` signature.
-    // Assuming `verifyPin` is updated or used correctly elsewhere. 
-    // Let's assume for this specific modal, we need to fetch user data.
-    
-    // To keep it simple and consistent with existing `App.tsx` logic (which likely relies on successful PIN check),
-    // we need to fix how verifyPin is called if it requires hash/salt.
-    // `utils/api.ts` has `getUsers`.
-    
-    const users = import('../utils/api').then(mod => {
-        const userList = mod.getUsers();
-        const user = userList[email.toLowerCase()];
-        if (user) {
-             import('../utils/auth').then(authMod => {
-                 authMod.verifyPin(inputPin, user.pinHash, user.pinSalt).then(isValid => {
-                     if (isValid) {
-                         onSuccess();
-                     } else {
-                         setError(true);
-                         if (navigator.vibrate) navigator.vibrate(200);
-                         setTimeout(() => setPin(''), 500);
-                     }
-                 });
-             });
-        } else {
-             setError(true); // User not found
-        }
-    });
+  const validatePin = async (inputPin: string) => {
+    try {
+      const apiMod = await import('../utils/api');
+      const authMod = await import('../utils/auth');
+
+      const userList = apiMod.getUsers();
+      const user = userList[email.toLowerCase()];
+
+      if (!user) {
+        setError(true);
+        return;
+      }
+
+      const isValid = await authMod.verifyPin(inputPin, user.pinHash, user.pinSalt);
+      if (isValid) {
+        onSuccess();
+      } else {
+        setError(true);
+        if (navigator.vibrate) navigator.vibrate(200);
+        setTimeout(() => setPin(''), 500);
+      }
+    } catch (e) {
+      console.log('Errore verifica PIN', e);
+      setError(true);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm animate-fade-in p-4">
-      
       {/* Area clickabile per chiudere */}
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Modale Centrato e Compatto */}
-      <div className="relative w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        
+      <div
+        className="relative w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header compatto */}
         <div className="flex justify-between items-center p-4 pb-0">
-          <div className="w-8"></div> 
+          <div className="w-8"></div>
           <h2 className="text-lg font-bold text-slate-800">Inserisci PIN</h2>
           <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 rounded-full">
             <XMarkIcon className="w-5 h-5" />
@@ -121,31 +116,23 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
         </div>
 
         <div className="p-4 flex flex-col items-center flex-grow">
-          <p className="text-slate-500 text-xs mb-6 text-center">
-            Per visualizzare i dati sensibili
-          </p>
+          <p className="text-slate-500 text-xs mb-6 text-center">Per visualizzare i dati sensibili</p>
 
-          {/* Pallini PIN (Ora sono 4) */}
+          {/* Pallini PIN */}
           <div className="flex gap-3 mb-6">
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  i < pin.length 
-                    ? error ? 'bg-red-500 scale-110' : 'bg-indigo-600 scale-110'
-                    : 'bg-slate-200'
+                  i < pin.length ? (error ? 'bg-red-500 scale-110' : 'bg-indigo-600 scale-110') : 'bg-slate-200'
                 }`}
               />
             ))}
           </div>
 
-          {error && (
-            <p className="text-red-500 text-xs font-medium mb-4 animate-shake">
-              PIN non corretto
-            </p>
-          )}
+          {error && <p className="text-red-500 text-xs font-medium mb-4 animate-shake">PIN non corretto</p>}
 
-          {/* Tastierino Compatto */}
+          {/* Tastierino */}
           <div className="w-full max-w-[240px] grid grid-cols-3 gap-y-4 gap-x-6 mb-2">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <button
@@ -156,11 +143,11 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
                 {num}
               </button>
             ))}
-            
+
             {/* Biometric Button */}
             <div className="flex items-center justify-center">
               {isBioAvailable && (
-                <button 
+                <button
                   onClick={handleBiometricScan}
                   className="w-14 h-14 rounded-full flex items-center justify-center text-indigo-600 hover:bg-indigo-50 transition-colors"
                   aria-label="Usa Biometria"
