@@ -1,4 +1,4 @@
-import { BiometricAuth } from '@capawesome/capacitor-biometric-authentication';
+import { NativeBiometric, BiometryType } from '@capgo/capacitor-native-biometric';
 import { Capacitor } from '@capacitor/core';
 
 export interface BiometricResult {
@@ -6,17 +6,39 @@ export interface BiometricResult {
   error?: string;
 }
 
+// Funzioni helper per snooze (manteniamo compatibilità con codice esistente)
+const BIO_SNOOZE_KEY = 'bio.snooze';
+export const isBiometricSnoozed = () => {
+  try {
+    return sessionStorage.getItem(BIO_SNOOZE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+export const setBiometricSnooze = () => {
+  try {
+    sessionStorage.setItem(BIO_SNOOZE_KEY, '1');
+  } catch {}
+};
+
+export const clearBiometricSnooze = () => {
+  try {
+    sessionStorage.removeItem(BIO_SNOOZE_KEY);
+  } catch {}
+};
+
 /**
  * Check if biometric authentication is available on the device
  */
-export async function isBiometricAvailable(): Promise<boolean> {
+export async function isBiometricsAvailable(): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) {
     // Fallback to Web Crypto API for PWA
     return window.PublicKeyCredential !== undefined;
   }
 
   try {
-    const result = await BiometricAuth.isAvailable();
+    const result = await NativeBiometric.isAvailable();
     return result.isAvailable;
   } catch (error) {
     console.error('Biometric availability check failed:', error);
@@ -33,12 +55,64 @@ export async function getBiometricType(): Promise<string[]> {
   }
 
   try {
-    const result = await BiometricAuth.isAvailable();
-    return result.biometryTypes || [];
+    const result = await NativeBiometric.isAvailable();
+    const types: string[] = [];
+    
+    if (result.biometryType === BiometryType.FACE_ID) {
+      types.push('faceId');
+    } else if (result.biometryType === BiometryType.TOUCH_ID) {
+      types.push('touchId');
+    } else if (result.biometryType === BiometryType.FINGERPRINT) {
+      types.push('fingerprint');
+    }
+    
+    return types;
   } catch (error) {
     console.error('Get biometric type failed:', error);
     return [];
   }
+}
+
+/**
+ * Check if biometrics is enabled (stored in localStorage)
+ */
+export function isBiometricsEnabled(): boolean {
+  try {
+    return localStorage.getItem('biometric_enabled') === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Enable biometrics (set flag in localStorage)
+ */
+export function enableBiometrics(): void {
+  try {
+    localStorage.setItem('biometric_enabled', '1');
+  } catch {}
+}
+
+/**
+ * Disable biometrics
+ */
+export function disableBiometrics(): void {
+  try {
+    localStorage.removeItem('biometric_enabled');
+  } catch {}
+}
+
+/**
+ * Set biometrics opt-out flag
+ */
+export function setBiometricsOptOut(optOut: boolean): void {
+  try {
+    if (optOut) {
+      localStorage.setItem('biometric_opt_out', '1');
+    } else {
+      localStorage.removeItem('biometric_opt_out');
+    }
+  } catch {}
 }
 
 /**
@@ -53,14 +127,13 @@ export async function authenticateWithBiometrics(
   }
 
   try {
-    await BiometricAuth.authenticate({
+    await NativeBiometric.verifyIdentity({
       reason,
-      cancelTitle: 'Annulla',
-      iosFallbackTitle: 'Usa codice',
-      androidTitle: 'Autenticazione biometrica',
-      androidSubtitle: reason,
-      androidConfirmationRequired: false,
-      allowDeviceCredential: true, // Permette anche PIN/password
+      title: 'Autenticazione',
+      subtitle: reason,
+      description: 'Usa la tua impronta o Face ID',
+      negativeButtonText: 'Annulla',
+      maxAttempts: 3,
     });
 
     return { success: true };
@@ -70,6 +143,30 @@ export async function authenticateWithBiometrics(
       success: false,
       error: error.message || 'Autenticazione fallita',
     };
+  }
+}
+
+/**
+ * Unlock with biometric (wrapper compatibile con codice esistente)
+ */
+export async function unlockWithBiometric(
+  reason: string = 'Sblocca con impronta / FaceID'
+): Promise<boolean> {
+  const result = await authenticateWithBiometrics(reason);
+  return result.success;
+}
+
+/**
+ * Register biometric (abilita biometria)
+ */
+export async function registerBiometric(
+  reason: string = 'Configura autenticazione biometrica'
+): Promise<void> {
+  const result = await authenticateWithBiometrics(reason);
+  if (result.success) {
+    enableBiometrics();
+  } else {
+    throw new Error(result.error || 'Registrazione fallita');
   }
 }
 
@@ -100,7 +197,7 @@ async function authenticateWithWebCrypto(
  * Setup biometric authentication (enrollment)
  */
 export async function setupBiometric(): Promise<BiometricResult> {
-  const available = await isBiometricAvailable();
+  const available = await isBiometricsAvailable();
   
   if (!available) {
     return {
