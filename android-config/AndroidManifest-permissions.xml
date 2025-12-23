@@ -21,3 +21,16 @@
 <!-- Internet (required for PWA) -->
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- SMS Reading -->
+<uses-permission android:name="android.permission.READ_SMS" />
+<uses-permission android:name="android.permission.RECEIVE_SMS" />
+
+<!-- Notification Listener (for auto-transaction detection) -->
+<uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" 
+    tools:ignore="ProtectedPermissions" />
+
+<!-- Local Notifications -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
