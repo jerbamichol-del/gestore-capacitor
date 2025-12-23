@@ -42,24 +42,17 @@ export const useAutoTransactions = () => {
           setNotificationListenerEnabled(enabled);
           
           if (!enabled) {
-            console.log('⚠️ Notification listener not enabled. User needs to grant permission.');
+            console.log('⚠️ Notification listener not enabled.');
+            console.log('ℹ️ User needs to grant notification access in Settings.');
+          } else {
+            console.log('✅ Notification listener active - monitoring banking apps');
           }
         }
 
-        // 3. Scan recent SMS (ultimi 24h, Android only)
-        if (Capacitor.getPlatform() === 'android') {
-          try {
-            const transactions = await SMSTransactionParser.scanRecentSMS(24);
-            console.log(`📱 Scanned SMS: ${transactions.length} new transactions found`);
-          } catch (error) {
-            console.error('Error scanning SMS:', error);
-          }
-        }
-
-        // 4. Load existing pending
+        // 3. Load existing pending
         await loadPending();
 
-        // 5. Cleanup old transactions (30+ days)
+        // 4. Cleanup old transactions (30+ days)
         const deleted = await AutoTransactionService.cleanupOldTransactions();
         if (deleted > 0) {
           console.log(`🧹 Cleaned up ${deleted} old transactions`);
@@ -109,15 +102,20 @@ export const useAutoTransactions = () => {
       setTimeout(async () => {
         const enabled = await NotificationListenerService.checkPermission();
         setNotificationListenerEnabled(enabled);
+        if (enabled) {
+          console.log('✅ Notification listener enabled successfully!');
+        }
       }, 2000);
     } catch (error) {
       console.error('Error requesting notification permission:', error);
     }
   }, []);
 
-  // Manually scan SMS
+  // Manually scan SMS (optional, requires custom plugin)
   const scanSMS = useCallback(async (hours: number = 24) => {
     try {
+      console.log('ℹ️ SMS scanning requires custom Android plugin');
+      console.log('ℹ️ Using Notification Listener instead (no additional plugin needed)');
       const transactions = await SMSTransactionParser.scanRecentSMS(hours);
       await loadPending();
       return transactions;
