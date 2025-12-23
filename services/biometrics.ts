@@ -2,7 +2,7 @@
 // Biometria adattata per Capacitor: usa il plugin nativo invece di WebAuthn
 
 import { Capacitor } from '@capacitor/core';
-import { BiometricAuth } from '@capawesome/capacitor-biometric-auth';
+import { BiometricAuth } from '@capawesome-team/capacitor-biometric-auth';
 
 const KEY_ENABLED = 'bio.enabled';
 const KEY_OPTOUT = 'bio.optOut';
