@@ -56,3 +56,51 @@ jobs:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+
+      # 🆕 NUOVA SEZIONE: Release automatica solo su push a main
+      - name: Generate version tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: version
+        run: |
+          # Genera versione basata su data e commit
+          VERSION="v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Versione generata: $VERSION"
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Release ${{ steps.version.outputs.tag }}"
+          body: |
+            🚀 **Build automatica Android APK**
+            
+            📱 **Scansiona il QR code per scaricare l'app**
+            
+            **Commit**: ${{ github.sha }}
+            **Branch**: ${{ github.ref_name }}
+            **Data**: $(date +'%Y-%m-%d %H:%M:%S')
+            
+            ---
+            
+            ### 📥 Installazione
+            1. Scarica `gestore-spese.apk` qui sotto
+            2. Apri il file sul tuo Android
+            3. Abilita "Installa da fonti sconosciute" se richiesto
+            4. Installa l'app
+            
+            ### ⚠️ Nota
+            Questa è una build di debug. Per la produzione usa una build release firmata.
+          files: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rename APK for release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese.apk
+          echo "✅ APK rinominato: gestore-spese.apk"
