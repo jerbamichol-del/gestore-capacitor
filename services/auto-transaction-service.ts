@@ -1,9 +1,17 @@
 // services/auto-transaction-service.ts
 
-import { db } from './db';
-import { AutoTransaction, TransactionType } from '../types/transaction';
+import { 
+    addAutoTransaction as dbAddAutoTransaction,
+    getAutoTransactions,
+    getAutoTransactionByHash,
+    getAutoTransactionsByStatus,
+    updateAutoTransaction,
+    deleteOldAutoTransactions
+} from '../utils/db';
+import { AutoTransaction } from '../types/transaction';
 import { md5, normalizeForHash } from '../utils/hash';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Expense } from '../types';
 
 export class AutoTransactionService {
   
@@ -25,11 +33,7 @@ export class AutoTransactionService {
    * Controlla se transazione già esiste (duplicato)
    */
   static async isDuplicate(hash: string): Promise<boolean> {
-    const existing = await db.autoTransactions
-      .where('sourceHash')
-      .equals(hash)
-      .first();
-    
+    const existing = await getAutoTransactionByHash(hash);
     return existing !== undefined;
   }
 
@@ -66,7 +70,7 @@ export class AutoTransactionService {
       createdAt: Date.now()
     };
 
-    await db.autoTransactions.add(transaction);
+    await dbAddAutoTransaction(transaction);
     
     console.log('✅ New auto transaction added:', transaction);
     
@@ -105,30 +109,32 @@ export class AutoTransactionService {
    * Ottieni tutte le transazioni pending
    */
   static async getPendingTransactions(): Promise<AutoTransaction[]> {
-    return db.autoTransactions
-      .where('status')
-      .equals('pending')
-      .reverse()
-      .sortBy('createdAt');
+    const pending = await getAutoTransactionsByStatus('pending');
+    return pending.sort((a, b) => b.createdAt - a.createdAt);
   }
 
   /**
    * Conferma transazione → crea expense/income/transfer reale
    */
-  static async confirmTransaction(id: string): Promise<void> {
-    const tx = await db.autoTransactions.get(id);
+  static async confirmTransaction(
+    id: string,
+    createExpenseFn: (data: Omit<Expense, 'id'>) => void
+  ): Promise<void> {
+    const allTransactions = await getAutoTransactions();
+    const tx = allTransactions.find(t => t.id === id);
+    
     if (!tx) {
       throw new Error('Transaction not found');
     }
 
     if (tx.type === 'transfer') {
-      await this.createTransfer(tx);
+      await this.createTransfer(tx, createExpenseFn);
     } else {
-      await this.createExpenseOrIncome(tx);
+      await this.createExpenseOrIncome(tx, createExpenseFn);
     }
 
     // Aggiorna stato
-    await db.autoTransactions.update(id, {
+    await updateAutoTransaction(id, {
       status: 'confirmed',
       confirmedAt: Date.now()
     });
@@ -140,7 +146,7 @@ export class AutoTransactionService {
    * Ignora transazione
    */
   static async ignoreTransaction(id: string): Promise<void> {
-    await db.autoTransactions.update(id, { 
+    await updateAutoTransaction(id, { 
       status: 'ignored',
       confirmedAt: Date.now()
     });
@@ -150,75 +156,56 @@ export class AutoTransactionService {
   /**
    * Crea trasferimento tra account (non spesa/entrata)
    */
-  private static async createTransfer(tx: AutoTransaction): Promise<void> {
+  private static async createTransfer(
+    tx: AutoTransaction,
+    createExpenseFn: (data: Omit<Expense, 'id'>) => void
+  ): Promise<void> {
     if (!tx.toAccount) {
       throw new Error('Transfer requires toAccount');
     }
     
-    const baseId = crypto.randomUUID();
-    
-    // Sottrai da account sorgente (outgoing transfer)
-    await db.expenses.add({
-      id: `${baseId}-out`,
+    // Sottrai da account sorgente
+    createExpenseFn({
       type: 'expense',
       amount: tx.amount,
       description: `Trasferimento → ${tx.toAccount}`,
       date: tx.date,
-      account: tx.account,
+      accountId: tx.account,
       category: 'Trasferimenti',
-      subcategory: null,
-      notes: `Auto-rilevato da ${tx.sourceType} (${tx.sourceApp || 'unknown'})`,
-      createdAt: tx.createdAt,
-      updatedAt: Date.now(),
-      isTransfer: true // Flag per identificare transfer
-    });
+      notes: `Auto-rilevato da ${tx.sourceType}`,
+      tags: ['transfer', 'auto']
+    } as any);
 
-    // Aggiungi a account destinazione (incoming transfer)
-    await db.expenses.add({
-      id: `${baseId}-in`,
+    // Aggiungi a account destinazione
+    createExpenseFn({
       type: 'income',
       amount: tx.amount,
       description: `Trasferimento ← ${tx.account}`,
       date: tx.date,
-      account: tx.toAccount,
+      accountId: tx.toAccount,
       category: 'Trasferimenti',
-      subcategory: null,
-      notes: `Auto-rilevato da ${tx.sourceType} (${tx.sourceApp || 'unknown'})`,
-      createdAt: tx.createdAt,
-      updatedAt: Date.now(),
-      isTransfer: true
-    });
-
-    console.log('✅ Transfer created:', {
-      from: tx.account,
-      to: tx.toAccount,
-      amount: tx.amount
-    });
+      notes: `Auto-rilevato da ${tx.sourceType}`,
+      tags: ['transfer', 'auto']
+    } as any);
   }
 
   /**
    * Crea expense o income normale
    */
-  private static async createExpenseOrIncome(tx: AutoTransaction): Promise<void> {
-    await db.expenses.add({
-      id: crypto.randomUUID(),
+  private static async createExpenseOrIncome(
+    tx: AutoTransaction,
+    createExpenseFn: (data: Omit<Expense, 'id'>) => void
+  ): Promise<void> {
+    createExpenseFn({
       type: tx.type as 'expense' | 'income',
       amount: tx.amount,
       description: tx.description,
       date: tx.date,
-      account: tx.account,
+      accountId: tx.account,
       category: tx.category || 'Da Categorizzare',
-      subcategory: null,
-      notes: `Auto-rilevato da ${tx.sourceType} (${tx.sourceApp || 'unknown'})`,
-      createdAt: tx.createdAt,
-      updatedAt: Date.now()
-    });
-
-    console.log('✅ Expense/Income created:', {
-      type: tx.type,
-      description: tx.description,
-      amount: tx.amount
-    });
+      notes: `Auto-rilevato da ${tx.sourceType}`,
+      tags: ['auto']
+    } as any);
   }
 
   /**
@@ -230,7 +217,7 @@ export class AutoTransactionService {
     ignored: number;
     total: number;
   }> {
-    const all = await db.autoTransactions.toArray();
+    const all = await getAutoTransactions();
     
     return {
       pending: all.filter(t => t.status === 'pending').length,
@@ -245,17 +232,6 @@ export class AutoTransactionService {
    */
   static async cleanupOldTransactions(): Promise<number> {
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    
-    const oldTransactions = await db.autoTransactions
-      .where('createdAt')
-      .below(thirtyDaysAgo)
-      .and(tx => tx.status !== 'pending') // Mantieni pending
-      .toArray();
-    
-    const ids = oldTransactions.map(tx => tx.id);
-    await db.autoTransactions.bulkDelete(ids);
-    
-    console.log(`🧹 Cleaned up ${ids.length} old transactions`);
-    return ids.length;
+    return await deleteOldAutoTransactions(thirtyDaysAgo);
   }
 }
