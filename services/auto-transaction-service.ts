@@ -1,0 +1,261 @@
+// services/auto-transaction-service.ts
+
+import { db } from './db';
+import { AutoTransaction, TransactionType } from '../types/transaction';
+import { md5, normalizeForHash } from '../utils/hash';
+import { LocalNotifications } from '@capacitor/local-notifications';
+
+export class AutoTransactionService {
+  
+  /**
+   * Genera hash univoco per detect duplicati
+   */
+  static generateTransactionHash(
+    amount: number,
+    date: string,
+    account: string,
+    description: string
+  ): string {
+    const normalized = normalizeForHash(description);
+    const key = `${amount.toFixed(2)}-${date}-${account}-${normalized}`;
+    return md5(key);
+  }
+
+  /**
+   * Controlla se transazione già esiste (duplicato)
+   */
+  static async isDuplicate(hash: string): Promise<boolean> {
+    const existing = await db.autoTransactions
+      .where('sourceHash')
+      .equals(hash)
+      .first();
+    
+    return existing !== undefined;
+  }
+
+  /**
+   * Aggiungi transazione automatica (con check duplicati)
+   */
+  static async addAutoTransaction(
+    data: Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'>
+  ): Promise<AutoTransaction | null> {
+    
+    const hash = this.generateTransactionHash(
+      data.amount,
+      data.date,
+      data.account,
+      data.description
+    );
+
+    // Check duplicato
+    if (await this.isDuplicate(hash)) {
+      console.log('⚠️ Duplicate transaction detected, skipping:', {
+        hash,
+        description: data.description,
+        amount: data.amount,
+        source: data.sourceType
+      });
+      return null;
+    }
+
+    const transaction: AutoTransaction = {
+      ...data,
+      id: crypto.randomUUID(),
+      sourceHash: hash,
+      status: 'pending',
+      createdAt: Date.now()
+    };
+
+    await db.autoTransactions.add(transaction);
+    
+    console.log('✅ New auto transaction added:', transaction);
+    
+    // Notifica utente
+    await this.notifyNewTransaction(transaction);
+    
+    return transaction;
+  }
+
+  /**
+   * Notifica nuova transazione rilevata
+   */
+  static async notifyNewTransaction(tx: AutoTransaction): Promise<void> {
+    const emoji = tx.type === 'expense' ? '💸' : 
+                  tx.type === 'income' ? '💰' : '🔄';
+    const action = tx.type === 'expense' ? 'Spesa' : 
+                   tx.type === 'income' ? 'Entrata' : 'Trasferimento';
+    
+    try {
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: Date.now(),
+          title: `${emoji} ${action} Rilevata`,
+          body: `${tx.description} - €${tx.amount.toFixed(2)}`,
+          actionTypeId: 'REVIEW_TRANSACTION',
+          extra: { transactionId: tx.id },
+          smallIcon: 'ic_stat_notification'
+        }]
+      });
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+    }
+  }
+
+  /**
+   * Ottieni tutte le transazioni pending
+   */
+  static async getPendingTransactions(): Promise<AutoTransaction[]> {
+    return db.autoTransactions
+      .where('status')
+      .equals('pending')
+      .reverse()
+      .sortBy('createdAt');
+  }
+
+  /**
+   * Conferma transazione → crea expense/income/transfer reale
+   */
+  static async confirmTransaction(id: string): Promise<void> {
+    const tx = await db.autoTransactions.get(id);
+    if (!tx) {
+      throw new Error('Transaction not found');
+    }
+
+    if (tx.type === 'transfer') {
+      await this.createTransfer(tx);
+    } else {
+      await this.createExpenseOrIncome(tx);
+    }
+
+    // Aggiorna stato
+    await db.autoTransactions.update(id, {
+      status: 'confirmed',
+      confirmedAt: Date.now()
+    });
+
+    console.log('✅ Transaction confirmed:', id);
+  }
+
+  /**
+   * Ignora transazione
+   */
+  static async ignoreTransaction(id: string): Promise<void> {
+    await db.autoTransactions.update(id, { 
+      status: 'ignored',
+      confirmedAt: Date.now()
+    });
+    console.log('⏭️ Transaction ignored:', id);
+  }
+
+  /**
+   * Crea trasferimento tra account (non spesa/entrata)
+   */
+  private static async createTransfer(tx: AutoTransaction): Promise<void> {
+    if (!tx.toAccount) {
+      throw new Error('Transfer requires toAccount');
+    }
+    
+    const baseId = crypto.randomUUID();
+    
+    // Sottrai da account sorgente (outgoing transfer)
+    await db.expenses.add({
+      id: `${baseId}-out`,
+      type: 'expense',
+      amount: tx.amount,
+      description: `Trasferimento → ${tx.toAccount}`,
+      date: tx.date,
+      account: tx.account,
+      category: 'Trasferimenti',
+      subcategory: null,
+      notes: `Auto-rilevato da ${tx.sourceType} (${tx.sourceApp || 'unknown'})`,
+      createdAt: tx.createdAt,
+      updatedAt: Date.now(),
+      isTransfer: true // Flag per identificare transfer
+    });
+
+    // Aggiungi a account destinazione (incoming transfer)
+    await db.expenses.add({
+      id: `${baseId}-in`,
+      type: 'income',
+      amount: tx.amount,
+      description: `Trasferimento ← ${tx.account}`,
+      date: tx.date,
+      account: tx.toAccount,
+      category: 'Trasferimenti',
+      subcategory: null,
+      notes: `Auto-rilevato da ${tx.sourceType} (${tx.sourceApp || 'unknown'})`,
+      createdAt: tx.createdAt,
+      updatedAt: Date.now(),
+      isTransfer: true
+    });
+
+    console.log('✅ Transfer created:', {
+      from: tx.account,
+      to: tx.toAccount,
+      amount: tx.amount
+    });
+  }
+
+  /**
+   * Crea expense o income normale
+   */
+  private static async createExpenseOrIncome(tx: AutoTransaction): Promise<void> {
+    await db.expenses.add({
+      id: crypto.randomUUID(),
+      type: tx.type as 'expense' | 'income',
+      amount: tx.amount,
+      description: tx.description,
+      date: tx.date,
+      account: tx.account,
+      category: tx.category || 'Da Categorizzare',
+      subcategory: null,
+      notes: `Auto-rilevato da ${tx.sourceType} (${tx.sourceApp || 'unknown'})`,
+      createdAt: tx.createdAt,
+      updatedAt: Date.now()
+    });
+
+    console.log('✅ Expense/Income created:', {
+      type: tx.type,
+      description: tx.description,
+      amount: tx.amount
+    });
+  }
+
+  /**
+   * Ottieni statistiche transazioni auto
+   */
+  static async getStats(): Promise<{
+    pending: number;
+    confirmed: number;
+    ignored: number;
+    total: number;
+  }> {
+    const all = await db.autoTransactions.toArray();
+    
+    return {
+      pending: all.filter(t => t.status === 'pending').length,
+      confirmed: all.filter(t => t.status === 'confirmed').length,
+      ignored: all.filter(t => t.status === 'ignored').length,
+      total: all.length
+    };
+  }
+
+  /**
+   * Pulisci transazioni vecchie (oltre 30 giorni)
+   */
+  static async cleanupOldTransactions(): Promise<number> {
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    
+    const oldTransactions = await db.autoTransactions
+      .where('createdAt')
+      .below(thirtyDaysAgo)
+      .and(tx => tx.status !== 'pending') // Mantieni pending
+      .toArray();
+    
+    const ids = oldTransactions.map(tx => tx.id);
+    await db.autoTransactions.bulkDelete(ids);
+    
+    console.log(`🧹 Cleaned up ${ids.length} old transactions`);
+    return ids.length;
+  }
+}
