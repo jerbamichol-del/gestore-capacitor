@@ -2,11 +2,13 @@
 
 ## Overview
 
-Questa feature rileva automaticamente transazioni da:
-- **SMS bancari** (Revolut, PayPal, Postepay, BBVA, Intesa)
-- **Notifiche app bancarie** (background monitoring)
+**Questa feature rileva automaticamente transazioni da notifiche app bancarie** (Revolut, PayPal, Postepay, BBVA, Intesa, BNL, Unicredit).
 
 Le transazioni rilevate vengono salvate come **pending** e richiedono conferma manuale.
+
+### ⚠️ Nota SMS
+
+Il rilevamento SMS **non è incluso in questa versione** perché richiede un plugin Android custom aggiuntivo. Il **Notification Listener è sufficiente** per rilevare la maggior parte delle transazioni, dato che tutte le app bancarie moderne inviano notifiche.
 
 ---
 
@@ -14,7 +16,7 @@ Le transazioni rilevate vengono salvate come **pending** e richiedono conferma m
 
 ### 1. Copia i file Java nel progetto Android
 
-Dopo `npx cap sync`, copia i file Java nella cartella corretta:
+Dopo `npx cap sync`, copia i file Java:
 
 ```bash
 # Da eseguire nella root del progetto
@@ -74,10 +76,6 @@ Apri `android/app/src/main/AndroidManifest.xml` e aggiungi dentro `<application>
 I permessi sono già in `android-config/AndroidManifest-permissions.xml`:
 
 ```xml
-<!-- SMS Reading -->
-<uses-permission android:name="android.permission.READ_SMS" />
-<uses-permission android:name="android.permission.RECEIVE_SMS" />
-
 <!-- Notification Listener -->
 <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
 
@@ -85,6 +83,8 @@ I permessi sono già in `android-config/AndroidManifest-permissions.xml`:
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 ```
+
+**Nota**: I permessi SMS sono opzionali e **non necessari** per il funzionamento base.
 
 ---
 
@@ -113,151 +113,149 @@ npx cap open android
 
 ### Inizializzazione
 
-In `App.tsx`, aggiungi nella `useEffect` di mount:
+In `App.tsx`, il hook `useAutoTransactions` inizializza automaticamente:
 
 ```typescript
-import { SMSTransactionParser } from './services/sms-transaction-parser';
-import { NotificationListenerService } from './services/notification-listener-service';
-import { SmartNotifications } from './services/smart-notifications';
+import { useAutoTransactions } from './hooks/useAutoTransactions';
 
-useEffect(() => {
-  const initAutoTransactions = async () => {
-    // Init notifiche
-    await SmartNotifications.init();
-    
-    // Init notification listener
-    const notificationEnabled = await NotificationListenerService.init();
-    if (!notificationEnabled) {
-      console.log('⚠️ User needs to enable notification access');
-    }
-    
-    // Scan SMS recenti (ultimi 24h)
-    await SMSTransactionParser.scanRecentSMS(24);
-  };
-  
-  initAutoTransactions();
-}, []);
+const { 
+  pendingCount, 
+  notificationListenerEnabled,
+  requestNotificationPermission 
+} = useAutoTransactions();
 ```
 
-### Mostra Transazioni Pending
+**L'hook fa automaticamente**:
+- ✅ Init notification listener
+- ✅ Load pending transactions
+- ✅ Cleanup old transactions
+- ✅ Listen for new transactions
+
+### Mostra Banner se Non Abilitato
 
 ```typescript
-import { AutoTransactionService } from './services/auto-transaction-service';
-
-const [pendingTransactions, setPendingTransactions] = useState([]);
-
-useEffect(() => {
-  const loadPending = async () => {
-    const pending = await AutoTransactionService.getPendingTransactions();
-    setPendingTransactions(pending);
-  };
-  
-  loadPending();
-  
-  // Listener per nuove transazioni
-  const handleNewTransaction = (event: any) => {
-    loadPending();
-  };
-  
-  window.addEventListener('auto-transaction-added', handleNewTransaction);
-  
-  return () => {
-    window.removeEventListener('auto-transaction-added', handleNewTransaction);
-  };
-}, []);
+{!notificationListenerEnabled && (
+  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+    <h3 className="font-semibold text-yellow-900">Abilita Rilevamento Automatico</h3>
+    <p className="text-sm text-yellow-700 mb-3">
+      Consenti all'app di leggere le notifiche bancarie.
+    </p>
+    <button
+      onClick={requestNotificationPermission}
+      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg"
+    >
+      Abilita Ora
+    </button>
+  </div>
+)}
 ```
 
-### Conferma/Ignora Transazione
+### Mostra Pending Count
 
 ```typescript
-const handleConfirm = async (transactionId: string) => {
-  await AutoTransactionService.confirmTransaction(
-    transactionId,
-    handleAddExpense // La tua funzione per aggiungere spese
-  );
-  // Reload pending
-};
+import PendingTransactionsBadge from './components/PendingTransactionsBadge';
 
-const handleIgnore = async (transactionId: string) => {
-  await AutoTransactionService.ignoreTransaction(transactionId);
-  // Reload pending
-};
+<PendingTransactionsBadge 
+  count={pendingCount}
+  onClick={() => setIsPendingModalOpen(true)}
+/>
+```
+
+### Mostra Modal per Review
+
+```typescript
+import PendingTransactionsModal from './components/PendingTransactionsModal';
+
+<PendingTransactionsModal 
+  isOpen={isPendingModalOpen}
+  onClose={() => setIsPendingModalOpen(false)}
+  onAddExpense={handleAddExpense}
+/>
 ```
 
 ---
 
-## 🔧 Configurazione Banche
+## 🔧 App Bancarie Supportate
 
-### Aggiungi Nuova Banca (SMS)
+**7 app monitorate automaticamente**:
+- ✅ Revolut (`com.revolut.revolut`)
+- ✅ PayPal (`com.paypal.android.p2pmobile`)
+- ✅ Postepay (`it.poste.postepay`)
+- ✅ BBVA (`com.bbva.mobile.android`)
+- ✅ Intesa Sanpaolo (`com.latuabancaperandroid`)
+- ✅ BNL (`it.bnl.apps.banking`)
+- ✅ Unicredit (`it.nogood.container`)
 
-In `services/sms-transaction-parser.ts`, aggiungi al runtime:
+### Aggiungi Nuova App
+
+In `NotificationListenerService.java`, aggiungi:
+
+```java
+private static final List<String> BANK_PACKAGES = Arrays.asList(
+    // ... existing ...
+    "com.mybank.app"  // Your package name
+);
+```
+
+E in `notification-transaction-parser.ts`:
 
 ```typescript
-SMSTransactionParser.addBankConfig({
+NotificationTransactionParser.addAppConfig({
   name: 'MyBank',
-  identifier: 'MYBANK',
+  identifier: 'mybank',
   accountName: 'MyBank Account',
   patterns: {
-    expense: /pagamento\s+([\d.,]+).*?presso\s+(.+)/i,
-    income: /accredito\s+([\d.,]+)/i
+    expense: /spent\s+€?([\d.,]+)\s+at\s+(.+)/i
   }
 });
 ```
-
-### Aggiungi Nuova App (Notifiche)
-
-In `services/notification-transaction-parser.ts`, stesso sistema.
 
 ---
 
 ## ⚠️ Note Importanti
 
-1. **Permessi Utente**: L'app chiederà automaticamente:
-   - SMS read permission
-   - Notification listener access (apre Settings)
-   - Local notification permission
+1. **Solo Android**: iOS non permette accesso a notifiche di altre app
 
-2. **Privacy**: Le transazioni pending restano locali (IndexedDB) fino a conferma.
+2. **Permesso Utente**: L'app chiederà automaticamente di abilitare "Notification Access" nelle Settings Android
 
-3. **Duplicati**: L'hash MD5 previene duplicati da SMS + Notifica della stessa transazione.
+3. **Background Service**: Il NotificationListener gira in background anche con app chiusa
 
-4. **Background**: Il NotificationListenerService gira in background anche con app chiusa.
+4. **Privacy**: Le transazioni pending restano locali (IndexedDB) fino a conferma manuale
 
-5. **Battery**: Impatto minimo, usa eventi nativi Android.
+5. **Battery**: Impatto minimo, usa eventi passivi Android
 
----
-
-## 🐛 Debug
-
-### Logcat Android Studio
-
-```bash
-adb logcat | grep "NotificationListener"
-```
-
-### Console Browser (Web)
-
-```javascript
-// Verifica DB
-import { getAutoTransactions } from './utils/db';
-const all = await getAutoTransactions();
-console.log('All transactions:', all);
-
-// Stats
-import { AutoTransactionService } from './services/auto-transaction-service';
-const stats = await AutoTransactionService.getStats();
-console.log('Stats:', stats);
-```
+6. **Duplicati**: Hash MD5 previene duplicati se stessa notifica viene rilevata più volte
 
 ---
 
-## 🎯 Prossimi Step
+## 🐛 Troubleshooting
 
-- [ ] Creare UI modal per pending transactions
-- [ ] Aggiungere AI categorization automatica
-- [ ] Supporto per più banche italiane
-- [ ] Sync cloud delle transazioni confermate
-- [ ] Widget Android con saldo aggiornato
+### Il badge non appare
+- Verifica che notification listener sia abilitato: Settings → Apps → Gestore Finanze → Notification Access
+- Riavvia l'app dopo aver abilitato
+- Controlla logcat: `adb logcat | grep NotificationListener`
+
+### Nessuna transazione rilevata
+- Verifica che l'app bancaria sia nella lista `BANK_PACKAGES`
+- Controlla che le notifiche dell'app bancaria siano abilitate
+- Testa inviando una notifica test
+
+### Build Error
+- Verifica che i file Java siano nella cartella corretta
+- Controlla il package name in MainActivity.java
+- Pulisci build: `cd android && ./gradlew clean`
+
+### Android 14+ Permission Denied
+- Android 14+ richiede conferma extra per notification listener
+- Vai manualmente in Settings e abilita
+
+---
+
+## 📚 Documentazione Aggiuntiva
+
+- **Integration Guide**: `INTEGRATION_GUIDE.md` - Come integrare in App.tsx
+- **Examples**: `EXAMPLES.md` - Esempi pratici e test
+- **README**: `AUTO_TRANSACTIONS_README.md` - Overview completa
 
 ---
 
