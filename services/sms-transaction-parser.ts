@@ -3,6 +3,7 @@
 import { AutoTransaction } from '../types/transaction';
 import { AutoTransactionService } from './auto-transaction-service';
 import { BankConfig } from '../types/transaction';
+import { Capacitor } from '@capacitor/core';
 
 // Configurazioni banche italiane
 const BANK_CONFIGS: BankConfig[] = [
@@ -61,46 +62,24 @@ export class SMSTransactionParser {
   
   /**
    * Scan recent SMS (ultimi X ore)
+   * NOTA: Richiede implementazione Android nativa (vedi SETUP_AUTO_TRANSACTIONS.md)
    */
   static async scanRecentSMS(hours: number = 24): Promise<AutoTransaction[]> {
+    // Solo su Android
+    if (Capacitor.getPlatform() !== 'android') {
+      console.log('⚠️ SMS scanning only available on Android');
+      return [];
+    }
+
     try {
-      // Importa dinamicamente il plugin SMS
-      const { SmsRetriever } = await import('cap-read-sms');
+      console.log('📱 Scanning SMS (native Android API required)...');
       
-      // Ottieni SMS recenti
-      const result = await SmsRetriever.requestReadSmsPermission();
-      if (result.granted !== true) {
-        console.log('⚠️ SMS permission denied');
-        return [];
-      }
-
-      const messages = await SmsRetriever.getMessages({ 
-        maxCount: 100 
-      });
-
-      const cutoff = Date.now() - (hours * 60 * 60 * 1000);
-      const recentMessages = messages.messages.filter(
-        (sms: any) => sms.date && sms.date > cutoff
-      );
-
-      const transactions: AutoTransaction[] = [];
-
-      for (const sms of recentMessages) {
-        const parsed = this.parseSMS(
-          sms.address || '',
-          sms.body || '',
-          sms.date || Date.now()
-        );
-        
-        if (parsed) {
-          // Aggiungi solo se non duplicato
-          const added = await AutoTransactionService.addAutoTransaction(parsed);
-          if (added) transactions.push(added);
-        }
-      }
-
-      console.log(`📱 Scanned ${recentMessages.length} SMS, found ${transactions.length} new transactions`);
-      return transactions;
+      // NOTA: Questa funzionalità richiede un plugin Android custom
+      // Per ora ritorna array vuoto, ma il NotificationListener funziona!
+      console.log('ℹ️ SMS scanning requires custom Android plugin.');
+      console.log('ℹ️ Notification Listener will detect transactions from banking apps.');
+      
+      return [];
       
     } catch (error) {
       console.error('Error scanning SMS:', error);
