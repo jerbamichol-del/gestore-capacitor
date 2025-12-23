@@ -4,6 +4,7 @@ import { AutoTransaction } from '../types/transaction';
 import { AutoTransactionService } from './auto-transaction-service';
 import { BankConfig } from '../types/transaction';
 import { Capacitor } from '@capacitor/core';
+import SMSReader from '../src/plugins/sms-reader';
 
 // Configurazioni banche italiane
 const BANK_CONFIGS: BankConfig[] = [
@@ -61,8 +62,41 @@ const BANK_CONFIGS: BankConfig[] = [
 export class SMSTransactionParser {
   
   /**
+   * Check if SMS permission is granted
+   */
+  static async checkPermission(): Promise<boolean> {
+    if (Capacitor.getPlatform() !== 'android') {
+      return false;
+    }
+
+    try {
+      const result = await SMSReader.checkPermission();
+      return result.granted;
+    } catch (error) {
+      console.error('Error checking SMS permission:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Request SMS permission from user
+   */
+  static async requestPermission(): Promise<boolean> {
+    if (Capacitor.getPlatform() !== 'android') {
+      return false;
+    }
+
+    try {
+      const result = await SMSReader.requestPermission();
+      return result.granted;
+    } catch (error) {
+      console.error('Error requesting SMS permission:', error);
+      return false;
+    }
+  }
+
+  /**
    * Scan recent SMS (ultimi X ore)
-   * NOTA: Richiede implementazione Android nativa (vedi SETUP_AUTO_TRANSACTIONS.md)
    */
   static async scanRecentSMS(hours: number = 24): Promise<AutoTransaction[]> {
     // Solo su Android
@@ -72,14 +106,49 @@ export class SMSTransactionParser {
     }
 
     try {
-      console.log('📱 Scanning SMS (native Android API required)...');
-      
-      // NOTA: Questa funzionalità richiede un plugin Android custom
-      // Per ora ritorna array vuoto, ma il NotificationListener funziona!
-      console.log('ℹ️ SMS scanning requires custom Android plugin.');
-      console.log('ℹ️ Notification Listener will detect transactions from banking apps.');
-      
-      return [];
+      // Check permission
+      const hasPermission = await this.checkPermission();
+      if (!hasPermission) {
+        console.log('⚠️ SMS permission not granted');
+        return [];
+      }
+
+      console.log(`📱 Scanning SMS from last ${hours} hours...`);
+
+      // Get SMS from native plugin
+      const result = await SMSReader.getRecentSMS({ hours });
+      console.log(`📥 Found ${result.count} SMS messages`);
+
+      const transactions: AutoTransaction[] = [];
+
+      // Parse each SMS
+      for (const sms of result.messages) {
+        const transaction = this.parseSMS(sms.sender, sms.body, sms.timestamp);
+        
+        if (transaction) {
+          // Check if duplicate
+          const isDuplicate = await AutoTransactionService.isDuplicate(
+            AutoTransactionService.generateTransactionHash(
+              transaction.amount,
+              transaction.date,
+              transaction.account,
+              transaction.description
+            )
+          );
+
+          if (!isDuplicate) {
+            // Add to database
+            await AutoTransactionService.addAutoTransaction(transaction);
+            transactions.push(transaction as AutoTransaction);
+            console.log(`✅ Added transaction: ${transaction.description} - €${transaction.amount}`);
+          } else {
+            console.log(`⚠️ Skipped duplicate: ${transaction.description}`);
+          }
+        }
+      }
+
+      console.log(`✅ Scan complete: ${transactions.length} new transactions added`);
+      return transactions;
       
     } catch (error) {
       console.error('Error scanning SMS:', error);
