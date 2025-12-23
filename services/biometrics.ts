@@ -2,7 +2,7 @@
 // Biometria adattata per Capacitor: usa il plugin nativo invece di WebAuthn
 
 import { Capacitor } from '@capacitor/core';
-import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
+import { BiometricAuth } from '@capawesome/capacitor-biometric-auth';
 
 const KEY_ENABLED = 'bio.enabled';
 const KEY_OPTOUT = 'bio.optOut';
@@ -47,7 +47,7 @@ export async function isBiometricsAvailable(): Promise<boolean> {
   if (isNative) {
     try {
       const result = await BiometricAuth.checkBiometry();
-      return result.biometryTypes.length > 0;
+      return result.isAvailable;
     } catch {
       return false;
     }
@@ -95,11 +95,6 @@ export async function registerBiometric(displayName = 'Utente'): Promise<boolean
     try {
       await BiometricAuth.authenticate({
         reason: 'Abilita autenticazione biometrica',
-        cancelTitle: 'Annulla',
-        allowDeviceCredential: false,
-        iosFallbackTitle: 'Usa codice',
-        androidTitle: 'Gestore Spese',
-        androidSubtitle: 'Configurazione',
       });
       localStorage.setItem(KEY_ENABLED, '1');
       clearBiometricSnooze();
@@ -174,20 +169,12 @@ export async function unlockWithBiometric(reason = 'Sblocca Gestore Spese'): Pro
     try {
       await BiometricAuth.authenticate({
         reason,
-        cancelTitle: 'Annulla',
-        allowDeviceCredential: false,
-        iosFallbackTitle: 'Usa codice',
-        androidTitle: 'Gestore Spese',
-        androidSubtitle: 'Autenticazione',
       });
       clearBiometricSnooze();
       return true;
     } catch (e: any) {
-      const code = e?.code;
-      // userCancel = 10, biometryLockout = 7
-      if (code === 10 || code === 7) {
-        setBiometricSnooze();
-      }
+      // user canceled
+      setBiometricSnooze();
       throw e;
     }
   }
