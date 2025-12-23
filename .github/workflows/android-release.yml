@@ -46,6 +46,58 @@ jobs:
           npx cap copy android
           npx cap sync android
 
+      - name: Copy SMS + Notification plugins to Android
+        run: |
+          echo "📦 Copying Java plugins..."
+          cp android-config/SMSReaderPlugin.java android/app/src/main/java/com/gestorefinanze/app/
+          cp android-config/NotificationListenerPlugin.java android/app/src/main/java/com/gestorefinanze/app/
+          cp android-config/NotificationListenerService.java android/app/src/main/java/com/gestorefinanze/app/
+          echo "✅ Plugins copied"
+
+      - name: Register plugins in MainActivity.java
+        run: |
+          MAIN_ACTIVITY="android/app/src/main/java/com/gestorefinanze/app/MainActivity.java"
+          
+          # Create MainActivity with plugin registration
+          cat > "$MAIN_ACTIVITY" << 'EOF'
+          package com.gestorefinanze.app;
+
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+          import com.gestorefinanze.app.SMSReaderPlugin;
+          import com.gestorefinanze.app.NotificationListenerPlugin;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  
+                  // Register custom plugins
+                  registerPlugin(SMSReaderPlugin.class);
+                  registerPlugin(NotificationListenerPlugin.class);
+              }
+          }
+          EOF
+          
+          echo "✅ MainActivity.java updated with plugin registration"
+
+      - name: Add SMS + Notification permissions to AndroidManifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          
+          # Backup original
+          cp "$MANIFEST" "$MANIFEST.backup"
+          
+          # Add permissions before </manifest>
+          sed -i '/<\/manifest>/i\    <!-- SMS Reading -->\n    <uses-permission android:name="android.permission.READ_SMS" />\n    <uses-permission android:name="android.permission.RECEIVE_SMS" />\n\n    <!-- Notification Listener -->\n    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />\n\n    <!-- Local Notifications -->\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />' "$MANIFEST"
+          
+          # Add NotificationListenerService before </application>
+          sed -i '/<\/application>/i\        <!-- Notification Listener Service -->\n        <service\n            android:name=".NotificationListenerService"\n            android:exported="true"\n            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n            <intent-filter>\n                <action android:name="android.service.notification.NotificationListenerService" />\n            </intent-filter>\n        </service>' "$MANIFEST"
+          
+          echo "✅ AndroidManifest.xml updated with permissions and service"
+          echo "📄 Manifest diff:"
+          diff "$MANIFEST.backup" "$MANIFEST" || true
+
       - name: Patch AndroidManifest with permissions
         run: node scripts/patch-android-manifest.js
 
