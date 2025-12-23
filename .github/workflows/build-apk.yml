@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# ✅ AGGIUNTO: Permessi necessari per creare release
+permissions:
+  contents: write  # Necessario per creare release e tag
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -57,7 +61,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      # 🆕 NUOVA SEZIONE: Release automatica solo su push a main
+      # 🆕 Release automatica solo su push a main
       - name: Generate version tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: version
@@ -67,9 +71,15 @@ jobs:
           echo "tag=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Versione generata: $VERSION"
 
+      - name: Rename APK for release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese.apk
+          echo "✅ APK rinominato: gestore-spese.apk"
+
       - name: Create GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "Release ${{ steps.version.outputs.tag }}"
@@ -92,15 +102,8 @@ jobs:
             
             ### ⚠️ Nota
             Questa è una build di debug. Per la produzione usa una build release firmata.
-          files: |
-            android/app/build/outputs/apk/debug/app-debug.apk
+          files: gestore-spese.apk
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Rename APK for release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese.apk
-          echo "✅ APK rinominato: gestore-spese.apk"
