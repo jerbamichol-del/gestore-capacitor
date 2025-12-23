@@ -13,6 +13,12 @@ const config: CapacitorConfig = {
     },
     Camera: {
       permissions: ['camera', 'photos']
+    },
+    VoiceRecorder: {
+      permissions: ['microphone']
+    },
+    NativeBiometric: {
+      useFallback: true
     }
   }
 };
