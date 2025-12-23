@@ -7,14 +7,14 @@ import { SpinnerIcon } from '../components/icons/SpinnerIcon';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import LoginEmail from '../components/auth/LoginEmail';
 import { FingerprintIcon } from '../components/icons/FingerprintIcon';
-// biometria NATIVA
+// biometria
 import {
   isBiometricsAvailable,
   isBiometricsEnabled,
   unlockWithBiometric,
   registerBiometric,
   setBiometricsOptOut,
-} from '../services/biometrics-native';
+} from '../services/biometrics';
 
 type BioHelpers = {
   isBiometricSnoozed: () => boolean;
@@ -141,7 +141,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
     (async () => {
       const { isBiometricSnoozed, setBiometricSnooze, clearBiometricSnooze } =
-        (await import('../services/biometrics-native')) as unknown as BioHelpers;
+        (await import('../services/biometrics')) as unknown as BioHelpers;
 
       if (isBiometricSnoozed()) return;
 
@@ -259,7 +259,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
     try {
       setBioBusy(true);
       const { clearBiometricSnooze, setBiometricSnooze } =
-        (await import('../services/biometrics-native')) as unknown as BioHelpers;
+        (await import('../services/biometrics')) as unknown as BioHelpers;
       // login richiesto esplicitamente → azzero lo snooze
       clearBiometricSnooze();
       const ok = await unlockWithBiometric('Sblocca con impronta / FaceID');
@@ -287,7 +287,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       const msg = String((err as any)?.message || '');
       if (name === 'NotAllowedError' || name === 'AbortError' || /timeout/i.test(msg)) {
         const { setBiometricSnooze } =
-          (await import('../services/biometrics-native')) as unknown as BioHelpers;
+          (await import('../services/biometrics')) as unknown as BioHelpers;
         setBiometricSnooze();
       }
     }
@@ -316,11 +316,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       }
       setBiometricEmail(normalized);
 
-      // Tentativo manuale subito dopo l'abilitazione
+      // Tentativo manuale subito dopo l’abilitazione
       await loginWithBiometrics();
     } catch {
       setBioBusy(false);
-      // se annulla in registrazione, resta tutto com'è
+      // se annulla in registrazione, resta tutto com’è
     }
   };
 

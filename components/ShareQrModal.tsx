@@ -59,7 +59,7 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            🌐 Web App (PWA)
+            📱 Web App (PWA)
           </button>
           <button
             onClick={() => setShowNativeQr(true)}
