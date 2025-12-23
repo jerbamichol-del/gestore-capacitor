@@ -13,6 +13,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Serve per accedere a commit precedenti
+
+      - name: 🔄 Ripristina CalculatorInputScreen dal commit funzionante
+        run: |
+          echo "🔄 Ripristino CalculatorInputScreen.tsx dal commit dc72f096..."
+          git checkout dc72f096fac69f96cdc127f6c8309e19e4273dd9 -- components/CalculatorInputScreen.tsx
+          echo "✅ File ripristinato"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,17 +34,11 @@ jobs:
         run: |
           echo "🎨 Prepara icone per Android"
           
-          # Verifica se esiste logo.png
           if [ -f "public/logo.png" ]; then
             echo "✅ Logo trovato in public/logo.png"
-            
-            # Crea cartella assets se non esiste
             mkdir -p assets
-            
-            # Copia logo come icon.png e icon-foreground.png
             cp public/logo.png assets/icon.png
             cp public/logo.png assets/icon-foreground.png
-            
             echo "✅ Icone preparate:"
             ls -lh assets/icon*.png
           else
@@ -49,16 +51,20 @@ jobs:
         run: |
           echo "🔧 Applicazione fix safe-area per CalculatorInputScreen"
           
-          # Verifica se il file esiste
           if [ -f "components/CalculatorInputScreen.tsx" ]; then
-            # Cerca la riga con 'flex-shrink-0 flex flex-col" style={{ height: \'52vh\' }}' 
-            # e aggiunge pb-[env(safe-area-inset-bottom)]
-            sed -i 's/flex-shrink-0 flex flex-col" style={{ height/flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]" style={{ height/g' components/CalculatorInputScreen.tsx
+            # Modifica la riga specifica che contiene il tastierino
+            sed -i 's/className="flex-shrink-0 flex flex-col"/className="flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]"/g' components/CalculatorInputScreen.tsx
             
-            echo "✅ Safe-area applicata a CalculatorInputScreen"
+            echo "✅ Safe-area applicata"
             
             # Verifica modifica
-            grep -n "pb-\[env(safe-area-inset-bottom)\]" components/CalculatorInputScreen.tsx || echo "⚠️ Modifica non applicata"
+            if grep -q "pb-\[env(safe-area-inset-bottom)\]" components/CalculatorInputScreen.tsx; then
+              echo "✅ Modifica verificata con successo"
+            else
+              echo "⚠️ Modifica non trovata, provo pattern alternativo..."
+              # Pattern alternativo se il primo non funziona
+              sed -i 's/flex-shrink-0 flex flex-col" style/flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]" style/g' components/CalculatorInputScreen.tsx
+            fi
           else
             echo "⚠️ CalculatorInputScreen.tsx non trovato"
           fi
@@ -79,17 +85,11 @@ jobs:
         run: |
           echo "🎨 Generazione icone native..."
           
-          # Verifica asset preparati
           if [ -f "assets/icon.png" ]; then
             echo "✅ Icon preparato, eseguo capacitor-assets"
-            
-            # Installa capacitor-assets globalmente
             npm install -g @capacitor/assets
-            
-            # Genera icone
             npx @capacitor/assets generate --assetPath ./assets --platform android || echo "⚠️ Generazione parzialmente fallita"
             
-            # Verifica output
             echo "📊 Verifica icone generate:"
             find android/app/src/main/res -name "ic_launcher*.png" -o -name "ic_launcher*.xml" 2>/dev/null | head -20 || echo "Nessuna icona generata"
           else
