@@ -21,7 +21,7 @@
     "@capacitor/core": "^6.1.2",
     "@capacitor/haptics": "^6.0.1",
     "@google/genai": "^1.21.0",
-    "capacitor-native-biometric": "^4.2.3",
+    "capacitor-native-biometric": "^5.0.0",
     "idb": "8",
     "react": "18.3.1",
     "react-dom": "18.3.1",
