@@ -1,4 +1,4 @@
-name: Build Android Debug
+name: Build Android APK
 
 on:
   push:
@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -23,39 +21,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
-      - name: 🔄 Ripristina CalculatorInputScreen dal commit funzionante
-        run: |
-          echo "🔄 Ripristino CalculatorInputScreen.tsx dal commit dc72f096..."
-          git checkout dc72f096fac69f96cdc127f6c8309e19e4273dd9 -- components/CalculatorInputScreen.tsx
-          echo "✅ File ripristinato"
-
-      - name: 🔧 Fix safe-area calcolatrice
-        run: |
-          echo "🔧 Applicazione fix safe-area per CalculatorInputScreen"
-          sed -i 's/className="flex-shrink-0 flex flex-col"/className="flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]"/g' components/CalculatorInputScreen.tsx
-          
-          if grep -q "pb-\[env(safe-area-inset-bottom)\]" components/CalculatorInputScreen.tsx; then
-            echo "✅ Safe-area applicata con successo"
-          else
-            echo "⚠️ Provo pattern alternativo..."
-            sed -i 's/flex-shrink-0 flex flex-col" style/flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]" style/g' components/CalculatorInputScreen.tsx
-          fi
-
-      - name: 🎨 Prepara icone per Android
-        run: |
-          echo "🎨 Prepara icone per Android"
-          
-          if [ -f "public/logo.png" ]; then
-            echo "✅ Logo trovato in public/logo.png"
-            mkdir -p assets
-            cp public/logo.png assets/icon.png
-            cp public/logo.png assets/icon-foreground.png
-            echo "✅ Icone preparate"
-            ls -lh assets/icon*.png
-          else
-            echo "⚠️ Logo non trovato"
-          fi
 
       - name: Build web assets
         run: npm run build
@@ -66,65 +31,32 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 📱 Aggiungi piattaforma Android
-        run: |
-          echo "📱 Aggiunta piattaforma Android..."
-          npx cap add android
-          echo "✅ Piattaforma Android aggiunta"
+      - name: Sync Capacitor
+        run: npx cap sync android
 
-      - name: 🎨 Generazione icone native
-        run: |
-          echo "🎨 Generazione icone native..."
-          
-          if [ -f "assets/icon.png" ]; then
-            npm install -g @capacitor/assets
-            npx @capacitor/assets generate --assetPath ./assets --platform android || echo "⚠️ Generazione parzialmente fallita"
-            
-            echo "📊 Verifica icone generate:"
-            find android/app/src/main/res -name "ic_launcher*.png" -o -name "ic_launcher*.xml" 2>/dev/null | head -10 || echo "Nessuna icona trovata"
-          else
-            echo "⚠️ Skip generazione icone - asset mancante"
-          fi
-
-      - name: Build APK Debug
+      - name: Build APK
         run: |
           cd android
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Rinomina APK
+      - name: Sign APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese-debug.apk
-          echo "✅ APK debug pronto: gestore-spese-debug.apk"
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          SIGNED_APK="gestore-spese.apk"
+          
+          keytool -genkey -v -keystore debug.keystore -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 -storepass android \
+            -keypass android -dname "CN=Android Debug,O=Android,C=US"
+          
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore debug.keystore -storepass android -keypass android \
+            "$APK_PATH" androiddebugkey
+          
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 "$APK_PATH" "$SIGNED_APK"
 
-      - name: 📦 Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          release_name: Debug Build v1.0.${{ github.run_number }}
-          body: |
-            🚀 **Build Debug Automatica**
-            
-            ✅ Calcolatrice: safe-area fix applicato
-            🎨 Icone: generazione nativa da public/logo.png
-            🔒 Biometria: supporto nativo
-            
-            ⚠️ **Questa è una build DEBUG** - non ottimizzata per produzione
-            
-            **Commit:** ${{ github.sha }}
-            **Build:** #${{ github.run_number }}
-          draft: false
-          prerelease: true
-
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./gestore-spese-debug.apk
-          asset_name: gestore-spese-debug.apk
-          asset_content_type: application/vnd.android.package-archive
+          name: gestore-spese-apk
+          path: gestore-spese.apk
