@@ -14,13 +14,13 @@
     "build:android": "npm run build && cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^9.1.2",
     "@capacitor/android": "^6.1.2",
     "@capacitor/app": "^6.0.1",
     "@capacitor/assets": "^3.0.5",
     "@capacitor/camera": "^6.0.2",
     "@capacitor/core": "^6.1.2",
     "@capacitor/haptics": "^6.0.1",
-    "@capgo/capacitor-native-biometric": "^7.6.0",
     "@google/genai": "^1.21.0",
     "idb": "8",
     "react": "18.3.1",
