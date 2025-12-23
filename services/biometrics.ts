@@ -2,7 +2,7 @@
 // Biometria adattata per Capacitor: usa il plugin nativo invece di WebAuthn
 
 import { Capacitor } from '@capacitor/core';
-import { NativeBiometric } from '@capgo/capacitor-native-biometric';
+import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 
 const KEY_ENABLED = 'bio.enabled';
 const KEY_OPTOUT = 'bio.optOut';
@@ -46,8 +46,8 @@ export function canAutoPromptBiometric(): boolean {
 export async function isBiometricsAvailable(): Promise<boolean> {
   if (isNative) {
     try {
-      const result = await NativeBiometric.isAvailable();
-      return result.isAvailable;
+      const result = await BiometricAuth.checkBiometry();
+      return result.biometryTypes.length > 0;
     } catch {
       return false;
     }
@@ -92,13 +92,14 @@ export async function registerBiometric(displayName = 'Utente'): Promise<boolean
   }
 
   if (isNative) {
-    // Capacitor: verifica semplicemente che funzioni
     try {
-      await NativeBiometric.verifyIdentity({
+      await BiometricAuth.authenticate({
         reason: 'Abilita autenticazione biometrica',
-        title: 'Gestore Spese',
-        subtitle: 'Configurazione',
-        description: displayName,
+        cancelTitle: 'Annulla',
+        allowDeviceCredential: false,
+        iosFallbackTitle: 'Usa codice',
+        androidTitle: 'Gestore Spese',
+        androidSubtitle: 'Configurazione',
       });
       localStorage.setItem(KEY_ENABLED, '1');
       clearBiometricSnooze();
@@ -170,26 +171,21 @@ export async function unlockWithBiometric(reason = 'Sblocca Gestore Spese'): Pro
   }
 
   if (isNative) {
-    // Capacitor: usa plugin nativo
     try {
-      await NativeBiometric.verifyIdentity({
+      await BiometricAuth.authenticate({
         reason,
-        title: 'Gestore Spese',
-        subtitle: 'Autenticazione',
-        description: reason,
+        cancelTitle: 'Annulla',
+        allowDeviceCredential: false,
+        iosFallbackTitle: 'Usa codice',
+        androidTitle: 'Gestore Spese',
+        androidSubtitle: 'Autenticazione',
       });
       clearBiometricSnooze();
       return true;
     } catch (e: any) {
-      const name = String(e?.name || '');
-      const msg = String(e?.message || '');
-      // Annullo/timeout → snooze
-      if (
-        name === 'NotAllowedError' ||
-        name === 'AbortError' ||
-        /timeout/i.test(msg) ||
-        /cancel/i.test(msg)
-      ) {
+      const code = e?.code;
+      // userCancel = 10, biometryLockout = 7
+      if (code === 10 || code === 7) {
         setBiometricSnooze();
       }
       throw e;
