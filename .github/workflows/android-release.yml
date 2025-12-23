@@ -14,13 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Serve per accedere a commit precedenti
-
-      - name: 🔄 Ripristina CalculatorInputScreen dal commit funzionante
-        run: |
-          echo "🔄 Ripristino CalculatorInputScreen.tsx dal commit dc72f096..."
-          git checkout dc72f096fac69f96cdc127f6c8309e19e4273dd9 -- components/CalculatorInputScreen.tsx
-          echo "✅ File ripristinato"
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,6 +23,24 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: 🔄 Ripristina CalculatorInputScreen dal commit funzionante
+        run: |
+          echo "🔄 Ripristino CalculatorInputScreen.tsx dal commit dc72f096..."
+          git checkout dc72f096fac69f96cdc127f6c8309e19e4273dd9 -- components/CalculatorInputScreen.tsx
+          echo "✅ File ripristinato"
+
+      - name: 🔧 Fix safe-area calcolatrice
+        run: |
+          echo "🔧 Applicazione fix safe-area per CalculatorInputScreen"
+          sed -i 's/className="flex-shrink-0 flex flex-col"/className="flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]"/g' components/CalculatorInputScreen.tsx
+          
+          if grep -q "pb-\[env(safe-area-inset-bottom)\]" components/CalculatorInputScreen.tsx; then
+            echo "✅ Safe-area applicata con successo"
+          else
+            echo "⚠️ Provo pattern alternativo..."
+            sed -i 's/flex-shrink-0 flex flex-col" style/flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]" style/g' components/CalculatorInputScreen.tsx
+          fi
 
       - name: 🎨 Prepara icone per Android
         run: |
@@ -39,34 +51,10 @@ jobs:
             mkdir -p assets
             cp public/logo.png assets/icon.png
             cp public/logo.png assets/icon-foreground.png
-            echo "✅ Icone preparate:"
+            echo "✅ Icone preparate"
             ls -lh assets/icon*.png
           else
-            echo "⚠️ Logo non trovato in public/logo.png"
-            echo "Cerco in altre posizioni..."
-            find . -name "logo.png" -o -name "icon.png" 2>/dev/null || echo "Nessun logo trovato"
-          fi
-
-      - name: 🔧 Fix safe-area calcolatrice
-        run: |
-          echo "🔧 Applicazione fix safe-area per CalculatorInputScreen"
-          
-          if [ -f "components/CalculatorInputScreen.tsx" ]; then
-            # Modifica la riga specifica che contiene il tastierino
-            sed -i 's/className="flex-shrink-0 flex flex-col"/className="flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]"/g' components/CalculatorInputScreen.tsx
-            
-            echo "✅ Safe-area applicata"
-            
-            # Verifica modifica
-            if grep -q "pb-\[env(safe-area-inset-bottom)\]" components/CalculatorInputScreen.tsx; then
-              echo "✅ Modifica verificata con successo"
-            else
-              echo "⚠️ Modifica non trovata, provo pattern alternativo..."
-              # Pattern alternativo se il primo non funziona
-              sed -i 's/flex-shrink-0 flex flex-col" style/flex-shrink-0 flex flex-col pb-[env(safe-area-inset-bottom)]" style/g' components/CalculatorInputScreen.tsx
-            fi
-          else
-            echo "⚠️ CalculatorInputScreen.tsx non trovato"
+            echo "⚠️ Logo non trovato"
           fi
 
       - name: Build web assets
@@ -78,22 +66,24 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+      - name: 📱 Aggiungi piattaforma Android
+        run: |
+          echo "📱 Aggiunta piattaforma Android..."
+          npx cap add android
+          echo "✅ Piattaforma Android aggiunta"
 
       - name: 🎨 Generazione icone native
         run: |
           echo "🎨 Generazione icone native..."
           
           if [ -f "assets/icon.png" ]; then
-            echo "✅ Icon preparato, eseguo capacitor-assets"
             npm install -g @capacitor/assets
             npx @capacitor/assets generate --assetPath ./assets --platform android || echo "⚠️ Generazione parzialmente fallita"
             
             echo "📊 Verifica icone generate:"
-            find android/app/src/main/res -name "ic_launcher*.png" -o -name "ic_launcher*.xml" 2>/dev/null | head -20 || echo "Nessuna icona generata"
+            find android/app/src/main/res -name "ic_launcher*.png" -o -name "ic_launcher*.xml" 2>/dev/null | head -10 || echo "Nessuna icona trovata"
           else
-            echo "⚠️ Nessun asset trovato in assets/icon.png, skip generazione"
+            echo "⚠️ Skip generazione icone - asset mancante"
           fi
 
       - name: Build APK
