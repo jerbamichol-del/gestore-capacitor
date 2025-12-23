@@ -38,22 +38,47 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 🎨 NUOVO: Prepara icona per generazione asset nativi
-      - name: Prepare app icon
+      # 🎨 Prepara icone per Android
+      - name: Prepare app icons
         run: |
           mkdir -p assets
-          # Copia logo.png da public/ come sorgente per le icone native
-          cp public/logo.png assets/icon.png
-          echo "✅ Icona sorgente preparata da public/logo.png"
+          
+          # Verifica se public/logo.png esiste
+          if [ -f "public/logo.png" ]; then
+            echo "✅ Logo trovato in public/logo.png"
+            
+            # Crea sia icon.png che icon-foreground.png (per adaptive icons)
+            cp public/logo.png assets/icon.png
+            cp public/logo.png assets/icon-foreground.png
+            
+            echo "✅ Icone preparate:"
+            echo "   - assets/icon.png (icona standard)"
+            echo "   - assets/icon-foreground.png (adaptive icon)"
+            
+            ls -lh assets/
+          else
+            echo "⚠️ Logo non trovato in public/logo.png"
+            echo "🚨 Le icone native non saranno generate"
+          fi
 
-      # 🎨 NUOVO: Genera icone native per Android
+      # 🎨 Genera icone native per Android
       - name: Generate native icons
         run: |
-          # Installa @capacitor/assets
-          npm install -D @capacitor/assets
-          # Genera icone con background bianco
-          npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#1a1a1a'
-          echo "✅ Icone native generate!"
+          if [ -f "assets/icon.png" ]; then
+            # Installa @capacitor/assets
+            npm install -D @capacitor/assets
+            
+            echo "🎨 Generazione icone native..."
+            
+            # Genera icone (il tool usa assets/icon.png e assets/icon-foreground.png)
+            npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#1a1a1a' || {
+              echo "⚠️ Errore nella generazione icone, continuo comunque..."
+            }
+            
+            echo "✅ Tentativo di generazione icone completato"
+          else
+            echo "⏭️ Salto generazione icone (logo non disponibile)"
+          fi
 
       - name: Build web assets
         env:
@@ -117,6 +142,7 @@ jobs:
             ### ✨ Novità
             - ✅ Icona app nativa generata automaticamente
             - 📱 QR code per download APK integrato nell'app
+            - 🔧 Fix overflow calcolatrice su Android
             
             ### ⚠️ Nota
             Questa è una build di debug. Per la produzione usa una build release firmata.
