@@ -37,6 +37,12 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Generate Native Assets
+        run: |
+          npx @capacitor/assets generate --android
+          npx cap copy android
+          npx cap sync android
+
       - name: Patch AndroidManifest with permissions
         run: node scripts/patch-android-manifest.js
 
