@@ -16,6 +16,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +29,6 @@ import java.util.List;
     }
 )
 public class SMSReaderPlugin extends Plugin {
-
-    private static final int PERMISSION_REQUEST_CODE = 9001;
 
     @PluginMethod
     public void checkPermission(PluginCall call) {
@@ -53,32 +52,16 @@ public class SMSReaderPlugin extends Plugin {
             return;
         }
 
-        // Request permission
-        ActivityCompat.requestPermissions(
-            getActivity(),
-            new String[]{Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS},
-            PERMISSION_REQUEST_CODE
-        );
-
-        // Save call for later
-        saveCall(call);
+        // Use Capacitor's permission request system
+        requestPermissionForAlias("readSMS", call, "smsPermissionCallback");
     }
 
-    @Override
-    protected void handleOnRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.handleOnRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            PluginCall savedCall = getSavedCall();
-            if (savedCall == null) {
-                return;
-            }
-
-            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
-            JSObject result = new JSObject();
-            result.put("granted", granted);
-            savedCall.resolve(result);
-        }
+    @PermissionCallback
+    private void smsPermissionCallback(PluginCall call) {
+        boolean granted = getPermissionState("readSMS") == com.getcapacitor.PermissionState.GRANTED;
+        JSObject result = new JSObject();
+        result.put("granted", granted);
+        call.resolve(result);
     }
 
     @PluginMethod
