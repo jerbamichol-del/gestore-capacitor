@@ -46,11 +46,17 @@ jobs:
       - name: Patch AndroidManifest with permissions
         run: node scripts/patch-android-manifest.js
 
+      - name: Clean Gradle Cache
+        run: |
+          rm -rf ~/.gradle/caches/jars-9/
+          mkdir -p ~/.gradle/caches/jars-9/
+
       - name: Build Debug APK
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK
         run: |
