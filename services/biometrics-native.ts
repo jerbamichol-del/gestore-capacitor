@@ -1,7 +1,7 @@
 // services/biometrics-native.ts
 // Servizio nativo per autenticazione biometrica su Android/iOS con Capacitor
 
-import { NativeBiometric, BiometryType } from '@capgo/capacitor-native-biometric';
+import { NativeBiometric, BiometryType } from 'capacitor-native-biometric';
 
 export interface BiometricsResult {
   success: boolean;
