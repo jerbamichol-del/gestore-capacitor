@@ -46,26 +46,36 @@ jobs:
           npx cap copy android
           npx cap sync android
 
+      - name: Update plugin package names
+        run: |
+          echo "🔧 Updating package names in plugins..."
+          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/SMSReaderPlugin.java
+          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/NotificationListenerPlugin.java
+          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/NotificationListenerService.java
+          echo "✅ Package names updated"
+
       - name: Copy SMS + Notification plugins to Android
         run: |
           echo "📦 Copying Java plugins..."
-          cp android-config/SMSReaderPlugin.java android/app/src/main/java/com/gestorefinanze/app/
-          cp android-config/NotificationListenerPlugin.java android/app/src/main/java/com/gestorefinanze/app/
-          cp android-config/NotificationListenerService.java android/app/src/main/java/com/gestorefinanze/app/
-          echo "✅ Plugins copied"
+          JAVA_DIR="android/app/src/main/java/com/gestore/spese"
+          mkdir -p "$JAVA_DIR"
+          cp android-config/SMSReaderPlugin.java "$JAVA_DIR/"
+          cp android-config/NotificationListenerPlugin.java "$JAVA_DIR/"
+          cp android-config/NotificationListenerService.java "$JAVA_DIR/"
+          echo "✅ Plugins copied to $JAVA_DIR"
 
       - name: Register plugins in MainActivity.java
         run: |
-          MAIN_ACTIVITY="android/app/src/main/java/com/gestorefinanze/app/MainActivity.java"
+          MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
           
-          # Create MainActivity with plugin registration
+          echo "🔧 Creating MainActivity with plugin registration..."
           cat > "$MAIN_ACTIVITY" << 'EOF'
-          package com.gestorefinanze.app;
+          package com.gestore.spese;
 
           import android.os.Bundle;
           import com.getcapacitor.BridgeActivity;
-          import com.gestorefinanze.app.SMSReaderPlugin;
-          import com.gestorefinanze.app.NotificationListenerPlugin;
+          import com.gestore.spese.SMSReaderPlugin;
+          import com.gestore.spese.NotificationListenerPlugin;
 
           public class MainActivity extends BridgeActivity {
               @Override
@@ -85,6 +95,8 @@ jobs:
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           
+          echo "📝 Adding permissions and service to AndroidManifest..."
+          
           # Backup original
           cp "$MANIFEST" "$MANIFEST.backup"
           
@@ -94,9 +106,7 @@ jobs:
           # Add NotificationListenerService before </application>
           sed -i '/<\/application>/i\        <!-- Notification Listener Service -->\n        <service\n            android:name=".NotificationListenerService"\n            android:exported="true"\n            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n            <intent-filter>\n                <action android:name="android.service.notification.NotificationListenerService" />\n            </intent-filter>\n        </service>' "$MANIFEST"
           
-          echo "✅ AndroidManifest.xml updated with permissions and service"
-          echo "📄 Manifest diff:"
-          diff "$MANIFEST.backup" "$MANIFEST" || true
+          echo "✅ AndroidManifest.xml updated"
 
       - name: Patch AndroidManifest with permissions
         run: node scripts/patch-android-manifest.js
