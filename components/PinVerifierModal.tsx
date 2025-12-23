@@ -4,7 +4,7 @@ import { BackspaceIcon } from './icons/BackspaceIcon';
 import { FingerprintIcon } from './icons/FingerprintIcon';
 
 import { verifyPin } from '../utils/auth';
-import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics-native';
+import { unlockWithBiometric, isBiometricsAvailable, isBiometricsEnabled } from '../services/biometrics';
 
 interface PinVerifierModalProps {
   isOpen: boolean;
