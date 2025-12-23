@@ -25,12 +25,12 @@ jobs:
           path: pwa
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Copy all PWA files (preserve native biometrics)
+      - name: Copy all PWA files (preserve native adaptations)
         run: |
           cd capacitor
 
           # Copia cartelle principali (sync pulito)
-          rsync -a --delete ../pwa/components/ ./components/
+          rsync -a --delete ../pwa/components/ ./components/ --exclude 'PinVerifierModal.tsx'
           rsync -a --delete ../pwa/screens/ ./screens/
           rsync -a --delete ../pwa/hooks/ ./hooks/
           rsync -a --delete ../pwa/utils/ ./utils/
@@ -38,18 +38,15 @@ jobs:
           rsync -a --delete ../pwa/public/ ./public/
           rsync -a --delete ../pwa/share-target/ ./share-target/
 
-          # services: copia tutto TRANNE biometrics.ts (che in Capacitor è nativo)
-          rsync -a --delete --exclude 'biometrics.ts' ../pwa/services/ ./services/
+          # services: copia tutto (biometrics.ts WebAuthn può coesistere)
+          rsync -a --delete ../pwa/services/ ./services/
 
           # File singoli
           cp ../pwa/metadata.json ./
 
-          # Ripristina biometrics nativo (che NON deve arrivare dalla PWA)
-          # Devi creare questo file nella repo capacitor:
-          # capacitor/services-capacitor/biometrics.ts
-          cp -f ./services-capacitor/biometrics.ts ./services/biometrics.ts
-
-          echo "✅ Tutti i file copiati! (biometrics nativo preservato)"
+          echo "✅ Tutti i file copiati!"
+          echo "🔒 PinVerifierModal.tsx nativo preservato"
+          echo "🔒 biometrics-native.ts preservato"
 
       - name: Commit and push
         run: |
@@ -57,12 +54,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "🚀 Auto-copy all PWA files from gestore repo" || echo "No changes to commit"
+          git commit -m "🚀 Auto-copy PWA files (native adaptations preserved)" || echo "No changes to commit"
           git push
 
       - name: Summary
         run: |
           echo "✅ Setup completato!"
           echo "📦 Tutti i file dalla PWA sono stati copiati"
-          echo "🔒 Biometria nativa preservata (services/biometrics.ts)"
-          echo "🔥 Ora aggiungi il secret GEMINI_API_KEY per abilitare le build APK"
+          echo "🔒 PinVerifierModal.tsx nativo preservato (usa biometrics-native)"
+          echo "🔒 biometrics-native.ts preservato"
