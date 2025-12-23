@@ -14,7 +14,6 @@
     "build:android": "npm run build && cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
-    "@capawesome-team/capacitor-biometric-auth": "^6.0.0",
     "@capacitor/android": "^6.1.2",
     "@capacitor/app": "^6.0.1",
     "@capacitor/assets": "^3.0.5",
@@ -22,6 +21,7 @@
     "@capacitor/core": "^6.1.2",
     "@capacitor/haptics": "^6.0.1",
     "@google/genai": "^1.21.0",
+    "capacitor-native-biometric": "^4.2.3",
     "idb": "8",
     "react": "18.3.1",
     "react-dom": "18.3.1",
