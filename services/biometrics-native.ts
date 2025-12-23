@@ -8,6 +8,8 @@ export interface BiometricsResult {
   error?: string;
 }
 
+const BIOMETRICS_ENABLED_KEY = 'biometrics_enabled';
+
 /**
  * Verifica se il dispositivo supporta l'autenticazione biometrica
  */
@@ -22,6 +24,30 @@ export async function isBiometricsAvailable(): Promise<boolean> {
 }
 
 /**
+ * Verifica se l'utente ha abilitato la biometria nell'app
+ */
+export function isBiometricsEnabled(): boolean {
+  try {
+    const enabled = localStorage.getItem(BIOMETRICS_ENABLED_KEY);
+    return enabled === 'true';
+  } catch (error) {
+    console.error('Error checking biometrics enabled state:', error);
+    return false;
+  }
+}
+
+/**
+ * Abilita o disabilita la biometria nell'app
+ */
+export function setBiometricsEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(BIOMETRICS_ENABLED_KEY, enabled.toString());
+  } catch (error) {
+    console.error('Error setting biometrics enabled state:', error);
+  }
+}
+
+/**
  * Ottiene il tipo di biometria disponibile sul dispositivo
  */
 export async function getBiometryType(): Promise<BiometryType | null> {
@@ -31,6 +57,20 @@ export async function getBiometryType(): Promise<BiometryType | null> {
   } catch (error) {
     console.error('Error getting biometry type:', error);
     return null;
+  }
+}
+
+/**
+ * Autentica l'utente con la biometria e ritorna true se successo
+ * Questa è la funzione usata da PinVerifierModal
+ */
+export async function unlockWithBiometric(): Promise<boolean> {
+  try {
+    const result = await authenticateWithBiometrics('Accedi con la tua impronta digitale');
+    return result.success;
+  } catch (error) {
+    console.error('Unlock with biometric error:', error);
+    return false;
   }
 }
 
