@@ -1,24 +1,38 @@
 import { openDB, IDBPDatabase } from 'idb';
+import { AutoTransaction } from '../types/transaction';
 
 export interface OfflineImage {
   id: string;
   base64Image: string;
   mimeType: string;
   timestamp?: number;
+  _isShared?: boolean; // Flag for shared images
 }
 
 const DB_NAME = 'expense-manager-db';
-const STORE_NAME = 'offline-images';
-const DB_VERSION = 1;
+const STORE_IMAGES = 'offline-images';
+const STORE_AUTO_TRANSACTIONS = 'auto-transactions';
+const DB_VERSION = 2; // Incrementato per nuova tabella
 
 let dbPromise: Promise<IDBPDatabase<unknown>> | null = null;
 
 const getDb = (): Promise<IDBPDatabase<unknown>> => {
     if (!dbPromise) {
         dbPromise = openDB(DB_NAME, DB_VERSION, {
-            upgrade(db) {
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            upgrade(db, oldVersion) {
+                // Create offline-images store
+                if (!db.objectStoreNames.contains(STORE_IMAGES)) {
+                    db.createObjectStore(STORE_IMAGES, { keyPath: 'id' });
+                }
+                
+                // Create auto-transactions store (v2)
+                if (oldVersion < 2 && !db.objectStoreNames.contains(STORE_AUTO_TRANSACTIONS)) {
+                    const store = db.createObjectStore(STORE_AUTO_TRANSACTIONS, { keyPath: 'id' });
+                    // Indexes for efficient queries
+                    store.createIndex('sourceHash', 'sourceHash', { unique: false });
+                    store.createIndex('status', 'status', { unique: false });
+                    store.createIndex('date', 'date', { unique: false });
+                    store.createIndex('createdAt', 'createdAt', { unique: false });
                 }
             },
             blocked() {
@@ -58,21 +72,86 @@ async function withRetry<T>(operation: (db: IDBPDatabase<unknown>) => Promise<T>
     }
 }
 
+// =============== OFFLINE IMAGES ===============
+
 export const addImageToQueue = async (image: OfflineImage): Promise<void> => {
   await withRetry(async (db) => {
-      // Use put instead of add to upsert and prevent "Key already exists" errors
-      await db.put(STORE_NAME, image);
+      await db.put(STORE_IMAGES, image);
   });
 };
 
 export const getQueuedImages = async (): Promise<OfflineImage[]> => {
   return await withRetry(async (db) => {
-      return await db.getAll(STORE_NAME);
+      return await db.getAll(STORE_IMAGES);
   }) as OfflineImage[];
 };
 
 export const deleteImageFromQueue = async (id: string): Promise<void> => {
   await withRetry(async (db) => {
-      await db.delete(STORE_NAME, id);
+      await db.delete(STORE_IMAGES, id);
+  });
+};
+
+// =============== AUTO TRANSACTIONS ===============
+
+export const addAutoTransaction = async (transaction: AutoTransaction): Promise<void> => {
+  await withRetry(async (db) => {
+      await db.put(STORE_AUTO_TRANSACTIONS, transaction);
+  });
+};
+
+export const getAutoTransactions = async (): Promise<AutoTransaction[]> => {
+  return await withRetry(async (db) => {
+      return await db.getAll(STORE_AUTO_TRANSACTIONS);
+  }) as AutoTransaction[];
+};
+
+export const getAutoTransactionByHash = async (hash: string): Promise<AutoTransaction | undefined> => {
+  return await withRetry(async (db) => {
+      const tx = db.transaction(STORE_AUTO_TRANSACTIONS, 'readonly');
+      const index = tx.store.index('sourceHash');
+      return await index.get(hash) as AutoTransaction | undefined;
+  });
+};
+
+export const getAutoTransactionsByStatus = async (status: string): Promise<AutoTransaction[]> => {
+  return await withRetry(async (db) => {
+      const tx = db.transaction(STORE_AUTO_TRANSACTIONS, 'readonly');
+      const index = tx.store.index('status');
+      return await index.getAll(status) as AutoTransaction[];
+  });
+};
+
+export const updateAutoTransaction = async (id: string, updates: Partial<AutoTransaction>): Promise<void> => {
+  await withRetry(async (db) => {
+      const tx = db.transaction(STORE_AUTO_TRANSACTIONS, 'readwrite');
+      const existing = await tx.store.get(id) as AutoTransaction | undefined;
+      if (existing) {
+          await tx.store.put({ ...existing, ...updates });
+      }
+  });
+};
+
+export const deleteAutoTransaction = async (id: string): Promise<void> => {
+  await withRetry(async (db) => {
+      await db.delete(STORE_AUTO_TRANSACTIONS, id);
+  });
+};
+
+export const deleteOldAutoTransactions = async (olderThan: number): Promise<number> => {
+  return await withRetry(async (db) => {
+      const tx = db.transaction(STORE_AUTO_TRANSACTIONS, 'readwrite');
+      const index = tx.store.index('createdAt');
+      const allTransactions = await index.getAll() as AutoTransaction[];
+      
+      const toDelete = allTransactions.filter(
+          t => t.createdAt < olderThan && t.status !== 'pending'
+      );
+      
+      for (const transaction of toDelete) {
+          await tx.store.delete(transaction.id);
+      }
+      
+      return toDelete.length;
   });
 };
