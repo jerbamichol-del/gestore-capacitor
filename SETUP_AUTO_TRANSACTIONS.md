@@ -2,13 +2,11 @@
 
 ## Overview
 
-**Questa feature rileva automaticamente transazioni da notifiche app bancarie** (Revolut, PayPal, Postepay, BBVA, Intesa, BNL, Unicredit).
+**Questa feature rileva automaticamente transazioni da**:
+- 💬 **SMS bancari** (5 banche: Revolut, PayPal, Postepay, BBVA, Intesa)
+- 🔔 **Notifiche app bancarie** (7 app: + BNL, Unicredit)
 
 Le transazioni rilevate vengono salvate come **pending** e richiedono conferma manuale.
-
-### ⚠️ Nota SMS
-
-Il rilevamento SMS **non è incluso in questa versione** perché richiede un plugin Android custom aggiuntivo. Il **Notification Listener è sufficiente** per rilevare la maggior parte delle transazioni, dato che tutte le app bancarie moderne inviano notifiche.
 
 ---
 
@@ -16,32 +14,35 @@ Il rilevamento SMS **non è incluso in questa versione** perché richiede un plu
 
 ### 1. Copia i file Java nel progetto Android
 
-Dopo `npx cap sync`, copia i file Java:
+Dopo `npx cap sync`, copia **3 file Java**:
 
 ```bash
 # Da eseguire nella root del progetto
 cp android-config/NotificationListenerPlugin.java android/app/src/main/java/com/gestorefinanze/app/
 cp android-config/NotificationListenerService.java android/app/src/main/java/com/gestorefinanze/app/
+cp android-config/SMSReaderPlugin.java android/app/src/main/java/com/gestorefinanze/app/
 ```
 
 **IMPORTANTE**: Modifica il package name se il tuo è diverso da `com.gestorefinanze.app`.
 
 ---
 
-### 2. Registra il Plugin in MainActivity.java
+### 2. Registra i Plugin in MainActivity.java
 
 Apri `android/app/src/main/java/com/gestorefinanze/app/MainActivity.java` e aggiungi:
 
 ```java
 import com.gestorefinanze.app.NotificationListenerPlugin;
+import com.gestorefinanze.app.SMSReaderPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Registra il plugin custom
+        // Registra i plugin custom
         registerPlugin(NotificationListenerPlugin.class);
+        registerPlugin(SMSReaderPlugin.class);
     }
 }
 ```
@@ -76,6 +77,10 @@ Apri `android/app/src/main/AndroidManifest.xml` e aggiungi dentro `<application>
 I permessi sono già in `android-config/AndroidManifest-permissions.xml`:
 
 ```xml
+<!-- SMS Reading -->
+<uses-permission android:name="android.permission.READ_SMS" />
+<uses-permission android:name="android.permission.RECEIVE_SMS" />
+
 <!-- Notification Listener -->
 <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
 
@@ -83,8 +88,6 @@ I permessi sono già in `android-config/AndroidManifest-permissions.xml`:
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 ```
-
-**Nota**: I permessi SMS sono opzionali e **non necessari** per il funzionamento base.
 
 ---
 
@@ -121,63 +124,90 @@ import { useAutoTransactions } from './hooks/useAutoTransactions';
 const { 
   pendingCount, 
   notificationListenerEnabled,
-  requestNotificationPermission 
+  smsPermissionGranted,
+  requestNotificationPermission,
+  requestSMSPermission,
+  scanSMS
 } = useAutoTransactions();
 ```
 
 **L'hook fa automaticamente**:
 - ✅ Init notification listener
+- ✅ Check SMS permission
+- ✅ Scan SMS ultimi 24h (se permesso granted)
 - ✅ Load pending transactions
 - ✅ Cleanup old transactions
 - ✅ Listen for new transactions
 
-### Mostra Banner se Non Abilitato
+### Richiedi Permessi
 
 ```typescript
-{!notificationListenerEnabled && (
+// Notification Listener
+if (!notificationListenerEnabled) {
+  await requestNotificationPermission();
+}
+
+// SMS Reader
+if (!smsPermissionGranted) {
+  const granted = await requestSMSPermission();
+  // Se granted, scan automatico parte subito!
+}
+```
+
+### Scan Manuale SMS
+
+```typescript
+// Scan ultimi 3 giorni
+const transactions = await scanSMS(72);
+console.log(`Found ${transactions.length} transactions`);
+```
+
+### Mostra Banner Permessi
+
+```typescript
+{!smsPermissionGranted && (
   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-    <h3 className="font-semibold text-yellow-900">Abilita Rilevamento Automatico</h3>
+    <h3 className="font-semibold text-yellow-900">Abilita Lettura SMS</h3>
     <p className="text-sm text-yellow-700 mb-3">
-      Consenti all'app di leggere le notifiche bancarie.
+      Consenti all'app di leggere SMS bancari per rilevare transazioni.
+    </p>
+    <button
+      onClick={requestSMSPermission}
+      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg"
+    >
+      Abilita SMS
+    </button>
+  </div>
+)}
+
+{!notificationListenerEnabled && (
+  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <h3 className="font-semibold text-blue-900">Abilita Notifiche</h3>
+    <p className="text-sm text-blue-700 mb-3">
+      Consenti all'app di leggere notifiche app bancarie.
     </p>
     <button
       onClick={requestNotificationPermission}
-      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg"
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
     >
-      Abilita Ora
+      Abilita Notifiche
     </button>
   </div>
 )}
 ```
 
-### Mostra Pending Count
-
-```typescript
-import PendingTransactionsBadge from './components/PendingTransactionsBadge';
-
-<PendingTransactionsBadge 
-  count={pendingCount}
-  onClick={() => setIsPendingModalOpen(true)}
-/>
-```
-
-### Mostra Modal per Review
-
-```typescript
-import PendingTransactionsModal from './components/PendingTransactionsModal';
-
-<PendingTransactionsModal 
-  isOpen={isPendingModalOpen}
-  onClose={() => setIsPendingModalOpen(false)}
-  onAddExpense={handleAddExpense}
-/>
-```
-
 ---
 
-## 🔧 App Bancarie Supportate
+## 🎯 Banche/App Supportate
 
-**7 app monitorate automaticamente**:
+### SMS (5 banche)
+- ✅ Revolut
+- ✅ PayPal
+- ✅ Postepay
+- ✅ BBVA
+- ✅ Intesa Sanpaolo
+
+### Notifiche (7 app)
 - ✅ Revolut (`com.revolut.revolut`)
 - ✅ PayPal (`com.paypal.android.p2pmobile`)
 - ✅ Postepay (`it.poste.postepay`)
@@ -186,14 +216,30 @@ import PendingTransactionsModal from './components/PendingTransactionsModal';
 - ✅ BNL (`it.bnl.apps.banking`)
 - ✅ Unicredit (`it.nogood.container`)
 
-### Aggiungi Nuova App
+### Aggiungi Nuova Banca SMS
 
-In `NotificationListenerService.java`, aggiungi:
+```typescript
+import { SMSTransactionParser } from './services/sms-transaction-parser';
+
+SMSTransactionParser.addBankConfig({
+  name: 'MyBank',
+  identifier: 'MYBANK',
+  accountName: 'MyBank Account',
+  patterns: {
+    expense: /pagamento\s+([\d.,]+).*?presso\s+(.+)/i,
+    income: /accredito\s+([\d.,]+)/i
+  }
+});
+```
+
+### Aggiungi Nuova App Notifiche
+
+In `NotificationListenerService.java`:
 
 ```java
 private static final List<String> BANK_PACKAGES = Arrays.asList(
     // ... existing ...
-    "com.mybank.app"  // Your package name
+    "com.mybank.app"  // Your package
 );
 ```
 
@@ -214,40 +260,51 @@ NotificationTransactionParser.addAppConfig({
 
 ## ⚠️ Note Importanti
 
-1. **Solo Android**: iOS non permette accesso a notifiche di altre app
+1. **Solo Android**: iOS non permette accesso a SMS o notifiche di altre app
 
-2. **Permesso Utente**: L'app chiederà automaticamente di abilitare "Notification Access" nelle Settings Android
+2. **Permessi Utente**: L'app chiederà automaticamente:
+   - SMS read permission (dialog Android)
+   - Notification listener access (apre Settings)
+   - Local notification permission
 
 3. **Background Service**: Il NotificationListener gira in background anche con app chiusa
 
-4. **Privacy**: Le transazioni pending restano locali (IndexedDB) fino a conferma manuale
+4. **SMS Scan**: Parte solo se permesso granted, altrimenti mostra banner per richiederlo
 
-5. **Battery**: Impatto minimo, usa eventi passivi Android
+5. **Privacy**: Le transazioni pending restano locali (IndexedDB) fino a conferma manuale
 
-6. **Duplicati**: Hash MD5 previene duplicati se stessa notifica viene rilevata più volte
+6. **Battery**: Impatto minimo, usa eventi passivi Android
+
+7. **Duplicati**: Hash MD5 previene duplicati tra SMS e Notifiche
 
 ---
 
 ## 🐛 Troubleshooting
 
 ### Il badge non appare
-- Verifica che notification listener sia abilitato: Settings → Apps → Gestore Finanze → Notification Access
-- Riavvia l'app dopo aver abilitato
-- Controlla logcat: `adb logcat | grep NotificationListener`
+- Verifica che almeno uno dei due permessi sia abilitato
+- Riavvia l'app dopo aver abilitato permessi
+- Controlla logcat: `adb logcat | grep -E "NotificationListener|SMSReader"`
 
-### Nessuna transazione rilevata
-- Verifica che l'app bancaria sia nella lista `BANK_PACKAGES`
-- Controlla che le notifiche dell'app bancaria siano abilitate
-- Testa inviando una notifica test
+### Nessuna transazione da SMS
+- Verifica che SMS permission sia granted
+- Controlla che l'SMS sia da una banca supportata
+- Testa pattern con `SMSTransactionParser.parseSMS()`
 
-### Build Error
-- Verifica che i file Java siano nella cartella corretta
-- Controlla il package name in MainActivity.java
+### Nessuna transazione da Notifiche
+- Verifica che notification listener sia abilitato
+- Controlla che l'app bancaria sia nella lista `BANK_PACKAGES`
+- Verifica che notifiche app bancaria siano abilitate
+
+### Build Error - Plugin not found
+- Verifica che `SMSReaderPlugin.java` sia copiato
+- Verifica che sia registrato in `MainActivity.java`
 - Pulisci build: `cd android && ./gradlew clean`
 
 ### Android 14+ Permission Denied
 - Android 14+ richiede conferma extra per notification listener
 - Vai manualmente in Settings e abilita
+- SMS permission usa dialog standard Android
 
 ---
 

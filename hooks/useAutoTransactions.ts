@@ -13,6 +13,7 @@ export const useAutoTransactions = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
   const [notificationListenerEnabled, setNotificationListenerEnabled] = useState(false);
+  const [smsPermissionGranted, setSmsPermissionGranted] = useState(false);
 
   // Load pending transactions
   const loadPending = useCallback(async () => {
@@ -49,10 +50,30 @@ export const useAutoTransactions = () => {
           }
         }
 
-        // 3. Load existing pending
+        // 3. Check SMS permission (Android only)
+        if (Capacitor.getPlatform() === 'android') {
+          const smsPermission = await SMSTransactionParser.checkPermission();
+          setSmsPermissionGranted(smsPermission);
+
+          if (smsPermission) {
+            console.log('✅ SMS permission granted - scanning recent messages...');
+            // Scan SMS ultimi 24h
+            try {
+              const transactions = await SMSTransactionParser.scanRecentSMS(24);
+              console.log(`📱 SMS Scan complete: ${transactions.length} transactions found`);
+            } catch (error) {
+              console.error('Error scanning SMS:', error);
+            }
+          } else {
+            console.log('⚠️ SMS permission not granted.');
+            console.log('ℹ️ Call requestSMSPermission() to ask user.');
+          }
+        }
+
+        // 4. Load existing pending
         await loadPending();
 
-        // 4. Cleanup old transactions (30+ days)
+        // 5. Cleanup old transactions (30+ days)
         const deleted = await AutoTransactionService.cleanupOldTransactions();
         if (deleted > 0) {
           console.log(`🧹 Cleaned up ${deleted} old transactions`);
@@ -111,11 +132,37 @@ export const useAutoTransactions = () => {
     }
   }, []);
 
-  // Manually scan SMS (optional, requires custom plugin)
+  // Request SMS permission
+  const requestSMSPermission = useCallback(async () => {
+    try {
+      const granted = await SMSTransactionParser.requestPermission();
+      setSmsPermissionGranted(granted);
+      
+      if (granted) {
+        console.log('✅ SMS permission granted!');
+        // Auto-scan dopo aver ottenuto il permesso
+        const transactions = await SMSTransactionParser.scanRecentSMS(24);
+        await loadPending();
+        console.log(`📱 Scanned ${transactions.length} transactions from SMS`);
+      } else {
+        console.log('⚠️ SMS permission denied');
+      }
+
+      return granted;
+    } catch (error) {
+      console.error('Error requesting SMS permission:', error);
+      return false;
+    }
+  }, [loadPending]);
+
+  // Manually scan SMS
   const scanSMS = useCallback(async (hours: number = 24) => {
     try {
-      console.log('ℹ️ SMS scanning requires custom Android plugin');
-      console.log('ℹ️ Using Notification Listener instead (no additional plugin needed)');
+      if (!smsPermissionGranted) {
+        console.log('⚠️ SMS permission not granted. Call requestSMSPermission() first.');
+        return [];
+      }
+
       const transactions = await SMSTransactionParser.scanRecentSMS(hours);
       await loadPending();
       return transactions;
@@ -123,16 +170,18 @@ export const useAutoTransactions = () => {
       console.error('Error scanning SMS:', error);
       return [];
     }
-  }, [loadPending]);
+  }, [smsPermissionGranted, loadPending]);
 
   return {
     pendingTransactions,
     pendingCount,
     isInitialized,
     notificationListenerEnabled,
+    smsPermissionGranted,
     loadPending,
     getStats,
     requestNotificationPermission,
+    requestSMSPermission,
     scanSMS
   };
 };
