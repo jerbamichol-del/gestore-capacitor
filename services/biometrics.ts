@@ -2,7 +2,7 @@
 // Biometria adattata per Capacitor: usa il plugin nativo invece di WebAuthn
 
 import { Capacitor } from '@capacitor/core';
-import { BiometricAuth } from '@capawesome-team/capacitor-biometric-auth';
+import { NativeBiometric } from 'capacitor-native-biometric';
 
 const KEY_ENABLED = 'bio.enabled';
 const KEY_OPTOUT = 'bio.optOut';
@@ -46,7 +46,7 @@ export function canAutoPromptBiometric(): boolean {
 export async function isBiometricsAvailable(): Promise<boolean> {
   if (isNative) {
     try {
-      const result = await BiometricAuth.checkBiometry();
+      const result = await NativeBiometric.isAvailable();
       return result.isAvailable;
     } catch {
       return false;
@@ -93,8 +93,9 @@ export async function registerBiometric(displayName = 'Utente'): Promise<boolean
 
   if (isNative) {
     try {
-      await BiometricAuth.authenticate({
+      await NativeBiometric.verifyIdentity({
         reason: 'Abilita autenticazione biometrica',
+        title: 'Gestore Spese',
       });
       localStorage.setItem(KEY_ENABLED, '1');
       clearBiometricSnooze();
@@ -167,8 +168,9 @@ export async function unlockWithBiometric(reason = 'Sblocca Gestore Spese'): Pro
 
   if (isNative) {
     try {
-      await BiometricAuth.authenticate({
+      await NativeBiometric.verifyIdentity({
         reason,
+        title: 'Gestore Spese',
       });
       clearBiometricSnooze();
       return true;
