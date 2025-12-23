@@ -37,7 +37,9 @@ jobs:
           rsync -a --delete ../pwa/types/ ./types/
           rsync -a --delete ../pwa/public/ ./public/
           rsync -a --delete ../pwa/share-target/ ./share-target/
-          rsync -a --delete ../pwa/services/ ./services/
+          
+          # 🔒 CRITICO: Proteggi biometrics-native.ts (file nativo Capacitor)
+          rsync -a --delete ../pwa/services/ ./services/ --exclude 'biometrics-native.ts'
 
           # File singoli (ESCLUDI vite.config.ts)
           cp ../pwa/metadata.json ./
@@ -50,9 +52,9 @@ jobs:
 
           echo "✅ Tutti i file copiati!"
           echo "🔒 File nativi preservati:"
-          echo "   - PinVerifierModal.tsx (usa biometrics-native)"
+          echo "   - components/PinVerifierModal.tsx (usa biometrics-native)"
+          echo "   - services/biometrics-native.ts (plugin Capacitor nativo)"
           echo "   - vite.config.ts (no base path)"
-          echo "   - biometrics-native.ts (plugin Capacitor)"
 
       - name: Commit and push
         run: |
@@ -67,4 +69,7 @@ jobs:
         run: |
           echo "✅ Sincronizzazione completata!"
           echo "📦 File PWA aggiornati"
-          echo "🔒 Configurazioni native preservate"
+          echo "🔒 Configurazioni native preservate:"
+          echo "   - PinVerifierModal.tsx"
+          echo "   - biometrics-native.ts"
+          echo "   - vite.config.ts"
