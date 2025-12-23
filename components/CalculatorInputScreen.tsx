@@ -101,7 +101,8 @@ const OperatorButton: React.FC<{ children: React.ReactNode; onClick: () => void 
   );
 };
 
-const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputScreenProps>(({  onClose, onSubmit, accounts,
+const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputScreenProps>(({
+  onClose, onSubmit, accounts,
   formData, onFormChange, onMenuStateChange, isDesktop, onNavigateToDetails
 }, ref) => {
   const [currentValue, setCurrentValue] = useState('0');
@@ -577,7 +578,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('1')}>1</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('2')}>2</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('3')}>3</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress(','))}>,</KeypadButton>
+            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress(',')}>,</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('0')}>0</KeypadButton>
             <KeypadButton
               // FIX: Correctly type props for KeypadButton and remove invalid ones from the component's internal div.
