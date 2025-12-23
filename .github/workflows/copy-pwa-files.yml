@@ -29,7 +29,7 @@ jobs:
         run: |
           cd capacitor
 
-          # Copia cartelle principali (sync pulito)
+          # Copia cartelle principali
           rsync -a --delete ../pwa/components/ ./components/ --exclude 'PinVerifierModal.tsx'
           rsync -a --delete ../pwa/screens/ ./screens/
           rsync -a --delete ../pwa/hooks/ ./hooks/
@@ -37,16 +37,22 @@ jobs:
           rsync -a --delete ../pwa/types/ ./types/
           rsync -a --delete ../pwa/public/ ./public/
           rsync -a --delete ../pwa/share-target/ ./share-target/
-
-          # services: copia tutto (biometrics.ts WebAuthn può coesistere)
           rsync -a --delete ../pwa/services/ ./services/
 
-          # File singoli
+          # File singoli (ESCLUDI vite.config.ts)
           cp ../pwa/metadata.json ./
+          cp ../pwa/App.tsx ./
+          cp ../pwa/AuthGate.tsx ./
+          cp ../pwa/index.tsx ./
+          cp ../pwa/types.ts ./
+          cp ../pwa/tsconfig.json ./
+          # NON copiare vite.config.ts (diverse configurazioni)
 
           echo "✅ Tutti i file copiati!"
-          echo "🔒 PinVerifierModal.tsx nativo preservato"
-          echo "🔒 biometrics-native.ts preservato"
+          echo "🔒 File nativi preservati:"
+          echo "   - PinVerifierModal.tsx (usa biometrics-native)"
+          echo "   - vite.config.ts (no base path)"
+          echo "   - biometrics-native.ts (plugin Capacitor)"
 
       - name: Commit and push
         run: |
@@ -59,7 +65,6 @@ jobs:
 
       - name: Summary
         run: |
-          echo "✅ Setup completato!"
-          echo "📦 Tutti i file dalla PWA sono stati copiati"
-          echo "🔒 PinVerifierModal.tsx nativo preservato (usa biometrics-native)"
-          echo "🔒 biometrics-native.ts preservato"
+          echo "✅ Sincronizzazione completata!"
+          echo "📦 File PWA aggiornati"
+          echo "🔒 Configurazioni native preservate"
