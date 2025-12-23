@@ -34,10 +34,6 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
-      - name: Downgrade Gradle to 8.0.2
-        run: |
-          sed -i 's/gradle-8.2.1-all.zip/gradle-8.0.2-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
-
       - name: Sync Capacitor
         run: npx cap sync android
 
