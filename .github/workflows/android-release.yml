@@ -51,7 +51,7 @@ jobs:
           echo "🔧 Updating package names in plugins..."
           sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/SMSReaderPlugin.java
           sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/NotificationListenerPlugin.java
-          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/NotificationListenerService.java
+          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/BankNotificationListenerService.java
           echo "✅ Package names updated"
 
       - name: Copy SMS + Notification plugins to Android
@@ -61,8 +61,9 @@ jobs:
           mkdir -p "$JAVA_DIR"
           cp android-config/SMSReaderPlugin.java "$JAVA_DIR/"
           cp android-config/NotificationListenerPlugin.java "$JAVA_DIR/"
-          cp android-config/NotificationListenerService.java "$JAVA_DIR/"
+          cp android-config/BankNotificationListenerService.java "$JAVA_DIR/"
           echo "✅ Plugins copied to $JAVA_DIR"
+          ls -la "$JAVA_DIR/"
 
       - name: Register plugins in MainActivity.java
         run: |
@@ -103,8 +104,8 @@ jobs:
           # Add permissions before </manifest>
           sed -i '/<\/manifest>/i\    <!-- SMS Reading -->\n    <uses-permission android:name="android.permission.READ_SMS" />\n    <uses-permission android:name="android.permission.RECEIVE_SMS" />\n\n    <!-- Notification Listener -->\n    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />\n\n    <!-- Local Notifications -->\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />' "$MANIFEST"
           
-          # Add NotificationListenerService before </application>
-          sed -i '/<\/application>/i\        <!-- Notification Listener Service -->\n        <service\n            android:name=".NotificationListenerService"\n            android:exported="true"\n            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n            <intent-filter>\n                <action android:name="android.service.notification.NotificationListenerService" />\n            </intent-filter>\n        </service>' "$MANIFEST"
+          # Add BankNotificationListenerService before </application>
+          sed -i '/<\/application>/i\        <!-- Bank Notification Listener Service -->\n        <service\n            android:name=".BankNotificationListenerService"\n            android:exported="true"\n            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n            <intent-filter>\n                <action android:name="android.service.notification.NotificationListenerService" />\n            </intent-filter>\n        </service>' "$MANIFEST"
           
           echo "✅ AndroidManifest.xml updated"
 
