@@ -7,9 +7,8 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# ✅ AGGIUNTO: Permessi necessari per creare release
 permissions:
-  contents: write  # Necessario per creare release e tag
+  contents: write
 
 jobs:
   build:
@@ -39,6 +38,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # 🎨 NUOVO: Prepara icona per generazione asset nativi
+      - name: Prepare app icon
+        run: |
+          mkdir -p assets
+          # Copia logo.png da public/ come sorgente per le icone native
+          cp public/logo.png assets/icon.png
+          echo "✅ Icona sorgente preparata da public/logo.png"
+
+      # 🎨 NUOVO: Genera icone native per Android
+      - name: Generate native icons
+        run: |
+          # Installa @capacitor/assets
+          npm install -D @capacitor/assets
+          # Genera icone con background bianco
+          npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#1a1a1a'
+          echo "✅ Icone native generate!"
+
       - name: Build web assets
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -61,12 +77,10 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      # 🆕 Release automatica solo su push a main
       - name: Generate version tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: version
         run: |
-          # Genera versione basata su data e commit
           VERSION="v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)"
           echo "tag=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Versione generata: $VERSION"
@@ -99,6 +113,10 @@ jobs:
             2. Apri il file sul tuo Android
             3. Abilita "Installa da fonti sconosciute" se richiesto
             4. Installa l'app
+            
+            ### ✨ Novità
+            - ✅ Icona app nativa generata automaticamente
+            - 📱 QR code per download APK integrato nell'app
             
             ### ⚠️ Nota
             Questa è una build di debug. Per la produzione usa una build release firmata.
