@@ -411,7 +411,9 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             onInstallClick={handleInstallClick} 
             installPromptEvent={installPromptEvent} 
             onLogout={onLogout} 
-            onShowQr={() => { window.history.pushState({ modal: 'qr' }, ''); nav.setIsQrModalOpen(true); }} 
+            onShowQr={() => { window.history.pushState({ modal: 'qr' }, ''); nav.setIsQrModalOpen(true); }}
+            isNotificationListenerEnabled={isNotificationListenerEnabled}
+            requestNotificationPermission={requestNotificationPermission}
         />
       </div>
 
