@@ -1,0 +1,26 @@
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+
+    &lt;application&gt;
+        &lt;activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:name="io.ionic.starter.MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+    &lt;/application&gt;
+
+    &lt;!-- Permissions for SMS reading --&gt;
+    &lt;uses-permission android:name="android.permission.READ_SMS" /&gt;
+    &lt;uses-permission android:name="android.permission.RECEIVE_SMS" /&gt;
+    
+    &lt;!-- Permission for notification listener --&gt;
+    &lt;uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" /&gt;
+
+&lt;/manifest&gt;
