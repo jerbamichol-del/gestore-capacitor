@@ -84,32 +84,13 @@ jobs:
             echo "✅ AndroidManifest.xml already exists"
           fi
 
-      - name: Register plugins in MainActivity.java
+      - name: Copy MainActivity.java with plugin registration
         run: |
           MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
           
-          echo "🔧 Creating MainActivity with plugin registration..."
-          cat > "$MAIN_ACTIVITY" << 'MAINACTIVITY_EOF'
-package com.gestore.spese;
-
-import android.os.Bundle;
-import com.getcapacitor.BridgeActivity;
-import com.gestore.spese.SMSReaderPlugin;
-import com.gestore.spese.NotificationListenerPlugin;
-
-public class MainActivity extends BridgeActivity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        
-        // Register custom plugins
-        registerPlugin(SMSReaderPlugin.class);
-        registerPlugin(NotificationListenerPlugin.class);
-    }
-}
-MAINACTIVITY_EOF
-          
-          echo "✅ MainActivity.java updated with plugin registration"
+          echo "📝 Copying MainActivity.java template..."
+          cp android-config/MainActivity.java "$MAIN_ACTIVITY"
+          echo "✅ MainActivity.java copied with plugin registration"
 
       - name: Build Debug APK
         run: |
