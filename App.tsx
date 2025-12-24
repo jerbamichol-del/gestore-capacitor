@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Expense, Account, CATEGORIES } from './types';
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -29,6 +28,7 @@ import { SpinnerIcon } from './components/icons/SpinnerIcon';
 import CalculatorContainer from './components/CalculatorContainer';
 import SuccessIndicator from './components/SuccessIndicator';
 import PinVerifierModal from './components/PinVerifierModal';
+import { PendingTransactionsModal, PendingTransactionsBadge } from './src/components/PendingTransactionsModal';
 
 // Custom Hooks
 import { useRecurringExpenseGenerator } from './hooks/useRecurringExpenseGenerator';
@@ -37,6 +37,9 @@ import { usePendingImages } from './hooks/usePendingImages';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { usePrivacyGate } from './hooks/usePrivacyGate';
 import { useBackNavigation } from './hooks/useBackNavigation';
+import { useNotificationListener } from './src/hooks/useNotificationListener';
+import { PendingTransaction } from './src/services/notification-listener-service';
+import { Capacitor } from '@capacitor/core';
 
 type ToastMessage = { message: string; type: 'success' | 'info' | 'error' };
 
@@ -63,6 +66,17 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   // --- Online Status ---
   const isOnline = useOnlineStatus();
+
+  // --- Auto-Transaction Detection ---
+  const [isPendingTransactionsModalOpen, setIsPendingTransactionsModalOpen] = useState(false);
+  const {
+    pendingTransactions,
+    pendingCount,
+    isEnabled: isNotificationListenerEnabled,
+    requestPermission: requestNotificationPermission,
+    confirmTransaction,
+    ignoreTransaction,
+  } = useNotificationListener();
 
   // --- Custom Hooks Integration ---
   
@@ -94,6 +108,40 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   // 6. Navigation
   const nav = useBackNavigation(showToast, setImageForAnalysis);
+
+  // --- Auto-Transaction Permission Request ---
+  useEffect(() => {
+    // Request permission only on Android and if not enabled
+    if (Capacitor.getPlatform() === 'android' && !isNotificationListenerEnabled) {
+      const hasAskedBefore = localStorage.getItem('has_asked_notification_permission');
+      if (!hasAskedBefore) {
+        // Ask only once on first app load
+        setTimeout(() => {
+          const shouldEnable = window.confirm(
+            'Vuoi abilitare il rilevamento automatico delle transazioni dalle notifiche bancarie?\n\n' +
+            'Questa funzione rileva automaticamente le spese da Revolut, PayPal, Postepay, BBVA, Intesa, BNL e UniCredit.'
+          );
+          if (shouldEnable) {
+            requestNotificationPermission();
+          }
+          localStorage.setItem('has_asked_notification_permission', 'true');
+        }, 3000); // Wait 3 seconds after app load
+      }
+    }
+  }, [isNotificationListenerEnabled, requestNotificationPermission]);
+
+  // --- Auto-open pending transactions modal when new transaction arrives ---
+  useEffect(() => {
+    if (pendingCount > 0 && !isPendingTransactionsModalOpen) {
+      // Auto-open modal when there are pending transactions
+      const lastCount = parseInt(localStorage.getItem('last_pending_count') || '0');
+      if (pendingCount > lastCount) {
+        // New transaction detected
+        setIsPendingTransactionsModalOpen(true);
+      }
+      localStorage.setItem('last_pending_count', pendingCount.toString());
+    }
+  }, [pendingCount, isPendingTransactionsModalOpen]);
 
   // --- Additional Logic ---
 
@@ -297,6 +345,54 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       setImageForAnalysis(null);
   };
 
+  // --- Auto-Transaction Handlers ---
+  const handleConfirmTransaction = async (id: string, transaction: PendingTransaction) => {
+    try {
+      // 1. Confirm in service
+      await confirmTransaction(id);
+
+      // 2. Find matching account by app name
+      let accountId = safeAccounts[0]?.id || '';
+      const matchingAccount = safeAccounts.find(
+        acc => acc.name.toLowerCase().includes(transaction.appName.toLowerCase())
+      );
+      if (matchingAccount) {
+        accountId = matchingAccount.id;
+      }
+
+      // 3. Create expense from transaction
+      const newExpense: Omit<Expense, 'id'> = {
+        description: transaction.description,
+        amount: transaction.amount,
+        date: new Date(transaction.timestamp).toISOString().split('T')[0],
+        category: 'Altro', // Default category, user can change later
+        account: transaction.appName,
+        accountId: accountId,
+        type: transaction.type,
+        tags: ['auto-rilevata'],
+        receipts: [],
+        frequency: 'single',
+      };
+
+      // 4. Add to expenses
+      handleAddExpense(newExpense);
+      showToast({ message: 'Transazione confermata e aggiunta!', type: 'success' });
+    } catch (error) {
+      console.error('Error confirming transaction:', error);
+      showToast({ message: 'Errore durante la conferma.', type: 'error' });
+    }
+  };
+
+  const handleIgnoreTransaction = async (id: string) => {
+    try {
+      await ignoreTransaction(id);
+      showToast({ message: 'Transazione ignorata.', type: 'info' });
+    } catch (error) {
+      console.error('Error ignoring transaction:', error);
+      showToast({ message: 'Errore durante l\'ignora.', type: 'error' });
+    }
+  };
+
   const fabStyle = (nav.isHistoryScreenOpen && !nav.isHistoryClosing) || (nav.isIncomeHistoryOpen && !nav.isIncomeHistoryClosing) ? { bottom: `calc(90px + env(safe-area-inset-bottom, 0px))` } : undefined;
 
   return (
@@ -311,6 +407,16 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             onShowQr={() => { window.history.pushState({ modal: 'qr' }, ''); nav.setIsQrModalOpen(true); }} 
         />
       </div>
+
+      {/* Pending Transactions Badge - Fixed Position */}
+      {pendingCount > 0 && (
+        <div className="fixed top-20 right-4 z-30">
+          <PendingTransactionsBadge 
+            count={pendingCount} 
+            onClick={() => setIsPendingTransactionsModalOpen(true)} 
+          />
+        </div>
+      )}
 
       <main className="flex-grow bg-slate-100">
         <div className="w-full h-full overflow-y-auto space-y-6" style={{ touchAction: 'pan-y' }}>
@@ -386,6 +492,15 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       />
 
       <MultipleExpensesModal isOpen={nav.isMultipleExpensesModalOpen} onClose={nav.closeModalWithHistory} expenses={multipleExpensesData} accounts={safeAccounts} onConfirm={(d) => { d.forEach(handleAddExpense); nav.forceNavigateHome(); }} />
+
+      {/* Pending Transactions Modal */}
+      <PendingTransactionsModal
+        isOpen={isPendingTransactionsModalOpen}
+        transactions={pendingTransactions}
+        onClose={() => setIsPendingTransactionsModalOpen(false)}
+        onConfirm={handleConfirmTransaction}
+        onIgnore={handleIgnoreTransaction}
+      />
 
       {/* History Screen - Expenses Only */}
       {nav.isHistoryScreenOpen && (
