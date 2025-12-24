@@ -69,18 +69,16 @@ class NotificationListenerService {
 
   /**
    * Request notification listener permission
-   * Opens Android settings - does NOT wait for user action
+   * Opens Android settings and returns current status
    */
-  async requestPermission(): Promise<boolean> {
+  async requestPermission(): Promise<{ enabled: boolean }> {
     try {
-      // This opens settings but returns immediately
-      await NotificationListener.requestPermission();
-      // We don't return the result here because the user hasn't acted yet
-      // The actual check happens via App state listener when they return
-      return false; // Always return false since we just opened settings
+      // This opens settings and returns the current status
+      const result = await NotificationListener.requestPermission();
+      return result;
     } catch (error) {
       console.error('Failed to request permission:', error);
-      return false;
+      return { enabled: false };
     }
   }
 
