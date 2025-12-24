@@ -1,6 +1,7 @@
 // src/hooks/useNotificationListener.ts
 
 import { useState, useEffect } from 'react';
+import { App } from '@capacitor/app';
 import notificationListenerService, { PendingTransaction } from '../services/notification-listener-service';
 
 export interface UseNotificationListenerReturn {
@@ -25,6 +26,31 @@ export function useNotificationListener(): UseNotificationListenerReturn {
   // Load initial state
   useEffect(() => {
     loadInitialState();
+  }, []);
+
+  // Listen to app state changes (to detect returning from settings)
+  useEffect(() => {
+    const appStateListener = App.addListener('appStateChange', async (state) => {
+      if (state.isActive) {
+        // App came to foreground, recheck permission
+        try {
+          const enabled = await notificationListenerService.isEnabled();
+          setIsEnabled(enabled);
+          
+          if (enabled) {
+            // If just enabled, initialize and refresh
+            await notificationListenerService.initialize();
+            await refresh();
+          }
+        } catch (error) {
+          console.error('Failed to check permission on app resume:', error);
+        }
+      }
+    });
+
+    return () => {
+      appStateListener.then(listener => listener.remove());
+    };
   }, []);
 
   // Listen to service events
@@ -76,13 +102,11 @@ export function useNotificationListener(): UseNotificationListenerReturn {
 
   const requestPermission = async () => {
     try {
-      const granted = await notificationListenerService.requestPermission();
-      setIsEnabled(granted);
+      // This will open Android settings
+      await notificationListenerService.requestPermission();
       
-      if (granted) {
-        await notificationListenerService.initialize();
-        await refresh();
-      }
+      // Note: The actual permission check will happen when app resumes
+      // via the appStateChange listener above
     } catch (error) {
       console.error('Failed to request permission:', error);
     }
