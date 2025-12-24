@@ -2,6 +2,7 @@ package io.ionic.starter;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
+import io.ionic.starter.SMSReaderPlugin;
 import io.ionic.starter.NotificationListenerPlugin;
 
 public class MainActivity extends BridgeActivity {
@@ -10,6 +11,7 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         
         // Register custom plugins
+        registerPlugin(SMSReaderPlugin.class);
         registerPlugin(NotificationListenerPlugin.class);
     }
 }
