@@ -9,7 +9,7 @@ export interface UseNotificationListenerReturn {
   pendingCount: number;
   isEnabled: boolean;
   isLoading: boolean;
-  requestPermission: () => Promise<void>;
+  requestPermission: () => Promise<{ enabled: boolean }>;
   confirmTransaction: (id: string) => Promise<void>;
   ignoreTransaction: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -100,15 +100,19 @@ export function useNotificationListener(): UseNotificationListenerReturn {
     }
   };
 
-  const requestPermission = async () => {
+  const requestPermission = async (): Promise<{ enabled: boolean }> => {
     try {
       // This will open Android settings
       await notificationListenerService.requestPermission();
       
-      // Note: The actual permission check will happen when app resumes
-      // via the appStateChange listener above
+      // Check current status after request
+      const enabled = await notificationListenerService.isEnabled();
+      setIsEnabled(enabled);
+      
+      return { enabled };
     } catch (error) {
       console.error('Failed to request permission:', error);
+      return { enabled: false };
     }
   };
 
