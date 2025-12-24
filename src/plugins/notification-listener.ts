@@ -75,10 +75,9 @@ class NotificationListenerWrapper {
   }
 
   async requestPermission(): Promise<{ enabled: boolean }> {
-    await NotificationListenerPlugin.requestPermission();
-    // FIXED: Recheck status after user returns from settings
-    // This ensures the red indicator dot disappears when permission is granted
-    return await this.isEnabled();
+    // This opens Android settings and returns immediately
+    // The native plugin will return { enabled: false } because user hasn't acted yet
+    return NotificationListenerPlugin.requestPermission();
   }
 
   async startListening(): Promise<void> {
