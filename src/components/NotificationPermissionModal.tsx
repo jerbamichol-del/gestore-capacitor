@@ -118,10 +118,7 @@ export function NotificationPermissionModal({
               Non ora
             </button>
             <button
-              onClick={() => {
-                onEnableClick();
-                onClose();
-              }}
+              onClick={onEnableClick}
               className="flex-1 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-lg transition-all"
             >
               Abilita Ora
