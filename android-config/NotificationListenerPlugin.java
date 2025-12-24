@@ -63,10 +63,10 @@ public class NotificationListenerPlugin extends Plugin {
     }
 
     /**
-     * Verifica se il NotificationListenerService è abilitato
+     * Verifica se il BankNotificationListenerService è abilitato
      */
     private boolean isNotificationListenerEnabled() {
-        ComponentName cn = new ComponentName(getContext(), NotificationListenerService.class);
+        ComponentName cn = new ComponentName(getContext(), BankNotificationListenerService.class);
         String flat = Settings.Secure.getString(
             getContext().getContentResolver(),
             "enabled_notification_listeners"
@@ -75,7 +75,7 @@ public class NotificationListenerPlugin extends Plugin {
     }
 
     /**
-     * Chiamato dal NotificationListenerService quando riceve una notifica bancaria
+     * Chiamato dal BankNotificationListenerService quando riceve una notifica bancaria
      */
     public void onBankNotificationReceived(JSObject data) {
         notifyListeners("notificationReceived", data);
