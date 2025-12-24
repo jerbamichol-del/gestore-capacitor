@@ -6,7 +6,7 @@ import { NotificationPermissionModal } from './NotificationPermissionModal';
 
 interface NotificationSettingsButtonProps {
   isEnabled: boolean;
-  requestPermission: () => void;
+  requestPermission: () => Promise<void> | void;
 }
 
 export function NotificationSettingsButton({
@@ -19,6 +19,13 @@ export function NotificationSettingsButton({
   if (Capacitor.getPlatform() !== 'android') {
     return null;
   }
+
+  const handleEnableClick = async () => {
+    // Call requestPermission and wait for it to complete
+    await requestPermission();
+    // Close modal after permission request is done
+    setIsModalOpen(false);
+  };
 
   return (
     <>
@@ -43,10 +50,7 @@ export function NotificationSettingsButton({
       <NotificationPermissionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onEnableClick={() => {
-          requestPermission();
-          setIsModalOpen(false);
-        }}
+        onEnableClick={handleEnableClick}
       />
     </>
   );
