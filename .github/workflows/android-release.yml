@@ -34,14 +34,30 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Add Android platform (if not exists)
+      - name: Remove existing Android platform
         run: |
-          if [ ! -d "android" ]; then
-            echo "📱 Creating Android platform..."
-            npx cap add android
-          else
-            echo "✅ Android platform already exists"
+          if [ -d "android" ]; then
+            echo "🗑️ Removing existing Android platform..."
+            rm -rf android
           fi
+
+      - name: Add Android platform
+        run: |
+          echo "📱 Creating Android platform..."
+          npx cap add android
+          echo "✅ Android platform created"
+
+      - name: Verify Android structure
+        run: |
+          echo "🔍 Verifying Android project structure..."
+          ls -la android/
+          if [ ! -f "android/settings.gradle" ] && [ ! -f "android/settings.gradle.kts" ]; then
+            echo "❌ ERROR: settings.gradle not found!"
+            echo "Contents of android/:" 
+            find android/ -type f -name "*.gradle*" || true
+            exit 1
+          fi
+          echo "✅ Android structure verified"
 
       - name: Sync Capacitor
         run: npx cap sync android
@@ -76,13 +92,9 @@ jobs:
           MANIFEST_DIR="android/app/src/main"
           mkdir -p "$MANIFEST_DIR"
           
-          if [ ! -f "$MANIFEST_DIR/AndroidManifest.xml" ]; then
-            echo "📝 Copying AndroidManifest.xml template..."
-            cp android-config/AndroidManifest.xml "$MANIFEST_DIR/AndroidManifest.xml"
-            echo "✅ AndroidManifest.xml copied"
-          else
-            echo "✅ AndroidManifest.xml already exists"
-          fi
+          echo "📝 Copying AndroidManifest.xml template..."
+          cp android-config/AndroidManifest.xml "$MANIFEST_DIR/AndroidManifest.xml"
+          echo "✅ AndroidManifest.xml copied"
 
       - name: Copy MainActivity.java with plugin registration
         run: |
@@ -92,22 +104,10 @@ jobs:
           cp android-config/MainActivity.java "$MAIN_ACTIVITY"
           echo "✅ MainActivity.java copied with plugin registration"
 
-      - name: Generate Gradle Wrapper (if missing)
-        run: |
-          cd android
-          if [ ! -f "gradlew" ]; then
-            echo "🔧 Generating Gradle wrapper..."
-            gradle wrapper --gradle-version 8.7
-            chmod +x gradlew
-            echo "✅ Gradle wrapper generated"
-          else
-            echo "✅ Gradle wrapper already exists"
-            chmod +x gradlew
-          fi
-
       - name: Build Debug APK
         run: |
           cd android
+          chmod +x ./gradlew
           ./gradlew clean assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK
