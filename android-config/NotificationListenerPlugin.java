@@ -1,9 +1,12 @@
 package com.gestorefinanze.app;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.provider.Settings;
-import android.text.TextUtils;
+import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -13,6 +16,33 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "NotificationListener")
 public class NotificationListenerPlugin extends Plugin {
+
+    private static final String TAG = "NotificationListenerPlugin";
+    private BankNotificationReceiver receiver;
+
+    @Override
+    public void load() {
+        super.load();
+        // Register broadcast receiver
+        receiver = new BankNotificationReceiver();
+        IntentFilter filter = new IntentFilter("com.gestorefinanze.BANK_NOTIFICATION");
+        getContext().registerReceiver(receiver, filter);
+        Log.d(TAG, "BroadcastReceiver registered");
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        super.handleOnDestroy();
+        // Unregister receiver
+        if (receiver != null) {
+            try {
+                getContext().unregisterReceiver(receiver);
+                Log.d(TAG, "BroadcastReceiver unregistered");
+            } catch (Exception e) {
+                Log.e(TAG, "Error unregistering receiver", e);
+            }
+        }
+    }
 
     @PluginMethod
     public void isEnabled(PluginCall call) {
@@ -75,9 +105,26 @@ public class NotificationListenerPlugin extends Plugin {
     }
 
     /**
-     * Chiamato dal BankNotificationListenerService quando riceve una notifica bancaria
+     * BroadcastReceiver per ricevere notifiche dal BankNotificationListenerService
      */
-    public void onBankNotificationReceived(JSObject data) {
-        notifyListeners("notificationReceived", data);
+    private class BankNotificationReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.gestorefinanze.BANK_NOTIFICATION".equals(intent.getAction())) {
+                String dataJson = intent.getStringExtra("data");
+                
+                if (dataJson != null) {
+                    try {
+                        JSObject data = JSObject.fromJSONObject(new org.json.JSONObject(dataJson));
+                        Log.d(TAG, "Received bank notification: " + data.toString());
+                        
+                        // Invia al JavaScript layer
+                        notifyListeners("notificationReceived", data);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing notification data", e);
+                    }
+                }
+            }
+        }
     }
 }
