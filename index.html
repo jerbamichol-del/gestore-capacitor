@@ -76,8 +76,13 @@
     <!-- Entry point -->
     <script type="module" src="/index.tsx"></script>
 
-    <script>
-      if ('serviceWorker' in navigator) {
+    <!-- Service Worker: SOLO per web, NON per app nativa Capacitor -->
+    <script type="module">
+      // Importa Capacitor per rilevare se siamo su app nativa
+      import { Capacitor } from 'https://cdn.jsdelivr.net/npm/@capacitor/core@6/+esm';
+      
+      // Registra SW solo se NON siamo su piattaforma nativa
+      if ('serviceWorker' in navigator && !Capacitor.isNativePlatform()) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
             .register('service-worker.js')
@@ -88,6 +93,8 @@
               console.log('ServiceWorker registration failed: ', err);
             });
         });
+      } else {
+        console.log('🚀 Running on native platform - Service Worker disabled');
       }
     </script>
   </body>
