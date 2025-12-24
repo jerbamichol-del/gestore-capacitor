@@ -31,8 +31,9 @@ export function NotificationSettingsButton({
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="relative p-2 text-white hover:bg-indigo-700 rounded-full transition-colors"
+        className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors"
         aria-label="Impostazioni rilevamento transazioni"
+        title={isEnabled ? 'Rilevamento attivo' : 'Abilita rilevamento notifiche'}
       >
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
