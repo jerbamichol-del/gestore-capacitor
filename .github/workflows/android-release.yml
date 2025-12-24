@@ -92,11 +92,23 @@ jobs:
           cp android-config/MainActivity.java "$MAIN_ACTIVITY"
           echo "✅ MainActivity.java copied with plugin registration"
 
+      - name: Generate Gradle Wrapper (if missing)
+        run: |
+          cd android
+          if [ ! -f "gradlew" ]; then
+            echo "🔧 Generating Gradle wrapper..."
+            gradle wrapper --gradle-version 8.7
+            chmod +x gradlew
+            echo "✅ Gradle wrapper generated"
+          else
+            echo "✅ Gradle wrapper already exists"
+            chmod +x gradlew
+          fi
+
       - name: Build Debug APK
         run: |
           cd android
-          chmod +x ./gradlew
-          ./gradlew clean assembleDebug --no-daemon
+          ./gradlew clean assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK
         run: |
