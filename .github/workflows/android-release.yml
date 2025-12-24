@@ -52,30 +52,6 @@ jobs:
           npx cap copy android
           npx cap sync android
 
-      - name: Debug - List Android structure
-        run: |
-          echo "🔍 === ANDROID STRUCTURE ==="
-          echo "Root android/ exists?"
-          ls -la android/ || echo "android/ not found!"
-          echo ""
-          echo "android/app/ exists?"
-          ls -la android/app/ || echo "android/app/ not found!"
-          echo ""
-          echo "android/app/src/ exists?"
-          ls -la android/app/src/ || echo "android/app/src/ not found!"
-          echo ""
-          echo "android/app/src/main/ exists?"
-          ls -la android/app/src/main/ || echo "android/app/src/main/ not found!"
-          echo ""
-          echo "Searching for AndroidManifest.xml:"
-          find android -name "AndroidManifest.xml" -type f 2>/dev/null || echo "No AndroidManifest.xml found"
-          echo ""
-          echo "Searching for java directories:"
-          find android -type d -name "java" 2>/dev/null || echo "No java directories found"
-          echo ""
-          echo "Full tree of android/app/src:"
-          tree android/app/src -L 5 2>/dev/null || find android/app/src -type f 2>/dev/null || echo "Cannot display tree"
-
       - name: Update plugin package names
         run: |
           echo "🔧 Updating package names in plugins..."
@@ -94,6 +70,100 @@ jobs:
           cp android-config/BankNotificationListenerService.java "$JAVA_DIR/"
           echo "✅ Plugins copied to $JAVA_DIR"
           ls -la "$JAVA_DIR/"
+
+      - name: Create AndroidManifest.xml if missing
+        run: |
+          MANIFEST_DIR="android/app/src/main"
+          MANIFEST="$MANIFEST_DIR/AndroidManifest.xml"
+          
+          if [ ! -f "$MANIFEST" ]; then
+            echo "📝 Creating AndroidManifest.xml..."
+            cat > "$MANIFEST" << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- SMS Reading -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    
+    <!-- Notification Listener -->
+    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
+    
+    <!-- Local Notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    
+    <!-- Biometric Authentication -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    
+    <!-- Audio Recording -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    
+    <!-- Camera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    
+    <!-- Storage -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    
+    <!-- Internet -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+        
+        <!-- Bank Notification Listener Service -->
+        <service
+            android:name=".BankNotificationListenerService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+
+    </application>
+
+</manifest>
+EOF
+            echo "✅ AndroidManifest.xml created"
+          else
+            echo "✅ AndroidManifest.xml already exists"
+          fi
 
       - name: Register plugins in MainActivity.java
         run: |
@@ -121,44 +191,6 @@ jobs:
           EOF
           
           echo "✅ MainActivity.java updated with plugin registration"
-
-      - name: Add SMS + Notification permissions to AndroidManifest
-        run: |
-          echo "🔍 Searching for AndroidManifest.xml..."
-          
-          # Try multiple possible locations
-          MANIFEST=""
-          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
-            MANIFEST="android/app/src/main/AndroidManifest.xml"
-          elif [ -f "android/src/main/AndroidManifest.xml" ]; then
-            MANIFEST="android/src/main/AndroidManifest.xml"
-          else
-            MANIFEST=$(find android -name "AndroidManifest.xml" -type f 2>/dev/null | head -n 1)
-          fi
-          
-          if [ -z "$MANIFEST" ]; then
-            echo "❌ ERROR: AndroidManifest.xml not found anywhere in android/!"
-            echo "🔍 Directory structure:"
-            find android -type f -name "*.xml" 2>/dev/null || echo "No XML files found"
-            exit 1
-          fi
-          
-          echo "✅ Found AndroidManifest at: $MANIFEST"
-          echo "📝 Adding permissions and service..."
-          
-          # Backup original
-          cp "$MANIFEST" "$MANIFEST.backup"
-          
-          # Add permissions before </manifest>
-          sed -i '/<\/manifest>/i\    <!-- SMS Reading -->\n    <uses-permission android:name="android.permission.READ_SMS" />\n    <uses-permission android:name="android.permission.RECEIVE_SMS" />\n\n    <!-- Notification Listener -->\n    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />\n\n    <!-- Local Notifications -->\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />' "$MANIFEST"
-          
-          # Add BankNotificationListenerService before </application>
-          sed -i '/<\/application>/i\        <!-- Bank Notification Listener Service -->\n        <service\n            android:name=".BankNotificationListenerService"\n            android:exported="true"\n            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n            <intent-filter>\n                <action android:name="android.service.notification.NotificationListenerService" />\n            </intent-filter>\n        </service>' "$MANIFEST"
-          
-          echo "✅ AndroidManifest.xml updated"
-
-      - name: Patch AndroidManifest with permissions
-        run: node scripts/patch-android-manifest.js
 
       - name: Build Debug APK
         run: |
