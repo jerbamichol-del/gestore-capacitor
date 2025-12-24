@@ -54,10 +54,27 @@ jobs:
 
       - name: Debug - List Android structure
         run: |
-          echo "🔍 Checking Android structure..."
-          ls -la android/app/src/main/ || echo "main/ not found"
-          find android/app/src -name "AndroidManifest.xml" || echo "AndroidManifest.xml not found"
-          find android/app/src -type d -name "java" || echo "java dir not found"
+          echo "🔍 === ANDROID STRUCTURE ==="
+          echo "Root android/ exists?"
+          ls -la android/ || echo "android/ not found!"
+          echo ""
+          echo "android/app/ exists?"
+          ls -la android/app/ || echo "android/app/ not found!"
+          echo ""
+          echo "android/app/src/ exists?"
+          ls -la android/app/src/ || echo "android/app/src/ not found!"
+          echo ""
+          echo "android/app/src/main/ exists?"
+          ls -la android/app/src/main/ || echo "android/app/src/main/ not found!"
+          echo ""
+          echo "Searching for AndroidManifest.xml:"
+          find android -name "AndroidManifest.xml" -type f 2>/dev/null || echo "No AndroidManifest.xml found"
+          echo ""
+          echo "Searching for java directories:"
+          find android -type d -name "java" 2>/dev/null || echo "No java directories found"
+          echo ""
+          echo "Full tree of android/app/src:"
+          tree android/app/src -L 5 2>/dev/null || find android/app/src -type f 2>/dev/null || echo "Cannot display tree"
 
       - name: Update plugin package names
         run: |
@@ -107,15 +124,26 @@ jobs:
 
       - name: Add SMS + Notification permissions to AndroidManifest
         run: |
-          # Find the actual AndroidManifest location
-          MANIFEST=$(find android/app/src -name "AndroidManifest.xml" | head -n 1)
+          echo "🔍 Searching for AndroidManifest.xml..."
+          
+          # Try multiple possible locations
+          MANIFEST=""
+          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
+            MANIFEST="android/app/src/main/AndroidManifest.xml"
+          elif [ -f "android/src/main/AndroidManifest.xml" ]; then
+            MANIFEST="android/src/main/AndroidManifest.xml"
+          else
+            MANIFEST=$(find android -name "AndroidManifest.xml" -type f 2>/dev/null | head -n 1)
+          fi
           
           if [ -z "$MANIFEST" ]; then
-            echo "❌ AndroidManifest.xml not found!"
+            echo "❌ ERROR: AndroidManifest.xml not found anywhere in android/!"
+            echo "🔍 Directory structure:"
+            find android -type f -name "*.xml" 2>/dev/null || echo "No XML files found"
             exit 1
           fi
           
-          echo "📝 Found AndroidManifest at: $MANIFEST"
+          echo "✅ Found AndroidManifest at: $MANIFEST"
           echo "📝 Adding permissions and service..."
           
           # Backup original
