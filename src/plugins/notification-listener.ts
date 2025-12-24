@@ -9,51 +9,38 @@ export interface NotificationListenerPlugin {
   isEnabled(): Promise<{ enabled: boolean }>;
 
   /**
-   * Request notification listener permission (opens settings)
+   * Request notification listener permission
+   * Opens Android settings
    */
-  requestPermission(): Promise<{ opened?: boolean; enabled?: boolean }>;
+  requestPermission(): Promise<void>;
 
   /**
-   * Start listening to notifications
-   */
-  startListening(): Promise<{ listening: boolean }>;
-
-  /**
-   * Stop listening to notifications
-   */
-  stopListening(): Promise<{ message: string }>;
-
-  /**
-   * Add listener for bank notifications
+   * Add listener for notification events
    */
   addListener(
     eventName: 'notificationReceived',
-    listenerFunc: (data: BankNotification) => void
-  ): Promise<{ remove: () => void }>;
+    listenerFunc: (data: NotificationData) => void
+  ): Promise<PluginListenerHandle>;
+
+  /**
+   * Remove all listeners
+   */
+  removeAllListeners(): Promise<void>;
 }
 
-export interface BankNotification {
+export interface NotificationData {
   packageName: string;
-  appName: string;
   title: string;
   text: string;
   timestamp: number;
 }
 
-const NotificationListener = registerPlugin<NotificationListenerPlugin>(
-  'NotificationListener',
-  {
-    web: () => {
-      // Mock implementation for web/dev
-      return {
-        isEnabled: async () => ({ enabled: false }),
-        requestPermission: async () => ({ enabled: false }),
-        startListening: async () => ({ listening: false }),
-        stopListening: async () => ({ message: 'Not available on web' }),
-        addListener: async () => ({ remove: () => {} })
-      } as any;
-    }
-  }
-);
+export interface PluginListenerHandle {
+  remove: () => Promise<void>;
+}
+
+const NotificationListener = registerPlugin<NotificationListenerPlugin>('NotificationListener', {
+  web: () => import('./notification-listener-web').then(m => new m.NotificationListenerWeb()),
+});
 
 export default NotificationListener;
