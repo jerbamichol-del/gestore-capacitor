@@ -5,7 +5,7 @@ import React from 'react';
 interface NotificationPermissionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onEnableClick: () => void;
+  onEnableClick: () => Promise<void> | void;
 }
 
 export function NotificationPermissionModal({
@@ -14,6 +14,10 @@ export function NotificationPermissionModal({
   onEnableClick,
 }: NotificationPermissionModalProps) {
   if (!isOpen) return null;
+
+  const handleEnableClick = async () => {
+    await onEnableClick();
+  };
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
@@ -118,7 +122,7 @@ export function NotificationPermissionModal({
               Non ora
             </button>
             <button
-              onClick={onEnableClick}
+              onClick={handleEnableClick}
               className="flex-1 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-lg transition-all"
             >
               Abilita Ora
