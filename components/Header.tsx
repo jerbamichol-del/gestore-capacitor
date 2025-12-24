@@ -3,6 +3,7 @@ import { PhotoIcon } from './icons/PhotoIcon';
 import { ArrowDownOnSquareIcon } from './icons/ArrowDownOnSquareIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
 import { QrCodeIcon } from './icons/QrCodeIcon';
+import { NotificationSettingsButton } from '../src/components/NotificationSettingsButton';
 
 interface HeaderProps {
     pendingSyncs: number;
@@ -11,9 +12,20 @@ interface HeaderProps {
     installPromptEvent: any;
     onLogout: () => void;
     onShowQr: () => void;
+    isNotificationListenerEnabled?: boolean;
+    requestNotificationPermission?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ pendingSyncs, isOnline, onInstallClick, installPromptEvent, onLogout, onShowQr }) => {
+const Header: React.FC<HeaderProps> = ({ 
+    pendingSyncs, 
+    isOnline, 
+    onInstallClick, 
+    installPromptEvent, 
+    onLogout, 
+    onShowQr,
+    isNotificationListenerEnabled = false,
+    requestNotificationPermission = () => {}
+}) => {
   return (
     <header className="bg-white shadow-md sticky top-0 z-20">
       <div className="mx-auto">
@@ -48,6 +60,11 @@ const Header: React.FC<HeaderProps> = ({ pendingSyncs, isOnline, onInstallClick,
                       <span className="hidden sm:inline">Installa</span>
                   </button>
               )}
+
+              <NotificationSettingsButton
+                isEnabled={isNotificationListenerEnabled}
+                requestPermission={requestNotificationPermission}
+              />
 
               <button
                   onClick={onShowQr}
