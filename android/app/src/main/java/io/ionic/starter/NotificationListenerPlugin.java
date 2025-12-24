@@ -67,10 +67,20 @@ public class NotificationListenerPlugin extends Plugin {
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
-        Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getContext().startActivity(intent);
-        call.resolve();
+        try {
+            Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            
+            // Return current status (will be false until user enables it)
+            boolean enabled = isNotificationListenerEnabled();
+            JSObject ret = new JSObject();
+            ret.put("enabled", enabled);
+            call.resolve(ret);
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening notification settings", e);
+            call.reject("Failed to open notification settings: " + e.getMessage());
+        }
     }
 
     private boolean isNotificationListenerEnabled() {
