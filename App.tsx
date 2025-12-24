@@ -29,6 +29,7 @@ import CalculatorContainer from './components/CalculatorContainer';
 import SuccessIndicator from './components/SuccessIndicator';
 import PinVerifierModal from './components/PinVerifierModal';
 import { PendingTransactionsModal, PendingTransactionsBadge } from './src/components/PendingTransactionsModal';
+import { NotificationPermissionModal } from './src/components/NotificationPermissionModal';
 
 // Custom Hooks
 import { useRecurringExpenseGenerator } from './hooks/useRecurringExpenseGenerator';
@@ -69,6 +70,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   // --- Auto-Transaction Detection ---
   const [isPendingTransactionsModalOpen, setIsPendingTransactionsModalOpen] = useState(false);
+  const [isNotificationPermissionModalOpen, setIsNotificationPermissionModalOpen] = useState(false);
   const {
     pendingTransactions,
     pendingCount,
@@ -110,25 +112,30 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const nav = useBackNavigation(showToast, setImageForAnalysis);
 
   // --- Auto-Transaction Permission Request ---
+  const hasShownPermissionModalRef = useRef(false);
+  
   useEffect(() => {
     // Request permission only on Android and if not enabled
     if (Capacitor.getPlatform() === 'android' && !isNotificationListenerEnabled) {
+      const dismissedForever = localStorage.getItem('notification_permission_dismissed_forever');
       const hasAskedBefore = localStorage.getItem('has_asked_notification_permission');
-      if (!hasAskedBefore) {
-        // Ask only once on first app load
+      
+      // Show modal only if:
+      // 1. Not dismissed forever
+      // 2. Haven't asked before in this session
+      // 3. Haven't shown the modal already in this render cycle
+      if (!dismissedForever && !hasAskedBefore && !hasShownPermissionModalRef.current) {
+        hasShownPermissionModalRef.current = true;
+        
+        // Show modal after 3 seconds
         setTimeout(() => {
-          const shouldEnable = window.confirm(
-            'Vuoi abilitare il rilevamento automatico delle transazioni dalle notifiche bancarie?\n\n' +
-            'Questa funzione rileva automaticamente le spese da Revolut, PayPal, Postepay, BBVA, Intesa, BNL e UniCredit.'
-          );
-          if (shouldEnable) {
-            requestNotificationPermission();
-          }
+          setIsNotificationPermissionModalOpen(true);
+          // Mark as asked to prevent showing again in this session
           localStorage.setItem('has_asked_notification_permission', 'true');
-        }, 3000); // Wait 3 seconds after app load
+        }, 3000);
       }
     }
-  }, [isNotificationListenerEnabled, requestNotificationPermission]);
+  }, [isNotificationListenerEnabled]);
 
   // --- Auto-open pending transactions modal when new transaction arrives ---
   useEffect(() => {
@@ -492,6 +499,13 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       />
 
       <MultipleExpensesModal isOpen={nav.isMultipleExpensesModalOpen} onClose={nav.closeModalWithHistory} expenses={multipleExpensesData} accounts={safeAccounts} onConfirm={(d) => { d.forEach(handleAddExpense); nav.forceNavigateHome(); }} />
+
+      {/* Notification Permission Modal */}
+      <NotificationPermissionModal
+        isOpen={isNotificationPermissionModalOpen}
+        onClose={() => setIsNotificationPermissionModalOpen(false)}
+        onEnableClick={requestNotificationPermission}
+      />
 
       {/* Pending Transactions Modal */}
       <PendingTransactionsModal
