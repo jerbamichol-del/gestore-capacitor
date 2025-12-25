@@ -1,17 +1,15 @@
-package io.ionic.starter;
+package com.gestore.spese;
 
-import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
-import io.ionic.starter.SMSReaderPlugin;
-import io.ionic.starter.NotificationListenerPlugin;
+import android.os.Bundle;
 
 public class MainActivity extends BridgeActivity {
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Register custom plugins
-        registerPlugin(SMSReaderPlugin.class);
-        registerPlugin(NotificationListenerPlugin.class);
+        // Registra i plugin custom
+        registerPlugin(io.ionic.starter.NotificationListenerPlugin.class);
+        registerPlugin(io.ionic.starter.SMSReaderPlugin.class);
     }
 }
