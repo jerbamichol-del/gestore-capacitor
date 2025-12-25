@@ -54,19 +54,27 @@ public class NotificationListenerPlugin extends Plugin {
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
-        if (!isNotificationListenerEnabled()) {
+        boolean currentlyEnabled = isNotificationListenerEnabled();
+        
+        if (!currentlyEnabled) {
             // Apri le impostazioni per abilitare il listener
-            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-            getActivity().startActivity(intent);
-            
-            JSObject ret = new JSObject();
-            ret.put("opened", true);
-            call.resolve(ret);
-        } else {
-            JSObject ret = new JSObject();
-            ret.put("enabled", true);
-            call.resolve(ret);
+            try {
+                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+                getActivity().startActivity(intent);
+                Log.d(TAG, "Opened notification listener settings");
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to open notification listener settings", e);
+                JSObject ret = new JSObject();
+                ret.put("enabled", false);
+                call.resolve(ret);
+                return;
+            }
         }
+        
+        // Restituisci lo stato attuale
+        JSObject ret = new JSObject();
+        ret.put("enabled", currentlyEnabled);
+        call.resolve(ret);
     }
 
     @PluginMethod
