@@ -314,15 +314,16 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       }
       setShowSuccessIndicator(true); setTimeout(() => setShowSuccessIndicator(false), 2000);
       
-      // Close navigation logic
+      // Close navigation logic - FIXED VERSION
       if (nav.isFormOpen) {
-          // If calculator is also open, we need to close both to get back to dashboard
+          // If calculator is also open, close BOTH by going back twice
           if (nav.isCalculatorContainerOpen) {
-              // Close form first
-              nav.setIsFormOpen(false);
-              // Then close calculator and force navigate to home
-              nav.setIsCalculatorContainerOpen(false);
-              nav.forceNavigateHome();
+              // First back closes the form
+              window.history.back();
+              // Small delay to ensure state is updated, then close calculator
+              setTimeout(() => {
+                  window.history.back();
+              }, 50);
           } else {
               // Just close the form
               window.history.back();
