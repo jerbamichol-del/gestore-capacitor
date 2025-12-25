@@ -64,6 +64,9 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const [editingRecurringExpense, setEditingRecurringExpense] = useState<Expense | undefined>(undefined);
   const [prefilledData, setPrefilledData] = useState<Partial<Omit<Expense, 'id'>> | undefined>(undefined);
   const [multipleExpensesData, setMultipleExpensesData] = useState<Partial<Omit<Expense, 'id'>>[]>([]);
+  
+  // Track if form was opened from calculator
+  const formOpenedFromCalculatorRef = useRef(false);
 
   // --- Online Status ---
   const isOnline = useOnlineStatus();
@@ -275,6 +278,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     nav.setIsVoiceModalOpen(false);
     const safeData = sanitizeExpenseData(data);
     setPrefilledData(safeData);
+    formOpenedFromCalculatorRef.current = false; // Not from calculator
     nav.setIsFormOpen(true);
   };
 
@@ -314,10 +318,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       }
       setShowSuccessIndicator(true); setTimeout(() => setShowSuccessIndicator(false), 2000);
       
-      // Close navigation logic - FIXED VERSION
+      // Close navigation logic - Check if form was opened from calculator
       if (nav.isFormOpen) {
-          // If calculator is also open, close BOTH by going back twice
-          if (nav.isCalculatorContainerOpen) {
+          // If form was opened from calculator, close both
+          if (formOpenedFromCalculatorRef.current) {
+              // Reset the flag
+              formOpenedFromCalculatorRef.current = false;
               // First back closes the form
               window.history.back();
               // Small delay to ensure state is updated, then close calculator
@@ -484,8 +490,31 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       
       <SuccessIndicator show={showSuccessIndicator} />
 
-      <CalculatorContainer isOpen={nav.isCalculatorContainerOpen} onClose={nav.closeModalWithHistory} onSubmit={handleAddExpense} accounts={safeAccounts} expenses={expenses} onEditExpense={(e) => { setEditingExpense(e); window.history.pushState({ modal: 'form' }, ''); nav.setIsFormOpen(true); }} onDeleteExpense={(id) => { setExpenseToDeleteId(id); setIsConfirmDeleteModalOpen(true); }} onMenuStateChange={() => {}} />
-      <ExpenseForm isOpen={nav.isFormOpen} onClose={nav.closeModalWithHistory} onSubmit={handleAddExpense} initialData={editingExpense || editingRecurringExpense} prefilledData={prefilledData} accounts={safeAccounts} isForRecurringTemplate={!!editingRecurringExpense} />
+      <CalculatorContainer 
+        isOpen={nav.isCalculatorContainerOpen} 
+        onClose={nav.closeModalWithHistory} 
+        onSubmit={handleAddExpense} 
+        accounts={safeAccounts} 
+        expenses={expenses} 
+        onEditExpense={(e) => { 
+          setEditingExpense(e); 
+          formOpenedFromCalculatorRef.current = nav.isCalculatorContainerOpen; // Track if opened from calculator
+          window.history.pushState({ modal: 'form' }, ''); 
+          nav.setIsFormOpen(true); 
+        }} 
+        onDeleteExpense={(id) => { setExpenseToDeleteId(id); setIsConfirmDeleteModalOpen(true); }} 
+        onMenuStateChange={() => {}}
+      />
+      
+      <ExpenseForm 
+        isOpen={nav.isFormOpen} 
+        onClose={nav.closeModalWithHistory} 
+        onSubmit={handleAddExpense} 
+        initialData={editingExpense || editingRecurringExpense} 
+        prefilledData={prefilledData} 
+        accounts={safeAccounts} 
+        isForRecurringTemplate={!!editingRecurringExpense} 
+      />
 
       {nav.isImageSourceModalOpen && (
         <div className="fixed inset-0 z-[5200] flex justify-center items-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={nav.closeModalWithHistory}>
@@ -537,7 +566,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             accounts={safeAccounts} 
             onClose={nav.closeModalWithHistory} 
             onCloseStart={() => nav.setIsHistoryClosing(true)} 
-            onEditExpense={(e) => { setEditingExpense(e); window.history.pushState({ modal: 'form' }, ''); nav.setIsFormOpen(true); }} 
+            onEditExpense={(e) => { 
+              setEditingExpense(e); 
+              formOpenedFromCalculatorRef.current = false; // Not from calculator
+              window.history.pushState({ modal: 'form' }, ''); 
+              nav.setIsFormOpen(true); 
+            }} 
             onDeleteExpense={handleDeleteRequest} 
             onDeleteExpenses={(ids) => { setExpenses(prev => (prev || []).filter(e => !ids.includes(e.id))); }} 
             isEditingOrDeleting={nav.isFormOpen || isConfirmDeleteModalOpen} 
@@ -555,7 +589,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             accounts={safeAccounts} 
             onClose={nav.closeModalWithHistory} 
             onCloseStart={() => nav.setIsIncomeHistoryClosing(true)} 
-            onEditExpense={(e) => { setEditingExpense(e); window.history.pushState({ modal: 'form' }, ''); nav.setIsFormOpen(true); }} 
+            onEditExpense={(e) => { 
+              setEditingExpense(e); 
+              formOpenedFromCalculatorRef.current = false; // Not from calculator
+              window.history.pushState({ modal: 'form' }, ''); 
+              nav.setIsFormOpen(true); 
+            }} 
             onDeleteExpense={handleDeleteRequest} 
             onDeleteExpenses={(ids) => { setExpenses(prev => (prev || []).filter(e => !ids.includes(e.id))); }} 
             isEditingOrDeleting={nav.isFormOpen || isConfirmDeleteModalOpen} 
@@ -573,7 +612,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             accounts={safeAccounts} 
             onClose={nav.closeModalWithHistory}
             onCloseStart={() => nav.setIsRecurringClosing(true)} 
-            onEdit={(e) => { setEditingRecurringExpense(e); window.history.pushState({ modal: 'form' }, ''); nav.setIsFormOpen(true); }} 
+            onEdit={(e) => { 
+              setEditingRecurringExpense(e); 
+              formOpenedFromCalculatorRef.current = false; // Not from calculator
+              window.history.pushState({ modal: 'form' }, ''); 
+              nav.setIsFormOpen(true); 
+            }} 
             onDelete={(id) => setRecurringExpenses(prev => (prev || []).filter(e => e.id !== id))} 
             onDeleteRecurringExpenses={(ids) => setRecurringExpenses(prev => (prev || []).filter(e => !ids.includes(e.id)))} 
         />
