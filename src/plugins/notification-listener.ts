@@ -70,56 +70,36 @@ const NotificationListenerPlugin = registerPlugin<NotificationListenerPlugin>('N
 
 // Create wrapper with BankNotification conversion + error handling
 class NotificationListenerWrapper {
-  private nativePluginAvailable = true;
-
   async isEnabled(): Promise<{ enabled: boolean }> {
-    if (!this.nativePluginAvailable) {
-      console.log('⚠️ NotificationListener native plugin not available');
-      return { enabled: false };
-    }
-
     try {
-      return await NotificationListenerPlugin.isEnabled();
+      const result = await NotificationListenerPlugin.isEnabled();
+      console.log('✅ NotificationListener.isEnabled() result:', result);
+      return result;
     } catch (error: any) {
-      console.log('Failed to check if enabled:', error);
-      // Se il plugin non è implementato, disabilitalo permanentemente
-      if (error?.message?.includes('not implemented')) {
-        this.nativePluginAvailable = false;
-      }
+      console.error('❌ NotificationListener.isEnabled() error:', error);
       return { enabled: false };
     }
   }
 
   async requestPermission(): Promise<{ enabled: boolean }> {
-    if (!this.nativePluginAvailable) {
-      console.log('⚠️ NotificationListener native plugin not available');
-      return { enabled: false };
-    }
-
     try {
-      // This opens Android settings and returns immediately
-      // The native plugin will return { enabled: false } because user hasn't acted yet
-      return await NotificationListenerPlugin.requestPermission();
+      console.log('📱 Opening Android notification settings...');
+      const result = await NotificationListenerPlugin.requestPermission();
+      console.log('✅ NotificationListener.requestPermission() result:', result);
+      return result;
     } catch (error: any) {
-      console.log('Failed to request permission:', error);
-      // Se il plugin non è implementato, disabilitalo permanentemente
-      if (error?.message?.includes('not implemented')) {
-        this.nativePluginAvailable = false;
-      }
+      console.error('❌ NotificationListener.requestPermission() error:', error);
       return { enabled: false };
     }
   }
 
   async startListening(): Promise<void> {
-    if (!this.nativePluginAvailable) {
-      return Promise.resolve();
-    }
-
     try {
+      console.log('🎧 Starting notification listener...');
       // No-op for now, listening starts automatically on Android
       return Promise.resolve();
     } catch (error) {
-      console.log('Failed to start listening:', error);
+      console.error('❌ Failed to start listening:', error);
       return Promise.resolve();
     }
   }
@@ -128,15 +108,10 @@ class NotificationListenerWrapper {
     eventName: 'notificationReceived',
     listenerFunc: (data: BankNotification) => void
   ): Promise<PluginListenerHandle> {
-    if (!this.nativePluginAvailable) {
-      // Return a no-op listener handle
-      return {
-        remove: async () => Promise.resolve()
-      };
-    }
-
     try {
+      console.log('👂 Adding notification listener...');
       return await NotificationListenerPlugin.addListener(eventName, (data: NotificationData) => {
+        console.log('🔔 Notification received:', data);
         // Convert to BankNotification format
         const bankNotification: BankNotification = {
           appName: PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
@@ -148,7 +123,7 @@ class NotificationListenerWrapper {
         listenerFunc(bankNotification);
       });
     } catch (error) {
-      console.log('Failed to add listener:', error);
+      console.error('❌ Failed to add listener:', error);
       // Return a no-op listener handle
       return {
         remove: async () => Promise.resolve()
@@ -157,14 +132,10 @@ class NotificationListenerWrapper {
   }
 
   async removeAllListeners(): Promise<void> {
-    if (!this.nativePluginAvailable) {
-      return Promise.resolve();
-    }
-
     try {
       return await NotificationListenerPlugin.removeAllListeners();
     } catch (error) {
-      console.log('Failed to remove listeners:', error);
+      console.error('❌ Failed to remove listeners:', error);
       return Promise.resolve();
     }
   }
