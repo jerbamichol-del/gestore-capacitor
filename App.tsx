@@ -314,8 +314,19 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       }
       setShowSuccessIndicator(true); setTimeout(() => setShowSuccessIndicator(false), 2000);
       
+      // Close navigation logic
       if (nav.isFormOpen) {
-          window.history.back();
+          // If calculator is also open, we need to close both to get back to dashboard
+          if (nav.isCalculatorContainerOpen) {
+              // Close form first
+              nav.setIsFormOpen(false);
+              // Then close calculator and force navigate to home
+              nav.setIsCalculatorContainerOpen(false);
+              nav.forceNavigateHome();
+          } else {
+              // Just close the form
+              window.history.back();
+          }
       } else if (nav.isCalculatorContainerOpen) {
           nav.closeModalWithHistory();
       } else if (nav.isAccountsScreenOpen) {
