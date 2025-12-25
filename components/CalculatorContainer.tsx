@@ -171,8 +171,16 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
     if (isSubmitting || submittingRef.current) return;
     setIsSubmitting(true);
     submittingRef.current = true;
+    
+    // ✅ Se stiamo in TransactionDetailPage, chiudi prima quella pagina
+    if (view === 'details') {
+      setView('calculator');
+      window.history.back();
+    }
+    
+    // Poi chiama onSubmit che chiuderà anche la calcolatrice
     onSubmit(data);
-  }, [isSubmitting, onSubmit]);
+  }, [isSubmitting, onSubmit, view]);
 
   const currentTransform = useMemo(() => {
       let base = view === 'calculator' ? 0 : -50;
