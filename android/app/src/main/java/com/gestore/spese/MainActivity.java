@@ -8,8 +8,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Registra i plugin custom
-        registerPlugin(io.ionic.starter.NotificationListenerPlugin.class);
-        registerPlugin(io.ionic.starter.SMSReaderPlugin.class);
+        // Registra i plugin custom (ora nello stesso package)
+        registerPlugin(NotificationListenerPlugin.class);
+        registerPlugin(SMSReaderPlugin.class);
     }
 }
