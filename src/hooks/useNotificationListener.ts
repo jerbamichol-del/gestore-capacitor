@@ -33,12 +33,15 @@ export function useNotificationListener(): UseNotificationListenerReturn {
     const appStateListener = App.addListener('appStateChange', async (state) => {
       if (state.isActive) {
         // App came to foreground, recheck permission
+        console.log('App resumed, rechecking notification permission...');
         try {
           const enabled = await notificationListenerService.isEnabled();
+          console.log('Permission check result:', enabled);
           setIsEnabled(enabled);
           
           if (enabled) {
             // If just enabled, initialize and refresh
+            console.log('Permission granted! Initializing service...');
             await notificationListenerService.initialize();
             await refresh();
           }
@@ -102,14 +105,15 @@ export function useNotificationListener(): UseNotificationListenerReturn {
 
   const requestPermission = async (): Promise<{ enabled: boolean }> => {
     try {
+      console.log('Requesting notification permission...');
       // This will open Android settings
-      await notificationListenerService.requestPermission();
+      const result = await notificationListenerService.requestPermission();
+      console.log('Permission request result:', result);
       
-      // Check current status after request
-      const enabled = await notificationListenerService.isEnabled();
-      setIsEnabled(enabled);
+      // Update local state
+      setIsEnabled(result.enabled);
       
-      return { enabled };
+      return result;
     } catch (error) {
       console.error('Failed to request permission:', error);
       return { enabled: false };
