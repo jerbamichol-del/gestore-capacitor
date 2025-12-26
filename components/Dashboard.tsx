@@ -134,6 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
   const [isImportExportMenuOpen, setIsImportExportMenuOpen] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const activeIndex = selectedIndex;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -214,9 +215,31 @@ const Dashboard: React.FC<DashboardProps> = ({
       setTimeout(() => fileInputRef.current?.click(), 100);
   };
 
-  const handleExportClick = (format: 'excel' | 'json') => {
-      exportExpenses(expenses, format);
-      window.history.go(-2);
+  const handleExportClick = async (format: 'excel' | 'json') => {
+      setIsExporting(true);
+      try {
+          const result = await exportExpenses(expenses, format);
+          
+          // Close modal first
+          window.history.go(-2);
+          
+          // Show feedback after a small delay to ensure modal is closed
+          setTimeout(() => {
+              if (result.success) {
+                  // Success - show native alert for now (will be replaced with toast in App.tsx)
+                  alert(`✅ ${result.message}`);
+              } else {
+                  // Error - show alert
+                  alert(`❌ ${result.message}`);
+              }
+          }, 300);
+      } catch (error) {
+          console.error('Export error:', error);
+          alert('❌ Errore imprevisto durante l\'export.');
+          window.history.go(-2);
+      } finally {
+          setIsExporting(false);
+      }
   };
   
   const handleSyncClick = async () => {
@@ -687,7 +710,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </>
                         ) : (
                             <>
-                                <button onClick={() => handleExportClick('excel')} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
+                                <button 
+                                    onClick={() => handleExportClick('excel')} 
+                                    disabled={isExporting}
+                                    className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
                                     <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
                                         <span className="font-bold text-sm">XLSX</span>
                                     </div>
@@ -696,7 +723,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <span className="text-xs text-slate-500">Le ricevute non verranno salvate</span>
                                     </div>
                                 </button>
-                                <button onClick={() => handleExportClick('json')} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
+                                <button 
+                                    onClick={() => handleExportClick('json')} 
+                                    disabled={isExporting}
+                                    className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
                                     <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 group-hover:scale-110 transition-transform">
                                         <span className="font-bold text-sm">JSON</span>
                                     </div>
