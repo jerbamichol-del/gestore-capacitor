@@ -56,6 +56,28 @@ jobs:
           npx cap sync android
           echo "✅ Capacitor sync completed"
 
+      - name: Generate app icons from resources/icon.png
+        run: |
+          echo "🎨 Generating app icons from resources/icon.png..."
+          
+          if [ ! -f "resources/icon.png" ]; then
+            echo "❌ ERROR: resources/icon.png not found!"
+            exit 1
+          fi
+          
+          # Generate Android icons
+          npx @capacitor/assets generate --android
+          
+          echo "✅ Icons generated successfully"
+          
+          # Verify icons exist
+          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
+            echo "✅ ic_launcher.png exists in mipmap-hdpi"
+          else
+            echo "❌ ERROR: Icons not generated!"
+            exit 1
+          fi
+
       # ✅ FINAL FIX: Copy plugin files from android-config/plugins/
       - name: Copy plugin Java files from android-config/plugins/
         run: |
@@ -114,10 +136,9 @@ jobs:
             exit 1
           fi
 
-      - name: Generate native assets
+      - name: Copy assets to Android
         run: |
-          echo "🎨 Generating native assets..."
-          npx @capacitor/assets generate --android || echo "⚠️ Asset generation skipped"
+          echo "📁 Copying assets..."
           npx cap copy android
           echo "✅ Assets copied"
 
@@ -195,8 +216,9 @@ jobs:
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
-            ✅ **FINAL FIX - FILES FROM android-config/plugins/:**
-            - ✅ Plugin files copied from android-config/plugins/ (persistent location)
+            ✅ **FEATURES:**
+            - ✅ Icona app generata da resources/icon.png
+            - ✅ Plugin files copied from android-config/plugins/
             - ✅ NotificationListenerPlugin.java with full logging
             - ✅ SMSReaderPlugin.java with permissions
             - ✅ BankNotificationListenerService.java included
