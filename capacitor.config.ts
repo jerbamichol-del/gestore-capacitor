@@ -5,7 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Gestore Spese',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    // CRITICAL: Assicurati che il plugin injector funzioni
+    cleartext: true
   },
   plugins: {
     SplashScreen: {
@@ -16,8 +18,13 @@ const config: CapacitorConfig = {
     },
     NativeBiometric: {
       useFallback: true
-    }
-  }
+    },
+    // ✅ AGGIUNTI I NOSTRI PLUGIN CUSTOM
+    NotificationListener: {},
+    SMSReader: {}
+  },
+  // ✅ CRITICAL: Includi i plugin esterni (locale)
+  includePlugins: ['NotificationListener', 'SMSReader']
 };
 
 export default config;
