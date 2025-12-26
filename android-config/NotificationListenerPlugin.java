@@ -1,4 +1,4 @@
-package com.gestorefinanze.app;
+package com.gestore.spese;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -25,7 +25,7 @@ public class NotificationListenerPlugin extends Plugin {
         super.load();
         // Register broadcast receiver
         receiver = new BankNotificationReceiver();
-        IntentFilter filter = new IntentFilter("com.gestorefinanze.BANK_NOTIFICATION");
+        IntentFilter filter = new IntentFilter("com.gestore.spese.BANK_NOTIFICATION");
         getContext().registerReceiver(receiver, filter);
         Log.d(TAG, "BroadcastReceiver registered");
     }
@@ -120,7 +120,7 @@ public class NotificationListenerPlugin extends Plugin {
     private class BankNotificationReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if ("com.gestorefinanze.BANK_NOTIFICATION".equals(intent.getAction())) {
+            if ("com.gestore.spese.BANK_NOTIFICATION".equals(intent.getAction())) {
                 String dataJson = intent.getStringExtra("data");
                 
                 if (dataJson != null) {
