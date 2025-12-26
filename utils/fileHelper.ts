@@ -200,7 +200,7 @@ export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'jso
                     dialogTitle: 'Salva o Condividi Excel'
                 });
 
-                return { success: true, message: `Excel pronto per il salvataggio` };
+                return { success: true, message: `Salvataggio Excel riuscito` };
             } else {
                 // WEB: Blob download
                 const blob = new Blob([excelBuffer], { 
@@ -245,7 +245,7 @@ export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'jso
                     dialogTitle: 'Salva o Condividi JSON'
                 });
 
-                return { success: true, message: `JSON pronto per il salvataggio` };
+                return { success: true, message: `Salvataggio JSON riuscito` };
             } else {
                 // WEB: Blob download
                 const blob = new Blob([jsonStr], { type: "application/json" });
