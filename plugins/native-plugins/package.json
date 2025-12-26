@@ -2,13 +2,11 @@
   "name": "native-plugins",
   "version": "1.0.0",
   "description": "Custom native plugins for Gestore Spese",
-  "main": "dist/esm/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/esm/index.d.ts",
-  "unpkg": "dist/plugin.js",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "files": [
     "android/",
-    "dist/",
     "src/"
   ],
   "author": "Gestore Spese",
@@ -26,7 +24,7 @@
     "native"
   ],
   "scripts": {
-    "build": "echo 'Build not required for local plugin'"
+    "build": "echo 'No build needed - using TypeScript source directly'"
   },
   "capacitor": {
     "android": {
