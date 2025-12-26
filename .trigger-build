@@ -1,2 +1,11 @@
-Build triggered at 2025-12-25T20:10:00Z
-Latest commit: 0ef9cbb - Fix calcolatrice submit behavior
+# Trigger Build
+
+This file triggers a new build when modified.
+
+Last build: 2025-12-26 23:56:00 CET
+
+Changes:
+- ✅ Icon generation from resources/icon.png
+- ✅ Auto version bump system
+- ✅ Complete auto-update system
+- ✅ Full documentation
