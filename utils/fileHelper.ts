@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import { Expense } from '../types';
 
@@ -147,7 +146,7 @@ export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'jso
     const dateStr = new Date().toISOString().slice(0, 10);
 
     if (format === 'excel') {
-        // 1. Esporta in Excel
+        // 1. Esporta in Excel usando Blob (mobile-friendly)
         try {
             const rows = expenses.map(e => ({
                 Data: e.date,
@@ -164,7 +163,18 @@ export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'jso
             const worksheet = XLSX.utils.json_to_sheet(rows);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Spese");
-            XLSX.writeFile(workbook, `Spese_Export_${dateStr}.xlsx`);
+            
+            // Mobile-compatible download using Blob
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Spese_Export_${dateStr}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             
             return { success: true, message: `File Excel scaricato: Spese_Export_${dateStr}.xlsx` };
         } catch (e) {
