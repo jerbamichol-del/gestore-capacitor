@@ -101,8 +101,7 @@ const OperatorButton: React.FC<{ children: React.ReactNode; onClick: () => void 
   );
 };
 
-const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputScreenProps>(({
-  onClose, onSubmit, accounts,
+const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputScreenProps>(({  onClose, onSubmit, accounts,
   formData, onFormChange, onMenuStateChange, isDesktop, onNavigateToDetails
 }, ref) => {
   const [currentValue, setCurrentValue] = useState('0');
@@ -372,7 +371,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     <div
       ref={ref}
       tabIndex={-1}
-      className="bg-slate-100 w-full h-full flex flex-col focus:outline-none"
+      className="bg-slate-100 w-full h-full flex flex-col focus:outline-none overflow-hidden"
       style={{ touchAction: 'pan-y' }}
     >
       <div className="flex-1 flex flex-col">
@@ -483,7 +482,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         </main>
       </div>
       
-      <div className="flex-shrink-0 flex flex-col" style={{ height: '52vh' }}>
+      {/* 🔧 FIX: Ridotto da 52vh a 50vh + gap da 2 a 1.5 */}
+      <div className="flex-shrink-0 flex flex-col" style={{ height: '50vh' }}>
         {/* MODIFIED: Changed -translate-x-6 to -translate-x-3 to move the arrow slightly right */}
         <div className="flex justify-between items-center my-2 w-full px-4 gap-0" style={{ touchAction: 'pan-y' }}>
           
@@ -567,8 +567,9 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           )}
         </div>
 
-        <div className="flex-1 p-2 flex flex-row gap-2 px-4 pb-4">
-          <div className="h-full w-4/5 grid grid-cols-3 grid-rows-4 gap-2 num-pad">
+        {/* 🔧 FIX: Ridotto gap da gap-2 a gap-1.5 */}
+        <div className="flex-1 p-2 flex flex-row gap-1.5 px-4 pb-4">
+          <div className="h-full w-4/5 grid grid-cols-3 grid-rows-4 gap-1.5 num-pad">
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('7')}>7</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('8')}>8</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('9')}>9</KeypadButton>
@@ -595,8 +596,9 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             </KeypadButton>
           </div>
 
+          {/* 🔧 FIX: Ridotto gap da gap-2 a gap-1.5 */}
           <div 
-            className="h-full w-1/5 flex flex-col gap-2 bg-slate-200 rounded-2xl p-1"
+            className="h-full w-1/5 flex flex-col gap-1.5 bg-slate-200 rounded-2xl p-1"
             style={{ touchAction: 'pan-y' }}
           >
             <OperatorButton onClick={() => handleKeyPress('÷')}>÷</OperatorButton>
