@@ -76,14 +76,14 @@ jobs:
           npx cap copy android
           echo "✅ Assets copied"
 
-      # ✅ FASE 2: Copiamo direttamente i file custom (già con package corretto)
+      # ✅ FASE 2: Copiamo i file custom con i NUOVI NOMI (senza "Plugin" suffix)
       - name: Copy custom plugins to Android
         run: |
-          echo "📦 Copying Java plugins (already with correct package)..."
+          echo "📦 Copying Java plugins (renamed to match JS names)..."
           JAVA_DIR="android/app/src/main/java/com/gestore/spese"
           mkdir -p "$JAVA_DIR"
-          cp android-config/SMSReaderPlugin.java "$JAVA_DIR/"
-          cp android-config/NotificationListenerPlugin.java "$JAVA_DIR/"
+          cp android-config/SMSReader.java "$JAVA_DIR/"
+          cp android-config/NotificationListener.java "$JAVA_DIR/"
           cp android-config/BankNotificationListenerService.java "$JAVA_DIR/"
           echo "✅ Plugins copied to $JAVA_DIR"
           ls -la "$JAVA_DIR/"
@@ -110,7 +110,7 @@ jobs:
           
           # Verify the file was copied correctly
           echo "🔍 Verifying MainActivity.java content..."
-          if grep -q "registerPlugin(NotificationListenerPlugin.class)" "$MAIN_ACTIVITY"; then
+          if grep -q "registerPlugin(NotificationListener.class)" "$MAIN_ACTIVITY"; then
             echo "✅ Plugin registration found in MainActivity.java"
             echo "📄 File size: $(wc -c < "$MAIN_ACTIVITY") bytes"
           else
@@ -157,10 +157,10 @@ jobs:
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
             ✅ **Questo build include:**
-            - Plugin NotificationListener registrato
-            - Plugin SMSReader registrato
-            - Permessi Android corretti
-            - Package name corretto: com.gestore.spese
+            - ✅ Plugin NotificationListener registrato (nome corretto!)
+            - ✅ Plugin SMSReader registrato (nome corretto!)
+            - ✅ Permessi Android corretti
+            - ✅ Package name: com.gestore.spese
           files: gestore-spese.apk
           draft: false
           prerelease: false
