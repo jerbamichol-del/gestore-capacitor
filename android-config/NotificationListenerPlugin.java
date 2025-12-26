@@ -12,9 +12,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
-import com.getcapacitor.annotation.CapacitorPlugin;
 
-@CapacitorPlugin(name = "NotificationListener", permissions = {})
 public class NotificationListenerPlugin extends Plugin {
 
     private static final String TAG = "NotificationListenerPlugin";
