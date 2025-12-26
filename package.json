@@ -24,7 +24,6 @@
     "@capacitor/local-notifications": "^6.1.0",
     "@google/genai": "^1.21.0",
     "idb": "8",
-    "native-plugins": "file:./plugins/native-plugins",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-qr-code": "^2.0.15",
