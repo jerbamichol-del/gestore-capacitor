@@ -53,7 +53,7 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅ CRITICAL: Generate icons BEFORE sync AND copy to correct location
+      # ✅ CRITICAL: Generate icons BEFORE sync
       - name: Generate app icons from resources/icon.png
         run: |
           echo "🎨 Generating app icons from resources/icon.png..."
@@ -109,7 +109,7 @@ jobs:
       - name: Sync Capacitor
         run: |
           echo "🔄 Syncing Capacitor..."
-          npx cap sync android --no-build
+          npx cap sync android
           echo "✅ Capacitor sync completed"
           
           echo "🔍 Verifying icons after sync:"
@@ -284,6 +284,7 @@ jobs:
             - Icona app personalizzata FISSA
             - Campanella notifiche si nasconde dopo abilitazione
             - Modal notifiche con z-index corretto (sopra i filtri)
+            - Nessuna schermata bianca al ritorno da Settings
             - Keystore debug consistente (futuri update OK)
             
             ---
