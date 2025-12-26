@@ -56,27 +56,61 @@ jobs:
           npx cap sync android
           echo "✅ Capacitor sync completed"
 
-      # ✅ NUOVO: Copia il modulo plugin
+      # ✅ Copia il modulo plugin
       - name: Copy android-plugins module
         run: |
           echo "📦 Copying android-plugins module..."
           cp -r android-plugins android/
           echo "✅ android-plugins module copied"
+          ls -la android/android-plugins/
 
-      # ✅ NUOVO: Aggiungi il modulo a settings.gradle
+      # ✅ CRITICAL: Modifica settings.gradle CORRETTAMENTE
       - name: Add module to settings.gradle
         run: |
-          echo "📝 Adding android-plugins to settings.gradle..."
-          echo "include ':android-plugins'" >> android/settings.gradle
-          cat android/settings.gradle
+          echo "📝 Modifying settings.gradle..."
+          cd android
+          
+          # Verifica contenuto originale
+          echo "Original settings.gradle:"
+          cat settings.gradle
+          
+          # Aggiungi include PRIMA della riga apply (se esiste)
+          if grep -q "apply from" settings.gradle; then
+            # Inserisci prima di apply from
+            sed -i "/apply from/i include ':android-plugins'" settings.gradle
+          else
+            # Aggiungi alla fine
+            echo "include ':android-plugins'" >> settings.gradle
+          fi
+          
+          echo ""
+          echo "Modified settings.gradle:"
+          cat settings.gradle
           echo "✅ Module added to settings.gradle"
 
-      # ✅ NUOVO: Aggiungi dipendenza nel build.gradle dell'app
+      # ✅ Aggiungi dipendenza in app/build.gradle
       - name: Add module dependency to app build.gradle
         run: |
-          echo "📝 Adding module dependency..."
-          sed -i "/dependencies {/a\    implementation project(':android-plugins')" android/app/build.gradle
-          echo "✅ Module dependency added"
+          echo "📝 Adding module dependency to app/build.gradle..."
+          cd android/app
+          
+          # Trova la sezione dependencies e aggiungi la dipendenza
+          if grep -q "dependencies {" build.gradle; then
+            sed -i "/dependencies {/a\    implementation project(':android-plugins')" build.gradle
+            echo "✅ Dependency added"
+          else
+            echo "❌ ERROR: dependencies section not found!"
+            exit 1
+          fi
+          
+          # Verifica
+          echo "Checking if dependency was added..."
+          if grep -q "android-plugins" build.gradle; then
+            echo "✅ Dependency verified in build.gradle"
+          else
+            echo "❌ ERROR: Dependency NOT found!"
+            exit 1
+          fi
 
       - name: Copy AndroidManifest.xml
         run: |
@@ -92,7 +126,7 @@ jobs:
             exit 1
           fi
 
-      - name: Update MainActivity with plugin registration
+      - name: Update MainActivity
         run: |
           MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
           
@@ -113,19 +147,27 @@ jobs:
           npx cap copy android
           echo "✅ Assets copied"
 
-      - name: Verify plugin setup
+      - name: Verify plugin module setup
         run: |
           echo "🔍 Final verification..."
           
-          # Check module files
+          # Check module exists
           if [ -d "android/android-plugins" ]; then
-            echo "✅ android-plugins module exists"
+            echo "✅ android-plugins module directory exists"
           else
             echo "❌ ERROR: android-plugins module NOT found!"
             exit 1
           fi
           
-          # Check Java files in module
+          # Check build.gradle in module
+          if [ -f "android/android-plugins/build.gradle" ]; then
+            echo "✅ build.gradle exists in module"
+          else
+            echo "❌ ERROR: build.gradle NOT found in module!"
+            exit 1
+          fi
+          
+          # Check Java files
           for file in NotificationListener.java SMSReader.java BankNotificationListenerService.java; do
             if [ -f "android/android-plugins/src/main/java/com/gestore/spese/$file" ]; then
               echo "✅ $file exists in module"
@@ -135,11 +177,27 @@ jobs:
             fi
           done
           
-          # Check annotations
+          # Check @CapacitorPlugin annotation
           if grep -q "@CapacitorPlugin" "android/android-plugins/src/main/java/com/gestore/spese/NotificationListener.java"; then
             echo "✅ @CapacitorPlugin annotation found"
           else
             echo "⚠️ Warning: @CapacitorPlugin NOT found"
+          fi
+          
+          # Check settings.gradle includes module
+          if grep -q "android-plugins" "android/settings.gradle"; then
+            echo "✅ Module included in settings.gradle"
+          else
+            echo "❌ ERROR: Module NOT in settings.gradle!"
+            exit 1
+          fi
+          
+          # Check app/build.gradle has dependency
+          if grep -q "android-plugins" "android/app/build.gradle"; then
+            echo "✅ Module dependency in app/build.gradle"
+          else
+            echo "❌ ERROR: Dependency NOT in app/build.gradle!"
+            exit 1
           fi
 
       - name: Build Debug APK
@@ -175,12 +233,13 @@ jobs:
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
-            ✅ **MODULO GRADLE SEPARATO:**
+            ✅ **MODULO GRADLE CORRETTO:**
             - ✅ android-plugins come modulo Gradle
-            - ✅ MainActivity registra i plugin
+            - ✅ settings.gradle modificato correttamente
+            - ✅ app/build.gradle con dipendenza
+            - ✅ MainActivity registra i plugin PRIMA di super.onCreate()
             - ✅ AndroidManifest con service
             - ✅ @CapacitorPlugin annotations
-            - ✅ Package: com.gestore.spese
           files: gestore-spese.apk
           draft: false
           prerelease: false
