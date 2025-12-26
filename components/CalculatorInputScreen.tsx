@@ -482,9 +482,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         </main>
       </div>
       
-      {/* 🔧 FIX: Ridotto da 50vh a 48vh + padding da pb-4 a pb-2 */}
-      <div className="flex-shrink-0 flex flex-col" style={{ height: '48vh' }}>
-        {/* MODIFIED: Changed -translate-x-6 to -translate-x-3 to move the arrow slightly right */}
+      {/* 🔧 FIX: RIPRISTINO 52vh + SAFE AREA */}
+      <div className="flex-shrink-0 flex flex-col" style={{ height: '52vh' }}>
         <div className="flex justify-between items-center my-2 w-full px-4 gap-0" style={{ touchAction: 'pan-y' }}>
           
           {isTransfer ? (
@@ -502,7 +501,6 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
                   </div>
                   
                   <div className="flex items-center justify-center pt-7 text-slate-400 shrink-0 -translate-x-3">
-                      {/* Custom Arrow with Long Tail and Small Tip - Shifted Left but less than before */}
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         viewBox="0 0 100 24" 
@@ -567,9 +565,12 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           )}
         </div>
 
-        {/* 🔧 FIX: Ridotto padding da pb-4 a pb-2 */}
-        <div className="flex-1 p-2 flex flex-row gap-1.5 px-4 pb-2">
-          <div className="h-full w-4/5 grid grid-cols-3 grid-rows-4 gap-1.5 num-pad">
+        {/* 🔧 FIX: SAFE AREA PADDING BOTTOM */}
+        <div 
+          className="flex-1 p-2 flex flex-row gap-2 px-4"
+          style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="h-full w-4/5 grid grid-cols-3 grid-rows-4 gap-2 num-pad">
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('7')}>7</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('8')}>8</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('9')}>9</KeypadButton>
@@ -582,7 +583,6 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress(',')}>,</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('0')}>0</KeypadButton>
             <KeypadButton
-              // FIX: Correctly type props for KeypadButton and remove invalid ones from the component's internal div.
               title="Tocca: cancella una cifra — Tieni premuto: cancella tutto"
               aria-label="Cancella"
               onPointerDownCapture={onDelPointerDownCapture}
@@ -591,14 +591,12 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
               onPointerCancelCapture={onDelPointerCancelCapture}
               onContextMenu={(e) => e.preventDefault()}
             >
-              {/* 🔧 FIX: Aggiunta classe colore esplicita */}
               <BackspaceIcon className="w-8 h-8 text-slate-800" />
             </KeypadButton>
           </div>
 
-          {/* 🔧 FIX: Ridotto gap da gap-2 a gap-1.5 */}
           <div 
-            className="h-full w-1/5 flex flex-col gap-1.5 bg-slate-200 rounded-2xl p-1"
+            className="h-full w-1/5 flex flex-col gap-2 bg-slate-200 rounded-2xl p-1"
             style={{ touchAction: 'pan-y' }}
           >
             <OperatorButton onClick={() => handleKeyPress('÷')}>÷</OperatorButton>
