@@ -6,19 +6,40 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.provider.Settings;
+import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Arrays;
+import java.util.List;
+
 @CapacitorPlugin(name = "NotificationListener")
 public class NotificationListenerPlugin extends Plugin {
 
     private static final String TAG = "NotificationListenerPlugin";
     private BankNotificationReceiver receiver;
+    
+    // Set to track processed notification IDs to avoid duplicates
+    private Set<String> processedNotificationIds = new HashSet<>();
+    
+    // Bank app package names (same as BankNotificationListenerService)
+    private static final List<String> BANK_PACKAGES = Arrays.asList(
+        "com.revolut.revolut",
+        "com.paypal.android.p2pmobile",
+        "it.poste.postepay",
+        "com.bbva.mobile.android",
+        "com.latuabancaperandroid",
+        "it.bnl.apps.banking",
+        "it.nogood.container"
+    );
 
     @Override
     public void load() {
@@ -135,6 +156,116 @@ public class NotificationListenerPlugin extends Plugin {
         ret.put("message", "Service cannot be stopped programmatically");
         call.resolve(ret);
     }
+    
+    /**
+     * NEW METHOD: Check for missed notifications while app was closed
+     * Scans active notifications from last 24 hours
+     */
+    @PluginMethod
+    public void checkMissedNotifications(PluginCall call) {
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "checkMissedNotifications() method called from JavaScript!");
+        Log.d(TAG, "========================================");
+        
+        if (!isNotificationListenerEnabled()) {
+            Log.w(TAG, "⚠️ Notification listener not enabled, returning empty array");
+            JSObject ret = new JSObject();
+            ret.put("missed", new JSArray());
+            call.resolve(ret);
+            return;
+        }
+        
+        try {
+            // Get the NotificationListenerService instance
+            BankNotificationListenerService service = BankNotificationListenerService.getInstance();
+            
+            if (service == null) {
+                Log.w(TAG, "⚠️ NotificationListenerService not running, returning empty array");
+                JSObject ret = new JSObject();
+                ret.put("missed", new JSArray());
+                call.resolve(ret);
+                return;
+            }
+            
+            // Get active notifications
+            StatusBarNotification[] activeNotifications = service.getActiveNotifications();
+            Log.d(TAG, "Found " + activeNotifications.length + " active notifications");
+            
+            JSArray missedArray = new JSArray();
+            long currentTime = System.currentTimeMillis();
+            long twentyFourHoursAgo = currentTime - (24 * 60 * 60 * 1000); // 24 hours
+            
+            for (StatusBarNotification sbn : activeNotifications) {
+                String packageName = sbn.getPackageName();
+                long postTime = sbn.getPostTime();
+                
+                // Check if it's a bank notification and within 24 hours
+                if (BANK_PACKAGES.contains(packageName) && postTime >= twentyFourHoursAgo) {
+                    String notificationId = sbn.getKey();
+                    
+                    // Skip if already processed
+                    if (processedNotificationIds.contains(notificationId)) {
+                        Log.d(TAG, "⏭️ Skipping already processed notification: " + notificationId);
+                        continue;
+                    }
+                    
+                    try {
+                        android.app.Notification notification = sbn.getNotification();
+                        android.os.Bundle extras = notification.extras;
+                        
+                        if (extras != null) {
+                            String title = extras.getString(android.app.Notification.EXTRA_TITLE, "");
+                            String text = extras.getString(android.app.Notification.EXTRA_TEXT, "");
+                            String bigText = extras.getString(android.app.Notification.EXTRA_BIG_TEXT, "");
+                            
+                            String fullText = (bigText != null && !bigText.isEmpty()) ? bigText : text;
+                            
+                            if (fullText != null && !fullText.isEmpty()) {
+                                JSObject notifData = new JSObject();
+                                notifData.put("packageName", packageName);
+                                notifData.put("appName", getAppName(packageName));
+                                notifData.put("title", title);
+                                notifData.put("text", fullText);
+                                notifData.put("timestamp", postTime);
+                                
+                                missedArray.put(notifData);
+                                
+                                // Mark as processed
+                                processedNotificationIds.add(notificationId);
+                                
+                                Log.d(TAG, "✅ Found missed notification from " + packageName + ": " + title);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Error processing notification", e);
+                    }
+                }
+            }
+            
+            Log.d(TAG, "✅ Found " + missedArray.length() + " missed bank notifications");
+            
+            JSObject ret = new JSObject();
+            ret.put("missed", missedArray);
+            call.resolve(ret);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error checking missed notifications", e);
+            call.reject("Failed to check missed notifications: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Mark a notification as processed to avoid showing it again
+     */
+    @PluginMethod
+    public void markAsProcessed(PluginCall call) {
+        String notificationId = call.getString("notificationId");
+        if (notificationId != null) {
+            processedNotificationIds.add(notificationId);
+            Log.d(TAG, "✅ Marked notification as processed: " + notificationId);
+        }
+        call.resolve();
+    }
 
     /**
      * Verifica se il BankNotificationListenerService è abilitato
@@ -158,6 +289,30 @@ public class NotificationListenerPlugin extends Plugin {
         } catch (Exception e) {
             Log.e(TAG, "Error checking if notification listener is enabled", e);
             return false;
+        }
+    }
+    
+    /**
+     * Ottieni nome friendly dell'app bancaria
+     */
+    private String getAppName(String packageName) {
+        switch (packageName) {
+            case "com.revolut.revolut":
+                return "revolut";
+            case "com.paypal.android.p2pmobile":
+                return "paypal";
+            case "it.poste.postepay":
+                return "postepay";
+            case "com.bbva.mobile.android":
+                return "bbva";
+            case "com.latuabancaperandroid":
+                return "intesa";
+            case "it.bnl.apps.banking":
+                return "bnl";
+            case "it.nogood.container":
+                return "unicredit";
+            default:
+                return packageName;
         }
     }
 
