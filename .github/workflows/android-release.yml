@@ -119,3 +119,28 @@ jobs:
         with:
           name: gestore-spese-apk
           path: gestore-spese.apk
+
+      # ✅ NUOVO: Crea GitHub Release con l'APK
+      - name: Get short commit SHA
+        id: vars
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: build-${{ steps.vars.outputs.short_sha }}
+          name: "Build ${{ steps.vars.outputs.short_sha }}"
+          body: |
+            🤖 Build automatica da commit [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            
+            📱 **Scarica l'APK:**
+            - Clicca su `gestore-spese.apk` qui sotto
+            - Oppure scansiona il QR code nell'app
+            
+            🕐 Build del: ${{ github.event.head_commit.timestamp }}
+          files: gestore-spese.apk
+          draft: false
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
