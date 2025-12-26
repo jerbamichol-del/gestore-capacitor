@@ -474,6 +474,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
               onSync={() => handleSyncFromCloud(false)}
               isBalanceVisible={isBalanceVisible}
               onToggleBalanceVisibility={handleToggleBalanceVisibility}
+              showToast={showToast}
            />
            <PendingImages images={pendingImages} onAnalyze={handleAnalyzeImage} onDelete={async (id) => { await deleteImageFromQueue(id); refreshPendingImages(); }} isOnline={isOnline} syncingImageId={syncingImageId} />
         </div>
