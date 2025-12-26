@@ -15,10 +15,12 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@CapacitorPlugin(name = "SMSReader")
 public class SMSReader extends Plugin {
 
     private static final String TAG = "SMSReader";
