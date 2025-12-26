@@ -94,6 +94,93 @@ class NotificationListenerService {
       return false;
     }
   }
+  
+  /**
+   * 🆕 NEW: Check for missed notifications while app was closed
+   * Scans active notifications from last 24 hours and adds them to pending
+   */
+  async checkAndRecoverMissedNotifications(): Promise<number> {
+    try {
+      console.log('📬 Checking for missed notifications...');
+      
+      // Call plugin method to get missed notifications
+      const missedNotifications = await NotificationListener.checkMissedNotifications();
+      
+      if (missedNotifications.length === 0) {
+        console.log('✅ No missed notifications found');
+        return 0;
+      }
+      
+      console.log(`📬 Found ${missedNotifications.length} missed notifications`);
+      
+      let recoveredCount = 0;
+      const existing = await this.getPendingTransactions();
+      
+      // Process each missed notification
+      for (const notification of missedNotifications) {
+        // Parse transaction
+        const parsed = parseNotificationTransaction(
+          notification.appName,
+          notification.title,
+          notification.text
+        );
+        
+        if (!parsed) {
+          console.warn('⚠️ Could not parse missed notification:', notification);
+          continue;
+        }
+        
+        // Generate hash for deduplication
+        const hash = generateTransactionHash(
+          notification.appName,
+          parsed.amount,
+          notification.timestamp
+        );
+        
+        // Check if already exists
+        if (existing.some(t => t.hash === hash)) {
+          console.log('⏭️ Transaction already exists, skipping:', hash);
+          continue;
+        }
+        
+        // Create pending transaction
+        const pending: PendingTransaction = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          hash,
+          appName: notification.appName,
+          amount: parsed.amount,
+          description: parsed.description,
+          currency: parsed.currency,
+          type: parsed.type,
+          timestamp: notification.timestamp,
+          rawNotification: notification,
+          confirmed: false,
+        };
+        
+        // Add to existing list
+        existing.push(pending);
+        recoveredCount++;
+        
+        console.log('✅ Recovered transaction:', pending);
+      }
+      
+      // Save all at once if we recovered any
+      if (recoveredCount > 0) {
+        await this.savePendingTransactions(existing);
+        console.log(`✅ Successfully recovered ${recoveredCount} transactions!`);
+        
+        // Emit event for each recovered transaction
+        for (const transaction of existing.slice(-recoveredCount)) {
+          this.emitTransactionAdded(transaction);
+        }
+      }
+      
+      return recoveredCount;
+    } catch (error) {
+      console.error('❌ Failed to check missed notifications:', error);
+      return 0;
+    }
+  }
 
   /**
    * Handle incoming bank notification
