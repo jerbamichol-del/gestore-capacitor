@@ -50,101 +50,91 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      - name: Verify Android structure
+      # ✅ STEP 1: Capacitor sync
+      - name: Sync Capacitor
         run: |
-          echo "🔍 Verifying Android project structure..."
-          ls -la android/
-          if [ ! -f "android/settings.gradle" ] && [ ! -f "android/settings.gradle.kts" ]; then
-            echo "❌ ERROR: settings.gradle not found!"
-            echo "Contents of android:" 
-            find android/ -type f -name "*.gradle*" || true
-            exit 1
-          fi
-          echo "✅ Android structure verified"
-
-      # ✅ CRITICAL: Copy AndroidManifest.xml BEFORE cap sync!
-      - name: Copy AndroidManifest.xml with permissions (BEFORE sync)
-        run: |
-          MANIFEST_DIR="android/app/src/main"
-          mkdir -p "$MANIFEST_DIR"
-          
-          echo "📝 Copying AndroidManifest.xml template BEFORE sync..."
-          cp android-config/AndroidManifest.xml "$MANIFEST_DIR/AndroidManifest.xml"
-          echo "✅ AndroidManifest.xml copied"
-          
-          # Verify it was copied
-          if grep -q "BankNotificationListenerService" "$MANIFEST_DIR/AndroidManifest.xml"; then
-            echo "✅ Service declaration found in AndroidManifest.xml"
-          else
-            echo "❌ ERROR: Service declaration NOT found!"
-            exit 1
-          fi
-
-      # ✅ NOW sync Capacitor (won't overwrite our AndroidManifest)
-      - name: Sync Capacitor (includes native-plugins)
-        run: |
-          echo "🔄 Syncing Capacitor with native plugins..."
+          echo "🔄 Syncing Capacitor..."
           npx cap sync android
           echo "✅ Capacitor sync completed"
 
-      # ✅ Verify AndroidManifest wasn't overwritten
-      - name: Verify AndroidManifest after sync
+      # ✅ STEP 2: Copy custom Java plugins AFTER sync
+      - name: Copy custom Java plugins to Android
+        run: |
+          echo "📦 Copying custom Java plugins..."
+          JAVA_DIR="android/app/src/main/java/com/gestore/spese"
+          mkdir -p "$JAVA_DIR"
+          
+          # Copy plugin files
+          cp android-config/NotificationListener.java "$JAVA_DIR/"
+          cp android-config/SMSReader.java "$JAVA_DIR/"
+          cp android-config/BankNotificationListenerService.java "$JAVA_DIR/"
+          
+          echo "✅ Plugins copied to $JAVA_DIR"
+          ls -la "$JAVA_DIR/"
+
+      # ✅ STEP 3: Copy AndroidManifest with permissions
+      - name: Copy AndroidManifest.xml
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          echo "🔍 Verifying AndroidManifest.xml after sync..."
           
+          echo "📝 Copying AndroidManifest.xml..."
+          cp android-config/AndroidManifest.xml "$MANIFEST"
+          
+          # Verify
           if grep -q "BankNotificationListenerService" "$MANIFEST"; then
-            echo "✅ Service declaration still present after sync"
+            echo "✅ Service declaration found"
           else
-            echo "❌ ERROR: AndroidManifest was overwritten by cap sync!"
-            echo "Copying it again..."
-            cp android-config/AndroidManifest.xml "$MANIFEST"
+            echo "❌ ERROR: Service NOT found!"
+            exit 1
           fi
+
+      # ✅ STEP 4: Update MainActivity to register plugins
+      - name: Update MainActivity with plugin registration
+        run: |
+          MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
           
-          if grep -q "BIND_NOTIFICATION_LISTENER_SERVICE" "$MANIFEST"; then
-            echo "✅ Notification listener permission found"
+          echo "📝 Updating MainActivity.java..."
+          cp android-config/MainActivity.java "$MAIN_ACTIVITY"
+          
+          # Verify
+          if grep -q "registerPlugin" "$MAIN_ACTIVITY"; then
+            echo "✅ Plugin registration found in MainActivity"
           else
-            echo "⚠️ Warning: BIND_NOTIFICATION_LISTENER_SERVICE not found"
+            echo "❌ ERROR: No plugin registration!"
+            exit 1
           fi
 
       - name: Generate native assets
         run: |
           echo "🎨 Generating native assets..."
-          npx @capacitor/assets generate --android || echo "⚠️ Asset generation skipped (no assets found)"
+          npx @capacitor/assets generate --android || echo "⚠️ Asset generation skipped"
           npx cap copy android
           echo "✅ Assets copied"
 
-      # 🔍 Verify plugin was installed
-      - name: Verify native plugins installation
+      # ✅ STEP 5: Verify everything is in place
+      - name: Verify plugin setup
         run: |
-          echo "🔍 Verifying native-plugins installation..."
-          if [ -d "node_modules/native-plugins" ]; then
-            echo "✅ native-plugins found in node_modules"
-            ls -la node_modules/native-plugins/android/src/main/java/com/gestore/spese/ || true
-          else
-            echo "❌ ERROR: native-plugins not found!"
-            exit 1
-          fi
+          echo "🔍 Final verification..."
+          JAVA_DIR="android/app/src/main/java/com/gestore/spese"
           
-          # Check if Capacitor detected the plugin
-          echo "🔍 Checking Capacitor plugin detection..."
-          if [ -d "android/native-plugins" ] || grep -r "native-plugins" android/capacitor.settings.gradle 2>/dev/null; then
-            echo "✅ Plugin detected by Capacitor"
-          else
-            echo "⚠️ Warning: Plugin may not be properly detected"
-            echo "Capacitor settings:"
-            cat android/capacitor.settings.gradle 2>/dev/null || echo "capacitor.settings.gradle not found"
-          fi
+          # Check Java files
+          for file in NotificationListener.java SMSReader.java BankNotificationListenerService.java; do
+            if [ -f "$JAVA_DIR/$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ ERROR: $file NOT found!"
+              exit 1
+            fi
+          done
           
-          # Check if plugin classes exist in android folder
-          if find android -name "NotificationListener.java" 2>/dev/null | grep -q .; then
-            echo "✅ NotificationListener.java found in android folder"
-            find android -name "NotificationListener.java"
+          # Check annotations
+          if grep -q "@CapacitorPlugin" "$JAVA_DIR/NotificationListener.java"; then
+            echo "✅ @CapacitorPlugin annotation found"
           else
-            echo "⚠️ Warning: NotificationListener.java not found in android folder"
+            echo "⚠️ Warning: @CapacitorPlugin NOT found"
           fi
 
-      # ✅ Build
+      # ✅ STEP 6: Build
       - name: Build Debug APK
         run: |
           cd android
@@ -175,17 +165,14 @@ jobs:
             
             📱 **Scarica l'APK:**
             - Clicca su `gestore-spese.apk` qui sotto
-            - Oppure scansiona il QR code nell'app
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
-            ✅ **Questo build include:**
-            - 📦 Plugin locale native-plugins (CORRETTO!)
-            - ✅ NotificationListener con @CapacitorPlugin
-            - ✅ SMSReader con @CapacitorPlugin
-            - ✅ BankNotificationListenerService
-            - ✅ AndroidManifest copiato PRIMA di cap sync
-            - ✅ Permessi Android corretti
+            ✅ **METODO SEMPLIFICATO:**
+            - ✅ Java files copiati DOPO cap sync
+            - ✅ MainActivity registra i plugin
+            - ✅ AndroidManifest con service
+            - ✅ @CapacitorPlugin annotations
             - ✅ Package: com.gestore.spese
           files: gestore-spese.apk
           draft: false
