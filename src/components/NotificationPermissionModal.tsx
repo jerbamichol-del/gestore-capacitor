@@ -20,7 +20,8 @@ export function NotificationPermissionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
+    // ✅ FIX: z-[99999] ensures modal is ABOVE everything (filters are z-50)
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[85vh] flex flex-col">
         {/* Header - Fixed */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex-shrink-0">
