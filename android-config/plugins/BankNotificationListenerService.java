@@ -17,6 +17,9 @@ public class BankNotificationListenerService extends NotificationListenerService
 
     private static final String TAG = "BankNotificationListener";
     
+    // Static instance for access from plugin
+    private static BankNotificationListenerService instance;
+    
     // Package names delle app bancarie da monitorare
     private static final List<String> BANK_PACKAGES = Arrays.asList(
         "com.revolut.revolut",           // Revolut
@@ -27,6 +30,27 @@ public class BankNotificationListenerService extends NotificationListenerService
         "it.bnl.apps.banking",           // BNL
         "it.nogood.container"            // Unicredit
     );
+    
+    /**
+     * Get the running service instance
+     */
+    public static BankNotificationListenerService getInstance() {
+        return instance;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        instance = this;
+        Log.d(TAG, "✅ BankNotificationListenerService created and instance set");
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        instance = null;
+        Log.d(TAG, "❌ BankNotificationListenerService destroyed and instance cleared");
+    }
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
