@@ -62,35 +62,22 @@ jobs:
           fi
           echo "✅ Android structure verified"
 
-      # ✅ FASE 1: Sync completo PRIMA di toccare i file custom
-      - name: Initial Capacitor sync
+      # ✅ Capacitor sync automaticamente include il plugin locale!
+      - name: Sync Capacitor (includes native-plugins)
         run: |
-          echo "🔄 Performing initial Capacitor sync..."
+          echo "🔄 Syncing Capacitor with native plugins..."
           npx cap sync android
-          echo "✅ Initial sync completed"
+          echo "✅ Capacitor sync completed"
 
-      - name: Generate and copy native assets
+      - name: Generate native assets
         run: |
           echo "🎨 Generating native assets..."
           npx @capacitor/assets generate --android || echo "⚠️ Asset generation skipped (no assets found)"
           npx cap copy android
           echo "✅ Assets copied"
 
-      # ✅ FASE 2: Copiamo i file custom con i NUOVI NOMI (senza "Plugin" suffix)
-      - name: Copy custom plugins to Android
-        run: |
-          echo "📦 Copying Java plugins (renamed to match JS names)..."
-          JAVA_DIR="android/app/src/main/java/com/gestore/spese"
-          mkdir -p "$JAVA_DIR"
-          cp android-config/SMSReader.java "$JAVA_DIR/"
-          cp android-config/NotificationListener.java "$JAVA_DIR/"
-          cp android-config/BankNotificationListenerService.java "$JAVA_DIR/"
-          echo "✅ Plugins copied to $JAVA_DIR"
-          ls -la "$JAVA_DIR/"
-          echo "🔍 Verifying package names..."
-          grep -n "^package" "$JAVA_DIR/"*.java
-
-      - name: Copy AndroidManifest.xml
+      # ✅ Ora copiamo SOLO AndroidManifest.xml con i permessi e service
+      - name: Copy AndroidManifest.xml with permissions
         run: |
           MANIFEST_DIR="android/app/src/main"
           mkdir -p "$MANIFEST_DIR"
@@ -99,33 +86,33 @@ jobs:
           cp android-config/AndroidManifest.xml "$MANIFEST_DIR/AndroidManifest.xml"
           echo "✅ AndroidManifest.xml copied"
 
-      # ⚠️ CRITICAL: Copy MainActivity.java as LAST step before build
-      - name: Copy MainActivity.java with plugin registration
+      # 🔍 Verify plugin was installed
+      - name: Verify native plugins installation
         run: |
-          MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
-          
-          echo "📝 Copying MainActivity.java template..."
-          cp android-config/MainActivity.java "$MAIN_ACTIVITY"
-          echo "✅ MainActivity.java copied with plugin registration"
-          
-          # Verify the file was copied correctly
-          echo "🔍 Verifying MainActivity.java content..."
-          if grep -q "registerPlugin(NotificationListener.class)" "$MAIN_ACTIVITY"; then
-            echo "✅ Plugin registration found in MainActivity.java"
-            echo "📄 File size: $(wc -c < "$MAIN_ACTIVITY") bytes"
+          echo "🔍 Verifying native-plugins installation..."
+          if [ -d "node_modules/native-plugins" ]; then
+            echo "✅ native-plugins found in node_modules"
+            ls -la node_modules/native-plugins/
           else
-            echo "❌ ERROR: Plugin registration NOT found in MainActivity.java!"
-            echo "📄 File content:"
-            cat "$MAIN_ACTIVITY"
+            echo "❌ ERROR: native-plugins not found!"
             exit 1
           fi
+          
+          # Check if Capacitor detected the plugin
+          echo "🔍 Checking Capacitor plugin detection..."
+          if [ -d "android/native-plugins" ] || grep -r "native-plugins" android/capacitor.settings.gradle 2>/dev/null; then
+            echo "✅ Plugin detected by Capacitor"
+          else
+            echo "⚠️ Warning: Plugin may not be properly detected"
+            echo "Capacitor settings:"
+            cat android/capacitor.settings.gradle || echo "capacitor.settings.gradle not found"
+          fi
 
-      # ✅ FASE 3: Build WITHOUT any sync operations
+      # ✅ Build
       - name: Build Debug APK
         run: |
           cd android
           chmod +x ./gradlew
-          # Build without triggering Capacitor sync
           ./gradlew clean assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK
@@ -157,10 +144,12 @@ jobs:
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
             ✅ **Questo build include:**
-            - ✅ Plugin NotificationListener registrato (nome corretto!)
-            - ✅ Plugin SMSReader registrato (nome corretto!)
+            - 📦 Plugin locale native-plugins
+            - ✅ NotificationListener con @CapacitorPlugin
+            - ✅ SMSReader con @CapacitorPlugin
+            - ✅ BankNotificationListenerService
             - ✅ Permessi Android corretti
-            - ✅ Package name: com.gestore.spese
+            - ✅ Package: com.gestore.spese
           files: gestore-spese.apk
           draft: false
           prerelease: false
