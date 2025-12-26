@@ -1,0 +1,20 @@
+// Signing configuration for debug builds
+// This ensures all debug APKs are signed with the same keystore
+// preventing "package conflict" errors when installing updates
+
+android {
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+}
