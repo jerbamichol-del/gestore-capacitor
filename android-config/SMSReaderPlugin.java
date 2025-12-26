@@ -1,4 +1,4 @@
-package com.gestorefinanze.app;
+package com.gestore.spese;
 
 import android.Manifest;
 import android.content.ContentResolver;
