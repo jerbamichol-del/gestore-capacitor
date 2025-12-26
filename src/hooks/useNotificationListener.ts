@@ -3,10 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import {
-  notificationListenerService,
-  PendingTransaction,
-} from '../services/notification-listener-service';
+import notificationListenerService from '../services/notification-listener-service';
+import type { PendingTransaction } from '../services/notification-listener-service';
 
 export function useNotificationListener() {
   const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
@@ -24,11 +22,11 @@ export function useNotificationListener() {
     isCheckingRef.current = true;
     
     try {
-      const status = await notificationListenerService.checkPermission();
-      setIsEnabled(status.enabled);
+      const enabled = await notificationListenerService.isEnabled();
+      setIsEnabled(enabled);
       
       // If enabled, load pending transactions
-      if (status.enabled) {
+      if (enabled) {
         const pending = await notificationListenerService.getPendingTransactions();
         setPendingTransactions(pending);
       }
