@@ -53,6 +53,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- App Links for Reset PIN (HTTPS) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="jerbamichol-del.github.io"
+                    android:pathPrefix="/gestore" />
+            </intent-filter>
+
         </activity>
         
         <!-- Bank Notification Listener Service -->
