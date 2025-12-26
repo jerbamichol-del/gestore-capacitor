@@ -19,8 +19,15 @@ public class NotificationListenerPlugin extends Plugin {
     private BankNotificationReceiver receiver;
 
     @Override
+    public String getId() {
+        return "NotificationListener";
+    }
+
+    @Override
     public void load() {
         super.load();
+        Log.d(TAG, "Plugin loaded with ID: " + getId());
+        
         // Register broadcast receiver
         receiver = new BankNotificationReceiver();
         IntentFilter filter = new IntentFilter("com.gestore.spese.BANK_NOTIFICATION");
