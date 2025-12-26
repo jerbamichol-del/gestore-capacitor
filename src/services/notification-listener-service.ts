@@ -94,6 +94,14 @@ class NotificationListenerService {
       return false;
     }
   }
+
+  /**
+   * Check permission status (alias for consistency)
+   */
+  async checkPermission(): Promise<{ enabled: boolean }> {
+    const enabled = await this.isEnabled();
+    return { enabled };
+  }
   
   /**
    * 🆕 NEW: Check for missed notifications while app was closed
@@ -373,4 +381,7 @@ class NotificationListenerService {
 
 // Singleton instance
 const notificationListenerService = new NotificationListenerService();
+
+// Export both default and named for compatibility
+export { notificationListenerService };
 export default notificationListenerService;
