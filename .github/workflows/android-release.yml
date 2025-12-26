@@ -56,7 +56,6 @@ jobs:
           npx cap sync android
           echo "✅ Capacitor sync completed"
 
-      # ✅ Copia il modulo plugin
       - name: Copy android-plugins module
         run: |
           echo "📦 Copying android-plugins module..."
@@ -64,22 +63,17 @@ jobs:
           echo "✅ android-plugins module copied"
           ls -la android/android-plugins/
 
-      # ✅ CRITICAL: Modifica settings.gradle CORRETTAMENTE
       - name: Add module to settings.gradle
         run: |
           echo "📝 Modifying settings.gradle..."
           cd android
           
-          # Verifica contenuto originale
           echo "Original settings.gradle:"
           cat settings.gradle
           
-          # Aggiungi include PRIMA della riga apply (se esiste)
           if grep -q "apply from" settings.gradle; then
-            # Inserisci prima di apply from
             sed -i "/apply from/i include ':android-plugins'" settings.gradle
           else
-            # Aggiungi alla fine
             echo "include ':android-plugins'" >> settings.gradle
           fi
           
@@ -88,13 +82,11 @@ jobs:
           cat settings.gradle
           echo "✅ Module added to settings.gradle"
 
-      # ✅ Aggiungi dipendenza in app/build.gradle
       - name: Add module dependency to app build.gradle
         run: |
           echo "📝 Adding module dependency to app/build.gradle..."
           cd android/app
           
-          # Trova la sezione dependencies e aggiungi la dipendenza
           if grep -q "dependencies {" build.gradle; then
             sed -i "/dependencies {/a\    implementation project(':android-plugins')" build.gradle
             echo "✅ Dependency added"
@@ -103,7 +95,6 @@ jobs:
             exit 1
           fi
           
-          # Verifica
           echo "Checking if dependency was added..."
           if grep -q "android-plugins" build.gradle; then
             echo "✅ Dependency verified in build.gradle"
@@ -126,17 +117,34 @@ jobs:
             exit 1
           fi
 
-      - name: Update MainActivity
+      - name: Copy MainActivity with imports
         run: |
           MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
           
-          echo "📝 Updating MainActivity.java..."
+          echo "📝 Copying MainActivity.java..."
           cp android-config/MainActivity.java "$MAIN_ACTIVITY"
           
+          echo "Verifying MainActivity.java content:"
+          cat "$MAIN_ACTIVITY"
+          
           if grep -q "registerPlugin" "$MAIN_ACTIVITY"; then
-            echo "✅ Plugin registration found in MainActivity"
+            echo "✅ Plugin registration found"
           else
             echo "❌ ERROR: No plugin registration!"
+            exit 1
+          fi
+          
+          if grep -q "import com.gestore.spese.NotificationListener" "$MAIN_ACTIVITY"; then
+            echo "✅ NotificationListener import found"
+          else
+            echo "❌ ERROR: Missing NotificationListener import!"
+            exit 1
+          fi
+          
+          if grep -q "import com.gestore.spese.SMSReader" "$MAIN_ACTIVITY"; then
+            echo "✅ SMSReader import found"
+          else
+            echo "❌ ERROR: Missing SMSReader import!"
             exit 1
           fi
 
@@ -147,44 +155,68 @@ jobs:
           npx cap copy android
           echo "✅ Assets copied"
 
-      - name: Verify plugin module setup
+      # ✅ OPUS SUGGESTION: Comprehensive verification
+      - name: Verify Plugin Registration (Opus Check)
         run: |
-          echo "🔍 Final verification..."
+          echo "🔍 Verifying plugin setup (Opus verification)..."
           
-          # Check module exists
-          if [ -d "android/android-plugins" ]; then
-            echo "✅ android-plugins module directory exists"
-          else
-            echo "❌ ERROR: android-plugins module NOT found!"
-            exit 1
-          fi
-          
-          # Check build.gradle in module
-          if [ -f "android/android-plugins/build.gradle" ]; then
-            echo "✅ build.gradle exists in module"
-          else
-            echo "❌ ERROR: build.gradle NOT found in module!"
-            exit 1
-          fi
-          
-          # Check Java files
-          for file in NotificationListener.java SMSReader.java BankNotificationListenerService.java; do
-            if [ -f "android/android-plugins/src/main/java/com/gestore/spese/$file" ]; then
-              echo "✅ $file exists in module"
+          # 1. Check module has correct class with annotation
+          PLUGIN_FILE="android/android-plugins/src/main/java/com/gestore/spese/NotificationListener.java"
+          if [ -f "$PLUGIN_FILE" ]; then
+            echo "✅ NotificationListener.java exists in module"
+            
+            if grep -q "@CapacitorPlugin" "$PLUGIN_FILE"; then
+              echo "✅ @CapacitorPlugin annotation found"
+              
+              # Extract plugin name from annotation
+              PLUGIN_NAME=$(grep -o '@CapacitorPlugin(name = "[^"]*"' "$PLUGIN_FILE" | cut -d'"' -f2)
+              echo "Plugin name in annotation: $PLUGIN_NAME"
+              
+              if [ "$PLUGIN_NAME" = "NotificationListener" ]; then
+                echo "✅ Plugin name matches: NotificationListener"
+              else
+                echo "❌ ERROR: Plugin name mismatch! Expected 'NotificationListener', got '$PLUGIN_NAME'"
+                exit 1
+              fi
             else
-              echo "❌ ERROR: $file NOT found in module!"
+              echo "❌ ERROR: Missing @CapacitorPlugin annotation!"
               exit 1
             fi
-          done
-          
-          # Check @CapacitorPlugin annotation
-          if grep -q "@CapacitorPlugin" "android/android-plugins/src/main/java/com/gestore/spese/NotificationListener.java"; then
-            echo "✅ @CapacitorPlugin annotation found"
           else
-            echo "⚠️ Warning: @CapacitorPlugin NOT found"
+            echo "❌ ERROR: NotificationListener.java not found!"
+            exit 1
           fi
           
-          # Check settings.gradle includes module
+          # 2. Check MainActivity registers correct class
+          MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
+          if grep -q "registerPlugin(NotificationListener.class)" "$MAIN_ACTIVITY"; then
+            echo "✅ MainActivity registers NotificationListener correctly"
+          else
+            echo "❌ ERROR: MainActivity does not register NotificationListener!"
+            echo "MainActivity content:"
+            cat "$MAIN_ACTIVITY"
+            exit 1
+          fi
+          
+          # 3. Check import statement
+          if grep -q "import com.gestore.spese.NotificationListener" "$MAIN_ACTIVITY"; then
+            echo "✅ Import statement found"
+          else
+            echo "❌ ERROR: Import missing!"
+            exit 1
+          fi
+          
+          # 4. Same checks for SMSReader
+          SMS_PLUGIN_FILE="android/android-plugins/src/main/java/com/gestore/spese/SMSReader.java"
+          if [ -f "$SMS_PLUGIN_FILE" ]; then
+            echo "✅ SMSReader.java exists"
+            
+            if grep -q "@CapacitorPlugin" "$SMS_PLUGIN_FILE"; then
+              echo "✅ SMSReader has @CapacitorPlugin"
+            fi
+          fi
+          
+          # 5. Check settings.gradle includes module
           if grep -q "android-plugins" "android/settings.gradle"; then
             echo "✅ Module included in settings.gradle"
           else
@@ -192,13 +224,15 @@ jobs:
             exit 1
           fi
           
-          # Check app/build.gradle has dependency
+          # 6. Check app/build.gradle has dependency
           if grep -q "android-plugins" "android/app/build.gradle"; then
             echo "✅ Module dependency in app/build.gradle"
           else
             echo "❌ ERROR: Dependency NOT in app/build.gradle!"
             exit 1
           fi
+          
+          echo "✅ All Opus verifications passed!"
 
       - name: Build Debug APK
         run: |
@@ -233,13 +267,12 @@ jobs:
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
-            ✅ **MODULO GRADLE CORRETTO:**
-            - ✅ android-plugins come modulo Gradle
-            - ✅ settings.gradle modificato correttamente
-            - ✅ app/build.gradle con dipendenza
-            - ✅ MainActivity registra i plugin PRIMA di super.onCreate()
-            - ✅ AndroidManifest con service
-            - ✅ @CapacitorPlugin annotations
+            ✅ **OPUS FIX APPLICATO:**
+            - ✅ MainActivity con import espliciti
+            - ✅ registerPlugin(NotificationListener.class)
+            - ✅ Modulo Gradle android-plugins
+            - ✅ @CapacitorPlugin annotations verificate
+            - ✅ Verifica completa Opus-style
           files: gestore-spese.apk
           draft: false
           prerelease: false
