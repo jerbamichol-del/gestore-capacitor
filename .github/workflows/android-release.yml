@@ -50,29 +50,34 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅ STEP 1: Capacitor sync
       - name: Sync Capacitor
         run: |
           echo "🔄 Syncing Capacitor..."
           npx cap sync android
           echo "✅ Capacitor sync completed"
 
-      # ✅ STEP 2: Copy custom Java plugins AFTER sync
-      - name: Copy custom Java plugins to Android
+      # ✅ NUOVO: Copia il modulo plugin
+      - name: Copy android-plugins module
         run: |
-          echo "📦 Copying custom Java plugins..."
-          JAVA_DIR="android/app/src/main/java/com/gestore/spese"
-          mkdir -p "$JAVA_DIR"
-          
-          # Copy plugin files
-          cp android-config/NotificationListener.java "$JAVA_DIR/"
-          cp android-config/SMSReader.java "$JAVA_DIR/"
-          cp android-config/BankNotificationListenerService.java "$JAVA_DIR/"
-          
-          echo "✅ Plugins copied to $JAVA_DIR"
-          ls -la "$JAVA_DIR/"
+          echo "📦 Copying android-plugins module..."
+          cp -r android-plugins android/
+          echo "✅ android-plugins module copied"
 
-      # ✅ STEP 3: Copy AndroidManifest with permissions
+      # ✅ NUOVO: Aggiungi il modulo a settings.gradle
+      - name: Add module to settings.gradle
+        run: |
+          echo "📝 Adding android-plugins to settings.gradle..."
+          echo "include ':android-plugins'" >> android/settings.gradle
+          cat android/settings.gradle
+          echo "✅ Module added to settings.gradle"
+
+      # ✅ NUOVO: Aggiungi dipendenza nel build.gradle dell'app
+      - name: Add module dependency to app build.gradle
+        run: |
+          echo "📝 Adding module dependency..."
+          sed -i "/dependencies {/a\    implementation project(':android-plugins')" android/app/build.gradle
+          echo "✅ Module dependency added"
+
       - name: Copy AndroidManifest.xml
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
@@ -80,7 +85,6 @@ jobs:
           echo "📝 Copying AndroidManifest.xml..."
           cp android-config/AndroidManifest.xml "$MANIFEST"
           
-          # Verify
           if grep -q "BankNotificationListenerService" "$MANIFEST"; then
             echo "✅ Service declaration found"
           else
@@ -88,7 +92,6 @@ jobs:
             exit 1
           fi
 
-      # ✅ STEP 4: Update MainActivity to register plugins
       - name: Update MainActivity with plugin registration
         run: |
           MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
@@ -96,7 +99,6 @@ jobs:
           echo "📝 Updating MainActivity.java..."
           cp android-config/MainActivity.java "$MAIN_ACTIVITY"
           
-          # Verify
           if grep -q "registerPlugin" "$MAIN_ACTIVITY"; then
             echo "✅ Plugin registration found in MainActivity"
           else
@@ -111,30 +113,35 @@ jobs:
           npx cap copy android
           echo "✅ Assets copied"
 
-      # ✅ STEP 5: Verify everything is in place
       - name: Verify plugin setup
         run: |
           echo "🔍 Final verification..."
-          JAVA_DIR="android/app/src/main/java/com/gestore/spese"
           
-          # Check Java files
+          # Check module files
+          if [ -d "android/android-plugins" ]; then
+            echo "✅ android-plugins module exists"
+          else
+            echo "❌ ERROR: android-plugins module NOT found!"
+            exit 1
+          fi
+          
+          # Check Java files in module
           for file in NotificationListener.java SMSReader.java BankNotificationListenerService.java; do
-            if [ -f "$JAVA_DIR/$file" ]; then
-              echo "✅ $file exists"
+            if [ -f "android/android-plugins/src/main/java/com/gestore/spese/$file" ]; then
+              echo "✅ $file exists in module"
             else
-              echo "❌ ERROR: $file NOT found!"
+              echo "❌ ERROR: $file NOT found in module!"
               exit 1
             fi
           done
           
           # Check annotations
-          if grep -q "@CapacitorPlugin" "$JAVA_DIR/NotificationListener.java"; then
+          if grep -q "@CapacitorPlugin" "android/android-plugins/src/main/java/com/gestore/spese/NotificationListener.java"; then
             echo "✅ @CapacitorPlugin annotation found"
           else
             echo "⚠️ Warning: @CapacitorPlugin NOT found"
           fi
 
-      # ✅ STEP 6: Build
       - name: Build Debug APK
         run: |
           cd android
@@ -168,8 +175,8 @@ jobs:
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
-            ✅ **METODO SEMPLIFICATO:**
-            - ✅ Java files copiati DOPO cap sync
+            ✅ **MODULO GRADLE SEPARATO:**
+            - ✅ android-plugins come modulo Gradle
             - ✅ MainActivity registra i plugin
             - ✅ AndroidManifest con service
             - ✅ @CapacitorPlugin annotations
