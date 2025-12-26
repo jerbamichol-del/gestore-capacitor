@@ -482,8 +482,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         </main>
       </div>
       
-      {/* 🔧 FIX: Ridotto da 52vh a 50vh + gap da 2 a 1.5 */}
-      <div className="flex-shrink-0 flex flex-col" style={{ height: '50vh' }}>
+      {/* 🔧 FIX: Ridotto da 50vh a 48vh + padding da pb-4 a pb-2 */}
+      <div className="flex-shrink-0 flex flex-col" style={{ height: '48vh' }}>
         {/* MODIFIED: Changed -translate-x-6 to -translate-x-3 to move the arrow slightly right */}
         <div className="flex justify-between items-center my-2 w-full px-4 gap-0" style={{ touchAction: 'pan-y' }}>
           
@@ -567,8 +567,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           )}
         </div>
 
-        {/* 🔧 FIX: Ridotto gap da gap-2 a gap-1.5 */}
-        <div className="flex-1 p-2 flex flex-row gap-1.5 px-4 pb-4">
+        {/* 🔧 FIX: Ridotto padding da pb-4 a pb-2 */}
+        <div className="flex-1 p-2 flex flex-row gap-1.5 px-4 pb-2">
           <div className="h-full w-4/5 grid grid-cols-3 grid-rows-4 gap-1.5 num-pad">
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('7')}>7</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('8')}>8</KeypadButton>
