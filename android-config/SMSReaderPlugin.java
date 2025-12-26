@@ -24,14 +24,9 @@ public class SMSReaderPlugin extends Plugin {
     private static final String TAG = "SMSReaderPlugin";
 
     @Override
-    public String getId() {
-        return "SMSReader";
-    }
-
-    @Override
     public void load() {
         super.load();
-        Log.d(TAG, "Plugin loaded with ID: " + getId());
+        Log.d(TAG, "Plugin loaded: SMSReaderPlugin");
     }
 
     @PluginMethod
