@@ -56,7 +56,7 @@ jobs:
           ls -la android/
           if [ ! -f "android/settings.gradle" ] && [ ! -f "android/settings.gradle.kts" ]; then
             echo "❌ ERROR: settings.gradle not found!"
-            echo "Contents of android/:" 
+            echo "Contents of android:" 
             find android/ -type f -name "*.gradle*" || true
             exit 1
           fi
@@ -76,18 +76,10 @@ jobs:
           npx cap copy android
           echo "✅ Assets copied"
 
-      # ✅ FASE 2: Ora che tutti i sync sono completati, copiamo i file custom
-      - name: Update plugin package names
-        run: |
-          echo "🔧 Updating package names in plugins..."
-          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/SMSReaderPlugin.java
-          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/NotificationListenerPlugin.java
-          sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/BankNotificationListenerService.java
-          echo "✅ Package names updated"
-
+      # ✅ FASE 2: Copiamo direttamente i file custom (già con package corretto)
       - name: Copy custom plugins to Android
         run: |
-          echo "📦 Copying Java plugins..."
+          echo "📦 Copying Java plugins (already with correct package)..."
           JAVA_DIR="android/app/src/main/java/com/gestore/spese"
           mkdir -p "$JAVA_DIR"
           cp android-config/SMSReaderPlugin.java "$JAVA_DIR/"
@@ -95,6 +87,8 @@ jobs:
           cp android-config/BankNotificationListenerService.java "$JAVA_DIR/"
           echo "✅ Plugins copied to $JAVA_DIR"
           ls -la "$JAVA_DIR/"
+          echo "🔍 Verifying package names..."
+          grep -n "^package" "$JAVA_DIR/"*.java
 
       - name: Copy AndroidManifest.xml
         run: |
@@ -166,6 +160,7 @@ jobs:
             - Plugin NotificationListener registrato
             - Plugin SMSReader registrato
             - Permessi Android corretti
+            - Package name corretto: com.gestore.spese
           files: gestore-spese.apk
           draft: false
           prerelease: false
