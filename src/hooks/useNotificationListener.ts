@@ -43,6 +43,13 @@ export function useNotificationListener(): UseNotificationListenerReturn {
             // If just enabled, initialize and refresh
             console.log('Permission granted! Initializing service...');
             await notificationListenerService.initialize();
+            
+            // 🆕 Check for missed notifications when coming back from settings
+            const recovered = await notificationListenerService.checkAndRecoverMissedNotifications();
+            if (recovered > 0) {
+              console.log(`📦 Recovered ${recovered} missed notifications from settings return`);
+            }
+            
             await refresh();
           }
         } catch (error) {
@@ -91,6 +98,16 @@ export function useNotificationListener(): UseNotificationListenerReturn {
       // Initialize if enabled
       if (enabled) {
         await notificationListenerService.initialize();
+        
+        // 🆕 NEW: Check for missed notifications on app startup
+        console.log('🔍 Checking for missed notifications on app startup...');
+        const recoveredCount = await notificationListenerService.checkAndRecoverMissedNotifications();
+        
+        if (recoveredCount > 0) {
+          console.log(`✅ Successfully recovered ${recoveredCount} missed transactions!`);
+        } else {
+          console.log('✅ No missed notifications found');
+        }
       }
 
       // Load pending transactions
