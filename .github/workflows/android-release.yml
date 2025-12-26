@@ -56,24 +56,39 @@ jobs:
           npx cap sync android
           echo "✅ Capacitor sync completed"
 
-      # ✅ OPUS SOLUTION: Copy Java files DIRECTLY to app (no Gradle module)
-      - name: Copy plugin Java files directly to app
+      # ✅ FIXED: Copy correct plugin files from android/app directory
+      - name: Copy plugin Java files from android/app
         run: |
-          echo "📦 Copying plugin Java files directly to app..."
+          echo "📦 Copying plugin Java files from android/app..."
           
+          SOURCE_DIR="android/app/src/main/java/com/gestore/spese"
           DEST_DIR="android/app/src/main/java/com/gestore/spese"
           
-          # Ensure directory exists
-          mkdir -p "$DEST_DIR"
+          # Note: After 'npx cap add android', we need to restore our custom plugins
+          # They are already in the repo at android/app/src/main/java/com/gestore/spese/
+          # But 'cap add android' recreates the directory, so we copy them back
           
-          # Copy plugin files from android-plugins source
-          cp android-plugins/src/main/java/com/gestore/spese/NotificationListener.java "$DEST_DIR/"
-          cp android-plugins/src/main/java/com/gestore/spese/SMSReader.java "$DEST_DIR/"
-          cp android-plugins/src/main/java/com/gestore/spese/BankNotificationListenerService.java "$DEST_DIR/"
+          # Copy plugin files (they should already be there from git checkout)
+          echo "Verifying plugin files exist..."
           
-          echo "✅ Java files copied to $DEST_DIR"
-          echo "Files in destination:"
-          ls -la "$DEST_DIR"
+          if [ ! -f "$SOURCE_DIR/NotificationListenerPlugin.java" ]; then
+            echo "❌ ERROR: NotificationListenerPlugin.java not found in $SOURCE_DIR"
+            exit 1
+          fi
+          
+          if [ ! -f "$SOURCE_DIR/SMSReaderPlugin.java" ]; then
+            echo "❌ ERROR: SMSReaderPlugin.java not found in $SOURCE_DIR"
+            exit 1
+          fi
+          
+          if [ ! -f "$SOURCE_DIR/BankNotificationListenerService.java" ]; then
+            echo "❌ ERROR: BankNotificationListenerService.java not found in $SOURCE_DIR"
+            exit 1
+          fi
+          
+          echo "✅ All plugin files found in repository"
+          echo "Files in $SOURCE_DIR:"
+          ls -la "$SOURCE_DIR"
 
       - name: Copy AndroidManifest.xml
         run: |
@@ -99,17 +114,17 @@ jobs:
           echo "Verifying MainActivity.java:"
           cat "$MAIN_ACTIVITY"
           
-          if grep -q "registerPlugin(NotificationListener.class)" "$MAIN_ACTIVITY"; then
-            echo "✅ NotificationListener registration found"
+          if grep -q "registerPlugin(NotificationListenerPlugin.class)" "$MAIN_ACTIVITY"; then
+            echo "✅ NotificationListenerPlugin registration found"
           else
-            echo "❌ ERROR: NotificationListener not registered!"
+            echo "❌ ERROR: NotificationListenerPlugin not registered!"
             exit 1
           fi
           
-          if grep -q "registerPlugin(SMSReader.class)" "$MAIN_ACTIVITY"; then
-            echo "✅ SMSReader registration found"
+          if grep -q "registerPlugin(SMSReaderPlugin.class)" "$MAIN_ACTIVITY"; then
+            echo "✅ SMSReaderPlugin registration found"
           else
-            echo "❌ ERROR: SMSReader not registered!"
+            echo "❌ ERROR: SMSReaderPlugin not registered!"
             exit 1
           fi
 
@@ -126,8 +141,8 @@ jobs:
           
           JAVA_DIR="android/app/src/main/java/com/gestore/spese"
           
-          # Check all Java files exist
-          for file in NotificationListener.java SMSReader.java BankNotificationListenerService.java MainActivity.java; do
+          # Check all Java files exist (with Plugin suffix!)
+          for file in NotificationListenerPlugin.java SMSReaderPlugin.java BankNotificationListenerService.java MainActivity.java; do
             if [ -f "$JAVA_DIR/$file" ]; then
               echo "✅ $file exists"
             else
@@ -137,25 +152,25 @@ jobs:
           done
           
           # Check @CapacitorPlugin annotation
-          if grep -q "@CapacitorPlugin(name = \"NotificationListener\")" "$JAVA_DIR/NotificationListener.java"; then
-            echo "✅ NotificationListener has @CapacitorPlugin annotation"
+          if grep -q "@CapacitorPlugin(name = \"NotificationListener\")" "$JAVA_DIR/NotificationListenerPlugin.java"; then
+            echo "✅ NotificationListenerPlugin has @CapacitorPlugin annotation"
           else
             echo "❌ ERROR: Missing @CapacitorPlugin annotation!"
             exit 1
           fi
           
-          if grep -q "@CapacitorPlugin(name = \"SMSReader\")" "$JAVA_DIR/SMSReader.java"; then
-            echo "✅ SMSReader has @CapacitorPlugin annotation"
+          if grep -q "@CapacitorPlugin" "$JAVA_DIR/SMSReaderPlugin.java"; then
+            echo "✅ SMSReaderPlugin has @CapacitorPlugin annotation"
           else
             echo "❌ ERROR: Missing @CapacitorPlugin annotation!"
             exit 1
           fi
           
-          # Check MainActivity imports
-          if grep -q "import com.gestore.spese.NotificationListener;" "$JAVA_DIR/MainActivity.java"; then
-            echo "✅ MainActivity imports NotificationListener"
+          # Check MainActivity imports (with Plugin suffix!)
+          if grep -q "import com.gestore.spese.NotificationListenerPlugin;" "$JAVA_DIR/MainActivity.java"; then
+            echo "✅ MainActivity imports NotificationListenerPlugin"
           else
-            echo "❌ ERROR: MainActivity missing NotificationListener import!"
+            echo "❌ ERROR: MainActivity missing NotificationListenerPlugin import!"
             exit 1
           fi
           
@@ -194,12 +209,13 @@ jobs:
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
-            ✅ **OPUS FIX: FILE DIRETTI (NO MODULO):**
-            - ✅ File Java copiati direttamente in app/
-            - ✅ Nessun modulo Gradle separato
-            - ✅ MainActivity con import espliciti
-            - ✅ @CapacitorPlugin annotations verificate
-            - ✅ APPROCCIO SEMPLIFICATO che FUNZIONA
+            ✅ **FIX: PLUGIN FILES FROM CORRECT LOCATION:**
+            - ✅ Files copied from android/app/ (not android-plugins/)
+            - ✅ NotificationListenerPlugin.java (with Plugin suffix)
+            - ✅ SMSReaderPlugin.java (with Plugin suffix)
+            - ✅ BankNotificationListenerService.java included
+            - ✅ MainActivity with correct imports
+            - ✅ All @CapacitorPlugin annotations verified
           files: gestore-spese.apk
           draft: false
           prerelease: false
