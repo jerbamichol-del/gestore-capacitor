@@ -14,7 +14,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-@CapacitorPlugin(name = "NotificationListener")
+@CapacitorPlugin(name = "NotificationListener", permissions = {})
 public class NotificationListenerPlugin extends Plugin {
 
     private static final String TAG = "NotificationListenerPlugin";
