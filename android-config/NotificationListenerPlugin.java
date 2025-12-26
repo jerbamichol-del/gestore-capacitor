@@ -54,15 +54,25 @@ public class NotificationListenerPlugin extends Plugin {
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
+        Log.d(TAG, "requestPermission() called");
+        
         if (!isNotificationListenerEnabled()) {
-            // Apri le impostazioni per abilitare il listener
+            Log.d(TAG, "Permission not enabled, opening settings...");
+            
+            // Open Android notification listener settings
             Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
             getActivity().startActivity(intent);
             
+            Log.d(TAG, "Settings opened successfully");
+            
+            // Return enabled: false (user needs to enable manually)
             JSObject ret = new JSObject();
-            ret.put("opened", true);
+            ret.put("enabled", false);
             call.resolve(ret);
         } else {
+            Log.d(TAG, "Permission already enabled");
+            
+            // Already enabled
             JSObject ret = new JSObject();
             ret.put("enabled", true);
             call.resolve(ret);
