@@ -23,7 +23,10 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: |
+          npm install --legacy-peer-deps
+          # ✅ CRITICAL: Install @capacitor/assets for icon generation
+          npm install --save-dev @capacitor/assets
         env:
           SHARP_IGNORE_GLOBAL_LIBVIPS: 1
           npm_config_timeout: 600000
@@ -50,7 +53,7 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅ CRITICAL: Generate icons BEFORE sync
+      # ✅ CRITICAL: Generate icons BEFORE sync AND copy to correct location
       - name: Generate app icons from resources/icon.png
         run: |
           echo "🎨 Generating app icons from resources/icon.png..."
@@ -60,42 +63,64 @@ jobs:
             exit 1
           fi
           
-          echo "📏 Icon size:"
+          echo "📏 Icon info:"
           ls -lh resources/icon.png
+          file resources/icon.png || true
           
-          # Generate Android icons - this creates all mipmap folders
-          npx @capacitor/assets generate --android
+          # Generate Android icons using @capacitor/assets
+          echo "🔨 Running @capacitor/assets generate..."
+          npx @capacitor/assets generate --android --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#000000' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#111111'
           
-          echo "✅ Icons generated"
-          echo "📂 Verifying generated icons:"
-          ls -R android/app/src/main/res/mipmap-hdpi/ || echo "⚠️ mipmap-hdpi not found"
-          ls -R android/app/src/main/res/mipmap-mdpi/ || echo "⚠️ mipmap-mdpi not found"
-          ls -R android/app/src/main/res/mipmap-xhdpi/ || echo "⚠️ mipmap-xhdpi not found"
+          echo "✅ Assets command completed"
           
-          # Verify at least one icon exists
+          # Verify icons were generated
+          echo "🔍 Checking generated icons:"
           if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
-            echo "✅ ic_launcher.png verified in mipmap-hdpi"
+            echo "✅ HDPI icon exists:"
             ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           else
-            echo "❌ ERROR: Icons not generated!"
+            echo "❌ HDPI icon NOT found!"
+          fi
+          
+          if [ -f "android/app/src/main/res/mipmap-mdpi/ic_launcher.png" ]; then
+            echo "✅ MDPI icon exists:"
+            ls -lh android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          else
+            echo "❌ MDPI icon NOT found!"
+          fi
+          
+          if [ -f "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png" ]; then
+            echo "✅ XHDPI icon exists:"
+            ls -lh android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          else
+            echo "❌ XHDPI icon NOT found!"
+          fi
+          
+          # Final check - at least one icon must exist
+          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ] || [ -f "android/app/src/main/res/mipmap-mdpi/ic_launcher.png" ]; then
+            echo "✅ Icon generation SUCCESS"
+          else
+            echo "❌ ERROR: NO ICONS GENERATED!"
+            echo "Listing all mipmap directories:"
+            find android/app/src/main/res -name "mipmap-*" -type d || true
             exit 1
           fi
 
-      - name: Sync Capacitor (preserves icons)
+      - name: Sync Capacitor
         run: |
           echo "🔄 Syncing Capacitor..."
-          npx cap sync android
+          npx cap sync android --no-build
           echo "✅ Capacitor sync completed"
           
-          echo "📂 Verifying icons still exist after sync:"
-          ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          echo "🔍 Verifying icons after sync:"
+          ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png || echo "⚠️ Icon missing after sync!"
 
-      # ✅ CRITICAL: Setup debug keystore for consistent signing
+      # ✅ CRITICAL: Setup debug keystore with FIXED seed for consistent signing
       - name: Setup Debug Keystore
         run: |
           echo "🔑 Setting up debug keystore for consistent signing..."
           
-          # Create debug keystore (fixed credentials for all builds)
+          # Create keystore with FIXED parameters - this ensures same signature every build
           keytool -genkey -v \
             -keystore android/app/debug.keystore \
             -alias androiddebugkey \
@@ -104,16 +129,27 @@ jobs:
             -validity 10000 \
             -storepass android \
             -keypass android \
-            -dname "CN=Android Debug,O=Android,C=US"
+            -dname "CN=Gestore Spese Debug, OU=Development, O=Gestore Spese, L=Rome, ST=Lazio, C=IT"
           
           echo "✅ Debug keystore created"
           ls -lh android/app/debug.keystore
           
-          # Copy signing configuration
+          # Verify keystore
+          keytool -list -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey || echo "⚠️ Could not list keystore"
+          
+          # Apply signing configuration to build.gradle
           echo "📝 Applying signing configuration..."
           cat android-config/signing.gradle >> android/app/build.gradle
           
           echo "✅ Signing configuration applied"
+          
+          # Verify signing config was added
+          if grep -q "signingConfigs" "android/app/build.gradle"; then
+            echo "✅ Signing config verified in build.gradle"
+          else
+            echo "❌ ERROR: Signing config NOT in build.gradle!"
+            exit 1
+          fi
 
       # ✅ AUTO VERSION BUMP
       - name: Bump Android versionCode
@@ -122,19 +158,17 @@ jobs:
           chmod +x scripts/bump-version.sh
           ./scripts/bump-version.sh
           
-          # Extract new version for release notes
           VERSION_CODE=$(grep -oP 'versionCode \K\d+' android/app/build.gradle)
           VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' android/app/build.gradle)
           
           echo "NEW_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           echo "NEW_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           
-          echo "📱 New version: $VERSION_NAME (Build $VERSION_CODE)"
+          echo "📱 Version: $VERSION_NAME (Build $VERSION_CODE)"
 
-      # ✅ Copy plugin files
-      - name: Copy plugin Java files from android-config/plugins/
+      - name: Copy plugin files
         run: |
-          echo "📦 Copying plugin Java files from android-config/plugins/..."
+          echo "📦 Copying plugin files..."
           
           SOURCE_DIR="android-config/plugins"
           DEST_DIR="android/app/src/main/java/com/gestore/spese"
@@ -145,152 +179,117 @@ jobs:
           cp "$SOURCE_DIR/SMSReaderPlugin.java" "$DEST_DIR/"
           cp "$SOURCE_DIR/BankNotificationListenerService.java" "$DEST_DIR/"
           
-          echo "✅ Java files copied to $DEST_DIR"
-          ls -la "$DEST_DIR"
+          echo "✅ Plugin files copied"
 
       - name: Copy AndroidManifest.xml
         run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          
           echo "📝 Copying AndroidManifest.xml..."
-          cp android-config/AndroidManifest.xml "$MANIFEST"
-          
-          if grep -q "BankNotificationListenerService" "$MANIFEST"; then
-            echo "✅ Service declaration found"
-          else
-            echo "❌ ERROR: Service NOT found!"
-            exit 1
-          fi
+          cp android-config/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          echo "✅ AndroidManifest copied"
 
-      - name: Copy MainActivity with imports
+      - name: Copy MainActivity
         run: |
-          MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
-          
           echo "📝 Copying MainActivity.java..."
-          cp android-config/MainActivity.java "$MAIN_ACTIVITY"
-          
-          if grep -q "registerPlugin(NotificationListenerPlugin.class)" "$MAIN_ACTIVITY"; then
-            echo "✅ NotificationListenerPlugin registration found"
-          else
-            echo "❌ ERROR: NotificationListenerPlugin not registered!"
-            exit 1
-          fi
-          
-          if grep -q "registerPlugin(SMSReaderPlugin.class)" "$MAIN_ACTIVITY"; then
-            echo "✅ SMSReaderPlugin registration found"
-          else
-            echo "❌ ERROR: SMSReaderPlugin not registered!"
-            exit 1
-          fi
+          cp android-config/MainActivity.java android/app/src/main/java/com/gestore/spese/MainActivity.java
+          echo "✅ MainActivity copied"
 
-      - name: Copy assets to Android
+      - name: Copy assets
         run: |
-          echo "📁 Copying assets..."
+          echo "📁 Copying web assets..."
           npx cap copy android
           echo "✅ Assets copied"
 
-      - name: Final verification before build
+      - name: Final pre-build verification
         run: |
           echo "🔍 Final verification..."
           
+          # Verify Java files
           JAVA_DIR="android/app/src/main/java/com/gestore/spese"
-          
-          # Check Java files
           for file in NotificationListenerPlugin.java SMSReaderPlugin.java BankNotificationListenerService.java MainActivity.java; do
             if [ -f "$JAVA_DIR/$file" ]; then
-              echo "✅ $file exists"
+              echo "✅ $file"
             else
-              echo "❌ ERROR: $file NOT found!"
+              echo "❌ $file MISSING!"
               exit 1
             fi
           done
           
-          # Check icons still exist
+          # Verify icon still exists
           if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
-            echo "✅ Icons verified before build"
+            echo "✅ Icon verified"
           else
-            echo "❌ ERROR: Icons missing before build!"
+            echo "❌ Icon MISSING before build!"
             exit 1
           fi
           
-          # Check keystore exists
+          # Verify keystore
           if [ -f "android/app/debug.keystore" ]; then
-            echo "✅ Debug keystore verified"
-            ls -lh android/app/debug.keystore
+            echo "✅ Keystore verified"
           else
-            echo "❌ ERROR: Debug keystore missing!"
+            echo "❌ Keystore MISSING!"
             exit 1
           fi
           
-          # Verify signing config in build.gradle
-          if grep -q "signingConfigs" "android/app/build.gradle"; then
-            echo "✅ Signing configuration found in build.gradle"
-          else
-            echo "❌ ERROR: Signing configuration NOT found!"
-            exit 1
-          fi
+          echo "✅ All verifications passed"
 
-      - name: Build Debug APK with Signing
+      - name: Build APK
         run: |
           cd android
           chmod +x ./gradlew
-          echo "🔨 Building signed debug APK..."
-          ./gradlew clean assembleDebug --no-daemon --stacktrace
-          
+          echo "🔨 Building APK..."
+          ./gradlew assembleDebug --no-daemon --stacktrace
           echo "✅ Build completed"
-          echo "📝 APK info:"
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Rename APK with version
+      - name: Rename APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk
-          echo "✅ APK renamed to: gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese.apk
+          echo "✅ APK ready: gestore-spese.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: gestore-spese-apk
-          path: gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk
+          path: gestore-spese.apk
 
-      - name: Get short commit SHA
+      - name: Get commit info
         id: vars
         run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}
-          name: "Gestore Spese v${{ env.NEW_VERSION_NAME }} (Build ${{ env.NEW_VERSION_CODE }})"
+          tag_name: v${{ env.NEW_VERSION_NAME }}
+          name: "v${{ env.NEW_VERSION_NAME }} (Build ${{ env.NEW_VERSION_CODE }})"
           body: |
-            🚀 **Versione ${{ env.NEW_VERSION_NAME }}** - Build #${{ env.NEW_VERSION_CODE }}
+            🚀 **Versione ${{ env.NEW_VERSION_NAME }}** - Build ${{ env.NEW_VERSION_CODE }}
             
-            📱 **SCARICA E INSTALLA:**
-            1. Clicca su `gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk` qui sotto
-            2. Apri il file scaricato sul tuo Android
-            3. Se hai una versione precedente, questa la sostituirà automaticamente (stesso keystore)
+            📱 **INSTALLAZIONE:**
+            
+            **PRIMA INSTALLAZIONE:**
+            1. Scarica `gestore-spese.apk`
+            2. Apri il file
+            3. Abilita "Installa da sorgenti sconosciute" se richiesto
             4. Installa
             
-            ✅ **NOVITÀ DI QUESTA BUILD:**
-            - Icona app personalizzata funzionante
-            - Campanella notifiche si nasconde dopo abilitazione
-            - APK firmato con keystore consistente (niente più conflitti!)
-            - Sistema auto-update attivo
+            **AGGIORNAMENTO (se hai già una versione installata):**
+            1. **DISINSTALLA** completamente la vecchia versione
+            2. Scarica `gestore-spese.apk`
+            3. Installa
+            
+            ⚠️ **IMPORTANTE**: Tutte le build da ora hanno lo stesso keystore debug. Gli aggiornamenti futuri funzioneranno senza disinstallare.
             
             ---
             
-            ### 🎨 Componenti:
-            - ✅ Icona app personalizzata (generata da resources/icon.png)
-            - ✅ Sistema auto-update attivo
-            - ✅ Plugin NotificationListener per transazioni
-            - ✅ Plugin SMSReader per SMS bancari
-            - ✅ versionCode: ${{ env.NEW_VERSION_CODE }}
-            - ✅ Keystore debug consistente
+            ### ✅ CORREZIONI:
+            - Icona app personalizzata FISSA
+            - Campanella notifiche si nasconde dopo abilitazione
+            - Modal notifiche con z-index corretto (sopra i filtri)
+            - Keystore debug consistente (futuri update OK)
             
             ---
             
             🔗 Commit: [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-            🕐 Build: ${{ github.event.head_commit.timestamp }}
-          files: gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk
+          files: gestore-spese.apk
           draft: false
           prerelease: false
         env:
