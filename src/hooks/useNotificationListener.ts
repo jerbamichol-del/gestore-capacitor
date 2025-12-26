@@ -1,177 +1,137 @@
 // src/hooks/useNotificationListener.ts
 
-import { useState, useEffect } from 'react';
-import { App } from '@capacitor/app';
-import notificationListenerService, { PendingTransaction } from '../services/notification-listener-service';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import {
+  notificationListenerService,
+  PendingTransaction,
+} from '../services/notification-listener-service';
 
-export interface UseNotificationListenerReturn {
-  pendingTransactions: PendingTransaction[];
-  pendingCount: number;
-  isEnabled: boolean;
-  isLoading: boolean;
-  requestPermission: () => Promise<{ enabled: boolean }>;
-  confirmTransaction: (id: string) => Promise<void>;
-  ignoreTransaction: (id: string) => Promise<void>;
-  refresh: () => Promise<void>;
-}
-
-/**
- * React hook for managing notification listener and pending transactions
- */
-export function useNotificationListener(): UseNotificationListenerReturn {
+export function useNotificationListener() {
   const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
   const [isEnabled, setIsEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const isCheckingRef = useRef(false);
 
-  // Load initial state
-  useEffect(() => {
-    loadInitialState();
+  // Check if running on Android
+  const isAndroid = Capacitor.getPlatform() === 'android';
+
+  // Function to check permission status
+  const checkPermissionStatus = useCallback(async () => {
+    if (!isAndroid) return;
+    if (isCheckingRef.current) return; // Prevent concurrent checks
+    
+    isCheckingRef.current = true;
+    
+    try {
+      const status = await notificationListenerService.checkPermission();
+      setIsEnabled(status.enabled);
+      
+      // If enabled, load pending transactions
+      if (status.enabled) {
+        const pending = await notificationListenerService.getPendingTransactions();
+        setPendingTransactions(pending);
+      }
+    } catch (error) {
+      console.error('Error checking notification permission:', error);
+      // Don't crash the app, just log the error
+      setIsEnabled(false);
+    } finally {
+      isCheckingRef.current = false;
+    }
+  }, [isAndroid]);
+
+  // Request notification listener permission
+  const requestPermission = useCallback(async () => {
+    if (!isAndroid) {
+      return { enabled: false };
+    }
+
+    try {
+      const result = await notificationListenerService.requestPermission();
+      // Permission request opens Android settings - don't update state here
+      // State will be updated when app returns to foreground
+      return result;
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      return { enabled: false };
+    }
+  }, [isAndroid]);
+
+  // Confirm a pending transaction
+  const confirmTransaction = useCallback(async (id: string) => {
+    await notificationListenerService.confirmTransaction(id);
+    // Refresh pending transactions
+    const pending = await notificationListenerService.getPendingTransactions();
+    setPendingTransactions(pending);
   }, []);
 
-  // Listen to app state changes (to detect returning from settings)
+  // Ignore a pending transaction
+  const ignoreTransaction = useCallback(async (id: string) => {
+    await notificationListenerService.ignoreTransaction(id);
+    // Refresh pending transactions
+    const pending = await notificationListenerService.getPendingTransactions();
+    setPendingTransactions(pending);
+  }, []);
+
+  // Initial check on mount
   useEffect(() => {
-    const appStateListener = App.addListener('appStateChange', async (state) => {
-      if (state.isActive) {
-        // App came to foreground, recheck permission
-        console.log('App resumed, rechecking notification permission...');
-        try {
-          const enabled = await notificationListenerService.isEnabled();
-          console.log('Permission check result:', enabled);
-          setIsEnabled(enabled);
-          
-          if (enabled) {
-            // If just enabled, initialize and refresh
-            console.log('Permission granted! Initializing service...');
-            await notificationListenerService.initialize();
-            
-            // 🆕 Check for missed notifications when coming back from settings
-            const recovered = await notificationListenerService.checkAndRecoverMissedNotifications();
-            if (recovered > 0) {
-              console.log(`📦 Recovered ${recovered} missed notifications from settings return`);
-            }
-            
-            await refresh();
-          }
-        } catch (error) {
-          console.error('Failed to check permission on app resume:', error);
-        }
+    if (!isAndroid) return;
+
+    // Check permission on mount
+    checkPermissionStatus();
+
+    // ✅ CRITICAL FIX: Listen for app state changes
+    // When user returns from Android settings, recheck permission
+    const appStateListener = CapApp.addListener('appStateChange', async ({ isActive }) => {
+      if (isActive) {
+        // App returned to foreground - recheck permission
+        console.log('App returned to foreground, rechecking permission...');
+        
+        // Small delay to ensure Android has updated the permission
+        setTimeout(() => {
+          checkPermissionStatus();
+        }, 500);
       }
     });
 
+    // ✅ CRITICAL FIX: Listen for resume event (alternative to appStateChange)
+    const resumeListener = CapApp.addListener('resume', async () => {
+      console.log('App resumed, rechecking permission...');
+      setTimeout(() => {
+        checkPermissionStatus();
+      }, 500);
+    });
+
+    // Cleanup listeners
     return () => {
       appStateListener.then(listener => listener.remove());
+      resumeListener.then(listener => listener.remove());
     };
-  }, []);
+  }, [isAndroid, checkPermissionStatus]);
 
-  // Listen to service events
+  // Poll for new transactions every 10 seconds if enabled
   useEffect(() => {
-    const unsubscribeAdded = notificationListenerService.addEventListener(
-      'transactionAdded',
-      () => refresh()
-    );
+    if (!isAndroid || !isEnabled) return;
 
-    const unsubscribeConfirmed = notificationListenerService.addEventListener(
-      'transactionConfirmed',
-      () => refresh()
-    );
-
-    const unsubscribeIgnored = notificationListenerService.addEventListener(
-      'transactionIgnored',
-      () => refresh()
-    );
-
-    return () => {
-      unsubscribeAdded();
-      unsubscribeConfirmed();
-      unsubscribeIgnored();
-    };
-  }, []);
-
-  const loadInitialState = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Check if enabled
-      const enabled = await notificationListenerService.isEnabled();
-      setIsEnabled(enabled);
-
-      // Initialize if enabled
-      if (enabled) {
-        await notificationListenerService.initialize();
-        
-        // 🆕 NEW: Check for missed notifications on app startup
-        console.log('🔍 Checking for missed notifications on app startup...');
-        const recoveredCount = await notificationListenerService.checkAndRecoverMissedNotifications();
-        
-        if (recoveredCount > 0) {
-          console.log(`✅ Successfully recovered ${recoveredCount} missed transactions!`);
-        } else {
-          console.log('✅ No missed notifications found');
-        }
+    const interval = setInterval(async () => {
+      try {
+        const pending = await notificationListenerService.getPendingTransactions();
+        setPendingTransactions(pending);
+      } catch (error) {
+        console.error('Error polling transactions:', error);
       }
+    }, 10000); // 10 seconds
 
-      // Load pending transactions
-      const transactions = await notificationListenerService.getPendingTransactions();
-      setPendingTransactions(transactions);
-    } catch (error) {
-      console.error('Failed to load notification listener state:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const requestPermission = async (): Promise<{ enabled: boolean }> => {
-    try {
-      console.log('Requesting notification permission...');
-      // This will open Android settings
-      const result = await notificationListenerService.requestPermission();
-      console.log('Permission request result:', result);
-      
-      // Update local state
-      setIsEnabled(result.enabled);
-      
-      return result;
-    } catch (error) {
-      console.error('Failed to request permission:', error);
-      return { enabled: false };
-    }
-  };
-
-  const confirmTransaction = async (id: string) => {
-    try {
-      await notificationListenerService.confirmTransaction(id);
-      await refresh();
-    } catch (error) {
-      console.error('Failed to confirm transaction:', error);
-    }
-  };
-
-  const ignoreTransaction = async (id: string) => {
-    try {
-      await notificationListenerService.ignoreTransaction(id);
-      await refresh();
-    } catch (error) {
-      console.error('Failed to ignore transaction:', error);
-    }
-  };
-
-  const refresh = async () => {
-    try {
-      const transactions = await notificationListenerService.getPendingTransactions();
-      setPendingTransactions(transactions);
-    } catch (error) {
-      console.error('Failed to refresh transactions:', error);
-    }
-  };
+    return () => clearInterval(interval);
+  }, [isAndroid, isEnabled]);
 
   return {
     pendingTransactions,
     pendingCount: pendingTransactions.length,
     isEnabled,
-    isLoading,
     requestPermission,
     confirmTransaction,
     ignoreTransaction,
-    refresh,
   };
 }
