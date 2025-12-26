@@ -1,4 +1,4 @@
-package com.gestorefinanze.app;
+package com.gestore.spese;
 
 import android.app.Notification;
 import android.content.Intent;
@@ -111,7 +111,7 @@ public class BankNotificationListenerService extends NotificationListenerService
      */
     private void sendToCapacitor(JSObject data) {
         // Invia broadcast intent che verrà catturato dal plugin
-        Intent intent = new Intent("com.gestorefinanze.BANK_NOTIFICATION");
+        Intent intent = new Intent("com.gestore.spese.BANK_NOTIFICATION");
         intent.putExtra("data", data.toString());
         sendBroadcast(intent);
 
