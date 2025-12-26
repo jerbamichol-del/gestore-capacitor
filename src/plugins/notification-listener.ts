@@ -26,6 +26,13 @@ export interface NotificationListenerPlugin {
    * Start listening for notifications (registers the service)
    */
   startListening(): Promise<void>;
+  
+  /**
+   * Check for missed notifications while app was closed
+   * Scans active notifications from last 24 hours
+   * @returns Array of missed bank notifications
+   */
+  checkMissedNotifications(): Promise<{ missed: NotificationData[] }>;
 
   /**
    * Add listener for notification events
@@ -43,6 +50,7 @@ export interface NotificationListenerPlugin {
 
 export interface NotificationData {
   packageName: string;
+  appName: string;
   title: string;
   text: string;
   timestamp: number;
@@ -57,11 +65,14 @@ const PACKAGE_TO_APP_NAME: Record<string, string> = {
   'com.revolut.revolut': 'Revolut',
   'com.paypal.android.p2pmobile': 'PayPal',
   'posteitaliane.posteapp.apppostepay': 'Postepay',
+  'it.poste.postepay': 'Postepay',
   'com.bbva.bbvacontigo': 'BBVA',
+  'com.bbva.mobile.android': 'BBVA',
   'com.latuabancaperandroid': 'Intesa Sanpaolo',
   'it.bnl.apps.banking': 'BNL',
   'com.unicredit': 'UniCredit',
   'com.unicredit.mobile': 'UniCredit',
+  'it.nogood.container': 'UniCredit',
 };
 
 const NotificationListenerPlugin = registerPlugin<NotificationListenerPlugin>('NotificationListener', {
@@ -103,6 +114,33 @@ class NotificationListenerWrapper {
       return Promise.resolve();
     }
   }
+  
+  /**
+   * NEW: Check for missed notifications from last 24 hours
+   */
+  async checkMissedNotifications(): Promise<BankNotification[]> {
+    try {
+      console.log('🔍 Checking for missed notifications...');
+      const result = await NotificationListenerPlugin.checkMissedNotifications();
+      console.log('✅ Found', result.missed?.length || 0, 'missed notifications');
+      
+      // Convert to BankNotification format
+      if (result.missed && Array.isArray(result.missed)) {
+        return result.missed.map((data: NotificationData) => ({
+          appName: data.appName || PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
+          packageName: data.packageName,
+          title: data.title,
+          text: data.text,
+          timestamp: data.timestamp,
+        }));
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to check missed notifications:', error);
+      return [];
+    }
+  }
 
   async addListener(
     eventName: 'notificationReceived',
@@ -114,7 +152,7 @@ class NotificationListenerWrapper {
         console.log('🔔 Notification received:', data);
         // Convert to BankNotification format
         const bankNotification: BankNotification = {
-          appName: PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
+          appName: data.appName || PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
           packageName: data.packageName,
           title: data.title,
           text: data.text,
