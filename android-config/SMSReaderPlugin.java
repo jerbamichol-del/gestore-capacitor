@@ -14,20 +14,10 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
-import com.getcapacitor.annotation.CapacitorPlugin;
-import com.getcapacitor.annotation.Permission;
-import com.getcapacitor.annotation.PermissionCallback;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@CapacitorPlugin(
-    name = "SMSReader",
-    permissions = {
-        @Permission(strings = {Manifest.permission.READ_SMS}, alias = "readSMS"),
-        @Permission(strings = {Manifest.permission.RECEIVE_SMS}, alias = "receiveSMS")
-    }
-)
 public class SMSReaderPlugin extends Plugin {
 
     @PluginMethod
@@ -52,16 +42,30 @@ public class SMSReaderPlugin extends Plugin {
             return;
         }
 
-        // Use Capacitor's permission request system
-        requestPermissionForAlias("readSMS", call, "smsPermissionCallback");
+        // Request permission using Activity
+        ActivityCompat.requestPermissions(
+            getActivity(),
+            new String[]{Manifest.permission.READ_SMS},
+            9001
+        );
+        
+        // Save the call for later resolution
+        saveCall(call);
     }
 
-    @PermissionCallback
-    private void smsPermissionCallback(PluginCall call) {
-        boolean granted = getPermissionState("readSMS") == com.getcapacitor.PermissionState.GRANTED;
-        JSObject result = new JSObject();
-        result.put("granted", granted);
-        call.resolve(result);
+    @Override
+    protected void handleRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.handleRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == 9001) {
+            PluginCall savedCall = getSavedCall();
+            if (savedCall != null) {
+                boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                JSObject result = new JSObject();
+                result.put("granted", granted);
+                savedCall.resolve(result);
+            }
+        }
     }
 
     @PluginMethod
