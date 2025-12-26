@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.Telephony;
+import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -19,6 +20,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SMSReaderPlugin extends Plugin {
+
+    private static final String TAG = "SMSReaderPlugin";
+
+    @Override
+    public String getId() {
+        return "SMSReader";
+    }
+
+    @Override
+    public void load() {
+        super.load();
+        Log.d(TAG, "Plugin loaded with ID: " + getId());
+    }
 
     @PluginMethod
     public void checkPermission(PluginCall call) {
