@@ -1,5 +1,20 @@
 import * as XLSX from 'xlsx';
 import { Expense } from '../types';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+
+/**
+ * Converte un ArrayBuffer in base64
+ */
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
 
 /**
  * Converte una stringa di testo in un'immagine base64 (PNG).
@@ -140,13 +155,15 @@ export const pickImage = (source: 'camera' | 'gallery'): Promise<File> => {
 
 /**
  * Esporta le spese in formato Excel o JSON
+ * MOBILE: Usa Capacitor Filesystem + Share
+ * WEB: Usa Blob download tradizionale
  * @returns Promise con { success: boolean, message: string }
  */
 export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'json' = 'excel'): Promise<{ success: boolean; message: string }> => {
     const dateStr = new Date().toISOString().slice(0, 10);
+    const isNative = Capacitor.isNativePlatform();
 
     if (format === 'excel') {
-        // 1. Esporta in Excel usando Blob (mobile-friendly)
         try {
             const rows = expenses.map(e => ({
                 Data: e.date,
@@ -163,42 +180,92 @@ export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'jso
             const worksheet = XLSX.utils.json_to_sheet(rows);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Spese");
-            
-            // Mobile-compatible download using Blob
             const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Spese_Export_${dateStr}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            return { success: true, message: `File Excel scaricato: Spese_Export_${dateStr}.xlsx` };
+            const fileName = `Spese_Export_${dateStr}.xlsx`;
+
+            if (isNative) {
+                // MOBILE: Salva in cache + condividi
+                const base64Data = arrayBufferToBase64(excelBuffer);
+                
+                const result = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64Data,
+                    directory: Directory.Cache
+                });
+
+                await Share.share({
+                    title: 'Esporta Spese Excel',
+                    text: `File Excel delle spese del ${dateStr}`,
+                    url: result.uri,
+                    dialogTitle: 'Salva o Condividi Excel'
+                });
+
+                return { success: true, message: `Excel pronto per il salvataggio` };
+            } else {
+                // WEB: Blob download
+                const blob = new Blob([excelBuffer], { 
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                return { success: true, message: `File Excel scaricato: ${fileName}` };
+            }
         } catch (e) {
             console.error("Export Excel failed", e);
-            return { success: false, message: 'Errore durante l\'export Excel. Verifica la libreria xlsx.' };
+            return { 
+                success: false, 
+                message: `Errore export Excel: ${e instanceof Error ? e.message : 'Errore sconosciuto'}` 
+            };
         }
     } else if (format === 'json') {
-        // 2. Esporta in JSON
         try {
             const jsonStr = JSON.stringify(expenses, null, 2);
-            const blob = new Blob([jsonStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Spese_Export_${dateStr}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            return { success: true, message: `File JSON scaricato: Spese_Export_${dateStr}.json` };
+            const fileName = `Spese_Export_${dateStr}.json`;
+
+            if (isNative) {
+                // MOBILE: Salva + condividi
+                const result = await Filesystem.writeFile({
+                    path: fileName,
+                    data: jsonStr,
+                    directory: Directory.Cache,
+                    encoding: 'utf8' as any
+                });
+
+                await Share.share({
+                    title: 'Esporta Spese JSON',
+                    text: `File JSON delle spese del ${dateStr}`,
+                    url: result.uri,
+                    dialogTitle: 'Salva o Condividi JSON'
+                });
+
+                return { success: true, message: `JSON pronto per il salvataggio` };
+            } else {
+                // WEB: Blob download
+                const blob = new Blob([jsonStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                return { success: true, message: `File JSON scaricato: ${fileName}` };
+            }
         } catch (e) {
             console.error("Export JSON failed", e);
-            return { success: false, message: 'Errore durante l\'export JSON.' };
+            return { 
+                success: false, 
+                message: `Errore export JSON: ${e instanceof Error ? e.message : 'Errore sconosciuto'}` 
+            };
         }
     }
     
