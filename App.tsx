@@ -22,6 +22,7 @@ import AccountsScreen from './screens/AccountsScreen';
 import ImageSourceCard from './components/ImageSourceCard';
 import ShareQrModal from './components/ShareQrModal';
 import InstallPwaModal from './components/InstallPwaModal';
+import UpdateAvailableModal from './components/UpdateAvailableModal';
 import { CameraIcon } from './components/icons/CameraIcon';
 import { ComputerDesktopIcon } from './components/icons/ComputerDesktopIcon';
 import { SpinnerIcon } from './components/icons/SpinnerIcon';
@@ -39,6 +40,7 @@ import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { usePrivacyGate } from './hooks/usePrivacyGate';
 import { useBackNavigation } from './hooks/useBackNavigation';
 import { useNotificationListener } from './src/hooks/useNotificationListener';
+import { useUpdateChecker } from './hooks/useUpdateChecker';
 import { PendingTransaction } from './src/services/notification-listener-service';
 import { Capacitor } from '@capacitor/core';
 
@@ -82,6 +84,27 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     confirmTransaction,
     ignoreTransaction,
   } = useNotificationListener();
+
+  // --- Auto-Update System ---
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const { updateInfo, isChecking: isCheckingUpdate } = useUpdateChecker();
+
+  // Show update modal when update is available
+  useEffect(() => {
+    if (updateInfo.available && !isCheckingUpdate) {
+      // Check if user skipped this update recently
+      const skippedUntil = localStorage.getItem('update_skipped_until');
+      if (skippedUntil) {
+        const skipTime = parseInt(skippedUntil, 10);
+        if (Date.now() < skipTime) {
+          // Still in skip period
+          return;
+        }
+      }
+      // Show modal
+      setIsUpdateModalOpen(true);
+    }
+  }, [updateInfo, isCheckingUpdate]);
 
   // --- Custom Hooks Integration ---
   
@@ -543,6 +566,14 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       />
 
       <MultipleExpensesModal isOpen={nav.isMultipleExpensesModalOpen} onClose={nav.closeModalWithHistory} expenses={multipleExpensesData} accounts={safeAccounts} onConfirm={(d) => { d.forEach(handleAddExpense); nav.forceNavigateHome(); }} />
+
+      {/* Update Available Modal */}
+      <UpdateAvailableModal
+        isOpen={isUpdateModalOpen}
+        updateInfo={updateInfo}
+        onClose={() => setIsUpdateModalOpen(false)}
+        onSkip={() => setIsUpdateModalOpen(false)}
+      />
 
       {/* Notification Permission Modal */}
       <NotificationPermissionModal
