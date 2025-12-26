@@ -62,12 +62,50 @@ jobs:
           fi
           echo "✅ Android structure verified"
 
-      # ✅ Capacitor sync automaticamente include il plugin locale!
+      # ✅ CRITICAL: Copy AndroidManifest.xml BEFORE cap sync!
+      - name: Copy AndroidManifest.xml with permissions (BEFORE sync)
+        run: |
+          MANIFEST_DIR="android/app/src/main"
+          mkdir -p "$MANIFEST_DIR"
+          
+          echo "📝 Copying AndroidManifest.xml template BEFORE sync..."
+          cp android-config/AndroidManifest.xml "$MANIFEST_DIR/AndroidManifest.xml"
+          echo "✅ AndroidManifest.xml copied"
+          
+          # Verify it was copied
+          if grep -q "BankNotificationListenerService" "$MANIFEST_DIR/AndroidManifest.xml"; then
+            echo "✅ Service declaration found in AndroidManifest.xml"
+          else
+            echo "❌ ERROR: Service declaration NOT found!"
+            exit 1
+          fi
+
+      # ✅ NOW sync Capacitor (won't overwrite our AndroidManifest)
       - name: Sync Capacitor (includes native-plugins)
         run: |
           echo "🔄 Syncing Capacitor with native plugins..."
           npx cap sync android
           echo "✅ Capacitor sync completed"
+
+      # ✅ Verify AndroidManifest wasn't overwritten
+      - name: Verify AndroidManifest after sync
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          echo "🔍 Verifying AndroidManifest.xml after sync..."
+          
+          if grep -q "BankNotificationListenerService" "$MANIFEST"; then
+            echo "✅ Service declaration still present after sync"
+          else
+            echo "❌ ERROR: AndroidManifest was overwritten by cap sync!"
+            echo "Copying it again..."
+            cp android-config/AndroidManifest.xml "$MANIFEST"
+          fi
+          
+          if grep -q "BIND_NOTIFICATION_LISTENER_SERVICE" "$MANIFEST"; then
+            echo "✅ Notification listener permission found"
+          else
+            echo "⚠️ Warning: BIND_NOTIFICATION_LISTENER_SERVICE not found"
+          fi
 
       - name: Generate native assets
         run: |
@@ -76,23 +114,13 @@ jobs:
           npx cap copy android
           echo "✅ Assets copied"
 
-      # ✅ Ora copiamo SOLO AndroidManifest.xml con i permessi e service
-      - name: Copy AndroidManifest.xml with permissions
-        run: |
-          MANIFEST_DIR="android/app/src/main"
-          mkdir -p "$MANIFEST_DIR"
-          
-          echo "📝 Copying AndroidManifest.xml template..."
-          cp android-config/AndroidManifest.xml "$MANIFEST_DIR/AndroidManifest.xml"
-          echo "✅ AndroidManifest.xml copied"
-
       # 🔍 Verify plugin was installed
       - name: Verify native plugins installation
         run: |
           echo "🔍 Verifying native-plugins installation..."
           if [ -d "node_modules/native-plugins" ]; then
             echo "✅ native-plugins found in node_modules"
-            ls -la node_modules/native-plugins/
+            ls -la node_modules/native-plugins/android/src/main/java/com/gestore/spese/ || true
           else
             echo "❌ ERROR: native-plugins not found!"
             exit 1
@@ -105,7 +133,15 @@ jobs:
           else
             echo "⚠️ Warning: Plugin may not be properly detected"
             echo "Capacitor settings:"
-            cat android/capacitor.settings.gradle || echo "capacitor.settings.gradle not found"
+            cat android/capacitor.settings.gradle 2>/dev/null || echo "capacitor.settings.gradle not found"
+          fi
+          
+          # Check if plugin classes exist in android folder
+          if find android -name "NotificationListener.java" 2>/dev/null | grep -q .; then
+            echo "✅ NotificationListener.java found in android folder"
+            find android -name "NotificationListener.java"
+          else
+            echo "⚠️ Warning: NotificationListener.java not found in android folder"
           fi
 
       # ✅ Build
@@ -144,10 +180,11 @@ jobs:
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
             ✅ **Questo build include:**
-            - 📦 Plugin locale native-plugins
+            - 📦 Plugin locale native-plugins (CORRETTO!)
             - ✅ NotificationListener con @CapacitorPlugin
             - ✅ SMSReader con @CapacitorPlugin
             - ✅ BankNotificationListenerService
+            - ✅ AndroidManifest copiato PRIMA di cap sync
             - ✅ Permessi Android corretti
             - ✅ Package: com.gestore.spese
           files: gestore-spese.apk
