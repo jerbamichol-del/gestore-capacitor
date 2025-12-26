@@ -56,39 +56,25 @@ jobs:
           npx cap sync android
           echo "✅ Capacitor sync completed"
 
-      # ✅ FIXED: Copy correct plugin files from android/app directory
-      - name: Copy plugin Java files from android/app
+      # ✅ FINAL FIX: Copy plugin files from android-config/plugins/
+      - name: Copy plugin Java files from android-config/plugins/
         run: |
-          echo "📦 Copying plugin Java files from android/app..."
+          echo "📦 Copying plugin Java files from android-config/plugins/..."
           
-          SOURCE_DIR="android/app/src/main/java/com/gestore/spese"
+          SOURCE_DIR="android-config/plugins"
           DEST_DIR="android/app/src/main/java/com/gestore/spese"
           
-          # Note: After 'npx cap add android', we need to restore our custom plugins
-          # They are already in the repo at android/app/src/main/java/com/gestore/spese/
-          # But 'cap add android' recreates the directory, so we copy them back
+          # Ensure destination directory exists
+          mkdir -p "$DEST_DIR"
           
-          # Copy plugin files (they should already be there from git checkout)
-          echo "Verifying plugin files exist..."
+          # Copy plugin files
+          cp "$SOURCE_DIR/NotificationListenerPlugin.java" "$DEST_DIR/"
+          cp "$SOURCE_DIR/SMSReaderPlugin.java" "$DEST_DIR/"
+          cp "$SOURCE_DIR/BankNotificationListenerService.java" "$DEST_DIR/"
           
-          if [ ! -f "$SOURCE_DIR/NotificationListenerPlugin.java" ]; then
-            echo "❌ ERROR: NotificationListenerPlugin.java not found in $SOURCE_DIR"
-            exit 1
-          fi
-          
-          if [ ! -f "$SOURCE_DIR/SMSReaderPlugin.java" ]; then
-            echo "❌ ERROR: SMSReaderPlugin.java not found in $SOURCE_DIR"
-            exit 1
-          fi
-          
-          if [ ! -f "$SOURCE_DIR/BankNotificationListenerService.java" ]; then
-            echo "❌ ERROR: BankNotificationListenerService.java not found in $SOURCE_DIR"
-            exit 1
-          fi
-          
-          echo "✅ All plugin files found in repository"
-          echo "Files in $SOURCE_DIR:"
-          ls -la "$SOURCE_DIR"
+          echo "✅ Java files copied to $DEST_DIR"
+          echo "Files in destination:"
+          ls -la "$DEST_DIR"
 
       - name: Copy AndroidManifest.xml
         run: |
@@ -209,13 +195,13 @@ jobs:
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
             
-            ✅ **FIX: PLUGIN FILES FROM CORRECT LOCATION:**
-            - ✅ Files copied from android/app/ (not android-plugins/)
-            - ✅ NotificationListenerPlugin.java (with Plugin suffix)
-            - ✅ SMSReaderPlugin.java (with Plugin suffix)
+            ✅ **FINAL FIX - FILES FROM android-config/plugins/:**
+            - ✅ Plugin files copied from android-config/plugins/ (persistent location)
+            - ✅ NotificationListenerPlugin.java with full logging
+            - ✅ SMSReaderPlugin.java with permissions
             - ✅ BankNotificationListenerService.java included
-            - ✅ MainActivity with correct imports
-            - ✅ All @CapacitorPlugin annotations verified
+            - ✅ MainActivity with correct imports and registration
+            - ✅ All files verified before build
           files: gestore-spese.apk
           draft: false
           prerelease: false
