@@ -139,7 +139,11 @@ export const pickImage = (source: 'camera' | 'gallery'): Promise<File> => {
     });
 };
 
-export const exportExpenses = (expenses: Expense[], format: 'excel' | 'json' = 'excel') => {
+/**
+ * Esporta le spese in formato Excel o JSON
+ * @returns Promise con { success: boolean, message: string }
+ */
+export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'json' = 'excel'): Promise<{ success: boolean; message: string }> => {
     const dateStr = new Date().toISOString().slice(0, 10);
 
     if (format === 'excel') {
@@ -161,8 +165,11 @@ export const exportExpenses = (expenses: Expense[], format: 'excel' | 'json' = '
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Spese");
             XLSX.writeFile(workbook, `Spese_Export_${dateStr}.xlsx`);
+            
+            return { success: true, message: `File Excel scaricato: Spese_Export_${dateStr}.xlsx` };
         } catch (e) {
             console.error("Export Excel failed", e);
+            return { success: false, message: 'Errore durante l\'export Excel. Verifica la libreria xlsx.' };
         }
     } else if (format === 'json') {
         // 2. Esporta in JSON
@@ -177,8 +184,13 @@ export const exportExpenses = (expenses: Expense[], format: 'excel' | 'json' = '
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            
+            return { success: true, message: `File JSON scaricato: Spese_Export_${dateStr}.json` };
         } catch (e) {
             console.error("Export JSON failed", e);
+            return { success: false, message: 'Errore durante l\'export JSON.' };
         }
     }
+    
+    return { success: false, message: 'Formato non supportato.' };
 };
