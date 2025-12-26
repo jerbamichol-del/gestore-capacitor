@@ -78,6 +78,20 @@ jobs:
             exit 1
           fi
 
+      # ✅ AUTO VERSION BUMP
+      - name: Bump Android versionCode
+        run: |
+          echo "🔢 Auto-incrementing versionCode..."
+          chmod +x scripts/bump-version.sh
+          ./scripts/bump-version.sh
+          
+          # Extract new version for release notes
+          VERSION_CODE=$(grep -oP 'versionCode \K\d+' android/app/build.gradle)
+          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' android/app/build.gradle)
+          
+          echo "NEW_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "NEW_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+
       # ✅ FINAL FIX: Copy plugin files from android-config/plugins/
       - name: Copy plugin Java files from android-config/plugins/
         run: |
@@ -206,24 +220,33 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: build-${{ steps.vars.outputs.short_sha }}
-          name: "Build ${{ steps.vars.outputs.short_sha }}"
+          tag_name: v${{ env.NEW_VERSION_NAME }}
+          name: "v${{ env.NEW_VERSION_NAME }} (Build ${{ env.NEW_VERSION_CODE }})"
           body: |
-            🤖 Build automatica da commit [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            🚀 **Versione ${{ env.NEW_VERSION_NAME }}** - Build #${{ env.NEW_VERSION_CODE }}
             
-            📱 **Scarica l'APK:**
-            - Clicca su `gestore-spese.apk` qui sotto
+            📱 **Scarica l'APK qui sotto e installa sul tuo dispositivo Android**
             
-            🕐 Build del: ${{ github.event.head_commit.timestamp }}
+            ---
             
-            ✅ **FEATURES:**
-            - ✅ Icona app generata da resources/icon.png
-            - ✅ Plugin files copied from android-config/plugins/
-            - ✅ NotificationListenerPlugin.java with full logging
-            - ✅ SMSReaderPlugin.java with permissions
-            - ✅ BankNotificationListenerService.java included
-            - ✅ MainActivity with correct imports and registration
-            - ✅ All files verified before build
+            ### 🎉 Novità:
+            - Auto-update system attivo
+            - Icona app personalizzata
+            - Sistema di notifiche transazioni
+            - Plugin SMS e Notification Listener
+            
+            ---
+            
+            🔗 Commit: [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            🕐 Build: ${{ github.event.head_commit.timestamp }}
+            
+            ### ✅ Componenti Verificati:
+            - ✅ versionCode auto-incrementato a ${{ env.NEW_VERSION_CODE }}
+            - ✅ Icona generata da resources/icon.png
+            - ✅ Plugin NotificationListener attivo
+            - ✅ Plugin SMSReader attivo
+            - ✅ BankNotificationListenerService configurato
+            - ✅ MainActivity con registrazioni corrette
           files: gestore-spese.apk
           draft: false
           prerelease: false
