@@ -85,6 +85,7 @@ interface DashboardProps {
   onSync: () => Promise<void> | void;
   isBalanceVisible: boolean;
   onToggleBalanceVisibility: () => void;
+  showToast: (msg: { message: string; type: 'success' | 'info' | 'error' }) => void;
 }
 
 const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null => {
@@ -121,7 +122,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     onImportFile, 
     onSync,
     isBalanceVisible,
-    onToggleBalanceVisibility
+    onToggleBalanceVisibility,
+    showToast
 }) => {
   const tapBridgeHandlers = useTapBridge();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -223,19 +225,16 @@ const Dashboard: React.FC<DashboardProps> = ({
           // Close modal first
           window.history.go(-2);
           
-          // Show feedback after a small delay to ensure modal is closed
+          // Show toast feedback after a small delay to ensure modal is closed
           setTimeout(() => {
-              if (result.success) {
-                  // Success - show native alert for now (will be replaced with toast in App.tsx)
-                  alert(`✅ ${result.message}`);
-              } else {
-                  // Error - show alert
-                  alert(`❌ ${result.message}`);
-              }
+              showToast({
+                  message: result.message,
+                  type: result.success ? 'success' : 'error'
+              });
           }, 300);
       } catch (error) {
           console.error('Export error:', error);
-          alert('❌ Errore imprevisto durante l\'export.');
+          showToast({ message: 'Errore imprevisto durante l\'export.', type: 'error' });
           window.history.go(-2);
       } finally {
           setIsExporting(false);
