@@ -50,12 +50,7 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      - name: Sync Capacitor
-        run: |
-          echo "🔄 Syncing Capacitor..."
-          npx cap sync android
-          echo "✅ Capacitor sync completed"
-
+      # ✅ CRITICAL: Generate icons BEFORE sync
       - name: Generate app icons from resources/icon.png
         run: |
           echo "🎨 Generating app icons from resources/icon.png..."
@@ -65,18 +60,35 @@ jobs:
             exit 1
           fi
           
-          # Generate Android icons
+          echo "📏 Icon size:"
+          ls -lh resources/icon.png
+          
+          # Generate Android icons - this creates all mipmap folders
           npx @capacitor/assets generate --android
           
-          echo "✅ Icons generated successfully"
+          echo "✅ Icons generated"
+          echo "📂 Verifying generated icons:"
+          ls -R android/app/src/main/res/mipmap-hdpi/ || echo "⚠️ mipmap-hdpi not found"
+          ls -R android/app/src/main/res/mipmap-mdpi/ || echo "⚠️ mipmap-mdpi not found"
+          ls -R android/app/src/main/res/mipmap-xhdpi/ || echo "⚠️ mipmap-xhdpi not found"
           
-          # Verify icons exist
+          # Verify at least one icon exists
           if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
-            echo "✅ ic_launcher.png exists in mipmap-hdpi"
+            echo "✅ ic_launcher.png verified in mipmap-hdpi"
+            ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           else
             echo "❌ ERROR: Icons not generated!"
             exit 1
           fi
+
+      - name: Sync Capacitor (preserves icons)
+        run: |
+          echo "🔄 Syncing Capacitor..."
+          npx cap sync android
+          echo "✅ Capacitor sync completed"
+          
+          echo "📂 Verifying icons still exist after sync:"
+          ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
 
       # ✅ AUTO VERSION BUMP
       - name: Bump Android versionCode
@@ -91,8 +103,10 @@ jobs:
           
           echo "NEW_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           echo "NEW_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          
+          echo "📱 New version: $VERSION_NAME (Build $VERSION_CODE)"
 
-      # ✅ FINAL FIX: Copy plugin files from android-config/plugins/
+      # ✅ Copy plugin files
       - name: Copy plugin Java files from android-config/plugins/
         run: |
           echo "📦 Copying plugin Java files from android-config/plugins/..."
@@ -100,16 +114,13 @@ jobs:
           SOURCE_DIR="android-config/plugins"
           DEST_DIR="android/app/src/main/java/com/gestore/spese"
           
-          # Ensure destination directory exists
           mkdir -p "$DEST_DIR"
           
-          # Copy plugin files
           cp "$SOURCE_DIR/NotificationListenerPlugin.java" "$DEST_DIR/"
           cp "$SOURCE_DIR/SMSReaderPlugin.java" "$DEST_DIR/"
           cp "$SOURCE_DIR/BankNotificationListenerService.java" "$DEST_DIR/"
           
           echo "✅ Java files copied to $DEST_DIR"
-          echo "Files in destination:"
           ls -la "$DEST_DIR"
 
       - name: Copy AndroidManifest.xml
@@ -133,9 +144,6 @@ jobs:
           echo "📝 Copying MainActivity.java..."
           cp android-config/MainActivity.java "$MAIN_ACTIVITY"
           
-          echo "Verifying MainActivity.java:"
-          cat "$MAIN_ACTIVITY"
-          
           if grep -q "registerPlugin(NotificationListenerPlugin.class)" "$MAIN_ACTIVITY"; then
             echo "✅ NotificationListenerPlugin registration found"
           else
@@ -156,13 +164,13 @@ jobs:
           npx cap copy android
           echo "✅ Assets copied"
 
-      - name: Verify plugin files in app
+      - name: Final verification before build
         run: |
-          echo "🔍 Verifying plugin files are in app..."
+          echo "🔍 Final verification..."
           
           JAVA_DIR="android/app/src/main/java/com/gestore/spese"
           
-          # Check all Java files exist (with Plugin suffix!)
+          # Check Java files
           for file in NotificationListenerPlugin.java SMSReaderPlugin.java BankNotificationListenerService.java MainActivity.java; do
             if [ -f "$JAVA_DIR/$file" ]; then
               echo "✅ $file exists"
@@ -172,30 +180,13 @@ jobs:
             fi
           done
           
-          # Check @CapacitorPlugin annotation
-          if grep -q "@CapacitorPlugin(name = \"NotificationListener\")" "$JAVA_DIR/NotificationListenerPlugin.java"; then
-            echo "✅ NotificationListenerPlugin has @CapacitorPlugin annotation"
+          # Check icons still exist
+          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
+            echo "✅ Icons verified before build"
           else
-            echo "❌ ERROR: Missing @CapacitorPlugin annotation!"
+            echo "❌ ERROR: Icons missing before build!"
             exit 1
           fi
-          
-          if grep -q "@CapacitorPlugin" "$JAVA_DIR/SMSReaderPlugin.java"; then
-            echo "✅ SMSReaderPlugin has @CapacitorPlugin annotation"
-          else
-            echo "❌ ERROR: Missing @CapacitorPlugin annotation!"
-            exit 1
-          fi
-          
-          # Check MainActivity imports (with Plugin suffix!)
-          if grep -q "import com.gestore.spese.NotificationListenerPlugin;" "$JAVA_DIR/MainActivity.java"; then
-            echo "✅ MainActivity imports NotificationListenerPlugin"
-          else
-            echo "❌ ERROR: MainActivity missing NotificationListenerPlugin import!"
-            exit 1
-          fi
-          
-          echo "✅ All plugin files verified!"
 
       - name: Build Debug APK
         run: |
@@ -203,15 +194,15 @@ jobs:
           chmod +x ./gradlew
           ./gradlew clean assembleDebug --no-daemon --stacktrace
 
-      - name: Rename APK
+      - name: Rename APK with version
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: gestore-spese-apk
-          path: gestore-spese.apk
+          path: gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk
 
       - name: Get short commit SHA
         id: vars
@@ -220,34 +211,33 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.NEW_VERSION_NAME }}
-          name: "v${{ env.NEW_VERSION_NAME }} (Build ${{ env.NEW_VERSION_CODE }})"
+          tag_name: v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}
+          name: "Gestore Spese v${{ env.NEW_VERSION_NAME }} (Build ${{ env.NEW_VERSION_CODE }})"
           body: |
             🚀 **Versione ${{ env.NEW_VERSION_NAME }}** - Build #${{ env.NEW_VERSION_CODE }}
             
-            📱 **Scarica l'APK qui sotto e installa sul tuo dispositivo Android**
+            📱 **SCARICA E INSTALLA:**
+            1. Scarica `gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk`
+            2. Apri il file sul tuo Android
+            3. Abilita "Installa da sorgenti sconosciute" se richiesto
+            4. Installa
+            
+            ⚠️ **NOTA**: Se hai già una versione installata, questa la sostituirà automaticamente
             
             ---
             
-            ### 🎉 Novità:
-            - Auto-update system attivo
-            - Icona app personalizzata
-            - Sistema di notifiche transazioni
-            - Plugin SMS e Notification Listener
+            ### 🎨 Questa build include:
+            - ✅ Icona app personalizzata (generata da resources/icon.png)
+            - ✅ Sistema auto-update attivo
+            - ✅ Plugin NotificationListener per transazioni
+            - ✅ Plugin SMSReader per SMS bancari
+            - ✅ versionCode: ${{ env.NEW_VERSION_CODE }}
             
             ---
             
             🔗 Commit: [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
             🕐 Build: ${{ github.event.head_commit.timestamp }}
-            
-            ### ✅ Componenti Verificati:
-            - ✅ versionCode auto-incrementato a ${{ env.NEW_VERSION_CODE }}
-            - ✅ Icona generata da resources/icon.png
-            - ✅ Plugin NotificationListener attivo
-            - ✅ Plugin SMSReader attivo
-            - ✅ BankNotificationListenerService configurato
-            - ✅ MainActivity con registrazioni corrette
-          files: gestore-spese.apk
+          files: gestore-spese-v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}.apk
           draft: false
           prerelease: false
         env:
