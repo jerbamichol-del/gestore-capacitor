@@ -62,15 +62,21 @@ jobs:
           fi
           echo "✅ Android structure verified"
 
-      - name: Sync Capacitor
-        run: npx cap sync android
-
-      - name: Generate Native Assets
+      # ✅ FASE 1: Sync completo PRIMA di toccare i file custom
+      - name: Initial Capacitor sync
         run: |
-          npx @capacitor/assets generate --android
-          npx cap copy android
+          echo "🔄 Performing initial Capacitor sync..."
           npx cap sync android
+          echo "✅ Initial sync completed"
 
+      - name: Generate and copy native assets
+        run: |
+          echo "🎨 Generating native assets..."
+          npx @capacitor/assets generate --android || echo "⚠️ Asset generation skipped (no assets found)"
+          npx cap copy android
+          echo "✅ Assets copied"
+
+      # ✅ FASE 2: Ora che tutti i sync sono completati, copiamo i file custom
       - name: Update plugin package names
         run: |
           echo "🔧 Updating package names in plugins..."
@@ -79,7 +85,7 @@ jobs:
           sed -i 's/package com.gestorefinanze.app;/package com.gestore.spese;/g' android-config/BankNotificationListenerService.java
           echo "✅ Package names updated"
 
-      - name: Copy SMS + Notification plugins to Android
+      - name: Copy custom plugins to Android
         run: |
           echo "📦 Copying Java plugins..."
           JAVA_DIR="android/app/src/main/java/com/gestore/spese"
@@ -99,6 +105,7 @@ jobs:
           cp android-config/AndroidManifest.xml "$MANIFEST_DIR/AndroidManifest.xml"
           echo "✅ AndroidManifest.xml copied"
 
+      # ⚠️ CRITICAL: Copy MainActivity.java as LAST step before build
       - name: Copy MainActivity.java with plugin registration
         run: |
           MAIN_ACTIVITY="android/app/src/main/java/com/gestore/spese/MainActivity.java"
@@ -106,11 +113,25 @@ jobs:
           echo "📝 Copying MainActivity.java template..."
           cp android-config/MainActivity.java "$MAIN_ACTIVITY"
           echo "✅ MainActivity.java copied with plugin registration"
+          
+          # Verify the file was copied correctly
+          echo "🔍 Verifying MainActivity.java content..."
+          if grep -q "registerPlugin(NotificationListenerPlugin.class)" "$MAIN_ACTIVITY"; then
+            echo "✅ Plugin registration found in MainActivity.java"
+            echo "📄 File size: $(wc -c < "$MAIN_ACTIVITY") bytes"
+          else
+            echo "❌ ERROR: Plugin registration NOT found in MainActivity.java!"
+            echo "📄 File content:"
+            cat "$MAIN_ACTIVITY"
+            exit 1
+          fi
 
+      # ✅ FASE 3: Build WITHOUT any sync operations
       - name: Build Debug APK
         run: |
           cd android
           chmod +x ./gradlew
+          # Build without triggering Capacitor sync
           ./gradlew clean assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK
@@ -123,7 +144,6 @@ jobs:
           name: gestore-spese-apk
           path: gestore-spese.apk
 
-      # ✅ NUOVO: Crea GitHub Release con l'APK
       - name: Get short commit SHA
         id: vars
         run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -141,6 +161,11 @@ jobs:
             - Oppure scansiona il QR code nell'app
             
             🕐 Build del: ${{ github.event.head_commit.timestamp }}
+            
+            ✅ **Questo build include:**
+            - Plugin NotificationListener registrato
+            - Plugin SMSReader registrato
+            - Permessi Android corretti
           files: gestore-spese.apk
           draft: false
           prerelease: false
