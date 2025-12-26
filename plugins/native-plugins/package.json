@@ -1,0 +1,43 @@
+{
+  "name": "native-plugins",
+  "version": "1.0.0",
+  "description": "Custom native plugins for Gestore Spese",
+  "main": "dist/esm/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "unpkg": "dist/plugin.js",
+  "files": [
+    "android/",
+    "dist/",
+    "src/"
+  ],
+  "author": "Gestore Spese",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jerbamichol-del/gestore-capacitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jerbamichol-del/gestore-capacitor/issues"
+  },
+  "keywords": [
+    "capacitor",
+    "plugin",
+    "native"
+  ],
+  "scripts": {
+    "build": "echo 'Build not required for local plugin'"
+  },
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}
