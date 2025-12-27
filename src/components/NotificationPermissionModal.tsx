@@ -6,12 +6,14 @@ interface NotificationPermissionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEnableClick: () => Promise<void> | void;
+  isEnabled: boolean; // NEW: to show success state
 }
 
 export function NotificationPermissionModal({
   isOpen,
   onClose,
   onEnableClick,
+  isEnabled,
 }: NotificationPermissionModalProps) {
   if (!isOpen) return null;
 
@@ -19,8 +21,80 @@ export function NotificationPermissionModal({
     await onEnableClick();
   };
 
+  // ✅✅✅ SUCCESS STATE - Show when permission is granted
+  if (isEnabled) {
+    return (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8">
+          {/* Success Header */}
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-bold text-white leading-tight">
+                  Notifiche Abilitate!
+                </h2>
+                <p className="text-green-100 text-xs">Rilevamento attivo</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Success Content */}
+          <div className="px-4 py-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-700 text-sm leading-relaxed mb-2">
+                  <strong>Perfetto!</strong> Il rilevamento automatico delle transazioni è ora attivo.
+                </p>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Quando riceverai una notifica bancaria, ti verrà chiesto se vuoi aggiungere la transazione.
+                </p>
+              </div>
+            </div>
+
+            {/* What happens next */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-blue-900 mb-1">Cosa succede ora:</p>
+                  <ul className="text-xs text-blue-800 space-y-0.5 list-disc list-inside">
+                    <li>L'app monitora le notifiche bancarie</li>
+                    <li>Rileva automaticamente importo e descrizione</li>
+                    <li>Ti chiede conferma prima di salvare</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Close button */}
+          <div className="px-4 pb-4">
+            <button
+              onClick={onClose}
+              className="w-full px-3 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm font-semibold rounded-lg shadow-lg transition-all"
+            >
+              Chiudi
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ INITIAL STATE - Show setup instructions
   return (
-    // ✅ FIX: z-[99999] ensures modal is ABOVE everything (filters are z-50)
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[85vh] flex flex-col">
         {/* Header - Fixed */}
@@ -96,8 +170,8 @@ export function NotificationPermissionModal({
                   <li>Cerca <strong>"Accesso alle notifiche"</strong></li>
                   <li>Trova <strong>"Gestore Spese"</strong></li>
                   <li>Attiva l'interruttore</li>
-                  <li>Torna all'app (attendi 3 secondi)</li>
-                  <li>✅ La campanella scomparirà automaticamente!</li>
+                  <li>Torna all'app con il pulsante Indietro</li>
+                  <li>✅ Attendi 3 secondi e vedrai il messaggio di successo!</li>
                 </ol>
               </div>
             </div>
