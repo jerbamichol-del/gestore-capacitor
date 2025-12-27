@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,6 +53,50 @@ jobs:
           echo "📱 Creating Android platform..."
           npx cap add android
           echo "✅ Android platform created"
+
+      # ✅✅✅ CRITICAL FIX: Bump versionCode BEFORE building
+      - name: Bump Android versionCode and Commit
+        run: |
+          echo "🔢 Auto-incrementing versionCode..."
+          
+          GRADLE_FILE="android/app/build.gradle"
+          
+          # Extract current versionCode
+          CURRENT_VERSION=$(grep -oP 'versionCode \K\d+' "$GRADLE_FILE")
+          echo "📊 Current versionCode: $CURRENT_VERSION"
+          
+          # Increment
+          NEW_VERSION=$((CURRENT_VERSION + 1))
+          echo "⬆️  Bumping to versionCode: $NEW_VERSION"
+          
+          # Update file
+          sed -i "s/versionCode $CURRENT_VERSION/versionCode $NEW_VERSION/g" "$GRADLE_FILE"
+          
+          # Verify
+          UPDATED_VERSION=$(grep -oP 'versionCode \K\d+' "$GRADLE_FILE")
+          if [ "$UPDATED_VERSION" = "$NEW_VERSION" ]; then
+            echo "✅ versionCode successfully bumped to $NEW_VERSION"
+          else
+            echo "❌ ERROR: Failed to update versionCode"
+            exit 1
+          fi
+          
+          # Extract versionName
+          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' "$GRADLE_FILE")
+          echo "📱 versionName: $VERSION_NAME"
+          
+          # Set env vars for later steps
+          echo "NEW_VERSION_CODE=$NEW_VERSION" >> $GITHUB_ENV
+          echo "NEW_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          
+          # ✅✅✅ COMMIT THE CHANGE
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$GRADLE_FILE"
+          git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]"
+          git push
+          
+          echo "✅ versionCode committed and pushed"
 
       # ✅ CRITICAL: Resize splash to meet cordova-res requirements
       - name: Prepare resources for cordova-res
@@ -168,20 +214,6 @@ jobs:
             exit 1
           fi
 
-      - name: Bump Android versionCode
-        run: |
-          echo "🔢 Auto-incrementing versionCode..."
-          chmod +x scripts/bump-version.sh
-          ./scripts/bump-version.sh
-          
-          VERSION_CODE=$(grep -oP 'versionCode \K\d+' android/app/build.gradle)
-          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' android/app/build.gradle)
-          
-          echo "NEW_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
-          echo "NEW_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          
-          echo "📱 Version: $VERSION_NAME (Build $VERSION_CODE)"
-
       - name: Copy plugin files
         run: |
           echo "📦 Copying plugin files..."
@@ -293,38 +325,11 @@ jobs:
             
             ---
             
-            ## ✅ FIX IN QUESTA BUILD:
+            ## ✅ NOVITÀ
             
-            1. **🚫 Schermata Bianca ELIMINATA**: Auto-update con delay SICURO (3s)
-            2. **🔔 Campanella Scompare Automaticamente**: Dopo 3s dal rientro
-            3. **🔑 Keystore Persistente**: ZERO conflitti durante aggiornamenti
-            4. **🔄 Sistema Auto-Update**: Parsing corretto dei tag v1.0-build2
-            5. **🎨 Icona + Splash**: Dimensioni corrette (1920x1920)
-            
-            ---
-            
-            ### ⚠️ IMPORTANTE PER AGGIORNAMENTI
-            
-            **Se hai installato una build PRECEDENTE a questa:**
-            - ❌ Le vecchie build avevano keystore diversi
-            - ✅ DISINSTALLA la vecchia versione PRIMA
-            - ✅ Poi installa questa nuova build
-            
-            **Da QUESTA build in poi:**
-            - ✅ Tutti gli aggiornamenti funzioneranno senza disinstallare
-            - ✅ Dati preservati automaticamente
-            - ✅ Nessun conflitto di pacchetto
-            
-            ---
-            
-            ### 🧪 TEST SCHERMATA BIANCA (RISOLTO)
-            
-            1. Vai in Impostazioni Android > Notifiche > Accesso notifiche
-            2. Abilita "Gestore Spese"
-            3. Torna all'app
-            4. ✅ App si carica normalmente (nessuna schermata bianca!)
-            5. Attendi 3 secondi
-            6. ✅ Campanella rossa scompare automaticamente!
+            - 🔄 Sistema auto-update funzionante
+            - 🔔 Gestione notifiche migliorata
+            - 🐛 Bug fix vari
             
             ---
             
@@ -332,7 +337,7 @@ jobs:
             
             📋 versionCode: ${{ env.NEW_VERSION_CODE }}
             📱 versionName: ${{ env.NEW_VERSION_NAME }}
-            🔑 Keystore: Persistente (committato)
+            🔑 Keystore: Persistente
             📦 Type: Debug APK
           files: gestore-spese.apk
           draft: false
