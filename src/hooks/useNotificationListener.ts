@@ -10,7 +10,7 @@ export function useNotificationListener() {
   const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
   const [isEnabled, setIsEnabled] = useState(false);
   const isCheckingRef = useRef(false);
-  const lastCheckTimeRef = useRef(0);
+  const hasCheckedOnceRef = useRef(false);
 
   // Check if running on Android
   const isAndroid = Capacitor.getPlatform() === 'android';
@@ -20,16 +20,8 @@ export function useNotificationListener() {
     if (!isAndroid) return;
     if (isCheckingRef.current) {
       console.log('⏭️ Permission check already in progress, skipping');
-      return; // Prevent concurrent checks
-    }
-    
-    // ✅ CRITICAL: Prevent multiple rapid checks (debounce)
-    const now = Date.now();
-    if (now - lastCheckTimeRef.current < 2000) {
-      console.log('⏭️ Permission check too soon after last one, skipping');
       return;
     }
-    lastCheckTimeRef.current = now;
     
     isCheckingRef.current = true;
     console.log(`🔍 Checking permission status (attempt ${retryCount + 1})...`);
@@ -46,16 +38,15 @@ export function useNotificationListener() {
           setPendingTransactions(pending);
         } catch (transError) {
           console.error('❌ Error loading pending transactions:', transError);
-          // Don't crash, just set empty array
           setPendingTransactions([]);
         }
       }
     } catch (error) {
       console.error(`❌ Error checking notification permission (attempt ${retryCount + 1}):`, error);
       
-      // ✅ CRITICAL: Retry up to 3 times with LONGER delays
-      if (retryCount < 3) {
-        const nextDelay = (retryCount + 1) * 1000; // 1s, 2s, 3s
+      // ✅ Retry up to 2 times with delays
+      if (retryCount < 2) {
+        const nextDelay = (retryCount + 1) * 1000; // 1s, 2s
         console.log(`🔄 Retrying permission check in ${nextDelay}ms...`);
         setTimeout(() => {
           isCheckingRef.current = false;
@@ -64,8 +55,8 @@ export function useNotificationListener() {
         return;
       }
       
-      // After 3 retries, give up gracefully
-      console.warn('⚠️ Failed to check permission after 3 retries, setting safe defaults');
+      // After 2 retries, give up gracefully
+      console.warn('⚠️ Failed to check permission after retries, setting safe defaults');
       setIsEnabled(false);
       setPendingTransactions([]);
     } finally {
@@ -94,12 +85,10 @@ export function useNotificationListener() {
   const confirmTransaction = useCallback(async (id: string) => {
     try {
       await notificationListenerService.confirmTransaction(id);
-      // Refresh pending transactions
       const pending = await notificationListenerService.getPendingTransactions();
       setPendingTransactions(pending);
     } catch (error) {
       console.error('❌ Error confirming transaction:', error);
-      // Try to refresh anyway
       try {
         const pending = await notificationListenerService.getPendingTransactions();
         setPendingTransactions(pending);
@@ -113,12 +102,10 @@ export function useNotificationListener() {
   const ignoreTransaction = useCallback(async (id: string) => {
     try {
       await notificationListenerService.ignoreTransaction(id);
-      // Refresh pending transactions
       const pending = await notificationListenerService.getPendingTransactions();
       setPendingTransactions(pending);
     } catch (error) {
       console.error('❌ Error ignoring transaction:', error);
-      // Try to refresh anyway
       try {
         const pending = await notificationListenerService.getPendingTransactions();
         setPendingTransactions(pending);
@@ -128,11 +115,19 @@ export function useNotificationListener() {
     }
   }, []);
 
-  // Initial check on mount
+  // ✅✅✅ MANUAL check permission - called only by user action
+  const manualCheckPermission = useCallback(async () => {
+    console.log('🔄 Manual permission check triggered by user');
+    await checkPermissionStatus();
+  }, [checkPermissionStatus]);
+
+  // Initial check on mount ONLY ONCE
   useEffect(() => {
     if (!isAndroid) return;
+    if (hasCheckedOnceRef.current) return; // ✅ CRITICAL: Check only ONCE
 
-    console.log('🚀 useNotificationListener mounted');
+    console.log('🚀 useNotificationListener mounted - initial check');
+    hasCheckedOnceRef.current = true;
 
     // Check permission on mount with error handling
     (async () => {
@@ -143,64 +138,27 @@ export function useNotificationListener() {
       }
     })();
 
-    // ✅✅✅ CRITICAL FIX: Use ONLY 'resume' event (appStateChange is BUGGY on Android!)
-    // Based on: https://github.com/ionic-team/capacitor-plugins/issues/479
-    const setupListeners = async () => {
-      try {
-        // ⚠️ REMOVED: appStateChange (buggy on Android)
-        // Only listen to 'resume' which fires reliably when returning from Settings
-        
-        const resumeListener = await CapApp.addListener('resume', async () => {
-          console.log('🔄 ===== APP RESUMED (returning from background) =====');
-          
-          // ✅ CRITICAL: LONGER delay (2000ms = 2 seconds)
-          // Why? Android needs time to:
-          // 1. Update Settings.Secure database (300-500ms)
-          // 2. Restart NotificationListenerService if crashed (500-1000ms)
-          // 3. Bind the service to the system (300-500ms)
-          // Total: ~1300-2000ms
-          setTimeout(async () => {
-            console.log('🔍 Starting permission check after 2s delay...');
-            try {
-              await checkPermissionStatus();
-            } catch (error) {
-              console.error('❌ Error rechecking permission on resume:', error);
-              // Don't crash - app continues working
-            }
-          }, 2000); // ⚠️⚠️⚠️ CRITICAL: 2000ms (2 seconds)
-        });
+    // ❌❌❌ REMOVED: NO automatic check on resume!
+    // The resume listener is completely REMOVED to prevent white screen crash.
+    // The app will only check permission when:
+    // 1. Component mounts (once)
+    // 2. User manually triggers check (e.g., closing modal)
+    // 3. User performs an action that requires permission check
 
-        console.log('✅ Resume listener registered');
-
-        // Return cleanup function
-        return () => {
-          console.log('🧹 Cleaning up listeners');
-          resumeListener.remove();
-        };
-      } catch (error) {
-        console.error('❌ Error setting up app listeners:', error);
-        return () => {}; // Return empty cleanup
-      }
-    };
-
-    // Setup listeners and store cleanup
-    let cleanup: (() => void) | undefined;
-    setupListeners().then(cleanupFn => {
-      cleanup = cleanupFn;
-    });
-
-    // Cleanup on unmount
+    console.log('✅ No resume listener registered (prevents crash)');
+    
+    // No cleanup needed since no listeners
     return () => {
-      console.log('🚫 useNotificationListener unmounting');
-      if (cleanup) cleanup();
+      console.log('🧹 useNotificationListener unmounting');
     };
   }, [isAndroid, checkPermissionStatus]);
 
-  // Poll for new transactions every 10 seconds if enabled
+  // Poll for new transactions every 30 seconds if enabled
+  // ✅ Increased to 30 seconds to reduce checks
   useEffect(() => {
     if (!isAndroid || !isEnabled) return;
 
-    console.log('🔍 Starting transaction polling (10s interval)');
+    console.log('🔍 Starting transaction polling (30s interval)');
 
     const interval = setInterval(async () => {
       try {
@@ -208,12 +166,11 @@ export function useNotificationListener() {
         setPendingTransactions(pending);
       } catch (error) {
         console.error('❌ Error polling transactions:', error);
-        // Don't crash, just log
       }
-    }, 10000); // 10 seconds
+    }, 30000); // 30 seconds
 
     return () => {
-      console.log('🚨 Stopping transaction polling');
+      console.log('🛑 Stopping transaction polling');
       clearInterval(interval);
     };
   }, [isAndroid, isEnabled]);
@@ -225,5 +182,6 @@ export function useNotificationListener() {
     requestPermission,
     confirmTransaction,
     ignoreTransaction,
+    manualCheckPermission, // ✅ NEW: Expose manual check for user-triggered updates
   };
 }
