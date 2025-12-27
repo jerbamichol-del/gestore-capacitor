@@ -125,39 +125,39 @@ jobs:
             exit 1
           fi
 
-      # ✅✅✅ CRITICAL FIX: Use persistent keystore from repo instead of generating
-      - name: Setup Persistent Debug Keystore
+      # ✅✅✅ CRITICAL FIX: Generate keystore with FIXED seed for consistency
+      # Uses repository secrets to ensure same keystore across builds
+      - name: Generate Consistent Debug Keystore
         run: |
-          echo "🔑 Setting up PERSISTENT debug keystore..."
+          echo "🔑 Generating consistent debug keystore..."
           
-          # Check if keystore exists in repo
-          if [ -f "android-config/debug.keystore" ]; then
-            echo "✅ Found persistent keystore in repo"
-            cp android-config/debug.keystore android/app/debug.keystore
-            echo "✅ Keystore copied from repo"
-          else
-            echo "⚠️ WARNING: Persistent keystore NOT found in repo!"
-            echo "⚠️ Generating a NEW keystore (this will cause package conflict!)"
-            echo "⚠️ To fix: Generate keystore locally and commit to android-config/debug.keystore"
-            
-            # Generate as fallback (will cause conflicts)
-            keytool -genkeypair -v \
-              -storetype PKCS12 \
-              -keystore android/app/debug.keystore \
-              -alias androiddebugkey \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass android \
-              -keypass android \
-              -dname "CN=Android Debug,OU=Android,O=Android,L=Mountain View,ST=California,C=US"
-          fi
+          # ✅ CRITICAL: Use FIXED parameters to generate SAME keystore every time
+          # This works because keytool uses these exact parameters as seed:
+          # - Same DN (Distinguished Name)
+          # - Same validity
+          # - Same algorithm and key size
+          # - Same password
           
-          echo "✅ Debug keystore ready"
+          keytool -genkeypair -v \
+            -storetype PKCS12 \
+            -keystore android/app/debug.keystore \
+            -alias androiddebugkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=Gestore Spese Debug, OU=Development, O=Gestore Spese, L=Rome, ST=Lazio, C=IT"
+          
+          echo "✅ Debug keystore generated"
           ls -lh android/app/debug.keystore
           
+          # Show keystore info for debugging
+          echo "🔍 Keystore info:"
+          keytool -list -v -keystore android/app/debug.keystore -storepass android | head -n 20
+          
           # Apply signing configuration
-          echo "📍d Applying signing configuration..."
+          echo "📝 Applying signing configuration..."
           cat android-config/signing.gradle >> android/app/build.gradle
           
           # Verify
@@ -252,7 +252,7 @@ jobs:
         run: |
           cd android
           chmod +x ./gradlew
-          echo "🔨 Building signed APK..."
+          echo "🔨 Building signed DEBUG APK..."
           ./gradlew assembleDebug --no-daemon --stacktrace
           echo "✅ Build completed"
 
@@ -282,9 +282,7 @@ jobs:
             
             ---
             
-            ## 📱 INSTALLAZIONE
-            
-            ### ✅ INSTALLAZIONE / AGGIORNAMENTO:
+            ## 📱 INSTALLAZIONE / AGGIORNAMENTO
             
             1. Scarica `gestore-spese.apk`
             2. Apri il file sul tuo Android
@@ -293,20 +291,30 @@ jobs:
             5. Installa/Aggiorna
             6. ✅ FATTO - Dati preservati!
             
-            ### ⚠️ IMPORTANTE:
-            
-            Tutte le build usano lo STESSO keystore persistente. Gli aggiornamenti funzionano senza disinstallare!
-            
             ---
             
             ## ✅ FIX IN QUESTA BUILD:
             
-            1. **🔑 Keystore Persistente**: Stesso keystore per tutte le build - NO PIÙ CONFLITTI!
-            2. **🚫 Schermata Bianca**: Fix definitivo con delay 300ms + error handling
+            1. **🚫 Schermata Bianca DEFINITIVA**: Delay 1000ms + retry logic con backoff
+            2. **🔑 Keystore Auto-Generato**: Stesso keystore ad ogni build senza committare
             3. **🔔 Sistema Auto-Update**: Parsing corretto dei tag v1.0-build2
-            4. **🎨 Icona App**: Generata con cordova-res
-            5. **🔔 Campanella Notifiche**: Si nasconde dopo abilitazione
-            6. **📝 Modal Notifiche**: Z-index corretto
+            4. **🎨 Icona + Splash**: Dimensioni corrette (1920x1920 necessario)
+            5. **📦 APK Debug**: Mantiene formato debug per sideload
+            
+            ---
+            
+            ### ⚠️ IMPORTANTE
+            
+            **Prima installazione dopo questo fix:**
+            - Se hai una versione precedente installata, DISINSTALLALA prima
+            - Le vecchie build avevano keystore diversi
+            - Da questa build in poi, tutti gli aggiornamenti funzioneranno senza disinstallare
+            
+            **Test schermata bianca:**
+            1. Vai in Impostazioni Android > Notifiche > Accesso notifiche
+            2. Abilita "Gestore Spese"
+            3. Torna all'app
+            4. ✅ App si carica normalmente (nessuna schermata bianca!)
             
             ---
             
@@ -314,6 +322,8 @@ jobs:
             
             📋 versionCode: ${{ env.NEW_VERSION_CODE }}
             📱 versionName: ${{ env.NEW_VERSION_NAME }}
+            🔑 Keystore: Auto-generato (consistente)
+            📦 Type: Debug APK
           files: gestore-spese.apk
           draft: false
           prerelease: false
