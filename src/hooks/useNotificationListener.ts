@@ -14,8 +14,8 @@ export function useNotificationListener() {
   // Check if running on Android
   const isAndroid = Capacitor.getPlatform() === 'android';
 
-  // Function to check permission status
-  const checkPermissionStatus = useCallback(async () => {
+  // Function to check permission status with retry logic
+  const checkPermissionStatus = useCallback(async (retryCount = 0): Promise<void> => {
     if (!isAndroid) return;
     if (isCheckingRef.current) return; // Prevent concurrent checks
     
@@ -37,8 +37,20 @@ export function useNotificationListener() {
         }
       }
     } catch (error) {
-      console.error('Error checking notification permission:', error);
-      // CRITICAL: Don't crash the app, just set safe defaults
+      console.error(`Error checking notification permission (attempt ${retryCount + 1}):`, error);
+      
+      // ✅ CRITICAL: Retry up to 2 times with increasing delays
+      if (retryCount < 2) {
+        console.log(`Retrying permission check in ${(retryCount + 1) * 500}ms...`);
+        setTimeout(() => {
+          isCheckingRef.current = false;
+          checkPermissionStatus(retryCount + 1);
+        }, (retryCount + 1) * 500); // 500ms, 1000ms
+        return;
+      }
+      
+      // After 2 retries, give up gracefully
+      console.warn('Failed to check permission after retries, setting safe defaults');
       setIsEnabled(false);
       setPendingTransactions([]);
     } finally {
@@ -114,35 +126,40 @@ export function useNotificationListener() {
       }
     })();
 
-    // ✅ CRITICAL FIX: Listen for app state changes with error handling
+    // ✅ CRITICAL FIX: Listen for app state changes with LONGER delay and error handling
     const setupListeners = async () => {
       try {
         const appStateListener = await CapApp.addListener('appStateChange', async ({ isActive }) => {
           if (isActive) {
             // App returned to foreground - recheck permission
-            console.log('App returned to foreground, rechecking permission...');
+            console.log('🔄 App returned to foreground, rechecking permission...');
             
-            // Small delay to ensure Android has updated the permission
+            // ✅ CRITICAL: Increased delay to 1000ms (300ms plugin delay + 700ms buffer)
+            // This ensures Android Settings.Secure has been fully updated
             setTimeout(async () => {
               try {
                 await checkPermissionStatus();
               } catch (error) {
-                console.error('Error rechecking permission on resume:', error);
+                console.error('❌ Error rechecking permission on resume:', error);
+                // Don't crash - app continues working
               }
-            }, 500);
+            }, 1000); // ⚠️ Increased from 500ms to 1000ms
           }
         });
 
-        // ✅ CRITICAL FIX: Listen for resume event with error handling
+        // ✅ CRITICAL FIX: Listen for resume event with LONGER delay and error handling
         const resumeListener = await CapApp.addListener('resume', async () => {
-          console.log('App resumed, rechecking permission...');
+          console.log('🔄 App resumed, rechecking permission...');
+          
+          // ✅ Same longer delay for consistency
           setTimeout(async () => {
             try {
               await checkPermissionStatus();
             } catch (error) {
-              console.error('Error rechecking permission on app resume:', error);
+              console.error('❌ Error rechecking permission on app resume:', error);
+              // Don't crash - app continues working
             }
-          }, 500);
+          }, 1000); // ⚠️ Increased from 500ms to 1000ms
         });
 
         // Return cleanup function
@@ -151,7 +168,7 @@ export function useNotificationListener() {
           resumeListener.remove();
         };
       } catch (error) {
-        console.error('Error setting up app listeners:', error);
+        console.error('❌ Error setting up app listeners:', error);
         return () => {}; // Return empty cleanup
       }
     };
