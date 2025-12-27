@@ -87,24 +87,23 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   // --- Auto-Update System ---
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const { updateInfo, isChecking: isCheckingUpdate } = useUpdateChecker();
+  const { updateInfo, isChecking: isCheckingUpdate, skipVersion } = useUpdateChecker();
 
-  // Show update modal when update is available
+  // ✅✅✅ CRITICAL FIX: Show update modal when update is available
   useEffect(() => {
-    if (updateInfo.available && !isCheckingUpdate) {
-      // Check if user skipped this update recently
-      const skippedUntil = localStorage.getItem('update_skipped_until');
-      if (skippedUntil) {
-        const skipTime = parseInt(skippedUntil, 10);
-        if (Date.now() < skipTime) {
-          // Still in skip period
-          return;
-        }
-      }
-      // Show modal
+    // ✅ FIX: Check if updateInfo exists AND has available property set to true
+    if (updateInfo && updateInfo.available && !isCheckingUpdate) {
+      console.log('🚀 Update detected - showing modal', updateInfo);
       setIsUpdateModalOpen(true);
     }
   }, [updateInfo, isCheckingUpdate]);
+
+  // ✅✅✅ CRITICAL FIX: Handle skip button properly
+  const handleSkipUpdate = () => {
+    console.log('⏭️ User skipped update');
+    skipVersion(); // ✅ Call the hook's skipVersion method
+    setIsUpdateModalOpen(false);
+  };
 
   // --- Custom Hooks Integration ---
   
@@ -567,12 +566,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
       <MultipleExpensesModal isOpen={nav.isMultipleExpensesModalOpen} onClose={nav.closeModalWithHistory} expenses={multipleExpensesData} accounts={safeAccounts} onConfirm={(d) => { d.forEach(handleAddExpense); nav.forceNavigateHome(); }} />
 
-      {/* Update Available Modal */}
+      {/* ✅✅✅ CRITICAL FIX: Update Available Modal with proper skip handler */}
       <UpdateAvailableModal
         isOpen={isUpdateModalOpen}
         updateInfo={updateInfo}
         onClose={() => setIsUpdateModalOpen(false)}
-        onSkip={() => setIsUpdateModalOpen(false)}
+        onSkip={handleSkipUpdate}
       />
 
       {/* Notification Permission Modal */}
@@ -580,6 +579,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         isOpen={isNotificationPermissionModalOpen}
         onClose={() => setIsNotificationPermissionModalOpen(false)}
         onEnableClick={requestNotificationPermission}
+        isEnabled={isNotificationListenerEnabled}
       />
 
       {/* Pending Transactions Modal */}
