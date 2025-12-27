@@ -25,23 +25,12 @@ export function NotificationSettingsButton({
     return null;
   }
 
-  // ❌❌❌ REMOVED: useEffect to auto-close modal
-  // REASON: When isEnabled becomes true, this component returns null and unmounts.
-  //         The useEffect trying to call setIsModalOpen(false) on unmounted component
-  //         causes "Cannot update during an existing state transition" crash.
-  //
-  // ✅✅✅ NEW APPROACH: Let user close modal manually.
-  //         - After 3 seconds, permission check runs automatically
-  //         - Button disappears when isEnabled becomes true
-  //         - Modal stays open but user can close it manually
-  //         - This is SAFE and cannot crash
-
   const handleEnableClick = async () => {
     try {
       await requestPermission();
-      // ✅ Button will disappear automatically after 3s when permission is granted
-      // ✅ Modal stays open - user closes manually
-      // ✅ No crash!
+      // ✅✅✅ Modal will show SUCCESS state when isEnabled becomes true (after 3s)
+      // User will see green checkmark and success message
+      // Then can close modal with "Chiudi" button
     } catch (e) {
       console.error('❌ Error requesting permission:', e);
       setIsModalOpen(false);
@@ -67,10 +56,12 @@ export function NotificationSettingsButton({
         <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
       </button>
 
+      {/* ✅✅✅ PASS isEnabled to modal so it can show success state */}
       <NotificationPermissionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onEnableClick={handleEnableClick}
+        isEnabled={isEnabled}
       />
     </>
   );
