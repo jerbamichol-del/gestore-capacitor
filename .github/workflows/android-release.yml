@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -54,259 +55,83 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅✅✅ CRITICAL FIX: Bump versionCode BEFORE building
-      - name: Bump Android versionCode and Commit
+      - name: Bump versionCode and commit
         run: |
-          echo "🔢 Auto-incrementing versionCode..."
+          echo "🔢 Incrementing versionCode..."
           
           GRADLE_FILE="android/app/build.gradle"
-          
-          # Extract current versionCode
           CURRENT_VERSION=$(grep -oP 'versionCode \K\d+' "$GRADLE_FILE")
-          echo "📊 Current versionCode: $CURRENT_VERSION"
-          
-          # Increment
           NEW_VERSION=$((CURRENT_VERSION + 1))
-          echo "⬆️  Bumping to versionCode: $NEW_VERSION"
           
-          # Update file
+          echo "📊 Current: $CURRENT_VERSION → New: $NEW_VERSION"
+          
           sed -i "s/versionCode $CURRENT_VERSION/versionCode $NEW_VERSION/g" "$GRADLE_FILE"
           
-          # Verify
-          UPDATED_VERSION=$(grep -oP 'versionCode \K\d+' "$GRADLE_FILE")
-          if [ "$UPDATED_VERSION" = "$NEW_VERSION" ]; then
-            echo "✅ versionCode successfully bumped to $NEW_VERSION"
-          else
-            echo "❌ ERROR: Failed to update versionCode"
-            exit 1
-          fi
-          
-          # Extract versionName
           VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' "$GRADLE_FILE")
-          echo "📱 versionName: $VERSION_NAME"
           
-          # Set env vars for later steps
           echo "NEW_VERSION_CODE=$NEW_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           
-          # ✅✅✅ COMMIT ALL ANDROID CHANGES (not just build.gradle)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Add ALL Android files (entire directory)
           git add android/
+          [ -f "package-lock.json" ] && git add package-lock.json
           
-          # Also add package-lock.json if it was created
-          if [ -f "package-lock.json" ]; then
-            git add package-lock.json
-          fi
+          git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]" || echo "No changes"
           
-          # Commit with skip ci flag
-          git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]" || {
-            echo "⚠️ No changes to commit (already up to date)"
-          }
+          # Pull con rebase per gestire commit concorrenti
+          git pull --rebase origin main || echo "Pull failed"
           
-          # Push
-          git push || {
-            echo "⚠️ Push failed or no changes to push"
-          }
+          git push || echo "Push failed"
           
-          echo "✅ versionCode committed and pushed"
+          echo "✅ versionCode bumped and pushed"
 
-      # ✅ CRITICAL: Resize splash to meet cordova-res requirements
-      - name: Prepare resources for cordova-res
+      - name: Prepare resources
         run: |
-          echo "🎨 Preparing resources for cordova-res..."
-          
-          # Install ImageMagick (already available on ubuntu-latest)
           sudo apt-get update -qq
           sudo apt-get install -y -qq imagemagick
-          
-          # Create resources/android directory
           mkdir -p resources/android
-          
-          # Resize icon to 1920x1920 for splash (cordova-res requirement)
-          # Using ImageMagick to resize and center on white background
-          convert resources/icon.png \
-            -resize 1920x1920 \
-            -background white \
-            -gravity center \
-            -extent 1920x1920 \
-            resources/splash.png
-          
-          echo "✅ Splash created at 1920x1920"
-          ls -lh resources/splash.png
-          
-          # Copy for adaptive icons
+          convert resources/icon.png -resize 1920x1920 -background white -gravity center -extent 1920x1920 resources/splash.png
           cp resources/icon.png resources/android/icon-foreground.png
           cp resources/icon.png resources/android/icon-background.png
-          
-          echo "✅ Resources prepared"
-          ls -lh resources/
-          ls -lh resources/android/
 
-      # ✅ Generate icons and splash with cordova-res
-      - name: Generate app icons and splash
+      - name: Generate icons
         run: |
-          echo "🎨 Generating icons and splash with cordova-res..."
-          
-          # cordova-res with both icon and splash
           npx cordova-res android --skip-config --copy
-          
-          echo "✅ Icons and splash generated"
-          
-          # Verify generated icons
-          echo "🔍 Checking generated icons:"
-          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
-            echo "✅ ic_launcher.png exists in mipmap-hdpi"
-            ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          else
-            echo "❌ ic_launcher.png NOT found!"
-            exit 1
-          fi
-          
-          # List all generated resources
-          echo "📂 All mipmap directories:"
-          find android/app/src/main/res -type d -name "mipmap-*" | sort
-          
-          echo "📂 All drawable directories:"
-          find android/app/src/main/res -type d -name "drawable*" | sort
+          [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ] || exit 1
 
       - name: Sync Capacitor
-        run: |
-          echo "🔄 Syncing Capacitor..."
-          npx cap sync android
-          echo "✅ Capacitor sync completed"
-          
-          echo "🔍 Verifying icons after sync:"
-          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
-            echo "✅ Icons preserved after sync"
-          else
-            echo "❌ Icons LOST after sync!"
-            exit 1
-          fi
+        run: npx cap sync android
 
-      # ✅✅✅ CRITICAL FIX: Copy COMMITTED keystore (no more generation!)
-      # This ensures SAME signature across ALL builds forever
-      - name: Copy Persistent Debug Keystore
+      - name: Copy keystore
         run: |
-          echo "🔑 Using committed debug keystore..."
-          
-          # Keystore is in repo root (generated once by generate-keystore.sh)
-          KEYSTORE_SOURCE="android-config/debug.keystore"
-          KEYSTORE_DEST="android/app/debug.keystore"
-          
-          if [ ! -f "$KEYSTORE_SOURCE" ]; then
-            echo "❌❌❌ KEYSTORE NOT FOUND IN REPOSITORY!"
-            echo ""
-            echo "You must generate and commit the keystore first:"
-            echo "  1. Run: chmod +x scripts/generate-keystore.sh"
-            echo "  2. Run: ./scripts/generate-keystore.sh"
-            echo "  3. Follow instructions to commit keystore"
-            echo ""
-            exit 1
-          fi
-          
-          # Copy keystore to android/app/
-          cp "$KEYSTORE_SOURCE" "$KEYSTORE_DEST"
-          
-          echo "✅ Keystore copied from repository"
-          ls -lh "$KEYSTORE_DEST"
-          
-          # Show keystore info for verification
-          echo "🔍 Keystore info:"
-          keytool -list -v -keystore "$KEYSTORE_DEST" -storepass android | head -n 20
-          
-          # Apply signing configuration
-          echo "📝 Applying signing configuration..."
+          cp android-config/debug.keystore android/app/debug.keystore
           cat android-config/signing.gradle >> android/app/build.gradle
-          
-          # Verify
-          if grep -q "signingConfigs" "android/app/build.gradle"; then
-            echo "✅ Signing config applied"
-          else
-            echo "❌ Signing config NOT applied!"
-            exit 1
-          fi
 
-      - name: Copy plugin files
+      - name: Copy plugins
         run: |
-          echo "📦 Copying plugin files..."
-          
-          SOURCE_DIR="android-config/plugins"
-          DEST_DIR="android/app/src/main/java/com/gestore/spese"
-          
-          mkdir -p "$DEST_DIR"
-          
-          cp "$SOURCE_DIR/NotificationListenerPlugin.java" "$DEST_DIR/"
-          cp "$SOURCE_DIR/SMSReaderPlugin.java" "$DEST_DIR/"
-          cp "$SOURCE_DIR/BankNotificationListenerService.java" "$DEST_DIR/"
-          
-          echo "✅ Plugin files copied"
+          DEST="android/app/src/main/java/com/gestore/spese"
+          mkdir -p "$DEST"
+          cp android-config/plugins/*.java "$DEST/"
 
-      - name: Copy AndroidManifest.xml
+      - name: Copy configs
         run: |
-          echo "📝 Copying AndroidManifest.xml..."
           cp android-config/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          echo "✅ AndroidManifest copied"
-
-      - name: Copy MainActivity
-        run: |
-          echo "📝 Copying MainActivity.java..."
           cp android-config/MainActivity.java android/app/src/main/java/com/gestore/spese/MainActivity.java
-          echo "✅ MainActivity copied"
 
       - name: Copy assets
-        run: |
-          echo "📁 Copying web assets..."
-          npx cap copy android
-          echo "✅ Assets copied"
-
-      - name: Final pre-build verification
-        run: |
-          echo "🔍 Final verification..."
-          
-          # Verify Java files
-          JAVA_DIR="android/app/src/main/java/com/gestore/spese"
-          for file in NotificationListenerPlugin.java SMSReaderPlugin.java BankNotificationListenerService.java MainActivity.java; do
-            if [ -f "$JAVA_DIR/$file" ]; then
-              echo "✅ $file"
-            else
-              echo "❌ $file MISSING!"
-              exit 1
-            fi
-          done
-          
-          # Verify icon exists
-          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
-            echo "✅ Icon verified"
-          else
-            echo "❌ Icon MISSING!"
-            exit 1
-          fi
-          
-          # Verify keystore
-          if [ -f "android/app/debug.keystore" ]; then
-            echo "✅ Keystore verified"
-          else
-            echo "❌ Keystore MISSING!"
-            exit 1
-          fi
-          
-          echo "✅ All verifications passed"
+        run: npx cap copy android
 
       - name: Build APK
         run: |
           cd android
           chmod +x ./gradlew
-          echo "🔨 Building signed DEBUG APK..."
           ./gradlew assembleDebug --no-daemon --stacktrace
-          echo "✅ Build completed"
 
       - name: Rename APK
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese.apk
-          echo "✅ APK ready: gestore-spese.apk"
           ls -lh gestore-spese.apk
 
       - name: Upload APK
@@ -315,45 +140,22 @@ jobs:
           name: gestore-spese-apk
           path: gestore-spese.apk
 
-      - name: Get commit info
+      - name: Get commit
         id: vars
         run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}
           name: "v${{ env.NEW_VERSION_NAME }} Build ${{ env.NEW_VERSION_CODE }}"
           body: |
-            🚀 **VERSIONE ${{ env.NEW_VERSION_NAME }}** - Build ${{ env.NEW_VERSION_CODE }}
+            🚀 **Build ${{ env.NEW_VERSION_CODE }}**
             
-            ---
+            📲 Scarica `gestore-spese.apk` e installa
+            ✅ Aggiornamento automatico preserva i dati
             
-            ## 📱 INSTALLAZIONE / AGGIORNAMENTO
-            
-            1. Scarica `gestore-spese.apk`
-            2. Apri il file sul tuo Android
-            3. Se è la prima volta: abilita "Installa da sorgenti sconosciute"
-            4. Se è un aggiornamento: Android chiederà "Vuoi aggiornare?"
-            5. Installa/Aggiorna
-            6. ✅ FATTO - Dati preservati!
-            
-            ---
-            
-            ## ✅ NOVITÀ
-            
-            - 🔄 Sistema auto-update funzionante
-            - 🔔 Gestione notifiche migliorata
-            - 🐛 Bug fix vari
-            
-            ---
-            
-            🔗 Commit: [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-            
-            📋 versionCode: ${{ env.NEW_VERSION_CODE }}
-            📱 versionName: ${{ env.NEW_VERSION_NAME }}
-            🔑 Keystore: Persistente
-            📦 Type: Debug APK
+            🔗 [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
           files: gestore-spese.apk
           draft: false
           prerelease: false
