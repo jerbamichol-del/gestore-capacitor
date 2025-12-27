@@ -5,7 +5,9 @@ import { App as CapApp } from '@capacitor/app';
 export interface UpdateInfo {
   available: boolean;
   currentVersion: string;
+  currentBuild?: string;
   latestVersion?: string;
+  latestBuild?: string;
   downloadUrl?: string;
   releaseNotes?: string;
 }
@@ -17,11 +19,14 @@ const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 /**
  * Hook to check for app updates from GitHub Releases
  * Only works on native Android platform
+ * 
+ * ✅ FIXED: Now correctly parses tags like "v1.0-build2" and "v1.0-build3"
  */
 export const useUpdateChecker = () => {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo>({
     available: false,
-    currentVersion: '1.0.1', // Fallback if native info fails
+    currentVersion: '1.0',
+    currentBuild: '2',
   });
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +34,7 @@ export const useUpdateChecker = () => {
   const checkForUpdates = async (force = false): Promise<UpdateInfo> => {
     // Only check on Android native
     if (Capacitor.getPlatform() !== 'android') {
+      console.log('Update check skipped: not on Android');
       return { available: false, currentVersion: 'web' };
     }
 
@@ -38,6 +44,7 @@ export const useUpdateChecker = () => {
       if (lastCheck) {
         const elapsed = Date.now() - parseInt(lastCheck, 10);
         if (elapsed < CHECK_INTERVAL_MS) {
+          console.log('Update check skipped: checked recently');
           // Return cached result
           const cached = localStorage.getItem('cached_update_info');
           if (cached) {
@@ -59,8 +66,10 @@ export const useUpdateChecker = () => {
     try {
       // Get current app version from native
       const appInfo = await CapApp.getInfo();
-      const currentVersionCode = parseInt(appInfo.build, 10) || 2; // versionCode
-      const currentVersionName = appInfo.version || '1.0.1'; // versionName
+      const currentVersionCode = parseInt(appInfo.build, 10); // e.g., 2
+      const currentVersionName = appInfo.version; // e.g., "1.0"
+
+      console.log(`Current app: v${currentVersionName} (Build ${currentVersionCode})`);
 
       // Fetch latest release from GitHub
       const response = await fetch(
@@ -74,10 +83,12 @@ export const useUpdateChecker = () => {
 
       if (!response.ok) {
         if (response.status === 404) {
+          console.log('No releases found on GitHub');
           // No releases yet
           const info: UpdateInfo = {
             available: false,
             currentVersion: currentVersionName,
+            currentBuild: currentVersionCode.toString(),
           };
           setUpdateInfo(info);
           return info;
@@ -86,35 +97,46 @@ export const useUpdateChecker = () => {
       }
 
       const release = await response.json();
+      const tagName = release.tag_name || ''; // e.g., "v1.0-build3"
+      console.log(`Latest release tag: ${tagName}`);
 
-      // Extract version code from tag (e.g., v1.0.2 or v2)
-      const tagName = release.tag_name || '';
-      const versionMatch = tagName.match(/v?(\d+)\.(\d+)\.(\d+)/);
+      // ✅ CRITICAL FIX: Extract build number from tags like "v1.0-build2" or "v1.0-build3"
+      const buildMatch = tagName.match(/build(\d+)/i);
       
-      let remoteVersionCode = currentVersionCode;
-      if (versionMatch) {
-        // Convert semantic version to code (major * 1000 + minor * 100 + patch)
-        const [, major, minor, patch] = versionMatch;
-        remoteVersionCode = parseInt(major) * 1000 + parseInt(minor) * 100 + parseInt(patch);
-      } else {
-        // Try to extract simple number
-        const simpleMatch = tagName.match(/v?(\d+)/);
-        if (simpleMatch) {
-          remoteVersionCode = parseInt(simpleMatch[1], 10);
-        }
+      if (!buildMatch) {
+        console.log(`Could not extract build number from tag: ${tagName}`);
+        // Can't parse, assume no update
+        const info: UpdateInfo = {
+          available: false,
+          currentVersion: currentVersionName,
+          currentBuild: currentVersionCode.toString(),
+        };
+        setUpdateInfo(info);
+        return info;
       }
+
+      const remoteBuildNumber = parseInt(buildMatch[1], 10);
+      console.log(`Remote build number: ${remoteBuildNumber}`);
 
       // Find APK asset
       const apkAsset = release.assets?.find(
         (asset: any) => asset.name.endsWith('.apk')
       );
 
-      const updateAvailable = remoteVersionCode > currentVersionCode;
+      if (!apkAsset) {
+        console.log('No APK found in release');
+      }
+
+      // ✅ Compare build numbers directly
+      const updateAvailable = remoteBuildNumber > currentVersionCode;
+      console.log(`Update available: ${updateAvailable} (${remoteBuildNumber} > ${currentVersionCode})`);
 
       const info: UpdateInfo = {
         available: updateAvailable,
         currentVersion: currentVersionName,
+        currentBuild: currentVersionCode.toString(),
         latestVersion: release.name || tagName,
+        latestBuild: remoteBuildNumber.toString(),
         downloadUrl: apkAsset?.browser_download_url,
         releaseNotes: release.body,
       };
@@ -135,6 +157,7 @@ export const useUpdateChecker = () => {
       const info: UpdateInfo = {
         available: false,
         currentVersion: updateInfo.currentVersion,
+        currentBuild: updateInfo.currentBuild,
       };
       return info;
     } finally {
@@ -142,9 +165,31 @@ export const useUpdateChecker = () => {
     }
   };
 
-  // Check on mount
+  // Check on mount and when app comes to foreground
   useEffect(() => {
+    // Initial check on mount
     checkForUpdates();
+
+    // Listen for app state changes
+    let listener: any;
+    
+    const setupListener = async () => {
+      listener = await CapApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          console.log('App became active, checking for updates...');
+          checkForUpdates();
+        }
+      });
+    };
+
+    setupListener();
+
+    // Cleanup
+    return () => {
+      if (listener) {
+        listener.remove();
+      }
+    };
   }, []);
 
   return {
