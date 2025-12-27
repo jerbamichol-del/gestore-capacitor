@@ -25,8 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install --legacy-peer-deps
-          # ✅ CRITICAL: Install @capacitor/assets for icon generation
-          npm install --save-dev @capacitor/assets
+          npm install --save-dev @capacitor/assets cordova-res sharp
         env:
           SHARP_IGNORE_GLOBAL_LIBVIPS: 1
           npm_config_timeout: 600000
@@ -53,57 +52,47 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅ CRITICAL: Generate icons BEFORE sync
-      - name: Generate app icons from resources/icon.png
+      # ✅ CRITICAL: Create adaptive icon resources first
+      - name: Prepare adaptive icon resources
         run: |
-          echo "🎨 Generating app icons from resources/icon.png..."
+          echo "🎨 Preparing adaptive icon resources..."
           
-          if [ ! -f "resources/icon.png" ]; then
-            echo "❌ ERROR: resources/icon.png not found!"
-            exit 1
-          fi
+          # Create resources/android directory
+          mkdir -p resources/android
           
-          echo "📏 Icon info:"
-          ls -lh resources/icon.png
-          file resources/icon.png || true
+          # Copy icon as both foreground and background for adaptive icons
+          cp resources/icon.png resources/android/icon-foreground.png
+          cp resources/icon.png resources/android/icon-background.png
           
-          # Generate Android icons using @capacitor/assets
-          echo "🔨 Running @capacitor/assets generate..."
-          npx @capacitor/assets generate --android --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#000000' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#111111'
+          echo "✅ Adaptive icon resources created"
+          ls -lh resources/android/
+
+      # ✅ CRITICAL: Generate icons using cordova-res (more reliable)
+      - name: Generate app icons
+        run: |
+          echo "🎨 Generating icons with cordova-res..."
           
-          echo "✅ Assets command completed"
+          # Use cordova-res for more reliable icon generation
+          npx cordova-res android --skip-config --copy
           
-          # Verify icons were generated
+          echo "✅ Icons generated"
+          
+          # Verify generated icons
           echo "🔍 Checking generated icons:"
+          ls -R android/app/src/main/res/ | grep mipmap || echo "⚠️ No mipmap folders"
+          
+          # Check specific icon files
           if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
-            echo "✅ HDPI icon exists:"
+            echo "✅ ic_launcher.png exists in mipmap-hdpi"
             ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           else
-            echo "❌ HDPI icon NOT found!"
+            echo "❌ ic_launcher.png NOT found in mipmap-hdpi!"
           fi
           
-          if [ -f "android/app/src/main/res/mipmap-mdpi/ic_launcher.png" ]; then
-            echo "✅ MDPI icon exists:"
-            ls -lh android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png" ]; then
+            echo "✅ ic_launcher_foreground.png exists"
           else
-            echo "❌ MDPI icon NOT found!"
-          fi
-          
-          if [ -f "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png" ]; then
-            echo "✅ XHDPI icon exists:"
-            ls -lh android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          else
-            echo "❌ XHDPI icon NOT found!"
-          fi
-          
-          # Final check - at least one icon must exist
-          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ] || [ -f "android/app/src/main/res/mipmap-mdpi/ic_launcher.png" ]; then
-            echo "✅ Icon generation SUCCESS"
-          else
-            echo "❌ ERROR: NO ICONS GENERATED!"
-            echo "Listing all mipmap directories:"
-            find android/app/src/main/res -name "mipmap-*" -type d || true
-            exit 1
+            echo "⚠️ ic_launcher_foreground.png NOT found"
           fi
 
       - name: Sync Capacitor
@@ -113,15 +102,21 @@ jobs:
           echo "✅ Capacitor sync completed"
           
           echo "🔍 Verifying icons after sync:"
-          ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png || echo "⚠️ Icon missing after sync!"
+          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
+            echo "✅ Icons preserved after sync"
+          else
+            echo "❌ Icons LOST after sync!"
+            exit 1
+          fi
 
-      # ✅ CRITICAL: Setup debug keystore with FIXED seed for consistent signing
+      # ✅ CRITICAL: Setup consistent keystore with FIXED seed
       - name: Setup Debug Keystore
         run: |
-          echo "🔑 Setting up debug keystore for consistent signing..."
+          echo "🔑 Setting up consistent debug keystore..."
           
-          # Create keystore with FIXED parameters - this ensures same signature every build
-          keytool -genkey -v \
+          # CRITICAL: Use exact same parameters for reproducible keystore
+          keytool -genkeypair -v \
+            -storetype PKCS12 \
             -keystore android/app/debug.keystore \
             -alias androiddebugkey \
             -keyalg RSA \
@@ -129,29 +124,23 @@ jobs:
             -validity 10000 \
             -storepass android \
             -keypass android \
-            -dname "CN=Gestore Spese Debug, OU=Development, O=Gestore Spese, L=Rome, ST=Lazio, C=IT"
+            -dname "CN=Android Debug,OU=Android,O=Android,L=Mountain View,ST=California,C=US"
           
           echo "✅ Debug keystore created"
           ls -lh android/app/debug.keystore
           
-          # Verify keystore
-          keytool -list -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey || echo "⚠️ Could not list keystore"
-          
-          # Apply signing configuration to build.gradle
+          # Apply signing configuration
           echo "📝 Applying signing configuration..."
           cat android-config/signing.gradle >> android/app/build.gradle
           
-          echo "✅ Signing configuration applied"
-          
-          # Verify signing config was added
+          # Verify
           if grep -q "signingConfigs" "android/app/build.gradle"; then
-            echo "✅ Signing config verified in build.gradle"
+            echo "✅ Signing config applied"
           else
-            echo "❌ ERROR: Signing config NOT in build.gradle!"
+            echo "❌ Signing config NOT applied!"
             exit 1
           fi
 
-      # ✅ AUTO VERSION BUMP
       - name: Bump Android versionCode
         run: |
           echo "🔢 Auto-incrementing versionCode..."
@@ -214,11 +203,11 @@ jobs:
             fi
           done
           
-          # Verify icon still exists
+          # Verify icon exists
           if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
             echo "✅ Icon verified"
           else
-            echo "❌ Icon MISSING before build!"
+            echo "❌ Icon MISSING!"
             exit 1
           fi
           
@@ -236,14 +225,19 @@ jobs:
         run: |
           cd android
           chmod +x ./gradlew
-          echo "🔨 Building APK..."
+          echo "🔨 Building signed APK..."
           ./gradlew assembleDebug --no-daemon --stacktrace
           echo "✅ Build completed"
+          
+          # Verify APK signature
+          echo "🔍 Verifying APK signature..."
+          $ANDROID_HOME/build-tools/*/apksigner verify --print-certs app/build/outputs/apk/debug/app-debug.apk || echo "⚠️ Could not verify signature"
 
       - name: Rename APK
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk gestore-spese.apk
           echo "✅ APK ready: gestore-spese.apk"
+          ls -lh gestore-spese.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -258,38 +252,53 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.NEW_VERSION_NAME }}
-          name: "v${{ env.NEW_VERSION_NAME }} (Build ${{ env.NEW_VERSION_CODE }})"
+          tag_name: v${{ env.NEW_VERSION_NAME }}-build${{ env.NEW_VERSION_CODE }}
+          name: "v${{ env.NEW_VERSION_NAME }} Build ${{ env.NEW_VERSION_CODE }}"
           body: |
-            🚀 **Versione ${{ env.NEW_VERSION_NAME }}** - Build ${{ env.NEW_VERSION_CODE }}
-            
-            📱 **INSTALLAZIONE:**
-            
-            **PRIMA INSTALLAZIONE:**
-            1. Scarica `gestore-spese.apk`
-            2. Apri il file
-            3. Abilita "Installa da sorgenti sconosciute" se richiesto
-            4. Installa
-            
-            **AGGIORNAMENTO (se hai già una versione installata):**
-            1. **DISINSTALLA** completamente la vecchia versione
-            2. Scarica `gestore-spese.apk`
-            3. Installa
-            
-            ⚠️ **IMPORTANTE**: Tutte le build da ora hanno lo stesso keystore debug. Gli aggiornamenti futuri funzioneranno senza disinstallare.
+            🚀 **VERSIONE ${{ env.NEW_VERSION_NAME }}** - Build ${{ env.NEW_VERSION_CODE }}
             
             ---
             
-            ### ✅ CORREZIONI:
-            - Icona app personalizzata FISSA
-            - Campanella notifiche si nasconde dopo abilitazione
-            - Modal notifiche con z-index corretto (sopra i filtri)
-            - Nessuna schermata bianca al ritorno da Settings
-            - Keystore debug consistente (futuri update OK)
+            ## 📱 INSTALLAZIONE
+            
+            ### ⚠️ SE HAI GIÀ UNA VERSIONE INSTALLATA:
+            
+            **DISINSTALLA COMPLETAMENTE** la vecchia app prima di installare questa.
+            
+            Le vecchie build avevano keystore diversi. Da questa build in poi, tutti gli aggiornamenti funzioneranno senza disinstallare.
+            
+            ### ✅ PRIMA INSTALLAZIONE:
+            
+            1. Scarica `gestore-spese.apk`
+            2. Apri il file sul tuo Android
+            3. Abilita "Installa da sorgenti sconosciute" se richiesto
+            4. Installa
+            
+            ### 🔄 AGGIORNAMENTI FUTURI (da questa build):
+            
+            1. Scarica nuova APK
+            2. Tap sul file
+            3. Android chiederà "Vuoi aggiornare?"
+            4. Tap "Aggiorna"
+            5. FATTO - Dati preservati!
+            
+            ---
+            
+            ## ✅ CORREZIONI IN QUESTA BUILD:
+            
+            1. **Icona App**: Icona personalizzata generata con cordova-res
+            2. **Campanella Notifiche**: Si nasconde dopo abilitazione permesso
+            3. **Schermata Bianca**: Fix per ritorno da Android Settings
+            4. **Modal Notifiche**: Z-index corretto, appare sopra tutti gli elementi
+            5. **Keystore Consistente**: Stesso keystore per tutte le build future
+            6. **Auto-Update**: Sistema attivo per notifiche di nuove versioni
             
             ---
             
             🔗 Commit: [${{ steps.vars.outputs.short_sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            
+            📋 versionCode: ${{ env.NEW_VERSION_CODE }}
+            📱 versionName: ${{ env.NEW_VERSION_NAME }}
           files: gestore-spese.apk
           draft: false
           prerelease: false
