@@ -7,13 +7,11 @@ import { NotificationPermissionModal } from './NotificationPermissionModal';
 interface NotificationSettingsButtonProps {
   isEnabled: boolean;
   requestPermission: () => Promise<{ enabled: boolean }> | void;
-  manualCheckPermission?: () => Promise<void>; // ✅ NEW: Manual check callback
 }
 
 export function NotificationSettingsButton({
   isEnabled,
   requestPermission,
-  manualCheckPermission,
 }: NotificationSettingsButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -32,33 +30,21 @@ export function NotificationSettingsButton({
   // from Settings, which triggered isEnabled() before Android Settings were ready.
   // This caused the white screen crash.
   //
-  // NEW APPROACH: User must manually close the modal or trigger a refresh.
-  // The modal will stay open after returning from Settings, with a new
-  // "Refresh" button that the user can tap to check if permission was granted.
+  // ✅✅✅ NEW APPROACH: Auto-update with SAFE 3-second delay in useNotificationListener hook
+  // The hook now has a resume listener that waits 3 seconds before checking permission.
+  // This gives Android enough time to update Settings.Secure safely.
+  // The modal stays open after returning, and after 3 seconds:
+  // 1. Permission is checked automatically
+  // 2. If enabled, button disappears (isEnabled becomes true)
+  // 3. Modal can be manually closed by user
 
   const handleEnableClick = async () => {
     try {
       await requestPermission();
-      // ✅ Modal stays open - user will close it manually after enabling
-      // or use the "Refresh" button to check status
+      // ✅ Modal stays open - permission will be checked automatically after 3s
     } catch (e) {
       console.error('❌ Error requesting permission:', e);
       setIsModalOpen(false);
-    }
-  };
-
-  const handleRefreshPermission = async () => {
-    // ✅ NEW: Manual refresh triggered by user clicking button in modal
-    console.log('🔄 User manually refreshing permission status...');
-    try {
-      if (manualCheckPermission) {
-        await manualCheckPermission();
-      }
-      // If permission is now enabled, the button will disappear and modal will close
-      // because isEnabled will become true
-      setIsModalOpen(false);
-    } catch (e) {
-      console.error('❌ Error refreshing permission:', e);
     }
   };
 
@@ -85,7 +71,6 @@ export function NotificationSettingsButton({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onEnableClick={handleEnableClick}
-        onRefreshClick={handleRefreshPermission} // ✅ NEW: Pass refresh handler
       />
     </>
   );
