@@ -8,7 +8,9 @@ import type { PendingTransaction } from '../services/notification-listener-servi
 
 export function useNotificationListener() {
   const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
-  const [isEnabled, setIsEnabled] = useState(false);
+  // ✅✅✅ CRITICAL FIX: Start with null to prevent flash
+  // null = not checked yet, true = enabled, false = disabled
+  const [isEnabled, setIsEnabled] = useState<boolean | null>(null);
   const isCheckingRef = useRef(false);
   const hasCheckedOnceRef = useRef(false);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -198,7 +200,8 @@ export function useNotificationListener() {
   return {
     pendingTransactions,
     pendingCount: pendingTransactions.length,
-    isEnabled,
+    // ✅✅✅ CRITICAL: Return false when null to prevent showing button during initial check
+    isEnabled: isEnabled === null ? false : isEnabled,
     requestPermission,
     confirmTransaction,
     ignoreTransaction,
