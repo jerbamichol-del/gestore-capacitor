@@ -1,6 +1,6 @@
 // src/components/NotificationSettingsButton.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { NotificationPermissionModal } from './NotificationPermissionModal';
 
@@ -25,23 +25,18 @@ export function NotificationSettingsButton({
     return null;
   }
 
-  // ❌❌❌ REMOVED: appStateChange listener that caused white screen crash!
-  // The listener was calling requestPermission() immediately when app returned
-  // from Settings, which triggered isEnabled() before Android Settings were ready.
-  // This caused the white screen crash.
-  //
-  // ✅✅✅ NEW APPROACH: Auto-update with SAFE 3-second delay in useNotificationListener hook
-  // The hook now has a resume listener that waits 3 seconds before checking permission.
-  // This gives Android enough time to update Settings.Secure safely.
-  // The modal stays open after returning, and after 3 seconds:
-  // 1. Permission is checked automatically
-  // 2. If enabled, button disappears (isEnabled becomes true)
-  // 3. Modal can be manually closed by user
+  // ✅✅✅ CRITICAL FIX: Auto-close modal when permission is granted
+  useEffect(() => {
+    if (isEnabled && isModalOpen) {
+      console.log('✅ Permission granted - auto-closing modal');
+      setIsModalOpen(false);
+    }
+  }, [isEnabled, isModalOpen]);
 
   const handleEnableClick = async () => {
     try {
       await requestPermission();
-      // ✅ Modal stays open - permission will be checked automatically after 3s
+      // ✅ Modal will close automatically when isEnabled becomes true (after 3s)
     } catch (e) {
       console.error('❌ Error requesting permission:', e);
       setIsModalOpen(false);
