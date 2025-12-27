@@ -1,18 +1,19 @@
 // src/components/NotificationSettingsButton.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { App } from '@capacitor/app';
 import { NotificationPermissionModal } from './NotificationPermissionModal';
 
 interface NotificationSettingsButtonProps {
   isEnabled: boolean;
   requestPermission: () => Promise<{ enabled: boolean }> | void;
+  manualCheckPermission?: () => Promise<void>; // ✅ NEW: Manual check callback
 }
 
 export function NotificationSettingsButton({
   isEnabled,
   requestPermission,
+  manualCheckPermission,
 }: NotificationSettingsButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -26,42 +27,38 @@ export function NotificationSettingsButton({
     return null;
   }
 
-  // Listen for app state changes to recheck permission
-  useEffect(() => {
-    const listener = App.addListener('appStateChange', async ({ isActive }) => {
-      if (isActive && isModalOpen) {
-        // App came back to foreground while modal was open
-        // Recheck permission status
-        try {
-          const result = await requestPermission();
-          if (result && typeof result === 'object' && 'enabled' in result) {
-            if (result.enabled) {
-              // Permission granted! Close modal
-              setIsModalOpen(false);
-            }
-          }
-        } catch (e) {
-          console.error('Error rechecking permission:', e);
-        }
-      }
-    });
-
-    return () => {
-      listener.then(l => l.remove());
-    };
-  }, [isModalOpen, requestPermission]);
+  // ❌❌❌ REMOVED: appStateChange listener that caused white screen crash!
+  // The listener was calling requestPermission() immediately when app returned
+  // from Settings, which triggered isEnabled() before Android Settings were ready.
+  // This caused the white screen crash.
+  //
+  // NEW APPROACH: User must manually close the modal or trigger a refresh.
+  // The modal will stay open after returning from Settings, with a new
+  // "Refresh" button that the user can tap to check if permission was granted.
 
   const handleEnableClick = async () => {
     try {
-      const result = await requestPermission();
-      // Check if permission was granted immediately (unlikely, but handle it)
-      if (result && typeof result === 'object' && 'enabled' in result && result.enabled) {
-        setIsModalOpen(false);
-      }
-      // Otherwise, modal stays open and App listener will close it when user returns
+      await requestPermission();
+      // ✅ Modal stays open - user will close it manually after enabling
+      // or use the "Refresh" button to check status
     } catch (e) {
-      console.error('Error requesting permission:', e);
+      console.error('❌ Error requesting permission:', e);
       setIsModalOpen(false);
+    }
+  };
+
+  const handleRefreshPermission = async () => {
+    // ✅ NEW: Manual refresh triggered by user clicking button in modal
+    console.log('🔄 User manually refreshing permission status...');
+    try {
+      if (manualCheckPermission) {
+        await manualCheckPermission();
+      }
+      // If permission is now enabled, the button will disappear and modal will close
+      // because isEnabled will become true
+      setIsModalOpen(false);
+    } catch (e) {
+      console.error('❌ Error refreshing permission:', e);
     }
   };
 
@@ -88,6 +85,7 @@ export function NotificationSettingsButton({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onEnableClick={handleEnableClick}
+        onRefreshClick={handleRefreshPermission} // ✅ NEW: Pass refresh handler
       />
     </>
   );
