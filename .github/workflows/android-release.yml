@@ -78,14 +78,20 @@ jobs:
           git add android/
           [ -f "package-lock.json" ] && git add package-lock.json
           
-          git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]" || echo "No changes"
-          
-          # Pull con rebase per gestire commit concorrenti
-          git pull --rebase origin main || echo "Pull failed"
-          
-          git push || echo "Push failed"
-          
-          echo "✅ versionCode bumped and pushed"
+          # Commit changes - FAIL if no changes to commit
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]"
+            
+            # Pull with rebase - FAIL if pull fails
+            git pull --rebase origin main
+            
+            # Push - FAIL if push fails  
+            git push
+            
+            echo "✅ versionCode bumped and pushed"
+          else
+            echo "⚠️ No changes to commit"
+          fi
 
       - name: Prepare resources
         run: |
