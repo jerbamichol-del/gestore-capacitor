@@ -27,13 +27,20 @@ export function useNotificationListener() {
       
       // If enabled, load pending transactions
       if (enabled) {
-        const pending = await notificationListenerService.getPendingTransactions();
-        setPendingTransactions(pending);
+        try {
+          const pending = await notificationListenerService.getPendingTransactions();
+          setPendingTransactions(pending);
+        } catch (transError) {
+          console.error('Error loading pending transactions:', transError);
+          // Don't crash, just set empty array
+          setPendingTransactions([]);
+        }
       }
     } catch (error) {
       console.error('Error checking notification permission:', error);
-      // Don't crash the app, just log the error
+      // CRITICAL: Don't crash the app, just set safe defaults
       setIsEnabled(false);
+      setPendingTransactions([]);
     } finally {
       isCheckingRef.current = false;
     }
@@ -58,53 +65,106 @@ export function useNotificationListener() {
 
   // Confirm a pending transaction
   const confirmTransaction = useCallback(async (id: string) => {
-    await notificationListenerService.confirmTransaction(id);
-    // Refresh pending transactions
-    const pending = await notificationListenerService.getPendingTransactions();
-    setPendingTransactions(pending);
+    try {
+      await notificationListenerService.confirmTransaction(id);
+      // Refresh pending transactions
+      const pending = await notificationListenerService.getPendingTransactions();
+      setPendingTransactions(pending);
+    } catch (error) {
+      console.error('Error confirming transaction:', error);
+      // Try to refresh anyway
+      try {
+        const pending = await notificationListenerService.getPendingTransactions();
+        setPendingTransactions(pending);
+      } catch (refreshError) {
+        console.error('Error refreshing transactions:', refreshError);
+      }
+    }
   }, []);
 
   // Ignore a pending transaction
   const ignoreTransaction = useCallback(async (id: string) => {
-    await notificationListenerService.ignoreTransaction(id);
-    // Refresh pending transactions
-    const pending = await notificationListenerService.getPendingTransactions();
-    setPendingTransactions(pending);
+    try {
+      await notificationListenerService.ignoreTransaction(id);
+      // Refresh pending transactions
+      const pending = await notificationListenerService.getPendingTransactions();
+      setPendingTransactions(pending);
+    } catch (error) {
+      console.error('Error ignoring transaction:', error);
+      // Try to refresh anyway
+      try {
+        const pending = await notificationListenerService.getPendingTransactions();
+        setPendingTransactions(pending);
+      } catch (refreshError) {
+        console.error('Error refreshing transactions:', refreshError);
+      }
+    }
   }, []);
 
   // Initial check on mount
   useEffect(() => {
     if (!isAndroid) return;
 
-    // Check permission on mount
-    checkPermissionStatus();
-
-    // ✅ CRITICAL FIX: Listen for app state changes
-    // When user returns from Android settings, recheck permission
-    const appStateListener = CapApp.addListener('appStateChange', async ({ isActive }) => {
-      if (isActive) {
-        // App returned to foreground - recheck permission
-        console.log('App returned to foreground, rechecking permission...');
-        
-        // Small delay to ensure Android has updated the permission
-        setTimeout(() => {
-          checkPermissionStatus();
-        }, 500);
+    // Check permission on mount with error handling
+    (async () => {
+      try {
+        await checkPermissionStatus();
+      } catch (error) {
+        console.error('Error in initial permission check:', error);
       }
+    })();
+
+    // ✅ CRITICAL FIX: Listen for app state changes with error handling
+    const setupListeners = async () => {
+      try {
+        const appStateListener = await CapApp.addListener('appStateChange', async ({ isActive }) => {
+          if (isActive) {
+            // App returned to foreground - recheck permission
+            console.log('App returned to foreground, rechecking permission...');
+            
+            // Small delay to ensure Android has updated the permission
+            setTimeout(async () => {
+              try {
+                await checkPermissionStatus();
+              } catch (error) {
+                console.error('Error rechecking permission on resume:', error);
+              }
+            }, 500);
+          }
+        });
+
+        // ✅ CRITICAL FIX: Listen for resume event with error handling
+        const resumeListener = await CapApp.addListener('resume', async () => {
+          console.log('App resumed, rechecking permission...');
+          setTimeout(async () => {
+            try {
+              await checkPermissionStatus();
+            } catch (error) {
+              console.error('Error rechecking permission on app resume:', error);
+            }
+          }, 500);
+        });
+
+        // Return cleanup function
+        return () => {
+          appStateListener.remove();
+          resumeListener.remove();
+        };
+      } catch (error) {
+        console.error('Error setting up app listeners:', error);
+        return () => {}; // Return empty cleanup
+      }
+    };
+
+    // Setup listeners and store cleanup
+    let cleanup: (() => void) | undefined;
+    setupListeners().then(cleanupFn => {
+      cleanup = cleanupFn;
     });
 
-    // ✅ CRITICAL FIX: Listen for resume event (alternative to appStateChange)
-    const resumeListener = CapApp.addListener('resume', async () => {
-      console.log('App resumed, rechecking permission...');
-      setTimeout(() => {
-        checkPermissionStatus();
-      }, 500);
-    });
-
-    // Cleanup listeners
+    // Cleanup on unmount
     return () => {
-      appStateListener.then(listener => listener.remove());
-      resumeListener.then(listener => listener.remove());
+      if (cleanup) cleanup();
     };
   }, [isAndroid, checkPermissionStatus]);
 
@@ -118,6 +178,7 @@ export function useNotificationListener() {
         setPendingTransactions(pending);
       } catch (error) {
         console.error('Error polling transactions:', error);
+        // Don't crash, just log
       }
     }, 10000); // 10 seconds
 
