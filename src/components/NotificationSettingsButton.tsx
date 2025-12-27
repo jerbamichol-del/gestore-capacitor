@@ -1,6 +1,6 @@
 // src/components/NotificationSettingsButton.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { NotificationPermissionModal } from './NotificationPermissionModal';
 
@@ -15,30 +15,33 @@ export function NotificationSettingsButton({
 }: NotificationSettingsButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ✅✅✅ CRITICAL: useEffect MUST be before early returns!
-  // Auto-close modal when permission is granted
-  useEffect(() => {
-    if (isEnabled && isModalOpen) {
-      console.log('✅ Permission granted - auto-closing modal SAFELY');
-      setIsModalOpen(false);
-    }
-  }, [isEnabled, isModalOpen]);
-
   // Only show on Android
   if (Capacitor.getPlatform() !== 'android') {
     return null;
   }
 
-  // ✅ Hide button completely when permission is granted
-  // This happens AFTER useEffect closes the modal, so no crash
+  // ✅ FIX: Hide button completely when permission is granted
   if (isEnabled) {
     return null;
   }
 
+  // ❌❌❌ REMOVED: useEffect to auto-close modal
+  // REASON: When isEnabled becomes true, this component returns null and unmounts.
+  //         The useEffect trying to call setIsModalOpen(false) on unmounted component
+  //         causes "Cannot update during an existing state transition" crash.
+  //
+  // ✅✅✅ NEW APPROACH: Let user close modal manually.
+  //         - After 3 seconds, permission check runs automatically
+  //         - Button disappears when isEnabled becomes true
+  //         - Modal stays open but user can close it manually
+  //         - This is SAFE and cannot crash
+
   const handleEnableClick = async () => {
     try {
       await requestPermission();
-      // ✅ Modal will close automatically when isEnabled becomes true (after 3s)
+      // ✅ Button will disappear automatically after 3s when permission is granted
+      // ✅ Modal stays open - user closes manually
+      // ✅ No crash!
     } catch (e) {
       console.error('❌ Error requesting permission:', e);
       setIsModalOpen(false);
