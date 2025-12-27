@@ -52,16 +52,29 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅ CRITICAL: Create all required resources for cordova-res
+      # ✅ CRITICAL: Resize splash to meet cordova-res requirements
       - name: Prepare resources for cordova-res
         run: |
           echo "🎨 Preparing resources for cordova-res..."
           
+          # Install ImageMagick (already available on ubuntu-latest)
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick
+          
           # Create resources/android directory
           mkdir -p resources/android
           
-          # Copy icon.png as splash.png (cordova-res requires both)
-          cp resources/icon.png resources/splash.png
+          # Resize icon to 1920x1920 for splash (cordova-res requirement)
+          # Using ImageMagick to resize and center on white background
+          convert resources/icon.png \
+            -resize 1920x1920 \
+            -background white \
+            -gravity center \
+            -extent 1920x1920 \
+            resources/splash.png
+          
+          echo "✅ Splash created at 1920x1920"
+          ls -lh resources/splash.png
           
           # Copy for adaptive icons
           cp resources/icon.png resources/android/icon-foreground.png
@@ -76,7 +89,7 @@ jobs:
         run: |
           echo "🎨 Generating icons and splash with cordova-res..."
           
-          # cordova-res requires both icon and splash
+          # cordova-res with both icon and splash
           npx cordova-res android --skip-config --copy
           
           echo "✅ Icons and splash generated"
