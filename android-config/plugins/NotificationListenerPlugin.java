@@ -5,6 +5,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
@@ -75,20 +77,43 @@ public class NotificationListenerPlugin extends Plugin {
         }
     }
 
+    /**
+     * ✅ CRITICAL FIX: Added 300ms delay to prevent white screen crash
+     * 
+     * When user returns from Android Settings after enabling the permission,
+     * Settings.Secure might not be immediately updated. The delay ensures
+     * Android has time to update the system settings before we query them.
+     * 
+     * The try-catch prevents any native crash from propagating to the JS layer.
+     */
     @PluginMethod
     public void isEnabled(PluginCall call) {
         Log.d(TAG, "========================================");
         Log.d(TAG, "isEnabled() method called from JavaScript!");
         Log.d(TAG, "========================================");
         
-        boolean enabled = isNotificationListenerEnabled();
-        Log.d(TAG, "Notification listener enabled status: " + enabled);
-        
-        JSObject ret = new JSObject();
-        ret.put("enabled", enabled);
-        
-        Log.d(TAG, "Returning result: " + ret.toString());
-        call.resolve(ret);
+        // ✅ CRITICAL: Add 300ms delay to ensure Android settings are updated
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    boolean enabled = isNotificationListenerEnabled();
+                    Log.d(TAG, "Notification listener enabled status: " + enabled);
+                    
+                    JSObject ret = new JSObject();
+                    ret.put("enabled", enabled);
+                    
+                    Log.d(TAG, "Returning result: " + ret.toString());
+                    call.resolve(ret);
+                } catch (Exception e) {
+                    // ✅ CRITICAL: Don't crash, return safe default
+                    Log.e(TAG, "❌ Error checking permission (returning safe default)", e);
+                    JSObject ret = new JSObject();
+                    ret.put("enabled", false);
+                    call.resolve(ret);
+                }
+            }
+        }, 300); // 300ms delay
     }
 
     @PluginMethod
