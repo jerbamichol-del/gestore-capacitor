@@ -1,41 +1,31 @@
-# Gestore Spese - Capacitor Native App
+# Gestore Spese
 
-## 📱 App Nativa Android
+Personal finance management application with PWA and React Native mobile support.
 
-Questa è la versione nativa Android dell'app "Gestore Spese" costruita con Capacitor.
+## Features
 
-## ✨ Features
+- Expense tracking across multiple accounts
+- Voice input for quick expense entry
+- Image-based expense recognition
+- Recurring expenses management
+- Transaction history with filters
+- Biometric authentication
+- AI-powered insights
+- Dashboard analytics
+- Auto-update system for Android builds
 
-- 🎨 Icone native generate automaticamente
-- 🔒 Biometria nativa (fingerprint/face)
-- 📱 Ottimizzata per Android con safe-area support
-- 🚀 Build automatica con GitHub Actions
-- 📥 Download APK da GitHub Releases
+## Tech Stack
 
-## 🔄 Sincronizzazione con PWA
+- React / React Native
+- TypeScript
+- Capacitor
+- SQLite
+- Google AI (Gemini)
+- Tailwind CSS
 
-I file vengono automaticamente sincronizzati dalla repository PWA preservando:
-- `PinVerifierModal.tsx` (usa biometrics nativa)
-- `vite.config.ts` (configurazione nativa)
-- `services/biometrics-native.ts` (plugin Capacitor)
+## CI/CD
 
-## 📦 Download
-
-Scarica l'ultima versione: [Releases](https://github.com/jerbamichol-del/gestore-capacitor/releases/latest)
-
-## 🛠️ Build Locale
-
-```bash
-npm install
-npm run build
-npx cap sync android
-cd android
-./gradlew assembleDebug
-```
-
----
-
-**Ultimo aggiornamento**: 2025-12-23
-- ✅ Fix overflow calcolatrice con safe-area
-- ✅ Generazione automatica icone native
-- ✅ QR code per download APK integrato
+- Automated Android APK builds via GitHub Actions
+- Auto-incrementing versionCode on each build
+- Automatic release creation with download links
+- In-app auto-update notifications
