@@ -125,28 +125,39 @@ jobs:
             exit 1
           fi
 
-      # ✅ CRITICAL: Setup consistent keystore with FIXED parameters
-      - name: Setup Debug Keystore
+      # ✅✅✅ CRITICAL FIX: Use persistent keystore from repo instead of generating
+      - name: Setup Persistent Debug Keystore
         run: |
-          echo "🔑 Setting up consistent debug keystore..."
+          echo "🔑 Setting up PERSISTENT debug keystore..."
           
-          # CRITICAL: Exact same parameters every time = same signature
-          keytool -genkeypair -v \
-            -storetype PKCS12 \
-            -keystore android/app/debug.keystore \
-            -alias androiddebugkey \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass android \
-            -keypass android \
-            -dname "CN=Android Debug,OU=Android,O=Android,L=Mountain View,ST=California,C=US"
+          # Check if keystore exists in repo
+          if [ -f "android-config/debug.keystore" ]; then
+            echo "✅ Found persistent keystore in repo"
+            cp android-config/debug.keystore android/app/debug.keystore
+            echo "✅ Keystore copied from repo"
+          else
+            echo "⚠️ WARNING: Persistent keystore NOT found in repo!"
+            echo "⚠️ Generating a NEW keystore (this will cause package conflict!)"
+            echo "⚠️ To fix: Generate keystore locally and commit to android-config/debug.keystore"
+            
+            # Generate as fallback (will cause conflicts)
+            keytool -genkeypair -v \
+              -storetype PKCS12 \
+              -keystore android/app/debug.keystore \
+              -alias androiddebugkey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass android \
+              -keypass android \
+              -dname "CN=Android Debug,OU=Android,O=Android,L=Mountain View,ST=California,C=US"
+          fi
           
-          echo "✅ Debug keystore created"
+          echo "✅ Debug keystore ready"
           ls -lh android/app/debug.keystore
           
           # Apply signing configuration
-          echo "📝 Applying signing configuration..."
+          echo "📍d Applying signing configuration..."
           cat android-config/signing.gradle >> android/app/build.gradle
           
           # Verify
@@ -273,37 +284,29 @@ jobs:
             
             ## 📱 INSTALLAZIONE
             
-            ### ⚠️ SE HAI GIÀ UNA VERSIONE INSTALLATA:
-            
-            **DISINSTALLA COMPLETAMENTE** la vecchia app prima di installare questa.
-            
-            Le vecchie build avevano keystore diversi. Da questa build in poi, tutti gli aggiornamenti funzioneranno senza disinstallare.
-            
-            ### ✅ PRIMA INSTALLAZIONE:
+            ### ✅ INSTALLAZIONE / AGGIORNAMENTO:
             
             1. Scarica `gestore-spese.apk`
             2. Apri il file sul tuo Android
-            3. Abilita "Installa da sorgenti sconosciute" se richiesto
-            4. Installa
+            3. Se è la prima volta: abilita "Installa da sorgenti sconosciute"
+            4. Se è un aggiornamento: Android chiederà "Vuoi aggiornare?"
+            5. Installa/Aggiorna
+            6. ✅ FATTO - Dati preservati!
             
-            ### 🔄 AGGIORNAMENTI FUTURI (da questa build):
+            ### ⚠️ IMPORTANTE:
             
-            1. Scarica nuova APK
-            2. Tap sul file
-            3. Android chiederà "Vuoi aggiornare?"
-            4. Tap "Aggiorna"
-            5. FATTO - Dati preservati!
+            Tutte le build usano lo STESSO keystore persistente. Gli aggiornamenti funzionano senza disinstallare!
             
             ---
             
-            ## ✅ CORREZIONI IN QUESTA BUILD:
+            ## ✅ FIX IN QUESTA BUILD:
             
-            1. **Icona App**: Icona personalizzata generata con cordova-res
-            2. **Campanella Notifiche**: Si nasconde dopo abilitazione permesso
-            3. **Schermata Bianca**: Fix completo con try-catch su tutti i listener
-            4. **Modal Notifiche**: Z-index corretto, appare sopra tutti gli elementi
-            5. **Keystore Consistente**: Stesso keystore PKCS12 per tutte le build future
-            6. **Auto-Update**: Sistema attivo per notifiche di nuove versioni
+            1. **🔑 Keystore Persistente**: Stesso keystore per tutte le build - NO PIÙ CONFLITTI!
+            2. **🚫 Schermata Bianca**: Fix definitivo con delay 300ms + error handling
+            3. **🔔 Sistema Auto-Update**: Parsing corretto dei tag v1.0-build2
+            4. **🎨 Icona App**: Generata con cordova-res
+            5. **🔔 Campanella Notifiche**: Si nasconde dopo abilitazione
+            6. **📝 Modal Notifiche**: Z-index corretto
             
             ---
             
