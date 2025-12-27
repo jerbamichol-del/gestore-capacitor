@@ -42,6 +42,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Read current versionCode BEFORE platform removal
+        id: read_version
+        run: |
+          if [ -f "android/app/build.gradle" ]; then
+            CURRENT=$(grep -oP 'versionCode \K\d+' android/app/build.gradle)
+            echo "Found existing versionCode: $CURRENT"
+            echo "EXISTING_VERSION=$CURRENT" >> $GITHUB_ENV
+          else
+            echo "No existing android platform, starting from 0"
+            echo "EXISTING_VERSION=0" >> $GITHUB_ENV
+          fi
+
       - name: Remove existing Android platform
         run: |
           if [ -d "android" ]; then
@@ -55,17 +67,18 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      - name: Bump versionCode and commit
+      - name: Restore and bump versionCode
         run: |
           echo "🔢 Incrementing versionCode..."
           
           GRADLE_FILE="android/app/build.gradle"
-          CURRENT_VERSION=$(grep -oP 'versionCode \K\d+' "$GRADLE_FILE")
+          CURRENT_VERSION=${{ env.EXISTING_VERSION }}
           NEW_VERSION=$((CURRENT_VERSION + 1))
           
           echo "📊 Current: $CURRENT_VERSION → New: $NEW_VERSION"
           
-          sed -i "s/versionCode $CURRENT_VERSION/versionCode $NEW_VERSION/g" "$GRADLE_FILE"
+          # Replace the default versionCode 1 with our incremented version
+          sed -i "s/versionCode 1/versionCode $NEW_VERSION/g" "$GRADLE_FILE"
           
           VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' "$GRADLE_FILE")
           
@@ -75,23 +88,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Add EVERYTHING that npx cap add might have modified
+          # Add ALL files
           git add -A
           
-          # Commit changes - FAIL if no changes to commit
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]"
-            
-            # Pull with rebase - FAIL if pull fails
-            git pull --rebase origin main
-            
-            # Push - FAIL if push fails  
-            git push
-            
-            echo "✅ versionCode bumped and pushed"
-          else
-            echo "⚠️ No changes to commit"
+          # Always commit - force if needed
+          if git diff --staged --quiet; then
+            echo "⚠️ No staged changes detected, forcing dummy change"
+            echo "# Build $NEW_VERSION - $(date)" >> android/app/.buildinfo
+            git add android/app/.buildinfo
           fi
+          
+          git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]"
+          
+          # Pull with rebase
+          git pull --rebase origin main || echo "Already up to date"
+          
+          # Push
+          git push
+          
+          echo "✅ versionCode bumped and pushed: $NEW_VERSION"
 
       - name: Prepare resources
         run: |
