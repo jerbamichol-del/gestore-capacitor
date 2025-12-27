@@ -125,36 +125,36 @@ jobs:
             exit 1
           fi
 
-      # ✅✅✅ CRITICAL FIX: Generate keystore with FIXED seed for consistency
-      # Uses repository secrets to ensure same keystore across builds
-      - name: Generate Consistent Debug Keystore
+      # ✅✅✅ CRITICAL FIX: Copy COMMITTED keystore (no more generation!)
+      # This ensures SAME signature across ALL builds forever
+      - name: Copy Persistent Debug Keystore
         run: |
-          echo "🔑 Generating consistent debug keystore..."
+          echo "🔑 Using committed debug keystore..."
           
-          # ✅ CRITICAL: Use FIXED parameters to generate SAME keystore every time
-          # This works because keytool uses these exact parameters as seed:
-          # - Same DN (Distinguished Name)
-          # - Same validity
-          # - Same algorithm and key size
-          # - Same password
+          # Keystore is in repo root (generated once by generate-keystore.sh)
+          KEYSTORE_SOURCE="android-config/debug.keystore"
+          KEYSTORE_DEST="android/app/debug.keystore"
           
-          keytool -genkeypair -v \
-            -storetype PKCS12 \
-            -keystore android/app/debug.keystore \
-            -alias androiddebugkey \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass android \
-            -keypass android \
-            -dname "CN=Gestore Spese Debug, OU=Development, O=Gestore Spese, L=Rome, ST=Lazio, C=IT"
+          if [ ! -f "$KEYSTORE_SOURCE" ]; then
+            echo "❌❌❌ KEYSTORE NOT FOUND IN REPOSITORY!"
+            echo ""
+            echo "You must generate and commit the keystore first:"
+            echo "  1. Run: chmod +x scripts/generate-keystore.sh"
+            echo "  2. Run: ./scripts/generate-keystore.sh"
+            echo "  3. Follow instructions to commit keystore"
+            echo ""
+            exit 1
+          fi
           
-          echo "✅ Debug keystore generated"
-          ls -lh android/app/debug.keystore
+          # Copy keystore to android/app/
+          cp "$KEYSTORE_SOURCE" "$KEYSTORE_DEST"
           
-          # Show keystore info for debugging
+          echo "✅ Keystore copied from repository"
+          ls -lh "$KEYSTORE_DEST"
+          
+          # Show keystore info for verification
           echo "🔍 Keystore info:"
-          keytool -list -v -keystore android/app/debug.keystore -storepass android | head -n 20
+          keytool -list -v -keystore "$KEYSTORE_DEST" -storepass android | head -n 20
           
           # Apply signing configuration
           echo "📝 Applying signing configuration..."
@@ -295,26 +295,36 @@ jobs:
             
             ## ✅ FIX IN QUESTA BUILD:
             
-            1. **🚫 Schermata Bianca DEFINITIVA**: Delay 1000ms + retry logic con backoff
-            2. **🔑 Keystore Auto-Generato**: Stesso keystore ad ogni build senza committare
-            3. **🔔 Sistema Auto-Update**: Parsing corretto dei tag v1.0-build2
-            4. **🎨 Icona + Splash**: Dimensioni corrette (1920x1920 necessario)
-            5. **📦 APK Debug**: Mantiene formato debug per sideload
+            1. **🚫 Schermata Bianca ELIMINATA**: Auto-update con delay SICURO (3s)
+            2. **🔔 Campanella Scompare Automaticamente**: Dopo 3s dal rientro
+            3. **🔑 Keystore Persistente**: ZERO conflitti durante aggiornamenti
+            4. **🔄 Sistema Auto-Update**: Parsing corretto dei tag v1.0-build2
+            5. **🎨 Icona + Splash**: Dimensioni corrette (1920x1920)
             
             ---
             
-            ### ⚠️ IMPORTANTE
+            ### ⚠️ IMPORTANTE PER AGGIORNAMENTI
             
-            **Prima installazione dopo questo fix:**
-            - Se hai una versione precedente installata, DISINSTALLALA prima
-            - Le vecchie build avevano keystore diversi
-            - Da questa build in poi, tutti gli aggiornamenti funzioneranno senza disinstallare
+            **Se hai installato una build PRECEDENTE a questa:**
+            - ❌ Le vecchie build avevano keystore diversi
+            - ✅ DISINSTALLA la vecchia versione PRIMA
+            - ✅ Poi installa questa nuova build
             
-            **Test schermata bianca:**
+            **Da QUESTA build in poi:**
+            - ✅ Tutti gli aggiornamenti funzioneranno senza disinstallare
+            - ✅ Dati preservati automaticamente
+            - ✅ Nessun conflitto di pacchetto
+            
+            ---
+            
+            ### 🧪 TEST SCHERMATA BIANCA (RISOLTO)
+            
             1. Vai in Impostazioni Android > Notifiche > Accesso notifiche
             2. Abilita "Gestore Spese"
             3. Torna all'app
             4. ✅ App si carica normalmente (nessuna schermata bianca!)
+            5. Attendi 3 secondi
+            6. ✅ Campanella rossa scompare automaticamente!
             
             ---
             
@@ -322,7 +332,7 @@ jobs:
             
             📋 versionCode: ${{ env.NEW_VERSION_CODE }}
             📱 versionName: ${{ env.NEW_VERSION_NAME }}
-            🔑 Keystore: Auto-generato (consistente)
+            🔑 Keystore: Persistente (committato)
             📦 Type: Debug APK
           files: gestore-spese.apk
           draft: false
