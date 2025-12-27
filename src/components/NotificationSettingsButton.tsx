@@ -15,23 +15,25 @@ export function NotificationSettingsButton({
 }: NotificationSettingsButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // ✅✅✅ CRITICAL: useEffect MUST be before early returns!
+  // Auto-close modal when permission is granted
+  useEffect(() => {
+    if (isEnabled && isModalOpen) {
+      console.log('✅ Permission granted - auto-closing modal SAFELY');
+      setIsModalOpen(false);
+    }
+  }, [isEnabled, isModalOpen]);
+
   // Only show on Android
   if (Capacitor.getPlatform() !== 'android') {
     return null;
   }
 
-  // ✅ FIX: Hide button completely when permission is granted
+  // ✅ Hide button completely when permission is granted
+  // This happens AFTER useEffect closes the modal, so no crash
   if (isEnabled) {
     return null;
   }
-
-  // ✅✅✅ CRITICAL FIX: Auto-close modal when permission is granted
-  useEffect(() => {
-    if (isEnabled && isModalOpen) {
-      console.log('✅ Permission granted - auto-closing modal');
-      setIsModalOpen(false);
-    }
-  }, [isEnabled, isModalOpen]);
 
   const handleEnableClick = async () => {
     try {
