@@ -11,6 +11,7 @@ export function useNotificationListener() {
   const [isEnabled, setIsEnabled] = useState(false);
   const isCheckingRef = useRef(false);
   const hasCheckedOnceRef = useRef(false);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if running on Android
   const isAndroid = Capacitor.getPlatform() === 'android';
@@ -121,7 +122,7 @@ export function useNotificationListener() {
     await checkPermissionStatus();
   }, [checkPermissionStatus]);
 
-  // Initial check on mount ONLY ONCE
+  // Initial check on mount ONLY ONCE + SAFE resume listener
   useEffect(() => {
     if (!isAndroid) return;
     if (hasCheckedOnceRef.current) return; // ✅ CRITICAL: Check only ONCE
@@ -138,18 +139,37 @@ export function useNotificationListener() {
       }
     })();
 
-    // ❌❌❌ REMOVED: NO automatic check on resume!
-    // The resume listener is completely REMOVED to prevent white screen crash.
-    // The app will only check permission when:
-    // 1. Component mounts (once)
-    // 2. User manually triggers check (e.g., closing modal)
-    // 3. User performs an action that requires permission check
+    // ✅✅✅ SAFE resume listener with 3000ms delay
+    // This gives Android enough time to update Settings.Secure after user returns
+    const resumeListener = CapApp.addListener('resume', () => {
+      console.log('📱 App resumed - scheduling SAFE permission check in 3000ms...');
+      
+      // Clear any existing timeout
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+      }
+      
+      // Schedule check with 3 second delay (SAFE)
+      resumeTimeoutRef.current = setTimeout(async () => {
+        console.log('⏰ 3 seconds elapsed - checking permission now (SAFE)');
+        try {
+          await checkPermissionStatus();
+        } catch (error) {
+          console.error('❌ Error in resume permission check:', error);
+          // Swallow error - don't crash
+        }
+      }, 3000); // ✅ 3 SECONDS - enough time for Android to update Settings.Secure
+    });
 
-    console.log('✅ No resume listener registered (prevents crash)');
+    console.log('✅ SAFE resume listener registered (3s delay)');
     
-    // No cleanup needed since no listeners
+    // Cleanup
     return () => {
       console.log('🧹 useNotificationListener unmounting');
+      resumeListener.then(listener => listener.remove());
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+      }
     };
   }, [isAndroid, checkPermissionStatus]);
 
@@ -182,6 +202,6 @@ export function useNotificationListener() {
     requestPermission,
     confirmTransaction,
     ignoreTransaction,
-    manualCheckPermission, // ✅ NEW: Expose manual check for user-triggered updates
+    manualCheckPermission, // ✅ Still exposed for manual refresh if needed
   };
 }
