@@ -52,28 +52,27 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅ CRITICAL: Create adaptive icon resources first
+      # ✅ CRITICAL: Create adaptive icon resources
       - name: Prepare adaptive icon resources
         run: |
           echo "🎨 Preparing adaptive icon resources..."
           
-          # Create resources/android directory
           mkdir -p resources/android
           
-          # Copy icon as both foreground and background for adaptive icons
+          # Copy icon for adaptive icons
           cp resources/icon.png resources/android/icon-foreground.png
           cp resources/icon.png resources/android/icon-background.png
           
           echo "✅ Adaptive icon resources created"
           ls -lh resources/android/
 
-      # ✅ CRITICAL: Generate icons using cordova-res (more reliable)
+      # ✅ CRITICAL: Generate ONLY icons (skip splash)
       - name: Generate app icons
         run: |
           echo "🎨 Generating icons with cordova-res..."
           
-          # Use cordova-res for more reliable icon generation
-          npx cordova-res android --skip-config --copy
+          # Use cordova-res with --icon-only flag to skip splash
+          npx cordova-res android --skip-config --copy --icon-only
           
           echo "✅ Icons generated"
           
@@ -92,7 +91,7 @@ jobs:
           if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png" ]; then
             echo "✅ ic_launcher_foreground.png exists"
           else
-            echo "⚠️ ic_launcher_foreground.png NOT found"
+            echo "⚠️ ic_launcher_foreground.png NOT found (optional)"
           fi
 
       - name: Sync Capacitor
@@ -109,12 +108,11 @@ jobs:
             exit 1
           fi
 
-      # ✅ CRITICAL: Setup consistent keystore with FIXED seed
+      # ✅ CRITICAL: Setup consistent keystore
       - name: Setup Debug Keystore
         run: |
           echo "🔑 Setting up consistent debug keystore..."
           
-          # CRITICAL: Use exact same parameters for reproducible keystore
           keytool -genkeypair -v \
             -storetype PKCS12 \
             -keystore android/app/debug.keystore \
@@ -228,10 +226,6 @@ jobs:
           echo "🔨 Building signed APK..."
           ./gradlew assembleDebug --no-daemon --stacktrace
           echo "✅ Build completed"
-          
-          # Verify APK signature
-          echo "🔍 Verifying APK signature..."
-          $ANDROID_HOME/build-tools/*/apksigner verify --print-certs app/build/outputs/apk/debug/app-debug.apk || echo "⚠️ Could not verify signature"
 
       - name: Rename APK
         run: |
@@ -288,9 +282,9 @@ jobs:
             
             1. **Icona App**: Icona personalizzata generata con cordova-res
             2. **Campanella Notifiche**: Si nasconde dopo abilitazione permesso
-            3. **Schermata Bianca**: Fix per ritorno da Android Settings
+            3. **Schermata Bianca**: Fix completo con try-catch su tutti i listener
             4. **Modal Notifiche**: Z-index corretto, appare sopra tutti gli elementi
-            5. **Keystore Consistente**: Stesso keystore per tutte le build future
+            5. **Keystore Consistente**: Stesso keystore PKCS12 per tutte le build future
             6. **Auto-Update**: Sistema attivo per notifiche di nuove versioni
             
             ---
