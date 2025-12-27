@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install --legacy-peer-deps
-          npm install --save-dev @capacitor/assets cordova-res sharp
+          npm install --save-dev cordova-res sharp
         env:
           SHARP_IGNORE_GLOBAL_LIBVIPS: 1
           npm_config_timeout: 600000
@@ -52,47 +52,51 @@ jobs:
           npx cap add android
           echo "✅ Android platform created"
 
-      # ✅ CRITICAL: Create adaptive icon resources
-      - name: Prepare adaptive icon resources
+      # ✅ CRITICAL: Create all required resources for cordova-res
+      - name: Prepare resources for cordova-res
         run: |
-          echo "🎨 Preparing adaptive icon resources..."
+          echo "🎨 Preparing resources for cordova-res..."
           
+          # Create resources/android directory
           mkdir -p resources/android
           
-          # Copy icon for adaptive icons
+          # Copy icon.png as splash.png (cordova-res requires both)
+          cp resources/icon.png resources/splash.png
+          
+          # Copy for adaptive icons
           cp resources/icon.png resources/android/icon-foreground.png
           cp resources/icon.png resources/android/icon-background.png
           
-          echo "✅ Adaptive icon resources created"
+          echo "✅ Resources prepared"
+          ls -lh resources/
           ls -lh resources/android/
 
-      # ✅ CRITICAL: Generate ONLY icons (skip splash)
-      - name: Generate app icons
+      # ✅ Generate icons and splash with cordova-res
+      - name: Generate app icons and splash
         run: |
-          echo "🎨 Generating icons with cordova-res..."
+          echo "🎨 Generating icons and splash with cordova-res..."
           
-          # Use cordova-res with --icon-only flag to skip splash
-          npx cordova-res android --skip-config --copy --icon-only
+          # cordova-res requires both icon and splash
+          npx cordova-res android --skip-config --copy
           
-          echo "✅ Icons generated"
+          echo "✅ Icons and splash generated"
           
           # Verify generated icons
           echo "🔍 Checking generated icons:"
-          ls -R android/app/src/main/res/ | grep mipmap || echo "⚠️ No mipmap folders"
-          
-          # Check specific icon files
           if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher.png" ]; then
             echo "✅ ic_launcher.png exists in mipmap-hdpi"
             ls -lh android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           else
-            echo "❌ ic_launcher.png NOT found in mipmap-hdpi!"
+            echo "❌ ic_launcher.png NOT found!"
+            exit 1
           fi
           
-          if [ -f "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png" ]; then
-            echo "✅ ic_launcher_foreground.png exists"
-          else
-            echo "⚠️ ic_launcher_foreground.png NOT found (optional)"
-          fi
+          # List all generated resources
+          echo "📂 All mipmap directories:"
+          find android/app/src/main/res -type d -name "mipmap-*" | sort
+          
+          echo "📂 All drawable directories:"
+          find android/app/src/main/res -type d -name "drawable*" | sort
 
       - name: Sync Capacitor
         run: |
@@ -108,11 +112,12 @@ jobs:
             exit 1
           fi
 
-      # ✅ CRITICAL: Setup consistent keystore
+      # ✅ CRITICAL: Setup consistent keystore with FIXED parameters
       - name: Setup Debug Keystore
         run: |
           echo "🔑 Setting up consistent debug keystore..."
           
+          # CRITICAL: Exact same parameters every time = same signature
           keytool -genkeypair -v \
             -storetype PKCS12 \
             -keystore android/app/debug.keystore \
