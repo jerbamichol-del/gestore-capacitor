@@ -21,12 +21,13 @@ const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
  * Only works on native Android platform
  * 
  * ✅ FIXED: Now correctly parses tags like "v1.0-build2" and "v1.0-build3"
+ * ✅ FIXED: Added skipVersion() function to skip specific build versions
  */
 export const useUpdateChecker = () => {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo>({
     available: false,
     currentVersion: '1.0',
-    currentBuild: '2',
+    currentBuild: '3',
   });
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export const useUpdateChecker = () => {
     try {
       // Get current app version from native
       const appInfo = await CapApp.getInfo();
-      const currentVersionCode = parseInt(appInfo.build, 10); // e.g., 2
+      const currentVersionCode = parseInt(appInfo.build, 10); // e.g., 3
       const currentVersionName = appInfo.version; // e.g., "1.0"
 
       console.log(`Current app: v${currentVersionName} (Build ${currentVersionCode})`);
@@ -118,6 +119,21 @@ export const useUpdateChecker = () => {
       const remoteBuildNumber = parseInt(buildMatch[1], 10);
       console.log(`Remote build number: ${remoteBuildNumber}`);
 
+      // ✅ CHECK IF USER SKIPPED THIS VERSION
+      const skippedVersion = localStorage.getItem('skipped_update_version');
+      if (skippedVersion && parseInt(skippedVersion, 10) === remoteBuildNumber) {
+        console.log(`User previously skipped build ${remoteBuildNumber}`);
+        const info: UpdateInfo = {
+          available: false,
+          currentVersion: currentVersionName,
+          currentBuild: currentVersionCode.toString(),
+          latestVersion: release.name || tagName,
+          latestBuild: remoteBuildNumber.toString(),
+        };
+        setUpdateInfo(info);
+        return info;
+      }
+
       // Find APK asset
       const apkAsset = release.assets?.find(
         (asset: any) => asset.name.endsWith('.apk')
@@ -165,6 +181,16 @@ export const useUpdateChecker = () => {
     }
   };
 
+  // ✅ NEW: Function to skip a specific version
+  const skipVersion = () => {
+    if (updateInfo.latestBuild) {
+      console.log(`⏭️ Skipping update to build ${updateInfo.latestBuild}`);
+      localStorage.setItem('skipped_update_version', updateInfo.latestBuild);
+      // Mark as not available
+      setUpdateInfo(prev => ({ ...prev, available: false }));
+    }
+  };
+
   // Check on mount and when app comes to foreground
   useEffect(() => {
     // Initial check on mount
@@ -197,5 +223,6 @@ export const useUpdateChecker = () => {
     isChecking,
     error,
     checkForUpdates,
+    skipVersion, // ✅ NOW EXPORTED!
   };
 };
