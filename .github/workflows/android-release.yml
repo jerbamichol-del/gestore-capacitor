@@ -89,12 +89,27 @@ jobs:
           echo "NEW_VERSION_CODE=$NEW_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           
-          # ✅✅✅ COMMIT THE CHANGE
+          # ✅✅✅ COMMIT ALL ANDROID CHANGES (not just build.gradle)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "$GRADLE_FILE"
-          git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]"
-          git push
+          
+          # Add ALL Android files (entire directory)
+          git add android/
+          
+          # Also add package-lock.json if it was created
+          if [ -f "package-lock.json" ]; then
+            git add package-lock.json
+          fi
+          
+          # Commit with skip ci flag
+          git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]" || {
+            echo "⚠️ No changes to commit (already up to date)"
+          }
+          
+          # Push
+          git push || {
+            echo "⚠️ Push failed or no changes to push"
+          }
           
           echo "✅ versionCode committed and pushed"
 
