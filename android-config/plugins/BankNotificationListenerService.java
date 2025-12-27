@@ -1,13 +1,13 @@
 package com.gestore.spese;
 
 import android.app.Notification;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
-import com.getcapacitor.Bridge;
 import com.getcapacitor.JSObject;
 
 import java.util.Arrays;
@@ -42,14 +42,59 @@ public class BankNotificationListenerService extends NotificationListenerService
     public void onCreate() {
         super.onCreate();
         instance = this;
-        Log.d(TAG, "✅ BankNotificationListenerService created and instance set");
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "✅ BankNotificationListenerService CREATED");
+        Log.d(TAG, "========================================");
+    }
+
+    @Override
+    public void onListenerConnected() {
+        super.onListenerConnected();
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "✅✅✅ Service CONNECTED to notification system");
+        Log.d(TAG, "========================================");
+        
+        // ✅✅✅ CRITICAL FIX: Request rebind to ensure service is properly bound
+        // This is CRUCIAL when returning from Android Settings after enabling permission
+        // Without this, the service can stay in a "zombie" state where it's technically
+        // enabled but not actually receiving notifications
+        try {
+            ComponentName component = new ComponentName(this, BankNotificationListenerService.class);
+            requestRebind(component);
+            Log.d(TAG, "✅ requestRebind() called successfully on connect");
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error calling requestRebind on connect:", e);
+            // Don't crash - service continues
+        }
+    }
+
+    @Override
+    public void onListenerDisconnected() {
+        super.onListenerDisconnected();
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "⚠️⚠️⚠️ Service DISCONNECTED from notification system");
+        Log.d(TAG, "========================================");
+        
+        // ✅✅✅ CRITICAL FIX: Request rebind when disconnected
+        // This prevents the service from staying dead after a crash or disconnect
+        // Android will automatically restart and rebind the service
+        try {
+            ComponentName component = new ComponentName(this, BankNotificationListenerService.class);
+            requestRebind(component);
+            Log.d(TAG, "✅ requestRebind() called successfully on disconnect");
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error calling requestRebind on disconnect:", e);
+            // Don't crash - Android will retry
+        }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         instance = null;
-        Log.d(TAG, "❌ BankNotificationListenerService destroyed and instance cleared");
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "❌ BankNotificationListenerService DESTROYED");
+        Log.d(TAG, "========================================");
     }
 
     @Override
@@ -81,7 +126,7 @@ public class BankNotificationListenerService extends NotificationListenerService
                 return;
             }
 
-            Log.d(TAG, "Bank notification from: " + packageName);
+            Log.d(TAG, "📦 Bank notification from: " + packageName);
             Log.d(TAG, "Title: " + title);
             Log.d(TAG, "Text: " + fullText);
 
@@ -97,7 +142,7 @@ public class BankNotificationListenerService extends NotificationListenerService
             sendToCapacitor(data);
 
         } catch (Exception e) {
-            Log.e(TAG, "Error processing notification", e);
+            Log.e(TAG, "❌ Error processing notification", e);
         }
     }
 
@@ -139,6 +184,6 @@ public class BankNotificationListenerService extends NotificationListenerService
         intent.putExtra("data", data.toString());
         sendBroadcast(intent);
 
-        Log.d(TAG, "Notification data sent to Capacitor");
+        Log.d(TAG, "✅ Notification data sent to Capacitor");
     }
 }
