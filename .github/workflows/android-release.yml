@@ -82,8 +82,14 @@ jobs:
           if ! git diff --staged --quiet; then
             git commit -m "chore: bump versionCode to $NEW_VERSION [skip ci]"
             
+            # Stash any other changes that might have occurred
+            git stash --include-untracked || true
+            
             # Pull with rebase - FAIL if pull fails
             git pull --rebase origin main
+            
+            # Pop stash if it exists
+            git stash pop || true
             
             # Push - FAIL if push fails  
             git push
