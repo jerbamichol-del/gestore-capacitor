@@ -1,14 +1,21 @@
 package com.gestore.spese.plugins;
 
 import android.app.DownloadManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -22,6 +29,10 @@ import java.io.File;
 public class AppUpdatePlugin extends Plugin {
 
     private static final String TAG = "AppUpdatePlugin";
+
+    private static final String NOTIFICATION_CHANNEL_ID = "app_update";
+    private static final int INSTALL_NOTIFICATION_ID = 7001;
+
     private long downloadId = -1;
     private BroadcastReceiver downloadReceiver;
 
@@ -38,14 +49,12 @@ public class AppUpdatePlugin extends Plugin {
         }
 
         try {
-            // Get DownloadManager system service
             DownloadManager downloadManager = (DownloadManager) getContext().getSystemService(Context.DOWNLOAD_SERVICE);
             if (downloadManager == null) {
                 call.reject("DownloadManager not available");
                 return;
             }
 
-            // Create download request
             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
             request.setTitle(title);
             request.setDescription(description);
@@ -53,11 +62,18 @@ public class AppUpdatePlugin extends Plugin {
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
             request.setMimeType("application/vnd.android.package-archive");
 
-            // Enqueue download
             downloadId = downloadManager.enqueue(request);
             Log.d(TAG, "Download started with ID: " + downloadId);
 
-            // Register broadcast receiver for download completion
+            // (Re)register receiver for completion
+            if (downloadReceiver != null) {
+                try {
+                    getContext().unregisterReceiver(downloadReceiver);
+                } catch (Exception ignored) {
+                }
+                downloadReceiver = null;
+            }
+
             downloadReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -69,11 +85,14 @@ public class AppUpdatePlugin extends Plugin {
                 }
             };
 
-            getContext().registerReceiver(
-                downloadReceiver,
-                new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-                Context.RECEIVER_NOT_EXPORTED
-            );
+            IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+
+            // IMPORTANT: Context.RECEIVER_NOT_EXPORTED overload exists only on API 33+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getContext().registerReceiver(downloadReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                getContext().registerReceiver(downloadReceiver, filter);
+            }
 
             JSObject ret = new JSObject();
             ret.put("downloadId", downloadId);
@@ -87,7 +106,12 @@ public class AppUpdatePlugin extends Plugin {
     }
 
     private void handleDownloadComplete(DownloadManager downloadManager, long id) {
+        Uri downloadUri = null;
+
         try {
+            // Prefer the official URI from DownloadManager (more reliable than COLUMN_LOCAL_URI parsing)
+            downloadUri = downloadManager.getUriForDownloadedFile(id);
+
             // Query download status
             DownloadManager.Query query = new DownloadManager.Query();
             query.setFilterById(id);
@@ -98,19 +122,29 @@ public class AppUpdatePlugin extends Plugin {
                 int status = cursor.getInt(statusIndex);
 
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    // Get downloaded file URI
-                    String uriString = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
-                    Uri fileUri = Uri.parse(uriString);
+                    if (downloadUri == null) {
+                        // Fallback to local uri if needed
+                        int localUriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
+                        if (localUriIndex != -1) {
+                            String uriString = cursor.getString(localUriIndex);
+                            if (uriString != null) {
+                                downloadUri = Uri.parse(uriString);
+                            }
+                        }
+                    }
 
-                    Log.d(TAG, "File downloaded to: " + fileUri);
+                    Log.d(TAG, "File downloaded URI: " + downloadUri);
 
-                    // Open APK for installation
-                    installApk(fileUri);
+                    if (downloadUri != null) {
+                        // Play-Store-like behavior: show a notification that opens the installer when tapped.
+                        showInstallNotification(downloadUri);
+                    } else {
+                        Log.e(TAG, "Download finished but URI is null");
+                    }
 
-                    // Notify JS side
                     JSObject ret = new JSObject();
                     ret.put("status", "completed");
-                    ret.put("uri", fileUri.toString());
+                    if (downloadUri != null) ret.put("uri", downloadUri.toString());
                     notifyListeners("downloadComplete", ret);
                 } else {
                     Log.e(TAG, "Download failed with status: " + status);
@@ -118,46 +152,100 @@ public class AppUpdatePlugin extends Plugin {
                     ret.put("status", "failed");
                     notifyListeners("downloadComplete", ret);
                 }
-                cursor.close();
-            }
 
-            // Unregister receiver
-            if (downloadReceiver != null) {
-                getContext().unregisterReceiver(downloadReceiver);
-                downloadReceiver = null;
+                cursor.close();
             }
 
         } catch (Exception e) {
             Log.e(TAG, "Error handling download completion", e);
+        } finally {
+            // Unregister receiver
+            if (downloadReceiver != null) {
+                try {
+                    getContext().unregisterReceiver(downloadReceiver);
+                } catch (Exception ignored) {
+                }
+                downloadReceiver = null;
+            }
         }
     }
 
-    private void installApk(Uri apkUri) {
+    private void showInstallNotification(Uri downloadedApkUri) {
         try {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            
-            // For Android N and above, use FileProvider
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                // Convert content:// to file:// for direct access
+            ensureNotificationChannel();
+
+            Intent installIntent = buildInstallIntent(downloadedApkUri);
+
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                getContext(),
+                0,
+                installIntent,
+                flags
+            );
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                .setContentTitle("Download completato")
+                .setContentText("Tocca per installare l'aggiornamento")
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+            NotificationManagerCompat.from(getContext()).notify(INSTALL_NOTIFICATION_ID, builder.build());
+            Log.d(TAG, "Install notification posted");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error showing install notification", e);
+        }
+    }
+
+    private void ensureNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
+        NotificationManager nm = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return;
+
+        NotificationChannel existing = nm.getNotificationChannel(NOTIFICATION_CHANNEL_ID);
+        if (existing != null) return;
+
+        NotificationChannel channel = new NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            "Aggiornamenti app",
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("Notifiche per installare aggiornamenti");
+        nm.createNotificationChannel(channel);
+    }
+
+    private Intent buildInstallIntent(Uri apkUri) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        Uri uriToUse = apkUri;
+
+        // If we ever get a file:// URI, convert it via FileProvider
+        if (apkUri != null && "file".equalsIgnoreCase(apkUri.getScheme())) {
+            try {
                 File file = new File(apkUri.getPath());
-                Uri contentUri = androidx.core.content.FileProvider.getUriForFile(
+                uriToUse = androidx.core.content.FileProvider.getUriForFile(
                     getContext(),
                     getContext().getPackageName() + ".fileprovider",
                     file
                 );
-                intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } else {
-                intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            } catch (Exception e) {
+                Log.e(TAG, "FileProvider conversion failed", e);
+                uriToUse = apkUri;
             }
-
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(intent);
-            Log.d(TAG, "APK installation intent launched");
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error installing APK", e);
         }
+
+        intent.setDataAndType(uriToUse, "application/vnd.android.package-archive");
+        return intent;
     }
 
     @PluginMethod
