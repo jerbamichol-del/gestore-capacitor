@@ -62,6 +62,27 @@ public class AppUpdatePlugin extends Plugin {
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
             request.setMimeType("application/vnd.android.package-archive");
 
+            // Be explicit to avoid OEM quirks / captive portal behaviors.
+            try {
+                request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
+            } catch (Exception ignored) {
+            }
+            try {
+                request.setAllowedOverMetered(true);
+                request.setAllowedOverRoaming(true);
+            } catch (Exception ignored) {
+            }
+            try {
+                request.setVisibleInDownloadsUi(true);
+            } catch (Exception ignored) {
+            }
+
+            // GitHub release URLs often redirect; DownloadManager handles redirects, but a UA header helps on some OEM stacks.
+            try {
+                request.addRequestHeader("User-Agent", "Android");
+            } catch (Exception ignored) {
+            }
+
             downloadId = downloadManager.enqueue(request);
             Log.d(TAG, "Download started with ID: " + downloadId);
 
@@ -248,6 +269,18 @@ public class AppUpdatePlugin extends Plugin {
     @PluginMethod
     public void getDownloadProgress(PluginCall call) {
         Long id = call.getLong("downloadId");
+
+        // Some bridges pass numbers as Double or strings; be permissive.
+        if (id == null) {
+            try {
+                String idStr = call.getString("downloadId");
+                if (idStr != null) {
+                    id = Long.parseLong(idStr);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
         if (id == null || id == -1) {
             call.reject("Invalid download ID");
             return;
@@ -274,6 +307,9 @@ public class AppUpdatePlugin extends Plugin {
                 int status = cursor.getInt(statusIndex);
 
                 int progress = bytesTotal > 0 ? (int) ((bytesDownloaded * 100) / bytesTotal) : 0;
+                if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                    progress = 100;
+                }
 
                 JSObject ret = new JSObject();
                 ret.put("progress", progress);

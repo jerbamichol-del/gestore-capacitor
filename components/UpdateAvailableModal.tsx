@@ -18,9 +18,9 @@ interface AppUpdatePlugin {
     fileName?: string;
     title?: string;
     description?: string;
-  }): Promise<{ downloadId?: number; status?: string }>;
+  }): Promise<{ downloadId?: number | string; status?: string }>;
 
-  getDownloadProgress(options: { downloadId: number }): Promise<{
+  getDownloadProgress(options: { downloadId: number | string }): Promise<{
     progress?: number;
     status?: string;
     bytesDownloaded?: number;
@@ -39,16 +39,34 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
   const pollRef = useRef<number | null>(null);
+  const downloadIdRef = useRef<number | string | null>(null);
+  const startedAtRef = useRef<number | null>(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      window.clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
 
   useEffect(() => {
+    // When modal closes (isOpen -> false) stop polling to avoid zombie polling + invalid IDs.
+    if (!isOpen) {
+      stopPolling();
+      downloadIdRef.current = null;
+      startedAtRef.current = null;
+      setIsDownloading(false);
+      setDownloadProgress(0);
+      setError(null);
+    }
+
     return () => {
-      if (pollRef.current) {
-        window.clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
+      stopPolling();
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen || !updateInfo.available) return null;
 
@@ -61,6 +79,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
     setIsDownloading(true);
     setDownloadProgress(0);
     setError(null);
+    startedAtRef.current = Date.now();
 
     const fileName = `gestore-spese-${updateInfo.latestBuild || updateInfo.latestVersion || 'latest'}.apk`;
 
@@ -73,46 +92,70 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
       });
 
       const downloadId = res?.downloadId;
+      downloadIdRef.current = downloadId ?? null;
 
-      // Poll progress if we got a downloadId
-      if (downloadId && typeof downloadId === 'number') {
-        pollRef.current = window.setInterval(async () => {
-          try {
-            const p = await AppUpdate.getDownloadProgress({ downloadId });
-            const progress = typeof p?.progress === 'number' ? p.progress : 0;
-            setDownloadProgress(progress);
-
-            const status = p?.status;
-            if (status === 'successful') {
-              if (pollRef.current) {
-                window.clearInterval(pollRef.current);
-                pollRef.current = null;
-              }
-              setTimeout(() => {
-                setIsDownloading(false);
-                onClose();
-              }, 800);
-            }
-
-            if (status === 'failed') {
-              if (pollRef.current) {
-                window.clearInterval(pollRef.current);
-                pollRef.current = null;
-              }
-              setIsDownloading(false);
-              setError('Download fallito. Riprova.');
-            }
-          } catch {
-            // Ignore transient polling errors
-          }
-        }, 800);
-      } else {
-        // No downloadId: close shortly after starting (download continues in background)
+      if (!downloadIdRef.current) {
+        // If plugin didn't return an ID, we can't poll; rely on system notification.
         setTimeout(() => {
           setIsDownloading(false);
           onClose();
         }, 800);
+        return;
       }
+
+      stopPolling();
+      pollRef.current = window.setInterval(async () => {
+        try {
+          const id = downloadIdRef.current;
+          if (!id) {
+            stopPolling();
+            return;
+          }
+
+          const p = await AppUpdate.getDownloadProgress({ downloadId: id });
+          const progress = typeof p?.progress === 'number' ? p.progress : 0;
+          setDownloadProgress(progress);
+
+          const status = p?.status;
+
+          if (status === 'successful' || progress >= 100) {
+            stopPolling();
+            setTimeout(() => {
+              setIsDownloading(false);
+              onClose();
+            }, 800);
+            return;
+          }
+
+          if (status === 'failed') {
+            stopPolling();
+            setIsDownloading(false);
+            setError('Download fallito. Riprova.');
+            return;
+          }
+
+          // Safety net: if we are stuck too long, close and instruct user to check notification/downloads.
+          const startedAt = startedAtRef.current ?? Date.now();
+          const elapsed = Date.now() - startedAt;
+          if (elapsed > 4 * 60 * 1000) {
+            stopPolling();
+            setIsDownloading(false);
+            setError('Download in corso troppo a lungo. Controlla la notifica di download o l\'app Download e riprova.');
+          }
+        } catch (e: any) {
+          // If the native side can’t find the download anymore (e.g. OEM bug / ID parsing), stop polling and fallback.
+          stopPolling();
+          setIsDownloading(false);
+
+          const msg = (e?.message || e?.toString?.() || '').toLowerCase();
+          if (msg.includes('invalid download id') || msg.includes('download not found')) {
+            setError('Download completato o non tracciabile. Controlla le notifiche/Downloads per installare.');
+            return;
+          }
+
+          setError('Errore durante il download. Riprova.');
+        }
+      }, 900);
 
     } catch (err) {
       // Fallback: open in browser
@@ -145,7 +188,6 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
         className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white relative">
           {!isDownloading && (
             <button
@@ -161,7 +203,6 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           <p className="text-indigo-100 text-sm">Versione {updateInfo.latestVersion || 'nuova'}</p>
         </div>
 
-        {/* Body */}
         <div className="p-6">
           <div className="mb-4">
             <p className="text-slate-700 mb-2">🔥 <strong>Novità:</strong></p>
@@ -177,7 +218,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <p className="text-xs text-blue-800">💡 <strong>Nota:</strong> Alla fine del download riceverai una notifica: toccala per installare.</p>
+            <p className="text-xs text-blue-800">💡 <strong>Nota:</strong> A fine download riceverai una notifica: toccala per installare.</p>
           </div>
 
           {error && (
@@ -186,7 +227,6 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
             </div>
           )}
 
-          {/* Buttons */}
           <div className="flex gap-3">
             <button
               onClick={handleSkip}
@@ -221,6 +261,16 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
               </div>
               <p className="text-xs text-slate-500 mt-1 text-center">{downloadProgress}%</p>
             </div>
+          )}
+
+          {/* Emergency fallback */}
+          {!isDownloading && updateInfo.downloadUrl && (
+            <button
+              onClick={() => Browser.open({ url: updateInfo.downloadUrl, presentationStyle: 'popover' })}
+              className="mt-4 w-full px-4 py-3 border border-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+            >
+              Apri link download (fallback)
+            </button>
           )}
         </div>
       </div>
