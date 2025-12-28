@@ -7,6 +7,7 @@ import com.getcapacitor.BridgeActivity;
 // ✅ CORRECT: Import plugin classes with Plugin suffix
 import com.gestore.spese.NotificationListenerPlugin;
 import com.gestore.spese.SMSReaderPlugin;
+import com.gestore.spese.AppUpdatePlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -15,8 +16,9 @@ public class MainActivity extends BridgeActivity {
         Log.d("MainActivity", "Registering custom plugins...");
         registerPlugin(NotificationListenerPlugin.class);
         registerPlugin(SMSReaderPlugin.class);
+        registerPlugin(AppUpdatePlugin.class);
         Log.d("MainActivity", "Custom plugins registered");
-        
+
         super.onCreate(savedInstanceState);
     }
 }
