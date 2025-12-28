@@ -167,7 +167,7 @@ Quando tutto è configurato correttamente:
 4. **UI Modal** mostra la conferma con un clic ✅
 5. **Auto-add** aggiunge la spesa con account corretto ✅
 
----
+----
 
 ## ❓ Troubleshooting
 
