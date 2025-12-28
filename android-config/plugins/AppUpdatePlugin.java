@@ -4,15 +4,15 @@ import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
@@ -33,12 +33,20 @@ import java.io.File;
 public class AppUpdatePlugin extends Plugin {
 
     private static final String TAG = "AppUpdatePlugin";
-
     private static final String NOTIFICATION_CHANNEL_ID = "app_update";
     private static final int INSTALL_NOTIFICATION_ID = 7001;
+    private static final int POLL_INTERVAL_MS = 1000; // Poll every 1 second
 
-    private long downloadId = -1;
-    private BroadcastReceiver downloadReceiver;
+    private Handler handler;
+    private Runnable pollRunnable;
+    private long currentDownloadId = -1;
+    private boolean installerLaunched = false;
+
+    @Override
+    public void load() {
+        super.load();
+        handler = new Handler(Looper.getMainLooper());
+    }
 
     @PluginMethod
     public void downloadAndInstall(PluginCall call) {
@@ -66,61 +74,24 @@ public class AppUpdatePlugin extends Plugin {
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
             request.setMimeType("application/vnd.android.package-archive");
 
-            // Be explicit to avoid OEM quirks.
             try {
                 request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
-            } catch (Exception ignored) {
-            }
-            try {
                 request.setAllowedOverMetered(true);
                 request.setAllowedOverRoaming(true);
-            } catch (Exception ignored) {
-            }
-            try {
                 request.setVisibleInDownloadsUi(true);
-            } catch (Exception ignored) {
-            }
-
-            // GitHub release URLs often redirect; a UA header helps on some OEM stacks.
-            try {
                 request.addRequestHeader("User-Agent", "Android");
             } catch (Exception ignored) {
             }
 
-            downloadId = downloadManager.enqueue(request);
-            Log.d(TAG, "Download started with ID: " + downloadId);
+            currentDownloadId = downloadManager.enqueue(request);
+            installerLaunched = false;
+            Log.d(TAG, "Download started with ID: " + currentDownloadId);
 
-            // (Re)register receiver for completion
-            if (downloadReceiver != null) {
-                try {
-                    getContext().unregisterReceiver(downloadReceiver);
-                } catch (Exception ignored) {
-                }
-                downloadReceiver = null;
-            }
+            // Start polling for completion
+            startPolling(downloadManager, currentDownloadId);
 
-            downloadReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-                    if (id == downloadId) {
-                        Log.d(TAG, "Download completed: " + id);
-                        handleDownloadComplete(downloadManager, id);
-                    }
-                }
-            };
-
-            IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                getContext().registerReceiver(downloadReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            } else {
-                getContext().registerReceiver(downloadReceiver, filter);
-            }
-
-            // IMPORTANT: return downloadId as STRING to avoid JS<->Java numeric coercion issues.
             JSObject ret = new JSObject();
-            ret.put("downloadId", String.valueOf(downloadId));
+            ret.put("downloadId", String.valueOf(currentDownloadId));
             ret.put("status", "started");
             call.resolve(ret);
 
@@ -130,123 +101,153 @@ public class AppUpdatePlugin extends Plugin {
         }
     }
 
-    private void handleDownloadComplete(DownloadManager downloadManager, long id) {
+    private void startPolling(final DownloadManager downloadManager, final long downloadId) {
+        stopPolling(); // Stop any existing polling
+
+        pollRunnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    checkDownloadStatus(downloadManager, downloadId);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in polling", e);
+                }
+                // Continue polling
+                if (pollRunnable != null) {
+                    handler.postDelayed(this, POLL_INTERVAL_MS);
+                }
+            }
+        };
+
+        handler.post(pollRunnable);
+        Log.d(TAG, "[POLLING] Started polling for download ID: " + downloadId);
+    }
+
+    private void stopPolling() {
+        if (pollRunnable != null) {
+            handler.removeCallbacks(pollRunnable);
+            pollRunnable = null;
+            Log.d(TAG, "[POLLING] Stopped polling");
+        }
+    }
+
+    private void checkDownloadStatus(DownloadManager downloadManager, long downloadId) {
+        DownloadManager.Query query = new DownloadManager.Query();
+        query.setFilterById(downloadId);
+        Cursor cursor = downloadManager.query(query);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+            int status = cursor.getInt(statusIndex);
+
+            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                Log.d(TAG, "[POLLING] Download successful - stopping polling");
+                stopPolling();
+
+                if (!installerLaunched) {
+                    installerLaunched = true;
+                    handleDownloadSuccess(downloadManager, downloadId);
+                }
+            } else if (status == DownloadManager.STATUS_FAILED) {
+                Log.e(TAG, "[POLLING] Download failed - stopping polling");
+                stopPolling();
+
+                JSObject ret = new JSObject();
+                ret.put("status", "failed");
+                notifyListeners("downloadComplete", ret);
+            }
+            // For RUNNING, PENDING, PAUSED - keep polling
+
+            cursor.close();
+        } else {
+            Log.w(TAG, "[POLLING] Download not found in query");
+        }
+    }
+
+    private void handleDownloadSuccess(DownloadManager downloadManager, long downloadId) {
         Uri downloadUri = null;
 
         try {
-            Log.d(TAG, "[DIAGNOSTIC] handleDownloadComplete called for ID: " + id);
-            downloadUri = downloadManager.getUriForDownloadedFile(id);
-            Log.d(TAG, "[DIAGNOSTIC] getUriForDownloadedFile returned: " + downloadUri);
+            Log.d(TAG, "[SUCCESS] Handling successful download ID: " + downloadId);
+            downloadUri = downloadManager.getUriForDownloadedFile(downloadId);
+            Log.d(TAG, "[SUCCESS] URI from getUriForDownloadedFile: " + downloadUri);
 
-            DownloadManager.Query query = new DownloadManager.Query();
-            query.setFilterById(id);
-            Cursor cursor = downloadManager.query(query);
+            if (downloadUri == null) {
+                // Fallback: try to get URI from cursor
+                DownloadManager.Query query = new DownloadManager.Query();
+                query.setFilterById(downloadId);
+                Cursor cursor = downloadManager.query(query);
 
-            if (cursor != null && cursor.moveToFirst()) {
-                int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                int status = cursor.getInt(statusIndex);
-                Log.d(TAG, "[DIAGNOSTIC] Download status: " + status + " (8=SUCCESSFUL)");
-
-                if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    if (downloadUri == null) {
-                        int localUriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
-                        if (localUriIndex != -1) {
-                            String uriString = cursor.getString(localUriIndex);
-                            if (uriString != null) {
-                                downloadUri = Uri.parse(uriString);
-                                Log.d(TAG, "[DIAGNOSTIC] Parsed local URI from cursor: " + downloadUri);
-                            }
+                if (cursor != null && cursor.moveToFirst()) {
+                    int localUriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
+                    if (localUriIndex != -1) {
+                        String uriString = cursor.getString(localUriIndex);
+                        if (uriString != null) {
+                            downloadUri = Uri.parse(uriString);
+                            Log.d(TAG, "[SUCCESS] URI from cursor: " + downloadUri);
                         }
                     }
-
-                    if (downloadUri != null) {
-                        Log.d(TAG, "[DIAGNOSTIC] About to call openInstaller with URI: " + downloadUri);
-                        // AUTO-LAUNCH INSTALLER (primary path)
-                        openInstaller(downloadUri);
-
-                        // ALSO show notification as fallback (if auto-launch fails or user dismisses)
-                        showInstallNotification(downloadUri);
-                    } else {
-                        Log.e(TAG, "[DIAGNOSTIC] Download finished but URI is null - cannot launch installer");
-                        Toast.makeText(getContext(), "Download completato ma URI nullo - apri manualmente da Download", Toast.LENGTH_LONG).show();
-                    }
-
-                    JSObject ret = new JSObject();
-                    ret.put("status", "completed");
-                    if (downloadUri != null) ret.put("uri", downloadUri.toString());
-                    notifyListeners("downloadComplete", ret);
-                } else {
-                    Log.e(TAG, "Download failed with status: " + status);
-                    JSObject ret = new JSObject();
-                    ret.put("status", "failed");
-                    notifyListeners("downloadComplete", ret);
+                    cursor.close();
                 }
-
-                cursor.close();
-            } else {
-                Log.e(TAG, "[DIAGNOSTIC] Cursor is null or empty for download ID: " + id);
             }
+
+            if (downloadUri != null) {
+                Log.d(TAG, "[SUCCESS] Launching installer");
+                openInstaller(downloadUri);
+                showInstallNotification(downloadUri);
+            } else {
+                Log.e(TAG, "[SUCCESS] URI is null - cannot launch installer");
+                Toast.makeText(getContext(), "Download completato ma impossibile trovare il file", Toast.LENGTH_LONG).show();
+            }
+
+            JSObject ret = new JSObject();
+            ret.put("status", "completed");
+            if (downloadUri != null) ret.put("uri", downloadUri.toString());
+            notifyListeners("downloadComplete", ret);
 
         } catch (Exception e) {
-            Log.e(TAG, "[DIAGNOSTIC] Exception in handleDownloadComplete", e);
-        } finally {
-            if (downloadReceiver != null) {
-                try {
-                    getContext().unregisterReceiver(downloadReceiver);
-                } catch (Exception ignored) {
-                }
-                downloadReceiver = null;
-            }
+            Log.e(TAG, "[SUCCESS] Error handling download success", e);
+            Toast.makeText(getContext(), "Errore: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
     private void openInstaller(Uri apkUri) {
         try {
-            Log.d(TAG, "[DIAGNOSTIC] openInstaller called with URI: " + apkUri);
-            Log.d(TAG, "[DIAGNOSTIC] Android SDK: " + Build.VERSION.SDK_INT);
+            Log.d(TAG, "[INSTALLER] Opening installer for URI: " + apkUri);
+            Log.d(TAG, "[INSTALLER] Android SDK: " + Build.VERSION.SDK_INT);
 
-            // Check if app can install unknown apps (Android 8+)
+            // Check install permission (Android 8+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 boolean canInstall = getContext().getPackageManager().canRequestPackageInstalls();
-                Log.d(TAG, "[DIAGNOSTIC] canRequestPackageInstalls() = " + canInstall);
+                Log.d(TAG, "[INSTALLER] canRequestPackageInstalls: " + canInstall);
 
                 if (!canInstall) {
-                    Log.w(TAG, "[DIAGNOSTIC] App cannot install unknown apps - opening settings");
+                    Log.w(TAG, "[INSTALLER] Cannot install - opening settings");
                     Toast.makeText(getContext(), "Abilita 'Installa app sconosciute' per questa app", Toast.LENGTH_LONG).show();
 
-                    // Open settings to enable "Install unknown apps" for this app
                     Intent settingsIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
                     settingsIntent.setData(Uri.parse("package:" + getContext().getPackageName()));
                     settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     getContext().startActivity(settingsIntent);
-                    Log.d(TAG, "[DIAGNOSTIC] Settings activity started");
                     return;
                 }
-            } else {
-                Log.d(TAG, "[DIAGNOSTIC] Android < 8.0 - no runtime install permission check needed");
             }
 
-            Log.d(TAG, "[DIAGNOSTIC] Building install intent...");
             Intent installIntent = buildInstallIntent(apkUri);
-            Log.d(TAG, "[DIAGNOSTIC] Install intent built: " + installIntent);
-            Log.d(TAG, "[DIAGNOSTIC] Install intent data: " + installIntent.getData());
-            Log.d(TAG, "[DIAGNOSTIC] Install intent type: " + installIntent.getType());
-            Log.d(TAG, "[DIAGNOSTIC] Install intent flags: " + installIntent.getFlags());
-
+            Log.d(TAG, "[INSTALLER] Starting install activity");
             getContext().startActivity(installIntent);
-            Log.d(TAG, "[DIAGNOSTIC] startActivity(installIntent) called - installer should open now");
             Toast.makeText(getContext(), "Apertura installer...", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "[INSTALLER] Install activity started successfully");
 
         } catch (Exception e) {
-            Log.e(TAG, "[DIAGNOSTIC] Exception in openInstaller", e);
+            Log.e(TAG, "[INSTALLER] Failed to open installer", e);
             Toast.makeText(getContext(), "Errore apertura installer: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            // Notification is already posted as fallback
         }
     }
 
     private void showInstallNotification(Uri downloadedApkUri) {
         try {
-            Log.d(TAG, "[DIAGNOSTIC] showInstallNotification called");
+            Log.d(TAG, "[NOTIFICATION] Showing install notification");
             ensureNotificationChannel();
 
             Intent installIntent = buildInstallIntent(downloadedApkUri);
@@ -272,10 +273,10 @@ public class AppUpdatePlugin extends Plugin {
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
 
             NotificationManagerCompat.from(getContext()).notify(INSTALL_NOTIFICATION_ID, builder.build());
-            Log.d(TAG, "[DIAGNOSTIC] Install notification posted");
+            Log.d(TAG, "[NOTIFICATION] Notification posted");
 
         } catch (Exception e) {
-            Log.e(TAG, "[DIAGNOSTIC] Error showing install notification", e);
+            Log.e(TAG, "[NOTIFICATION] Error showing notification", e);
         }
     }
 
@@ -295,11 +296,9 @@ public class AppUpdatePlugin extends Plugin {
         );
         channel.setDescription("Notifiche per installare aggiornamenti");
         nm.createNotificationChannel(channel);
-        Log.d(TAG, "[DIAGNOSTIC] Notification channel created");
     }
 
     private Intent buildInstallIntent(Uri apkUri) {
-        Log.d(TAG, "[DIAGNOSTIC] buildInstallIntent - input URI: " + apkUri);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -307,32 +306,19 @@ public class AppUpdatePlugin extends Plugin {
         Uri uriToUse = apkUri;
 
         if (apkUri != null && "file".equalsIgnoreCase(apkUri.getScheme())) {
-            Log.d(TAG, "[DIAGNOSTIC] URI is file:// scheme - converting to FileProvider URI");
             try {
                 File file = new File(apkUri.getPath());
-                Log.d(TAG, "[DIAGNOSTIC] File path: " + file.getAbsolutePath());
-                Log.d(TAG, "[DIAGNOSTIC] File exists: " + file.exists());
-                Log.d(TAG, "[DIAGNOSTIC] File size: " + file.length());
+                Log.d(TAG, "[INTENT] File: " + file.getAbsolutePath() + ", exists: " + file.exists());
 
                 String authority = getContext().getPackageName() + ".fileprovider";
-                Log.d(TAG, "[DIAGNOSTIC] FileProvider authority: " + authority);
-
-                uriToUse = FileProvider.getUriForFile(
-                    getContext(),
-                    authority,
-                    file
-                );
-                Log.d(TAG, "[DIAGNOSTIC] FileProvider URI: " + uriToUse);
+                uriToUse = FileProvider.getUriForFile(getContext(), authority, file);
+                Log.d(TAG, "[INTENT] FileProvider URI: " + uriToUse);
             } catch (Exception e) {
-                Log.e(TAG, "[DIAGNOSTIC] FileProvider conversion failed", e);
-                uriToUse = apkUri;
+                Log.e(TAG, "[INTENT] FileProvider failed", e);
             }
-        } else {
-            Log.d(TAG, "[DIAGNOSTIC] URI is not file:// - using as-is (likely content://)");
         }
 
         intent.setDataAndType(uriToUse, "application/vnd.android.package-archive");
-        Log.d(TAG, "[DIAGNOSTIC] buildInstallIntent - final URI: " + uriToUse);
         return intent;
     }
 
@@ -340,7 +326,6 @@ public class AppUpdatePlugin extends Plugin {
     public void getDownloadProgress(PluginCall call) {
         Long id = null;
 
-        // Prefer reading from raw data to handle String/Double/Long/Integer reliably.
         try {
             Object raw = call.getData() != null ? call.getData().get("downloadId") : null;
             if (raw instanceof Number) {
@@ -351,7 +336,6 @@ public class AppUpdatePlugin extends Plugin {
         } catch (Exception ignored) {
         }
 
-        // Fallbacks
         if (id == null) {
             try {
                 id = call.getLong("downloadId");
@@ -426,5 +410,11 @@ public class AppUpdatePlugin extends Plugin {
             default:
                 return "unknown";
         }
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        stopPolling();
+        super.handleOnDestroy();
     }
 }
