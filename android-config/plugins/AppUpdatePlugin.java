@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -133,7 +134,9 @@ public class AppUpdatePlugin extends Plugin {
         Uri downloadUri = null;
 
         try {
+            Log.d(TAG, "[DIAGNOSTIC] handleDownloadComplete called for ID: " + id);
             downloadUri = downloadManager.getUriForDownloadedFile(id);
+            Log.d(TAG, "[DIAGNOSTIC] getUriForDownloadedFile returned: " + downloadUri);
 
             DownloadManager.Query query = new DownloadManager.Query();
             query.setFilterById(id);
@@ -142,6 +145,7 @@ public class AppUpdatePlugin extends Plugin {
             if (cursor != null && cursor.moveToFirst()) {
                 int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
                 int status = cursor.getInt(statusIndex);
+                Log.d(TAG, "[DIAGNOSTIC] Download status: " + status + " (8=SUCCESSFUL)");
 
                 if (status == DownloadManager.STATUS_SUCCESSFUL) {
                     if (downloadUri == null) {
@@ -150,20 +154,21 @@ public class AppUpdatePlugin extends Plugin {
                             String uriString = cursor.getString(localUriIndex);
                             if (uriString != null) {
                                 downloadUri = Uri.parse(uriString);
+                                Log.d(TAG, "[DIAGNOSTIC] Parsed local URI from cursor: " + downloadUri);
                             }
                         }
                     }
 
-                    Log.d(TAG, "File downloaded successfully, URI: " + downloadUri);
-
                     if (downloadUri != null) {
+                        Log.d(TAG, "[DIAGNOSTIC] About to call openInstaller with URI: " + downloadUri);
                         // AUTO-LAUNCH INSTALLER (primary path)
                         openInstaller(downloadUri);
 
                         // ALSO show notification as fallback (if auto-launch fails or user dismisses)
                         showInstallNotification(downloadUri);
                     } else {
-                        Log.e(TAG, "Download finished but URI is null");
+                        Log.e(TAG, "[DIAGNOSTIC] Download finished but URI is null - cannot launch installer");
+                        Toast.makeText(getContext(), "Download completato ma URI nullo - apri manualmente da Download", Toast.LENGTH_LONG).show();
                     }
 
                     JSObject ret = new JSObject();
@@ -178,10 +183,12 @@ public class AppUpdatePlugin extends Plugin {
                 }
 
                 cursor.close();
+            } else {
+                Log.e(TAG, "[DIAGNOSTIC] Cursor is null or empty for download ID: " + id);
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "Error handling download completion", e);
+            Log.e(TAG, "[DIAGNOSTIC] Exception in handleDownloadComplete", e);
         } finally {
             if (downloadReceiver != null) {
                 try {
@@ -195,32 +202,51 @@ public class AppUpdatePlugin extends Plugin {
 
     private void openInstaller(Uri apkUri) {
         try {
+            Log.d(TAG, "[DIAGNOSTIC] openInstaller called with URI: " + apkUri);
+            Log.d(TAG, "[DIAGNOSTIC] Android SDK: " + Build.VERSION.SDK_INT);
+
             // Check if app can install unknown apps (Android 8+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 boolean canInstall = getContext().getPackageManager().canRequestPackageInstalls();
+                Log.d(TAG, "[DIAGNOSTIC] canRequestPackageInstalls() = " + canInstall);
+
                 if (!canInstall) {
-                    Log.w(TAG, "App cannot install unknown apps - opening settings");
+                    Log.w(TAG, "[DIAGNOSTIC] App cannot install unknown apps - opening settings");
+                    Toast.makeText(getContext(), "Abilita 'Installa app sconosciute' per questa app", Toast.LENGTH_LONG).show();
+
                     // Open settings to enable "Install unknown apps" for this app
                     Intent settingsIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
                     settingsIntent.setData(Uri.parse("package:" + getContext().getPackageName()));
                     settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     getContext().startActivity(settingsIntent);
+                    Log.d(TAG, "[DIAGNOSTIC] Settings activity started");
                     return;
                 }
+            } else {
+                Log.d(TAG, "[DIAGNOSTIC] Android < 8.0 - no runtime install permission check needed");
             }
 
+            Log.d(TAG, "[DIAGNOSTIC] Building install intent...");
             Intent installIntent = buildInstallIntent(apkUri);
+            Log.d(TAG, "[DIAGNOSTIC] Install intent built: " + installIntent);
+            Log.d(TAG, "[DIAGNOSTIC] Install intent data: " + installIntent.getData());
+            Log.d(TAG, "[DIAGNOSTIC] Install intent type: " + installIntent.getType());
+            Log.d(TAG, "[DIAGNOSTIC] Install intent flags: " + installIntent.getFlags());
+
             getContext().startActivity(installIntent);
-            Log.d(TAG, "Installer opened automatically");
+            Log.d(TAG, "[DIAGNOSTIC] startActivity(installIntent) called - installer should open now");
+            Toast.makeText(getContext(), "Apertura installer...", Toast.LENGTH_SHORT).show();
 
         } catch (Exception e) {
-            Log.e(TAG, "Failed to auto-open installer", e);
+            Log.e(TAG, "[DIAGNOSTIC] Exception in openInstaller", e);
+            Toast.makeText(getContext(), "Errore apertura installer: " + e.getMessage(), Toast.LENGTH_LONG).show();
             // Notification is already posted as fallback
         }
     }
 
     private void showInstallNotification(Uri downloadedApkUri) {
         try {
+            Log.d(TAG, "[DIAGNOSTIC] showInstallNotification called");
             ensureNotificationChannel();
 
             Intent installIntent = buildInstallIntent(downloadedApkUri);
@@ -246,10 +272,10 @@ public class AppUpdatePlugin extends Plugin {
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
 
             NotificationManagerCompat.from(getContext()).notify(INSTALL_NOTIFICATION_ID, builder.build());
-            Log.d(TAG, "Install notification posted");
+            Log.d(TAG, "[DIAGNOSTIC] Install notification posted");
 
         } catch (Exception e) {
-            Log.e(TAG, "Error showing install notification", e);
+            Log.e(TAG, "[DIAGNOSTIC] Error showing install notification", e);
         }
     }
 
@@ -269,9 +295,11 @@ public class AppUpdatePlugin extends Plugin {
         );
         channel.setDescription("Notifiche per installare aggiornamenti");
         nm.createNotificationChannel(channel);
+        Log.d(TAG, "[DIAGNOSTIC] Notification channel created");
     }
 
     private Intent buildInstallIntent(Uri apkUri) {
+        Log.d(TAG, "[DIAGNOSTIC] buildInstallIntent - input URI: " + apkUri);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -279,20 +307,32 @@ public class AppUpdatePlugin extends Plugin {
         Uri uriToUse = apkUri;
 
         if (apkUri != null && "file".equalsIgnoreCase(apkUri.getScheme())) {
+            Log.d(TAG, "[DIAGNOSTIC] URI is file:// scheme - converting to FileProvider URI");
             try {
                 File file = new File(apkUri.getPath());
+                Log.d(TAG, "[DIAGNOSTIC] File path: " + file.getAbsolutePath());
+                Log.d(TAG, "[DIAGNOSTIC] File exists: " + file.exists());
+                Log.d(TAG, "[DIAGNOSTIC] File size: " + file.length());
+
+                String authority = getContext().getPackageName() + ".fileprovider";
+                Log.d(TAG, "[DIAGNOSTIC] FileProvider authority: " + authority);
+
                 uriToUse = FileProvider.getUriForFile(
                     getContext(),
-                    getContext().getPackageName() + ".fileprovider",
+                    authority,
                     file
                 );
+                Log.d(TAG, "[DIAGNOSTIC] FileProvider URI: " + uriToUse);
             } catch (Exception e) {
-                Log.e(TAG, "FileProvider conversion failed", e);
+                Log.e(TAG, "[DIAGNOSTIC] FileProvider conversion failed", e);
                 uriToUse = apkUri;
             }
+        } else {
+            Log.d(TAG, "[DIAGNOSTIC] URI is not file:// - using as-is (likely content://)");
         }
 
         intent.setDataAndType(uriToUse, "application/vnd.android.package-archive");
+        Log.d(TAG, "[DIAGNOSTIC] buildInstallIntent - final URI: " + uriToUse);
         return intent;
     }
 
