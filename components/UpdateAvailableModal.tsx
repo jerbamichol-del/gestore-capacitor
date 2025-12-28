@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import React, { useEffect, useRef, useState } from 'react';
+import { registerPlugin } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { UpdateInfo } from '../hooks/useUpdateChecker';
 import { SpinnerIcon } from './icons/SpinnerIcon';
@@ -12,6 +12,24 @@ interface UpdateAvailableModalProps {
   onSkip: () => void;
 }
 
+interface AppUpdatePlugin {
+  downloadAndInstall(options: {
+    url: string;
+    fileName?: string;
+    title?: string;
+    description?: string;
+  }): Promise<{ downloadId?: number; status?: string }>;
+
+  getDownloadProgress(options: { downloadId: number }): Promise<{
+    progress?: number;
+    status?: string;
+    bytesDownloaded?: number;
+    bytesTotal?: number;
+  }>;
+}
+
+const AppUpdate = registerPlugin<AppUpdatePlugin>('AppUpdate');
+
 const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   isOpen,
   updateInfo,
@@ -21,6 +39,16 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) {
+        window.clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, []);
 
   if (!isOpen || !updateInfo.available) return null;
 
@@ -31,56 +59,89 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
     }
 
     setIsDownloading(true);
+    setDownloadProgress(0);
     setError(null);
 
+    const fileName = `gestore-spese-${updateInfo.latestBuild || updateInfo.latestVersion || 'latest'}.apk`;
+
     try {
-      // Open APK download in browser - Android will handle installation
-      await Browser.open({ 
+      const res = await AppUpdate.downloadAndInstall({
         url: updateInfo.downloadUrl,
-        presentationStyle: 'popover'
+        fileName,
+        title: 'Aggiornamento disponibile',
+        description: 'Download in corso...',
       });
 
-      // Alternative: Download with Filesystem (more complex, requires file opener)
-      // const fileName = `gestore-spese-${updateInfo.latestVersion}.apk`;
-      // 
-      // const response = await fetch(updateInfo.downloadUrl);
-      // const blob = await response.blob();
-      // const base64 = await blobToBase64(blob);
-      //
-      // const result = await Filesystem.writeFile({
-      //   path: fileName,
-      //   data: base64,
-      //   directory: Directory.Documents,
-      // });
-      //
-      // Then use FileOpener plugin to open the APK
+      const downloadId = res?.downloadId;
 
-      // Close modal after initiating download
-      setTimeout(() => {
-        onClose();
-        setIsDownloading(false);
-      }, 1000);
+      // Poll progress if we got a downloadId
+      if (downloadId && typeof downloadId === 'number') {
+        pollRef.current = window.setInterval(async () => {
+          try {
+            const p = await AppUpdate.getDownloadProgress({ downloadId });
+            const progress = typeof p?.progress === 'number' ? p.progress : 0;
+            setDownloadProgress(progress);
+
+            const status = p?.status;
+            if (status === 'successful') {
+              if (pollRef.current) {
+                window.clearInterval(pollRef.current);
+                pollRef.current = null;
+              }
+              setTimeout(() => {
+                setIsDownloading(false);
+                onClose();
+              }, 800);
+            }
+
+            if (status === 'failed') {
+              if (pollRef.current) {
+                window.clearInterval(pollRef.current);
+                pollRef.current = null;
+              }
+              setIsDownloading(false);
+              setError('Download fallito. Riprova.');
+            }
+          } catch {
+            // Ignore transient polling errors
+          }
+        }, 800);
+      } else {
+        // No downloadId: close shortly after starting (download continues in background)
+        setTimeout(() => {
+          setIsDownloading(false);
+          onClose();
+        }, 800);
+      }
+
     } catch (err) {
-      console.error('Download failed:', err);
-      setError('Errore durante il download. Riprova.');
-      setIsDownloading(false);
+      // Fallback: open in browser
+      try {
+        await Browser.open({ url: updateInfo.downloadUrl, presentationStyle: 'popover' });
+        setTimeout(() => {
+          setIsDownloading(false);
+          onClose();
+        }, 800);
+      } catch {
+        console.error('Update download failed:', err);
+        setError('Errore durante il download. Riprova.');
+        setIsDownloading(false);
+      }
     }
   };
 
   const handleSkip = () => {
-    // Mark as skipped for 24h
-    localStorage.setItem('update_skipped_until', (Date.now() + 24 * 60 * 60 * 1000).toString());
     onSkip();
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isDownloading) handleSkip();
       }}
     >
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -97,17 +158,13 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           )}
           <div className="text-5xl mb-2">🎉</div>
           <h2 className="text-2xl font-bold mb-1">Aggiornamento Disponibile!</h2>
-          <p className="text-indigo-100 text-sm">
-            Versione {updateInfo.latestVersion || 'nuova'}
-          </p>
+          <p className="text-indigo-100 text-sm">Versione {updateInfo.latestVersion || 'nuova'}</p>
         </div>
 
         {/* Body */}
         <div className="p-6">
           <div className="mb-4">
-            <p className="text-slate-700 mb-2">
-              🔥 <strong>Novità:</strong>
-            </p>
+            <p className="text-slate-700 mb-2">🔥 <strong>Novità:</strong></p>
             {updateInfo.releaseNotes ? (
               <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600 max-h-40 overflow-y-auto">
                 {updateInfo.releaseNotes.split('\n').map((line, i) => (
@@ -120,9 +177,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <p className="text-xs text-blue-800">
-              💡 <strong>Nota:</strong> L'app si aggiornerà automaticamente dopo il download.
-            </p>
+            <p className="text-xs text-blue-800">💡 <strong>Nota:</strong> Alla fine del download riceverai una notifica: toccala per installare.</p>
           </div>
 
           {error && (
@@ -156,17 +211,15 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
             </button>
           </div>
 
-          {isDownloading && downloadProgress > 0 && (
+          {isDownloading && (
             <div className="mt-4">
               <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div 
+                <div
                   className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full transition-all duration-300"
-                  style={{ width: `${downloadProgress}%` }}
+                  style={{ width: `${Math.max(0, Math.min(100, downloadProgress))}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-500 mt-1 text-center">
-                {downloadProgress}% completato
-              </p>
+              <p className="text-xs text-slate-500 mt-1 text-center">{downloadProgress}%</p>
             </div>
           )}
         </div>
