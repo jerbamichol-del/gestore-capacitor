@@ -62,7 +62,7 @@ public class AppUpdatePlugin extends Plugin {
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
             request.setMimeType("application/vnd.android.package-archive");
 
-            // Be explicit to avoid OEM quirks / captive portal behaviors.
+            // Be explicit to avoid OEM quirks.
             try {
                 request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
             } catch (Exception ignored) {
@@ -77,7 +77,7 @@ public class AppUpdatePlugin extends Plugin {
             } catch (Exception ignored) {
             }
 
-            // GitHub release URLs often redirect; DownloadManager handles redirects, but a UA header helps on some OEM stacks.
+            // GitHub release URLs often redirect; a UA header helps on some OEM stacks.
             try {
                 request.addRequestHeader("User-Agent", "Android");
             } catch (Exception ignored) {
@@ -108,15 +108,15 @@ public class AppUpdatePlugin extends Plugin {
 
             IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
 
-            // IMPORTANT: Context.RECEIVER_NOT_EXPORTED overload exists only on API 33+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 getContext().registerReceiver(downloadReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
             } else {
                 getContext().registerReceiver(downloadReceiver, filter);
             }
 
+            // IMPORTANT: return downloadId as STRING to avoid JS<->Java numeric coercion issues.
             JSObject ret = new JSObject();
-            ret.put("downloadId", downloadId);
+            ret.put("downloadId", String.valueOf(downloadId));
             ret.put("status", "started");
             call.resolve(ret);
 
@@ -130,7 +130,6 @@ public class AppUpdatePlugin extends Plugin {
         Uri downloadUri = null;
 
         try {
-            // Prefer the official URI from DownloadManager
             downloadUri = downloadManager.getUriForDownloadedFile(id);
 
             DownloadManager.Query query = new DownloadManager.Query();
@@ -155,7 +154,6 @@ public class AppUpdatePlugin extends Plugin {
                     Log.d(TAG, "File downloaded URI: " + downloadUri);
 
                     if (downloadUri != null) {
-                        // Reliable behavior: show a notification that opens the installer when tapped.
                         showInstallNotification(downloadUri);
                     } else {
                         Log.e(TAG, "Download finished but URI is null");
@@ -247,7 +245,6 @@ public class AppUpdatePlugin extends Plugin {
 
         Uri uriToUse = apkUri;
 
-        // If we ever get a file:// URI, convert it via FileProvider
         if (apkUri != null && "file".equalsIgnoreCase(apkUri.getScheme())) {
             try {
                 File file = new File(apkUri.getPath());
@@ -268,20 +265,35 @@ public class AppUpdatePlugin extends Plugin {
 
     @PluginMethod
     public void getDownloadProgress(PluginCall call) {
-        Long id = call.getLong("downloadId");
+        Long id = null;
 
-        // Some bridges pass numbers as Double or strings; be permissive.
+        // Prefer reading from raw data to handle String/Double/Long/Integer reliably.
+        try {
+            Object raw = call.getData() != null ? call.getData().get("downloadId") : null;
+            if (raw instanceof Number) {
+                id = ((Number) raw).longValue();
+            } else if (raw instanceof String) {
+                id = Long.parseLong((String) raw);
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Fallbacks
+        if (id == null) {
+            try {
+                id = call.getLong("downloadId");
+            } catch (Exception ignored) {
+            }
+        }
         if (id == null) {
             try {
                 String idStr = call.getString("downloadId");
-                if (idStr != null) {
-                    id = Long.parseLong(idStr);
-                }
+                if (idStr != null) id = Long.parseLong(idStr);
             } catch (Exception ignored) {
             }
         }
 
-        if (id == null || id == -1) {
+        if (id == null || id <= 0) {
             call.reject("Invalid download ID");
             return;
         }
@@ -307,9 +319,7 @@ public class AppUpdatePlugin extends Plugin {
                 int status = cursor.getInt(statusIndex);
 
                 int progress = bytesTotal > 0 ? (int) ((bytesDownloaded * 100) / bytesTotal) : 0;
-                if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    progress = 100;
-                }
+                if (status == DownloadManager.STATUS_SUCCESSFUL) progress = 100;
 
                 JSObject ret = new JSObject();
                 ret.put("progress", progress);

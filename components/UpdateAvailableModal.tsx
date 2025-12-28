@@ -18,9 +18,9 @@ interface AppUpdatePlugin {
     fileName?: string;
     title?: string;
     description?: string;
-  }): Promise<{ downloadId?: number | string; status?: string }>;
+  }): Promise<{ downloadId?: string; status?: string }>;
 
-  getDownloadProgress(options: { downloadId: number | string }): Promise<{
+  getDownloadProgress(options: { downloadId: string }): Promise<{
     progress?: number;
     status?: string;
     bytesDownloaded?: number;
@@ -41,7 +41,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const pollRef = useRef<number | null>(null);
-  const downloadIdRef = useRef<number | string | null>(null);
+  const downloadIdRef = useRef<string | null>(null);
   const startedAtRef = useRef<number | null>(null);
 
   const stopPolling = () => {
@@ -52,7 +52,6 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   };
 
   useEffect(() => {
-    // When modal closes (isOpen -> false) stop polling to avoid zombie polling + invalid IDs.
     if (!isOpen) {
       stopPolling();
       downloadIdRef.current = null;
@@ -91,11 +90,11 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
         description: 'Download in corso...',
       });
 
-      const downloadId = res?.downloadId;
-      downloadIdRef.current = downloadId ?? null;
+      const downloadId = res?.downloadId ? String(res.downloadId) : null;
+      downloadIdRef.current = downloadId;
 
       if (!downloadIdRef.current) {
-        // If plugin didn't return an ID, we can't poll; rely on system notification.
+        // Can't poll. Rely on DownloadManager notification.
         setTimeout(() => {
           setIsDownloading(false);
           onClose();
@@ -104,61 +103,64 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
       }
 
       stopPolling();
-      pollRef.current = window.setInterval(async () => {
-        try {
-          const id = downloadIdRef.current;
-          if (!id) {
-            stopPolling();
-            return;
-          }
 
-          const p = await AppUpdate.getDownloadProgress({ downloadId: id });
-          const progress = typeof p?.progress === 'number' ? p.progress : 0;
-          setDownloadProgress(progress);
+      // Small delay before first poll to avoid OEM timing quirks.
+      setTimeout(() => {
+        pollRef.current = window.setInterval(async () => {
+          try {
+            const id = downloadIdRef.current;
+            if (!id) {
+              stopPolling();
+              return;
+            }
 
-          const status = p?.status;
+            const p = await AppUpdate.getDownloadProgress({ downloadId: id });
+            const progress = typeof p?.progress === 'number' ? p.progress : 0;
+            setDownloadProgress(progress);
 
-          if (status === 'successful' || progress >= 100) {
-            stopPolling();
-            setTimeout(() => {
+            const status = p?.status;
+
+            if (status === 'successful' || progress >= 100) {
+              stopPolling();
+              setTimeout(() => {
+                setIsDownloading(false);
+                onClose();
+              }, 800);
+              return;
+            }
+
+            if (status === 'failed') {
+              stopPolling();
               setIsDownloading(false);
-              onClose();
-            }, 800);
-            return;
-          }
+              setError('Download fallito. Riprova.');
+              return;
+            }
 
-          if (status === 'failed') {
+            const startedAt = startedAtRef.current ?? Date.now();
+            const elapsed = Date.now() - startedAt;
+            if (elapsed > 4 * 60 * 1000) {
+              stopPolling();
+              setIsDownloading(false);
+              setError('Download in corso troppo a lungo. Controlla la notifica di download o l\'app Download e riprova.');
+            }
+          } catch (e: any) {
+            // IMPORTANT: do NOT auto-open browser here; keep update flow native and stable.
             stopPolling();
             setIsDownloading(false);
-            setError('Download fallito. Riprova.');
-            return;
-          }
 
-          // Safety net: if we are stuck too long, close and instruct user to check notification/downloads.
-          const startedAt = startedAtRef.current ?? Date.now();
-          const elapsed = Date.now() - startedAt;
-          if (elapsed > 4 * 60 * 1000) {
-            stopPolling();
-            setIsDownloading(false);
-            setError('Download in corso troppo a lungo. Controlla la notifica di download o l\'app Download e riprova.');
-          }
-        } catch (e: any) {
-          // If the native side can’t find the download anymore (e.g. OEM bug / ID parsing), stop polling and fallback.
-          stopPolling();
-          setIsDownloading(false);
+            const msg = (e?.message || e?.toString?.() || '').toLowerCase();
+            if (msg.includes('invalid download id') || msg.includes('download not found')) {
+              setError('Download avviato ma non tracciabile. Controlla notifiche/Downloads: quando finisce, tocca la notifica per installare.');
+              return;
+            }
 
-          const msg = (e?.message || e?.toString?.() || '').toLowerCase();
-          if (msg.includes('invalid download id') || msg.includes('download not found')) {
-            setError('Download completato o non tracciabile. Controlla le notifiche/Downloads per installare.');
-            return;
+            setError('Errore durante il download. Riprova.');
           }
-
-          setError('Errore durante il download. Riprova.');
-        }
-      }, 900);
+        }, 900);
+      }, 700);
 
     } catch (err) {
-      // Fallback: open in browser
+      // Fallback only if the native plugin fails to start the download.
       try {
         await Browser.open({ url: updateInfo.downloadUrl, presentationStyle: 'popover' });
         setTimeout(() => {
@@ -263,7 +265,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
             </div>
           )}
 
-          {/* Emergency fallback */}
+          {/* Manual fallback */}
           {!isDownloading && updateInfo.downloadUrl && (
             <button
               onClick={() => Browser.open({ url: updateInfo.downloadUrl, presentationStyle: 'popover' })}
