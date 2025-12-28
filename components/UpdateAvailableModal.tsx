@@ -94,7 +94,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
       downloadIdRef.current = downloadId;
 
       if (!downloadIdRef.current) {
-        // Can't poll. Rely on DownloadManager notification.
+        // Can't poll. Rely on DownloadManager notification + auto-installer.
         setTimeout(() => {
           setIsDownloading(false);
           onClose();
@@ -120,12 +120,14 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
             const status = p?.status;
 
-            if (status === 'successful' || progress >= 100) {
+            // CRITICAL: Close modal ONLY when status is truly 'successful', not just progress >= 100.
+            if (status === 'successful') {
               stopPolling();
+              // Installer auto-opens, so close modal immediately
               setTimeout(() => {
                 setIsDownloading(false);
                 onClose();
-              }, 800);
+              }, 500);
               return;
             }
 
@@ -220,7 +222,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <p className="text-xs text-blue-800">💡 <strong>Nota:</strong> A fine download riceverai una notifica: toccala per installare.</p>
+            <p className="text-xs text-blue-800">💡 <strong>Nota:</strong> L'installer si aprirà automaticamente a fine download.</p>
           </div>
 
           {error && (

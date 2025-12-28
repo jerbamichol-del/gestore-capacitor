@@ -8,14 +8,17 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.FileProvider;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -151,9 +154,13 @@ public class AppUpdatePlugin extends Plugin {
                         }
                     }
 
-                    Log.d(TAG, "File downloaded URI: " + downloadUri);
+                    Log.d(TAG, "File downloaded successfully, URI: " + downloadUri);
 
                     if (downloadUri != null) {
+                        // AUTO-LAUNCH INSTALLER (primary path)
+                        openInstaller(downloadUri);
+
+                        // ALSO show notification as fallback (if auto-launch fails or user dismisses)
                         showInstallNotification(downloadUri);
                     } else {
                         Log.e(TAG, "Download finished but URI is null");
@@ -186,6 +193,32 @@ public class AppUpdatePlugin extends Plugin {
         }
     }
 
+    private void openInstaller(Uri apkUri) {
+        try {
+            // Check if app can install unknown apps (Android 8+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                boolean canInstall = getContext().getPackageManager().canRequestPackageInstalls();
+                if (!canInstall) {
+                    Log.w(TAG, "App cannot install unknown apps - opening settings");
+                    // Open settings to enable "Install unknown apps" for this app
+                    Intent settingsIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+                    settingsIntent.setData(Uri.parse("package:" + getContext().getPackageName()));
+                    settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getContext().startActivity(settingsIntent);
+                    return;
+                }
+            }
+
+            Intent installIntent = buildInstallIntent(apkUri);
+            getContext().startActivity(installIntent);
+            Log.d(TAG, "Installer opened automatically");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to auto-open installer", e);
+            // Notification is already posted as fallback
+        }
+    }
+
     private void showInstallNotification(Uri downloadedApkUri) {
         try {
             ensureNotificationChannel();
@@ -206,8 +239,8 @@ public class AppUpdatePlugin extends Plugin {
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
-                .setContentTitle("Download completato")
-                .setContentText("Tocca per installare l'aggiornamento")
+                .setContentTitle("Aggiornamento pronto")
+                .setContentText("Tocca per installare")
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
@@ -248,7 +281,7 @@ public class AppUpdatePlugin extends Plugin {
         if (apkUri != null && "file".equalsIgnoreCase(apkUri.getScheme())) {
             try {
                 File file = new File(apkUri.getPath());
-                uriToUse = androidx.core.content.FileProvider.getUriForFile(
+                uriToUse = FileProvider.getUriForFile(
                     getContext(),
                     getContext().getPackageName() + ".fileprovider",
                     file
