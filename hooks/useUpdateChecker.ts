@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 
@@ -67,9 +67,12 @@ export const useUpdateChecker = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const checkForUpdates = async (force = false): Promise<UpdateInfo> => {
+  const checkForUpdates = useCallback(async (force = false): Promise<UpdateInfo> => {
+    console.log('🚀 useUpdateChecker - checkForUpdates called', { force });
+
     // Only check on Android native
     if (Capacitor.getPlatform() !== 'android') {
+      console.log('⏭️ Not on Android - skipping update check');
       const info: UpdateInfo = { available: false, currentVersion: 'web' };
       setUpdateInfo(info);
       return info;
@@ -80,12 +83,15 @@ export const useUpdateChecker = () => {
     const currentVersionName = appInfo.version;
     const currentVersionCode = safeParseInt(appInfo.build, 0);
 
+    console.log(`📱 Current version: ${currentVersionName} (Build ${currentVersionCode})`);
+
     // Within interval: avoid network, BUT if cached says a newer build exists, show it immediately.
     if (!force) {
       const lastCheck = localStorage.getItem(STORAGE_KEY_LAST_CHECK);
       if (lastCheck) {
         const elapsed = Date.now() - safeParseInt(lastCheck, 0);
         if (elapsed < CHECK_INTERVAL_MS) {
+          console.log(`⏱️ Within check interval (${Math.round(elapsed / 1000 / 60)}m ago) - checking cache`);
           const cachedRaw = readCachedUpdateRaw();
           const skippedTag = localStorage.getItem(STORAGE_KEY_SKIPPED_TAG);
           const skippedBuild = localStorage.getItem(STORAGE_KEY_SKIPPED_BUILD);
@@ -95,11 +101,14 @@ export const useUpdateChecker = () => {
             const cached = cachedRaw as UpdateInfo;
             const cachedLatestBuild = safeParseInt(cached.latestBuild, 0);
 
+            console.log(`💾 Cache: latest build ${cachedLatestBuild}, skipped tag: ${skippedTag}, skipped build: ${skippedBuild}`);
+
             if (
               cachedLatestBuild > currentVersionCode &&
               (!cached.latestTagName || cached.latestTagName !== skippedTag) &&
               (!cached.latestBuild || cached.latestBuild !== skippedBuild)
             ) {
+              console.log(`✅ Cache shows update available: ${currentVersionCode} → ${cachedLatestBuild}`);
               const info: UpdateInfo = {
                 ...cached,
                 available: true,
@@ -112,11 +121,13 @@ export const useUpdateChecker = () => {
 
             // If cached is stale (user updated), clear it.
             if (cachedLatestBuild <= currentVersionCode) {
+              console.log(`🗑️ Clearing stale cache (cached ${cachedLatestBuild} <= current ${currentVersionCode})`);
               clearCachedUpdateInfo();
             }
           }
 
           // Return minimal info (no network)
+          console.log('⏭️ No cached update - skipping network check');
           const info: UpdateInfo = {
             available: false,
             currentVersion: currentVersionName,
@@ -132,6 +143,7 @@ export const useUpdateChecker = () => {
     setError(null);
 
     try {
+      console.log('🔍 Checking for app updates from GitHub...');
       const response = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/releases/latest`,
         { headers: { Accept: 'application/vnd.github.v3+json' } }
@@ -140,6 +152,7 @@ export const useUpdateChecker = () => {
       if (!response.ok) {
         // No releases yet (404) => treat as up-to-date
         if (response.status === 404) {
+          console.log('⚠️ No releases found (404)');
           const info: UpdateInfo = {
             available: false,
             currentVersion: currentVersionName,
@@ -155,9 +168,11 @@ export const useUpdateChecker = () => {
 
       const release = await response.json();
       const tagName: string = release.tag_name || '';
+      console.log(`🏷️ Latest release: ${tagName}`);
 
       const buildMatch = tagName.match(/build(\d+)/i);
       if (!buildMatch) {
+        console.log(`⚠️ Could not extract build number from tag: ${tagName}`);
         const info: UpdateInfo = {
           available: false,
           currentVersion: currentVersionName,
@@ -172,11 +187,13 @@ export const useUpdateChecker = () => {
       }
 
       const remoteBuildNumber = safeParseInt(buildMatch[1], 0);
+      console.log(`🌐 Remote build: ${remoteBuildNumber}`);
 
       // Check skip (tag-based, and legacy build-based)
       const skippedTag = localStorage.getItem(STORAGE_KEY_SKIPPED_TAG);
       const skippedBuild = localStorage.getItem(STORAGE_KEY_SKIPPED_BUILD);
       if ((skippedTag && skippedTag === tagName) || (skippedBuild && safeParseInt(skippedBuild, -1) === remoteBuildNumber)) {
+        console.log(`⏭️ User skipped this version: ${tagName}`);
         const info: UpdateInfo = {
           available: false,
           currentVersion: currentVersionName,
@@ -194,6 +211,7 @@ export const useUpdateChecker = () => {
       const apkAsset = release.assets?.find((asset: any) => typeof asset?.name === 'string' && asset.name.endsWith('.apk'));
 
       const updateAvailable = remoteBuildNumber > currentVersionCode;
+      console.log(`🔢 Comparing: ${currentVersionCode} vs ${remoteBuildNumber} → Update available: ${updateAvailable}`);
 
       const info: UpdateInfo = {
         available: updateAvailable,
@@ -206,6 +224,12 @@ export const useUpdateChecker = () => {
         releaseNotes: release.body,
       };
 
+      if (updateAvailable) {
+        console.log(`✅ UPDATE AVAILABLE! ${currentVersionCode} → ${remoteBuildNumber}`);
+      } else {
+        console.log(`✅ App is up to date`);
+      }
+
       setUpdateInfo(info);
       writeCachedUpdateInfo(info);
       localStorage.setItem(STORAGE_KEY_LAST_CHECK, Date.now().toString());
@@ -217,6 +241,7 @@ export const useUpdateChecker = () => {
 
       return info;
     } catch (err) {
+      console.error('❌ Error checking for updates:', err);
       const errorMsg = err instanceof Error ? err.message : 'Network error';
       setError(errorMsg);
 
@@ -230,29 +255,34 @@ export const useUpdateChecker = () => {
     } finally {
       setIsChecking(false);
     }
-  };
+  }, []); // Empty deps: checkForUpdates is stable
 
-  const skipVersion = () => {
+  const skipVersion = useCallback(() => {
+    console.log('⏭️ skipVersion called', updateInfo);
     // Prefer skipping by tagName (stable), but also store legacy build key.
     const tagToSkip = updateInfo.latestTagName;
     const buildToSkip = updateInfo.latestBuild;
 
     if (tagToSkip) {
+      console.log(`💾 Skipping tag: ${tagToSkip}`);
       localStorage.setItem(STORAGE_KEY_SKIPPED_TAG, tagToSkip);
     }
     if (buildToSkip) {
+      console.log(`💾 Skipping build: ${buildToSkip}`);
       localStorage.setItem(STORAGE_KEY_SKIPPED_BUILD, buildToSkip);
     }
 
     setUpdateInfo(prev => ({ ...prev, available: false }));
-  };
+  }, [updateInfo]);
 
-  const clearSkipped = () => {
+  const clearSkipped = useCallback(() => {
+    console.log('🗑️ Clearing skipped versions');
     localStorage.removeItem(STORAGE_KEY_SKIPPED_TAG);
     localStorage.removeItem(STORAGE_KEY_SKIPPED_BUILD);
-  };
+  }, []);
 
   useEffect(() => {
+    console.log('🚀 useUpdateChecker mounted - starting initial check');
     checkForUpdates();
 
     let listener: any;
@@ -260,6 +290,7 @@ export const useUpdateChecker = () => {
     const setupListener = async () => {
       listener = await CapApp.addListener('appStateChange', ({ isActive }) => {
         if (isActive) {
+          console.log('📱 App became active - checking for updates');
           checkForUpdates();
         }
       });
@@ -268,11 +299,12 @@ export const useUpdateChecker = () => {
     setupListener();
 
     return () => {
+      console.log('🧹 useUpdateChecker unmounting');
       if (listener) {
         listener.remove();
       }
     };
-  }, []);
+  }, [checkForUpdates]);
 
   return {
     updateInfo,
