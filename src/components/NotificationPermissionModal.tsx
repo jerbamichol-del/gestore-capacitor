@@ -24,7 +24,7 @@ export function NotificationPermissionModal({
   // ✅✅✅ SUCCESS STATE - Show when permission is granted
   if (isEnabled) {
     return (
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
+      <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8">
           {/* Success Header */}
           <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3">
@@ -95,7 +95,7 @@ export function NotificationPermissionModal({
 
   // ✅ INITIAL STATE - Show setup instructions
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black bg-opacity-50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[85vh] flex flex-col">
         {/* Header - Fixed */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex-shrink-0">
