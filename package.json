@@ -24,6 +24,7 @@
     "@capacitor/haptics": "^6.0.1",
     "@capacitor/local-notifications": "^6.1.0",
     "@capacitor/share": "^6.0.0",
+    "@capacitor-community/file-opener": "^1.0.5",
     "@capgo/capacitor-native-biometric": "^6.0.0",
     "@google/genai": "^1.21.0",
     "idb": "8",
