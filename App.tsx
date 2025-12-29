@@ -491,11 +491,17 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     }
   };
 
-  // --- Auto-Transaction Handlers ---
-  const handleConfirmTransaction = async (id: string, transaction: PendingTransaction) => {
+  // --- ✅ UPDATED: Auto-Transaction Handlers with Type Selection ---
+  const handleConfirmTransaction = async (
+    id: string, 
+    transaction: PendingTransaction, 
+    selectedType: 'expense' | 'income' | 'transfer',
+    saveRule: boolean
+  ) => {
     try {
       await confirmTransaction(id);
 
+      // Find matching account
       let accountId = safeAccounts[0]?.id || '';
       const matchingAccount = safeAccounts.find(
         acc => acc.name.toLowerCase().includes(transaction.appName.toLowerCase())
@@ -504,21 +510,71 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         accountId = matchingAccount.id;
       }
 
-      const newExpense: Omit<Expense, 'id'> = {
-        description: transaction.description,
-        amount: transaction.amount,
-        date: new Date(transaction.timestamp).toISOString().split('T')[0],
-        category: 'Altro',
-        account: transaction.appName,
-        accountId: accountId,
-        type: transaction.type,
-        tags: ['auto-rilevata'],
-        receipts: [],
-        frequency: 'single',
-      };
+      // Handle TRANSFER type
+      if (selectedType === 'transfer') {
+        // For transfers, we need two accounts
+        // Source = matching account (Revolut, PayPal, etc.)
+        // Destination = first non-matching account or prompt user
+        
+        const sourceAccountId = accountId;
+        const destinationAccountId = safeAccounts.find(acc => acc.id !== sourceAccountId)?.id || safeAccounts[0]?.id || '';
 
-      handleAddExpense(newExpense);
-      showToast({ message: 'Transazione confermata e aggiunta!', type: 'success' });
+        if (!destinationAccountId || sourceAccountId === destinationAccountId) {
+          showToast({ message: 'Serve almeno 2 conti per un trasferimento.', type: 'error' });
+          return;
+        }
+
+        // Outgoing transaction (from source)
+        const outgoingExpense: Omit<Expense, 'id'> = {
+          type: 'expense',
+          description: `Trasferimento → ${safeAccounts.find(a => a.id === destinationAccountId)?.name || 'Altro conto'}`,
+          amount: transaction.amount,
+          date: new Date(transaction.timestamp).toISOString().split('T')[0],
+          category: 'Trasferimenti',
+          accountId: sourceAccountId,
+          tags: ['auto-rilevata', 'transfer'],
+          receipts: [],
+          frequency: 'single',
+          notes: `Da ${transaction.appName}: ${transaction.description}`,
+        };
+
+        // Incoming transaction (to destination)
+        const incomingExpense: Omit<Expense, 'id'> = {
+          type: 'income',
+          description: `Trasferimento ← ${safeAccounts.find(a => a.id === sourceAccountId)?.name || transaction.appName}`,
+          amount: transaction.amount,
+          date: new Date(transaction.timestamp).toISOString().split('T')[0],
+          category: 'Trasferimenti',
+          accountId: destinationAccountId,
+          tags: ['auto-rilevata', 'transfer'],
+          receipts: [],
+          frequency: 'single',
+          notes: `Da ${transaction.appName}: ${transaction.description}`,
+        };
+
+        handleAddExpense(outgoingExpense);
+        handleAddExpense(incomingExpense);
+        showToast({ message: 'Trasferimento registrato!', type: 'success' });
+        
+      } else {
+        // Handle EXPENSE or INCOME type
+        const newExpense: Omit<Expense, 'id'> = {
+          description: transaction.description,
+          amount: transaction.amount,
+          date: new Date(transaction.timestamp).toISOString().split('T')[0],
+          category: 'Altro',
+          account: transaction.appName,
+          accountId: accountId,
+          type: selectedType,
+          tags: ['auto-rilevata'],
+          receipts: [],
+          frequency: 'single',
+        };
+
+        handleAddExpense(newExpense);
+        showToast({ message: 'Transazione confermata e aggiunta!', type: 'success' });
+      }
+      
     } catch (error) {
       console.error('Error confirming transaction:', error);
       showToast({ message: 'Errore durante la conferma.', type: 'error' });
