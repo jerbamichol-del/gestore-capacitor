@@ -127,11 +127,67 @@ jobs:
 
       - name: Copy configs (CRITICAL - must run after cap sync)
         run: |
-          echo "✅ Copying MainActivity and AndroidManifest (AFTER cap sync to prevent overwrite)..."
-          cp android-config/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          cp android-config/MainActivity.java android/app/src/main/java/com/gestore/spese/MainActivity.java
-          echo "✅ MainActivity copied - verifying plugin registration..."
-          grep -q "registerPlugin" android/app/src/main/java/com/gestore/spese/MainActivity.java && echo "✅ MainActivity has registerPlugin calls" || (echo "❌ MainActivity missing registerPlugin!" && exit 1)
+          echo "========================================"
+          echo "CRITICAL: Copying MainActivity with plugin registration"
+          echo "========================================"
+          
+          SOURCE="android-config/MainActivity.java"
+          DEST_DIR="android/app/src/main/java/com/gestore/spese"
+          DEST="$DEST_DIR/MainActivity.java"
+          
+          echo "📝 SOURCE FILE: $SOURCE"
+          ls -lh "$SOURCE"
+          echo "📄 SOURCE CONTENT (first 20 lines):"
+          head -20 "$SOURCE"
+          echo ""
+          echo "md5sum of SOURCE:"
+          md5sum "$SOURCE"
+          echo ""
+          
+          echo "📁 Creating destination directory: $DEST_DIR"
+          mkdir -p "$DEST_DIR"
+          
+          echo "📝 DEST BEFORE COPY: $DEST"
+          if [ -f "$DEST" ]; then
+            ls -lh "$DEST"
+            echo "📄 DEST CONTENT BEFORE (first 20 lines):"
+            head -20 "$DEST"
+            echo "md5sum of DEST BEFORE:"
+            md5sum "$DEST"
+          else
+            echo "❌ Destination file does not exist yet"
+          fi
+          echo ""
+          
+          echo "📥 COPYING FILE..."
+          cp -v "$SOURCE" "$DEST"
+          
+          echo ""
+          echo "📝 DEST AFTER COPY: $DEST"
+          ls -lh "$DEST"
+          echo "📄 DEST CONTENT AFTER (first 20 lines):"
+          head -20 "$DEST"
+          echo "md5sum of DEST AFTER:"
+          md5sum "$DEST"
+          echo ""
+          
+          echo "🔍 Verifying registerPlugin is present..."
+          if grep -q "registerPlugin" "$DEST"; then
+            echo "✅ SUCCESS: MainActivity has registerPlugin calls"
+            echo "Found lines:"
+            grep "registerPlugin" "$DEST"
+          else
+            echo "❌ FATAL: MainActivity missing registerPlugin!"
+            echo "Full file content:"
+            cat "$DEST"
+            exit 1
+          fi
+          
+          echo ""
+          echo "📦 Copying AndroidManifest..."
+          cp -v android-config/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          echo "✅ Configs copied successfully"
+          echo "========================================"
 
       - name: Copy keystore
         run: |
