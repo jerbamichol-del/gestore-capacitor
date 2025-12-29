@@ -2,13 +2,18 @@ package com.gestore.spese;
 
 import android.app.Notification;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
 import com.getcapacitor.JSObject;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.List;
@@ -296,13 +301,25 @@ public class BankNotificationListenerService extends NotificationListenerService
 
     /**
      * Invia dati al layer JavaScript tramite Capacitor
+     * ✅ UPDATED: Now also saves to persistent queue for app-closed scenarios
      */
     private void sendToCapacitor(JSObject data) {
-        // Invia broadcast intent che verrà catturato dal plugin
+        // 1. Invia broadcast intent che verrà catturato dal plugin (se app è aperta)
         Intent intent = new Intent("com.gestore.spese.BANK_NOTIFICATION");
         intent.putExtra("data", data.toString());
         sendBroadcast(intent);
-
-        Log.d(TAG, "✅ Notification data sent to Capacitor");
+        Log.d(TAG, "✅ Notification data sent to Capacitor (broadcast)");
+        
+        // 2. ✅ NEW: Salva anche in SharedPreferences (per app chiusa)
+        try {
+            SharedPreferences prefs = getSharedPreferences("pending_notifications", Context.MODE_PRIVATE);
+            String existingJson = prefs.getString("queue", "[]");
+            JSONArray queue = new JSONArray(existingJson);
+            queue.put(new JSONObject(data.toString()));
+            prefs.edit().putString("queue", queue.toString()).apply();
+            Log.d(TAG, "✅ Notification saved to persistent queue (total: " + queue.length() + ")");
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Failed to save notification to queue", e);
+        }
     }
 }
