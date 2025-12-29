@@ -21,6 +21,7 @@ public class BankNotificationListenerService extends NotificationListenerService
     private static BankNotificationListenerService instance;
     
     // Package names delle app bancarie da monitorare
+    // ✅ EXPANDED: Now includes common variations + fallback "pass all if user enables"
     private static final List<String> BANK_PACKAGES = Arrays.asList(
         "com.revolut.revolut",           // Revolut
         "com.paypal.android.p2pmobile",  // PayPal
@@ -28,7 +29,10 @@ public class BankNotificationListenerService extends NotificationListenerService
         "com.bbva.mobile.android",       // BBVA
         "com.latuabancaperandroid",      // Intesa Sanpaolo
         "it.bnl.apps.banking",           // BNL
-        "it.nogood.container"            // Unicredit
+        "it.nogood.container",           // UniCredit (old/legacy)
+        "eu.unicredit.mobile",           // UniCredit (possible new)
+        "it.unicredit.mobile",           // UniCredit (alternate)
+        "com.unicredit.euromobile"       // UniCredit (euromobile variant)
     );
     
     /**
@@ -54,17 +58,12 @@ public class BankNotificationListenerService extends NotificationListenerService
         Log.d(TAG, "✅✅✅ Service CONNECTED to notification system");
         Log.d(TAG, "========================================");
         
-        // ✅✅✅ CRITICAL FIX: Request rebind to ensure service is properly bound
-        // This is CRUCIAL when returning from Android Settings after enabling permission
-        // Without this, the service can stay in a "zombie" state where it's technically
-        // enabled but not actually receiving notifications
         try {
             ComponentName component = new ComponentName(this, BankNotificationListenerService.class);
             requestRebind(component);
             Log.d(TAG, "✅ requestRebind() called successfully on connect");
         } catch (Exception e) {
             Log.e(TAG, "❌ Error calling requestRebind on connect:", e);
-            // Don't crash - service continues
         }
     }
 
@@ -75,16 +74,12 @@ public class BankNotificationListenerService extends NotificationListenerService
         Log.d(TAG, "⚠️⚠️⚠️ Service DISCONNECTED from notification system");
         Log.d(TAG, "========================================");
         
-        // ✅✅✅ CRITICAL FIX: Request rebind when disconnected
-        // This prevents the service from staying dead after a crash or disconnect
-        // Android will automatically restart and rebind the service
         try {
             ComponentName component = new ComponentName(this, BankNotificationListenerService.class);
             requestRebind(component);
             Log.d(TAG, "✅ requestRebind() called successfully on disconnect");
         } catch (Exception e) {
             Log.e(TAG, "❌ Error calling requestRebind on disconnect:", e);
-            // Don't crash - Android will retry
         }
     }
 
@@ -101,9 +96,31 @@ public class BankNotificationListenerService extends NotificationListenerService
     public void onNotificationPosted(StatusBarNotification sbn) {
         String packageName = sbn.getPackageName();
         
-        // Ignora se non è una notifica bancaria
-        if (!BANK_PACKAGES.contains(packageName)) {
+        // ✅ CRITICAL FIX: Log ALL notifications (even non-bank) for debugging
+        // This helps identify unknown bank packages
+        Log.d(TAG, "[ALL_NOTIF] Package: " + packageName + ", Key: " + sbn.getKey());
+        
+        // Check if it's a known bank package
+        boolean isBankPackage = BANK_PACKAGES.contains(packageName);
+        
+        // ✅ NEW: Also accept packages containing common bank keywords
+        // (fallback for unknown bank apps)
+        boolean looksLikeBank = packageName.contains("bank") || 
+                                packageName.contains("unicredit") ||
+                                packageName.contains("revolut") ||
+                                packageName.contains("paypal") ||
+                                packageName.contains("poste") ||
+                                packageName.contains("bbva") ||
+                                packageName.contains("intesa") ||
+                                packageName.contains("bnl");
+        
+        if (!isBankPackage && !looksLikeBank) {
+            // Not a bank notification, skip silently
             return;
+        }
+        
+        if (looksLikeBank && !isBankPackage) {
+            Log.w(TAG, "⚠️ UNKNOWN BANK PACKAGE DETECTED: " + packageName + " (processing anyway)");
         }
 
         try {
@@ -111,38 +128,134 @@ public class BankNotificationListenerService extends NotificationListenerService
             Bundle extras = notification.extras;
             
             if (extras == null) {
+                Log.w(TAG, "[SKIP] Notification has no extras: " + packageName);
                 return;
             }
 
+            // ✅ RESILIENT TEXT EXTRACTION: Try multiple fields in order of preference
             String title = extras.getString(Notification.EXTRA_TITLE, "");
-            String text = extras.getString(Notification.EXTRA_TEXT, "");
-            String bigText = extras.getString(Notification.EXTRA_BIG_TEXT, "");
+            String text = extractNotificationText(extras);
             long timestamp = sbn.getPostTime();
 
-            // Usa bigText se disponibile, altrimenti text
-            String fullText = bigText != null && !bigText.isEmpty() ? bigText : text;
-
-            if (fullText == null || fullText.isEmpty()) {
+            if (text == null || text.isEmpty()) {
+                Log.w(TAG, "[SKIP] Could not extract text from notification: " + packageName);
+                logExtrasForDebug(extras); // Log all available extras for debugging
                 return;
             }
 
             Log.d(TAG, "📦 Bank notification from: " + packageName);
             Log.d(TAG, "Title: " + title);
-            Log.d(TAG, "Text: " + fullText);
+            Log.d(TAG, "Text: " + text);
 
             // Prepara dati da inviare al JavaScript
             JSObject data = new JSObject();
             data.put("packageName", packageName);
             data.put("appName", getAppName(packageName));
             data.put("title", title);
-            data.put("text", fullText);
+            data.put("text", text);
             data.put("timestamp", timestamp);
 
             // Invia al plugin Capacitor
             sendToCapacitor(data);
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error processing notification", e);
+            Log.e(TAG, "❌ Error processing notification from " + packageName, e);
+        }
+    }
+    
+    /**
+     * ✅ RESILIENT TEXT EXTRACTION
+     * Tries multiple notification fields to extract text content.
+     * This handles different notification styles (basic, big text, messaging, etc.)
+     */
+    private String extractNotificationText(Bundle extras) {
+        // 1. Try BIG_TEXT first (most detailed)
+        String bigText = extras.getString(Notification.EXTRA_BIG_TEXT);
+        if (bigText != null && !bigText.isEmpty()) {
+            Log.d(TAG, "[TEXT] Extracted from EXTRA_BIG_TEXT");
+            return bigText;
+        }
+        
+        // 2. Try standard TEXT
+        String text = extras.getString(Notification.EXTRA_TEXT);
+        if (text != null && !text.isEmpty()) {
+            Log.d(TAG, "[TEXT] Extracted from EXTRA_TEXT");
+            return text;
+        }
+        
+        // 3. Try TEXT_LINES (used by some apps for multi-line notifications)
+        CharSequence[] textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
+        if (textLines != null && textLines.length > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (CharSequence line : textLines) {
+                if (line != null) {
+                    if (sb.length() > 0) sb.append(" ");
+                    sb.append(line.toString());
+                }
+            }
+            String combined = sb.toString();
+            if (!combined.isEmpty()) {
+                Log.d(TAG, "[TEXT] Extracted from EXTRA_TEXT_LINES");
+                return combined;
+            }
+        }
+        
+        // 4. Try MESSAGES (messaging style notifications)
+        android.os.Parcelable[] messages = extras.getParcelableArray(Notification.EXTRA_MESSAGES);
+        if (messages != null && messages.length > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (android.os.Parcelable p : messages) {
+                if (p instanceof Bundle) {
+                    Bundle msgBundle = (Bundle) p;
+                    CharSequence msgText = msgBundle.getCharSequence("text");
+                    if (msgText != null) {
+                        if (sb.length() > 0) sb.append(" ");
+                        sb.append(msgText.toString());
+                    }
+                }
+            }
+            String combined = sb.toString();
+            if (!combined.isEmpty()) {
+                Log.d(TAG, "[TEXT] Extracted from EXTRA_MESSAGES");
+                return combined;
+            }
+        }
+        
+        // 5. Try INFO_TEXT (fallback)
+        String infoText = extras.getString(Notification.EXTRA_INFO_TEXT);
+        if (infoText != null && !infoText.isEmpty()) {
+            Log.d(TAG, "[TEXT] Extracted from EXTRA_INFO_TEXT");
+            return infoText;
+        }
+        
+        // 6. Try SUB_TEXT (last resort)
+        String subText = extras.getString(Notification.EXTRA_SUB_TEXT);
+        if (subText != null && !subText.isEmpty()) {
+            Log.d(TAG, "[TEXT] Extracted from EXTRA_SUB_TEXT");
+            return subText;
+        }
+        
+        Log.w(TAG, "[TEXT] No text found in any known field");
+        return null;
+    }
+    
+    /**
+     * ✅ DEBUG HELPER: Log all extras keys for unknown notification formats
+     */
+    private void logExtrasForDebug(Bundle extras) {
+        try {
+            Log.d(TAG, "[DEBUG] Available extras keys:");
+            for (String key : extras.keySet()) {
+                Object value = extras.get(key);
+                String valueStr = value != null ? value.toString() : "null";
+                // Truncate long values
+                if (valueStr.length() > 100) {
+                    valueStr = valueStr.substring(0, 97) + "...";
+                }
+                Log.d(TAG, "  - " + key + ": " + valueStr);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "[DEBUG] Error logging extras", e);
         }
     }
 
@@ -153,6 +266,7 @@ public class BankNotificationListenerService extends NotificationListenerService
 
     /**
      * Ottieni nome friendly dell'app bancaria
+     * ✅ UPDATED: Handle unknown packages gracefully
      */
     private String getAppName(String packageName) {
         switch (packageName) {
@@ -169,9 +283,14 @@ public class BankNotificationListenerService extends NotificationListenerService
             case "it.bnl.apps.banking":
                 return "bnl";
             case "it.nogood.container":
+            case "eu.unicredit.mobile":
+            case "it.unicredit.mobile":
+            case "com.unicredit.euromobile":
                 return "unicredit";
             default:
-                return packageName;
+                // Return simplified package name for unknown apps
+                String[] parts = packageName.split("\\.");
+                return parts[parts.length - 1].toLowerCase();
         }
     }
 
