@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -62,8 +63,16 @@ public class NotificationListenerPlugin extends Plugin {
             // Register broadcast receiver
             receiver = new BankNotificationReceiver();
             IntentFilter filter = new IntentFilter("com.gestore.spese.BANK_NOTIFICATION");
-            getContext().registerReceiver(receiver, filter);
-            Log.d(TAG, "✅ BroadcastReceiver registered successfully");
+            
+            // ✅ FIX: Android 13+ requires explicit flag
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getContext().registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+                Log.d(TAG, "✅ BroadcastReceiver registered with RECEIVER_NOT_EXPORTED (Android 13+)");
+            } else {
+                getContext().registerReceiver(receiver, filter);
+                Log.d(TAG, "✅ BroadcastReceiver registered (Android <13)");
+            }
+            
         } catch (Exception e) {
             Log.e(TAG, "❌ Failed to register BroadcastReceiver", e);
         }
