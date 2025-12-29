@@ -23,6 +23,7 @@ import ImageSourceCard from './components/ImageSourceCard';
 import ShareQrModal from './components/ShareQrModal';
 import InstallPwaModal from './components/InstallPwaModal';
 import UpdateAvailableModal from './components/UpdateAvailableModal';
+import TransferConfirmationModal from './components/TransferConfirmationModal';
 import { CameraIcon } from './components/icons/CameraIcon';
 import { ComputerDesktopIcon } from './components/icons/ComputerDesktopIcon';
 import { SpinnerIcon } from './components/icons/SpinnerIcon';
@@ -43,6 +44,8 @@ import { useNotificationListener } from './src/hooks/useNotificationListener';
 import { useUpdateChecker } from './hooks/useUpdateChecker';
 import { PendingTransaction } from './src/services/notification-listener-service';
 import { Capacitor } from '@capacitor/core';
+import { AutoTransaction } from './types/transaction';
+import { NotificationTransactionParser } from './services/notification-transaction-parser';
 
 type ToastMessage = { message: string; type: 'success' | 'info' | 'error' };
 
@@ -76,6 +79,9 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   // --- Auto-Transaction Detection ---
   const [isPendingTransactionsModalOpen, setIsPendingTransactionsModalOpen] = useState(false);
   const [isNotificationPermissionModalOpen, setIsNotificationPermissionModalOpen] = useState(false);
+  const [isTransferConfirmationModalOpen, setIsTransferConfirmationModalOpen] = useState(false);
+  const [currentConfirmationTransaction, setCurrentConfirmationTransaction] = useState<AutoTransaction | null>(null);
+  
   const {
     pendingTransactions,
     pendingCount,
@@ -91,17 +97,15 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   // ✅✅✅ CRITICAL FIX: Show update modal when update is available
   useEffect(() => {
-    // ✅ FIX: Check if updateInfo exists AND has available property set to true
     if (updateInfo && updateInfo.available && !isCheckingUpdate) {
       console.log('🚀 Update detected - showing modal', updateInfo);
       setIsUpdateModalOpen(true);
     }
   }, [updateInfo, isCheckingUpdate]);
 
-  // ✅✅✅ CRITICAL FIX: Handle skip button properly
   const handleSkipUpdate = () => {
     console.log('⏭️ User skipped update');
-    skipVersion(); // ✅ Call the hook's skipVersion method
+    skipVersion();
     setIsUpdateModalOpen(false);
   };
 
@@ -136,26 +140,34 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   // 6. Navigation
   const nav = useBackNavigation(showToast, setImageForAnalysis);
 
+  // --- ✅ NEW: Listen for transfer confirmation needed events ---
+  useEffect(() => {
+    const handleConfirmationNeeded = (event: any) => {
+      const { transaction } = event.detail;
+      console.log('🚨 Transfer confirmation needed:', transaction);
+      setCurrentConfirmationTransaction(transaction);
+      setIsTransferConfirmationModalOpen(true);
+    };
+
+    window.addEventListener('auto-transaction-confirmation-needed', handleConfirmationNeeded);
+
+    return () => {
+      window.removeEventListener('auto-transaction-confirmation-needed', handleConfirmationNeeded);
+    };
+  }, []);
+
   // --- Auto-Transaction Permission Request ---
   const hasShownPermissionModalRef = useRef(false);
   
   useEffect(() => {
-    // Request permission only on Android and if not enabled
     if (Capacitor.getPlatform() === 'android' && !isNotificationListenerEnabled) {
       const dismissedForever = localStorage.getItem('notification_permission_dismissed_forever');
       const hasAskedBefore = localStorage.getItem('has_asked_notification_permission');
       
-      // Show modal only if:
-      // 1. Not dismissed forever
-      // 2. Haven't asked before in this session
-      // 3. Haven't shown the modal already in this render cycle
       if (!dismissedForever && !hasAskedBefore && !hasShownPermissionModalRef.current) {
         hasShownPermissionModalRef.current = true;
-        
-        // Show modal after 3 seconds
         setTimeout(() => {
           setIsNotificationPermissionModalOpen(true);
-          // Mark as asked to prevent showing again in this session
           localStorage.setItem('has_asked_notification_permission', 'true');
         }, 3000);
       }
@@ -165,10 +177,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   // --- Auto-open pending transactions modal when new transaction arrives ---
   useEffect(() => {
     if (pendingCount > 0 && !isPendingTransactionsModalOpen) {
-      // Auto-open modal when there are pending transactions
       const lastCount = parseInt(localStorage.getItem('last_pending_count') || '0');
       if (pendingCount > lastCount) {
-        // New transaction detected
         setIsPendingTransactionsModalOpen(true);
       }
       localStorage.setItem('last_pending_count', pendingCount.toString());
@@ -176,8 +186,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   }, [pendingCount, isPendingTransactionsModalOpen]);
 
   // --- Additional Logic ---
-
-  // Check shared file logic on mount
   const isSharedStart = useRef(new URLSearchParams(window.location.search).get('shared') === 'true');
   useEffect(() => {
     if (!isSharedStart.current) refreshPendingImages();
@@ -300,7 +308,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     nav.setIsVoiceModalOpen(false);
     const safeData = sanitizeExpenseData(data);
     setPrefilledData(safeData);
-    formOpenedFromCalculatorRef.current = false; // Not from calculator
+    formOpenedFromCalculatorRef.current = false;
     nav.setIsFormOpen(true);
   };
 
@@ -340,26 +348,17 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       }
       setShowSuccessIndicator(true); setTimeout(() => setShowSuccessIndicator(false), 2000);
       
-      // Close navigation logic - Check if form was opened from calculator
       if (nav.isFormOpen) {
-          // If form was opened from calculator, close both
           if (formOpenedFromCalculatorRef.current) {
-              // Reset the flag
               formOpenedFromCalculatorRef.current = false;
-              // First back closes the form
               window.history.back();
-              // Small delay to ensure state is updated, then close calculator
-              setTimeout(() => {
-                  window.history.back();
-              }, 50);
+              setTimeout(() => { window.history.back(); }, 50);
           } else {
-              // Just close the form
               window.history.back();
           }
       } else if (nav.isCalculatorContainerOpen) {
           nav.closeModalWithHistory();
       } else if (nav.isAccountsScreenOpen) {
-          // Do nothing, balance adjustment logic handles its own close
       } else {
           nav.forceNavigateHome();
       }
@@ -392,13 +391,111 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       setImageForAnalysis(null);
   };
 
+  // --- ✅ NEW: Transfer Confirmation Handlers ---
+  const handleConfirmAsTransfer = async (fromAccount: string, toAccount: string) => {
+    if (!currentConfirmationTransaction) return;
+    
+    try {
+      console.log(`✅ Confirming as transfer: ${fromAccount} → ${toAccount}`);
+      
+      // Call parser method to handle transfer logic
+      await NotificationTransactionParser.confirmAsTransfer(
+        currentConfirmationTransaction.id,
+        fromAccount,
+        toAccount,
+        currentConfirmationTransaction.amount,
+        currentConfirmationTransaction.date
+      );
+
+      // Create the two linked transactions
+      const outgoingExpense: Omit<Expense, 'id'> = {
+        type: 'expense',
+        amount: currentConfirmationTransaction.amount,
+        description: `Trasferimento → ${toAccount}`,
+        date: currentConfirmationTransaction.date,
+        accountId: fromAccount,
+        category: 'Trasferimenti',
+        notes: `Auto-rilevato da ${currentConfirmationTransaction.sourceType}`,
+        tags: ['transfer', 'auto'],
+        receipts: [],
+        frequency: 'single'
+      };
+
+      const incomingExpense: Omit<Expense, 'id'> = {
+        type: 'income',
+        amount: currentConfirmationTransaction.amount,
+        description: `Trasferimento ← ${fromAccount}`,
+        date: currentConfirmationTransaction.date,
+        accountId: toAccount,
+        category: 'Trasferimenti',
+        notes: `Auto-rilevato da ${currentConfirmationTransaction.sourceType}`,
+        tags: ['transfer', 'auto'],
+        receipts: [],
+        frequency: 'single'
+      };
+
+      handleAddExpense(outgoingExpense);
+      handleAddExpense(incomingExpense);
+      
+      showToast({ message: 'Trasferimento registrato correttamente!', type: 'success' });
+      setIsTransferConfirmationModalOpen(false);
+      setCurrentConfirmationTransaction(null);
+      
+    } catch (error) {
+      console.error('❌ Error confirming transfer:', error);
+      showToast({ message: 'Errore durante il trasferimento.', type: 'error' });
+    }
+  };
+
+  const handleConfirmAsExpense = async () => {
+    if (!currentConfirmationTransaction) return;
+    
+    try {
+      console.log(`✅ Confirming as regular expense`);
+      
+      // Call parser method to mark as expense
+      await NotificationTransactionParser.confirmAsExpense(currentConfirmationTransaction.id);
+
+      // Find matching account
+      let accountId = safeAccounts[0]?.id || '';
+      const matchingAccount = safeAccounts.find(
+        acc => acc.name.toLowerCase() === currentConfirmationTransaction.account.toLowerCase()
+      );
+      if (matchingAccount) {
+        accountId = matchingAccount.id;
+      }
+
+      // Create normal expense
+      const newExpense: Omit<Expense, 'id'> = {
+        type: 'expense',
+        amount: currentConfirmationTransaction.amount,
+        description: currentConfirmationTransaction.description,
+        date: currentConfirmationTransaction.date,
+        accountId: accountId,
+        category: currentConfirmationTransaction.category || 'Da Categorizzare',
+        notes: `Auto-rilevato da ${currentConfirmationTransaction.sourceType}`,
+        tags: ['auto'],
+        receipts: [],
+        frequency: 'single'
+      };
+
+      handleAddExpense(newExpense);
+      
+      showToast({ message: 'Spesa registrata correttamente!', type: 'success' });
+      setIsTransferConfirmationModalOpen(false);
+      setCurrentConfirmationTransaction(null);
+      
+    } catch (error) {
+      console.error('❌ Error confirming expense:', error);
+      showToast({ message: 'Errore durante la conferma.', type: 'error' });
+    }
+  };
+
   // --- Auto-Transaction Handlers ---
   const handleConfirmTransaction = async (id: string, transaction: PendingTransaction) => {
     try {
-      // 1. Confirm in service
       await confirmTransaction(id);
 
-      // 2. Find matching account by app name
       let accountId = safeAccounts[0]?.id || '';
       const matchingAccount = safeAccounts.find(
         acc => acc.name.toLowerCase().includes(transaction.appName.toLowerCase())
@@ -407,12 +504,11 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         accountId = matchingAccount.id;
       }
 
-      // 3. Create expense from transaction
       const newExpense: Omit<Expense, 'id'> = {
         description: transaction.description,
         amount: transaction.amount,
         date: new Date(transaction.timestamp).toISOString().split('T')[0],
-        category: 'Altro', // Default category, user can change later
+        category: 'Altro',
         account: transaction.appName,
         accountId: accountId,
         type: transaction.type,
@@ -421,7 +517,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         frequency: 'single',
       };
 
-      // 4. Add to expenses
       handleAddExpense(newExpense);
       showToast({ message: 'Transazione confermata e aggiunta!', type: 'success' });
     } catch (error) {
@@ -457,7 +552,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         />
       </div>
 
-      {/* Pending Transactions Badge - Fixed Position */}
       {pendingCount > 0 && (
         <div className="fixed top-20 right-4 z-30">
           <PendingTransactionsBadge 
@@ -521,7 +615,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         expenses={expenses} 
         onEditExpense={(e) => { 
           setEditingExpense(e); 
-          formOpenedFromCalculatorRef.current = nav.isCalculatorContainerOpen; // Track if opened from calculator
+          formOpenedFromCalculatorRef.current = nav.isCalculatorContainerOpen;
           window.history.pushState({ modal: 'form' }, ''); 
           nav.setIsFormOpen(true); 
         }} 
@@ -566,7 +660,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
       <MultipleExpensesModal isOpen={nav.isMultipleExpensesModalOpen} onClose={nav.closeModalWithHistory} expenses={multipleExpensesData} accounts={safeAccounts} onConfirm={(d) => { d.forEach(handleAddExpense); nav.forceNavigateHome(); }} />
 
-      {/* ✅✅✅ CRITICAL FIX: Update Available Modal with proper skip handler */}
       <UpdateAvailableModal
         isOpen={isUpdateModalOpen}
         updateInfo={updateInfo}
@@ -574,7 +667,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         onSkip={handleSkipUpdate}
       />
 
-      {/* Notification Permission Modal */}
       <NotificationPermissionModal
         isOpen={isNotificationPermissionModalOpen}
         onClose={() => setIsNotificationPermissionModalOpen(false)}
@@ -582,7 +674,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         isEnabled={isNotificationListenerEnabled}
       />
 
-      {/* Pending Transactions Modal */}
       <PendingTransactionsModal
         isOpen={isPendingTransactionsModalOpen}
         transactions={pendingTransactions}
@@ -591,7 +682,19 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         onIgnore={handleIgnoreTransaction}
       />
 
-      {/* History Screen - Expenses Only */}
+      {/* ✅ NEW: Transfer Confirmation Modal */}
+      <TransferConfirmationModal
+        isOpen={isTransferConfirmationModalOpen}
+        transaction={currentConfirmationTransaction}
+        accounts={safeAccounts}
+        onClose={() => {
+          setIsTransferConfirmationModalOpen(false);
+          setCurrentConfirmationTransaction(null);
+        }}
+        onConfirmAsTransfer={handleConfirmAsTransfer}
+        onConfirmAsExpense={handleConfirmAsExpense}
+      />
+
       {nav.isHistoryScreenOpen && (
         <HistoryScreen 
             expenses={expenses} 
@@ -600,7 +703,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             onCloseStart={() => nav.setIsHistoryClosing(true)} 
             onEditExpense={(e) => { 
               setEditingExpense(e); 
-              formOpenedFromCalculatorRef.current = false; // Not from calculator
+              formOpenedFromCalculatorRef.current = false;
               window.history.pushState({ modal: 'form' }, ''); 
               nav.setIsFormOpen(true); 
             }} 
@@ -614,7 +717,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         />
       )}
 
-      {/* History Screen - Income Only */}
       {nav.isIncomeHistoryOpen && (
         <HistoryScreen 
             expenses={expenses} 
@@ -623,7 +725,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             onCloseStart={() => nav.setIsIncomeHistoryClosing(true)} 
             onEditExpense={(e) => { 
               setEditingExpense(e); 
-              formOpenedFromCalculatorRef.current = false; // Not from calculator
+              formOpenedFromCalculatorRef.current = false;
               window.history.pushState({ modal: 'form' }, ''); 
               nav.setIsFormOpen(true); 
             }} 
@@ -646,7 +748,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             onCloseStart={() => nav.setIsRecurringClosing(true)} 
             onEdit={(e) => { 
               setEditingRecurringExpense(e); 
-              formOpenedFromCalculatorRef.current = false; // Not from calculator
+              formOpenedFromCalculatorRef.current = false;
               window.history.pushState({ modal: 'form' }, ''); 
               nav.setIsFormOpen(true); 
             }} 
