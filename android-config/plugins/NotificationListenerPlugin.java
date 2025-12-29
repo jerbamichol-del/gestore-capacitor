@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,6 +19,8 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+
+import org.json.JSONArray;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -169,6 +172,46 @@ public class NotificationListenerPlugin extends Plugin {
         JSObject ret = new JSObject();
         ret.put("message", "Service cannot be stopped programmatically");
         call.resolve(ret);
+    }
+    
+    /**
+     * ✅ NEW: Get pending notifications from persistent queue (for app-closed scenarios)
+     * Reads notifications saved to SharedPreferences by BankNotificationListenerService
+     * and clears the queue after reading.
+     */
+    @PluginMethod
+    public void getPendingNotifications(PluginCall call) {
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "📬 getPendingNotifications() called");
+        Log.d(TAG, "========================================");
+        
+        try {
+            SharedPreferences prefs = getContext().getSharedPreferences("pending_notifications", Context.MODE_PRIVATE);
+            String queueJson = prefs.getString("queue", "[]");
+            JSONArray queue = new JSONArray(queueJson);
+            
+            Log.d(TAG, "Found " + queue.length() + " pending notifications in queue");
+            
+            JSArray pending = new JSArray();
+            for (int i = 0; i < queue.length(); i++) {
+                pending.put(queue.getJSONObject(i));
+            }
+            
+            // ✅ CRITICAL: Clear the queue after reading to avoid duplicates
+            prefs.edit().putString("queue", "[]").apply();
+            Log.d(TAG, "✅ Queue cleared after reading");
+            
+            JSObject ret = new JSObject();
+            ret.put("notifications", pending);
+            ret.put("count", pending.length());
+            call.resolve(ret);
+            
+            Log.d(TAG, "✅ Returned " + pending.length() + " pending notifications");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error getting pending notifications", e);
+            call.reject("Failed to get pending notifications: " + e.getMessage());
+        }
     }
     
     /**
