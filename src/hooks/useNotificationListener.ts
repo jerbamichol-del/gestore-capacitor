@@ -34,13 +34,19 @@ export function useNotificationListener() {
       console.log(`✅ Permission check result: ${enabled}`);
       setIsEnabled(enabled);
       
-      // If enabled, load pending transactions
+      // ✅✅✅ CRITICAL FIX: Initialize service if enabled
+      // This registers the 'notificationReceived' event listener!
       if (enabled) {
         try {
+          console.log('🚀 Initializing notification listener service...');
+          await notificationListenerService.initialize();
+          console.log('✅ Notification listener service initialized');
+          
+          // Load pending transactions
           const pending = await notificationListenerService.getPendingTransactions();
           setPendingTransactions(pending);
-        } catch (transError) {
-          console.error('❌ Error loading pending transactions:', transError);
+        } catch (initError) {
+          console.error('❌ Error initializing service:', initError);
           setPendingTransactions([]);
         }
       }
@@ -172,6 +178,8 @@ export function useNotificationListener() {
       if (resumeTimeoutRef.current) {
         clearTimeout(resumeTimeoutRef.current);
       }
+      // ✅ Cleanup service on unmount
+      notificationListenerService.destroy();
     };
   }, [isAndroid, checkPermissionStatus]);
 
