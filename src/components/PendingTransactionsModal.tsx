@@ -1,14 +1,89 @@
 // src/components/PendingTransactionsModal.tsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PendingTransaction } from '../services/notification-listener-service';
+
+// Saved rule for auto-categorization
+interface SavedRule {
+  id: string;
+  appName: string;
+  destinatario: string; // normalized (lowercase, trimmed)
+  type: 'expense' | 'income' | 'transfer';
+  accountFrom?: string; // for transfers
+  accountTo?: string; // for transfers
+  createdAt: number;
+}
 
 interface PendingTransactionsModalProps {
   isOpen: boolean;
   transactions: PendingTransaction[];
   onClose: () => void;
-  onConfirm: (id: string, transaction: PendingTransaction) => void;
+  onConfirm: (id: string, transaction: PendingTransaction, selectedType: 'expense' | 'income' | 'transfer', saveRule: boolean) => void;
   onIgnore: (id: string) => void;
+}
+
+const RULES_STORAGE_KEY = 'transaction_type_rules';
+
+// Load saved rules from localStorage
+function loadSavedRules(): SavedRule[] {
+  try {
+    const stored = localStorage.getItem(RULES_STORAGE_KEY);
+    if (!stored) return [];
+    return JSON.parse(stored);
+  } catch (error) {
+    console.error('Failed to load saved rules:', error);
+    return [];
+  }
+}
+
+// Save rules to localStorage
+function saveSavedRules(rules: SavedRule[]): void {
+  try {
+    localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(rules));
+  } catch (error) {
+    console.error('Failed to save rules:', error);
+  }
+}
+
+// Extract destinatario from description
+function extractDestinatario(description: string): string | null {
+  // Pattern: "a [NAME]" or "to [NAME]"
+  const match = description.match(/(?:a|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return null;
+}
+
+// Find matching rule with confidence level
+function findMatchingRule(
+  appName: string,
+  description: string,
+  rules: SavedRule[]
+): { rule: SavedRule | null; confidence: number } {
+  const desc = description.toLowerCase().trim();
+
+  for (const rule of rules) {
+    if (rule.appName.toLowerCase() !== appName.toLowerCase()) continue;
+
+    const dest = rule.destinatario.toLowerCase();
+
+    // EXACT match (100%)
+    if (desc.includes(dest)) {
+      console.log(`✅ Exact rule match: ${dest}`);
+      return { rule, confidence: 100 };
+    }
+
+    // PARTIAL match - surname only (75%)
+    const tokens = dest.split(' ');
+    const cognome = tokens.length > 1 ? tokens[tokens.length - 1] : null;
+    if (cognome && cognome.length > 3 && desc.includes(cognome)) {
+      console.log(`⚠️ Partial rule match: ${cognome}`);
+      return { rule, confidence: 75 };
+    }
+  }
+
+  return { rule: null, confidence: 0 };
 }
 
 export function PendingTransactionsModal({
@@ -18,6 +93,42 @@ export function PendingTransactionsModal({
   onConfirm,
   onIgnore,
 }: PendingTransactionsModalProps) {
+  const [savedRules, setSavedRules] = useState<SavedRule[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<Record<string, 'expense' | 'income' | 'transfer'>>({});
+  const [saveRuleFlags, setSaveRuleFlags] = useState<Record<string, boolean>>({});
+  const [matchedRules, setMatchedRules] = useState<Record<string, { rule: SavedRule | null; confidence: number }>>({});
+
+  // Load saved rules on mount
+  useEffect(() => {
+    const rules = loadSavedRules();
+    setSavedRules(rules);
+  }, []);
+
+  // Initialize selected types and match rules when transactions change
+  useEffect(() => {
+    if (!isOpen || transactions.length === 0) return;
+
+    const newSelectedTypes: Record<string, 'expense' | 'income' | 'transfer'> = {};
+    const newMatchedRules: Record<string, { rule: SavedRule | null; confidence: number }> = {};
+
+    transactions.forEach((transaction) => {
+      // Try to find matching rule
+      const match = findMatchingRule(transaction.appName, transaction.description, savedRules);
+      newMatchedRules[transaction.id] = match;
+
+      // If exact match (100%), pre-select type from rule
+      if (match.confidence === 100 && match.rule) {
+        newSelectedTypes[transaction.id] = match.rule.type;
+      } else {
+        // Default: use transaction's detected type
+        newSelectedTypes[transaction.id] = transaction.type;
+      }
+    });
+
+    setSelectedTypes(newSelectedTypes);
+    setMatchedRules(newMatchedRules);
+  }, [isOpen, transactions, savedRules]);
+
   if (!isOpen || transactions.length === 0) return null;
 
   const formatDate = (timestamp: number) => {
@@ -34,6 +145,60 @@ export function PendingTransactionsModal({
     return `${currency} ${amount.toFixed(2)}`;
   };
 
+  const handleTypeChange = (transactionId: string, type: 'expense' | 'income' | 'transfer') => {
+    setSelectedTypes((prev) => ({ ...prev, [transactionId]: type }));
+  };
+
+  const handleSaveRuleChange = (transactionId: string, checked: boolean) => {
+    setSaveRuleFlags((prev) => ({ ...prev, [transactionId]: checked }));
+  };
+
+  const handleConfirm = (transaction: PendingTransaction) => {
+    const selectedType = selectedTypes[transaction.id] || transaction.type;
+    const saveRule = saveRuleFlags[transaction.id] || false;
+
+    // If user wants to save rule, create and save it
+    if (saveRule) {
+      const destinatario = extractDestinatario(transaction.description);
+      if (destinatario) {
+        const newRule: SavedRule = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          appName: transaction.appName,
+          destinatario: destinatario.toLowerCase().trim(),
+          type: selectedType,
+          createdAt: Date.now(),
+        };
+
+        const updatedRules = [...savedRules, newRule];
+        saveSavedRules(updatedRules);
+        setSavedRules(updatedRules);
+        console.log('✅ Saved new rule:', newRule);
+      }
+    }
+
+    onConfirm(transaction.id, transaction, selectedType, saveRule);
+  };
+
+  const handleDeleteRule = (transactionId: string) => {
+    const match = matchedRules[transactionId];
+    if (!match || !match.rule) return;
+
+    const updatedRules = savedRules.filter((r) => r.id !== match.rule!.id);
+    saveSavedRules(updatedRules);
+    setSavedRules(updatedRules);
+
+    // Reset to default type
+    const transaction = transactions.find((t) => t.id === transactionId);
+    if (transaction) {
+      setSelectedTypes((prev) => ({ ...prev, [transactionId]: transaction.type }));
+    }
+
+    // Clear matched rule
+    setMatchedRules((prev) => ({ ...prev, [transactionId]: { rule: null, confidence: 0 } }));
+
+    console.log('🗑️ Deleted rule:', match.rule.id);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       {/* Backdrop */}
@@ -45,7 +210,7 @@ export function PendingTransactionsModal({
       {/* Modal */}
       <div className="relative w-full max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[80vh] overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">
               Transazioni Rilevate
@@ -66,54 +231,143 @@ export function PendingTransactionsModal({
 
         {/* Transactions List */}
         <div className="overflow-y-auto max-h-[calc(80vh-140px)] px-6 py-4">
-          <div className="space-y-3">
-            {transactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-              >
-                {/* Transaction Info */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-gray-500 uppercase">
-                        {transaction.appName}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {formatDate(transaction.timestamp)}
-                      </span>
+          <div className="space-y-4">
+            {transactions.map((transaction) => {
+              const selectedType = selectedTypes[transaction.id] || transaction.type;
+              const saveRule = saveRuleFlags[transaction.id] || false;
+              const match = matchedRules[transaction.id];
+
+              return (
+                <div
+                  key={transaction.id}
+                  className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                >
+                  {/* Transaction Info */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-gray-500 uppercase">
+                          {transaction.appName}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {formatDate(transaction.timestamp)}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed">
+                        {transaction.description}
+                      </p>
+                      <p className="text-lg font-bold text-red-600">
+                        {formatAmount(transaction.amount, transaction.currency)}
+                      </p>
                     </div>
-                    <p className="text-base font-medium text-gray-900 mb-1">
-                      {transaction.description}
-                    </p>
-                    <p className="text-lg font-bold text-red-600">
-                      {formatAmount(transaction.amount, transaction.currency)}
-                    </p>
+                  </div>
+
+                  {/* Rule Match Info */}
+                  {match && match.rule && match.confidence === 100 && (
+                    <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-xs font-medium text-green-700">
+                        ✅ Regola riconosciuta: {match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}
+                      </p>
+                      <p className="text-xs text-green-600 mt-0.5">
+                        "{match.rule.destinatario}"
+                      </p>
+                    </div>
+                  )}
+                  {match && match.rule && match.confidence === 75 && (
+                    <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-xs font-medium text-yellow-700">
+                        ⚠️ Possibile corrispondenza
+                      </p>
+                      <p className="text-xs text-yellow-600 mt-0.5">
+                        Simile a "{match.rule.destinatario}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Type Selection */}
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-gray-700 mb-2">Seleziona tipo:</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleTypeChange(transaction.id, 'expense')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          selectedType === 'expense'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        💸 Spesa
+                      </button>
+                      <button
+                        onClick={() => handleTypeChange(transaction.id, 'income')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          selectedType === 'income'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        💰 Entrata
+                      </button>
+                      <button
+                        onClick={() => handleTypeChange(transaction.id, 'transfer')}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          selectedType === 'transfer'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        🔄 Trasferimento
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Save Rule Checkbox */}
+                  {!match?.rule && (
+                    <div className="mb-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={saveRule}
+                          onChange={(e) => handleSaveRuleChange(transaction.id, e.target.checked)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">Ricorda per il futuro</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleConfirm(transaction)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    >
+                      ✓ Conferma
+                    </button>
+                    <button
+                      onClick={() => onIgnore(transaction.id)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors"
+                    >
+                      ✕ Ignora
+                    </button>
+                    {match?.rule && (
+                      <button
+                        onClick={() => handleDeleteRule(transaction.id)}
+                        className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors"
+                        title="Elimina regola salvata"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => onConfirm(transaction.id, transaction)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    ✓ Conferma
-                  </button>
-                  <button
-                    onClick={() => onIgnore(transaction.id)}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    ✕ Ignora
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-3">
+        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-3 z-10">
           <button
             onClick={onClose}
             className="w-full text-gray-600 text-sm font-medium py-2"
