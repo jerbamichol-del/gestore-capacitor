@@ -6,6 +6,8 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import ForgotPasswordSuccessScreen from './screens/ForgotPasswordSuccessScreen';
 import ResetPinScreen from './screens/ResetPinScreen';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 type AuthView = 'login' | 'register' | 'forgotPassword' | 'forgotPasswordSuccess';
 type ResetContext = { token: string; email: string; } | null;
@@ -19,6 +21,27 @@ const AuthGate: React.FC = () => {
   const [resetContext, setResetContext] = useState<ResetContext>(null);
   const hiddenTimestampRef = useRef<number | null>(null);
   const [emailForReset, setEmailForReset] = useState<string>('');
+
+  const applyResetFromUrl = useCallback((url: string) => {
+    try {
+      const u = new URL(url);
+      const token = u.searchParams.get('resetToken');
+      const email = u.searchParams.get('email');
+
+      if (token && email) {
+        setResetContext({ token, email });
+
+        // Pulisce l'URL per evitare che il reset venga riattivato al refresh
+        try {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (e) {
+          // Ignora errore su ambienti restrittivi
+        }
+      }
+    } catch (e) {
+      // URL non valido / non assoluto: ignora
+    }
+  }, []);
   
   // Controlla se esiste un database di utenti per decidere la schermata iniziale.
   const hasUsers = () => {
@@ -33,21 +56,32 @@ const AuthGate: React.FC = () => {
   // Se non ci sono utenti, default su Register, ma permettiamo di cambiare
   const [authView, setAuthView] = useState<AuthView>(hasUsers() ? 'login' : 'register');
 
+  // Handle reset link when running as PWA/web (query params on window.location)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('resetToken');
-    const email = params.get('email');
+    applyResetFromUrl(window.location.href);
+  }, [applyResetFromUrl]);
 
-    if (token && email) {
-        setResetContext({ token, email });
-        // Pulisce l'URL per evitare che il reset venga riattivato al refresh della pagina
-        try {
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } catch (e) {
-            // Ignora errore su ambienti restrittivi
-        }
-    }
-  }, []);
+  // Handle reset link when running as native app (Capacitor deep links)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    // 1) If app was cold-started by a deep link
+    CapApp.getLaunchUrl().then((res) => {
+      if (res?.url) applyResetFromUrl(res.url);
+    }).catch(() => {});
+
+    // 2) If app is already open and receives a deep link
+    let handle: any = null;
+    CapApp.addListener('appUrlOpen', (data) => {
+      if (data?.url) applyResetFromUrl(data.url);
+    }).then((h) => {
+      handle = h;
+    }).catch(() => {});
+
+    return () => {
+      try { handle?.remove?.(); } catch (e) {}
+    };
+  }, [applyResetFromUrl]);
 
   const handleAuthSuccess = (token: string, email: string) => {
     setSessionToken(token);

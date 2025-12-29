@@ -56,6 +56,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Deep link: open the native app from the PIN reset URL -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Matches: https://jerbamichol-del.github.io/gestore/?resetToken=...&email=... -->
+                <data
+                    android:scheme="https"
+                    android:host="jerbamichol-del.github.io"
+                    android:pathPrefix="/gestore" />
+            </intent-filter>
+
         </activity>
         
         <!-- Bank Notification Listener Service -->
