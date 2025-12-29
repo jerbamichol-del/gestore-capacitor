@@ -3,6 +3,7 @@
 export type TransactionType = 'expense' | 'income' | 'transfer';
 export type TransactionStatus = 'pending' | 'confirmed' | 'ignored';
 export type TransactionSource = 'sms' | 'notification' | 'manual';
+export type ConfirmationType = 'transfer_or_expense' | 'normal';
 
 export interface AutoTransaction {
   id: string;
@@ -15,6 +16,11 @@ export interface AutoTransaction {
   
   // Transfer specifico
   toAccount?: string; // Se type='transfer', conto destinazione
+  
+  // ✅ NEW: Confirmation required for ambiguous transactions
+  requiresConfirmation?: boolean;
+  confirmationType?: ConfirmationType;
+  linkedTransactionId?: string; // Link to paired transfer transaction
   
   // Tracking duplicati
   sourceType: TransactionSource;
