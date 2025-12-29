@@ -15,31 +15,27 @@ interface BankPattern {
   getType: (text: string, description: string) => 'expense' | 'income' | 'transfer';
 }
 
-// Keywords that indicate a transfer between own accounts
+// ✅ SAFE transfer keywords - explicit only
 const TRANSFER_KEYWORDS = [
-  // Italian
-  'bonifico', 'trasferimento', 'ricarica', 'prelievo',
-  // English
+  // Italian explicit transfer terms
+  'bonifico', 'trasferimento', 'ricarica', 'prelievo', 'ricarica conto',
+  // English explicit transfer terms
   'transfer', 'withdrawal', 'top up', 'reload',
-  // Bank names (transfers to/from banks)
-  'intesa', 'unicredit', 'bnl', 'poste', 'postepay',
-  'banco', 'banca', 'conto', 'account',
+  // Bank/account indicators (institutions, not people)
+  'intesa', 'unicredit', 'bnl', 'poste', 'postepay', 'banca', 'banco',
+  'conto corrente', 'conto', 'account', 'carta prepagata',
 ];
 
-// Detect if transaction is to a person (likely own account transfer)
-function isProbablyTransferToOwnAccount(description: string): boolean {
-  const desc = description.toLowerCase();
+// ✅ CONSERVATIVE: Only detect transfers when EXPLICIT keywords present
+// ❌ NO generic name detection - too ambiguous (Mario Rossi vs Michol Battistelli)
+function isProbablyTransferToOwnAccount(text: string, description: string): boolean {
+  const combined = `${text} ${description}`.toLowerCase();
   
-  // Check for transfer keywords
-  if (TRANSFER_KEYWORDS.some(kw => desc.includes(kw))) {
-    return true;
-  }
+  // Check for explicit transfer keywords only
+  const hasTransferKeyword = TRANSFER_KEYWORDS.some(kw => combined.includes(kw));
   
-  // Check if description contains a capitalized name (e.g., "Michol Battistelli")
-  // Pattern: Two or more capitalized words (likely a person's name)
-  const namePattern = /\b[A-Z][a-z]+\s+[A-Z][a-z]+/;
-  if (namePattern.test(description)) {
-    console.log('📝 Detected personal name in description - treating as transfer');
+  if (hasTransferKeyword) {
+    console.log('📝 Detected explicit transfer keyword - treating as transfer');
     return true;
   }
   
@@ -53,8 +49,8 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
       
-      // Check if it's a transfer
-      if (isProbablyTransferToOwnAccount(description)) {
+      // ✅ Check explicit transfer indicators
+      if (isProbablyTransferToOwnAccount(text, description)) {
         return 'transfer';
       }
       
@@ -63,11 +59,7 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
         return 'income';
       }
       
-      // Default: if it's a payment, it's an expense (unless already detected as transfer)
-      if (lowerText.includes('pagamento') || lowerText.includes('payment')) {
-        return 'expense';
-      }
-      
+      // Default: expense (user can change if needed)
       return 'expense';
     },
   },
@@ -78,16 +70,12 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
       
-      if (isProbablyTransferToOwnAccount(description)) {
+      if (isProbablyTransferToOwnAccount(text, description)) {
         return 'transfer';
       }
       
       if (lowerText.includes('ricevuto') || lowerText.includes('received')) {
         return 'income';
-      }
-      
-      if (lowerText.includes('hai inviato') || lowerText.includes('you sent')) {
-        return 'expense';
       }
       
       return 'expense';
@@ -100,7 +88,7 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
       
-      if (isProbablyTransferToOwnAccount(description)) {
+      if (isProbablyTransferToOwnAccount(text, description)) {
         return 'transfer';
       }
       
@@ -118,7 +106,7 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
       
-      if (isProbablyTransferToOwnAccount(description)) {
+      if (isProbablyTransferToOwnAccount(text, description)) {
         return 'transfer';
       }
       
@@ -136,7 +124,7 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
       
-      if (isProbablyTransferToOwnAccount(description)) {
+      if (isProbablyTransferToOwnAccount(text, description)) {
         return 'transfer';
       }
       
@@ -154,7 +142,7 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
       
-      if (isProbablyTransferToOwnAccount(description)) {
+      if (isProbablyTransferToOwnAccount(text, description)) {
         return 'transfer';
       }
       
@@ -172,7 +160,7 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
       
-      if (isProbablyTransferToOwnAccount(description)) {
+      if (isProbablyTransferToOwnAccount(text, description)) {
         return 'transfer';
       }
       
