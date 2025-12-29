@@ -4,6 +4,17 @@ import { AutoTransaction } from '../types/transaction';
 import { AutoTransactionService } from './auto-transaction-service';
 import { BankConfig } from '../types/transaction';
 
+// ✅ BANK/FINANCIAL ACCOUNTS KEYWORDS
+// Used to detect transfers between own accounts
+const BANK_KEYWORDS = [
+  'revolut', 'paypal', 'postepay', 'bbva', 'unicredit', 'intesa', 'bnl',
+  'poste', 'postepay', 'banco', 'banca', 'conto', 'carta', 'prepagata',
+  'coinbase', 'binance', 'crypto', 'kraken', 'nexo', 'n26', 'wise',
+  'transferwise', 'hype', 'satispay', 'tinaba', 'yap', 'buddybank',
+  'credit agricole', 'ing', 'webank', 'fineco', 'widiba', 'chebanca',
+  'mediolanum', 'monte paschi', 'mps', 'ubi', 'bper', 'carige'
+];
+
 // Configurazioni pattern notifiche app bancarie
 const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
@@ -11,7 +22,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'revolut',
     accountName: 'Revolut',
     patterns: {
-      expense: /(?:You\s+spent|Hai\s+speso|Payment)\s+€?([\d.,]+)\s+(?:at|presso|in)\s+(.+)/i,
+      expense: /(?:You\s+spent|Hai\s+speso|Payment|Pagamento\s+riuscito)\s+€?([\d.,]+)\s+(?:at|presso|in|to|a)\s+(.+)/i,
       income: /(?:You\s+received|Hai\s+ricevuto|Received)\s+€?([\d.,]+)\s+(?:from|da)\s+(.+)/i,
       transfer: /(?:Transfer|Trasferimento)\s+€?([\d.,]+)\s+(?:to|a)\s+(.+)/i
     }
@@ -21,8 +32,8 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'paypal',
     accountName: 'PayPal',
     patterns: {
-      expense: /(?:You\s+sent|Hai\s+inviato)\s+€?([\d.,]+)\s+to\s+(.+)/i,
-      income: /(?:You\s+received|Hai\s+ricevuto)\s+€?([\d.,]+)\s+from\s+(.+)/i
+      expense: /(?:You\s+sent|Hai\s+inviato)\s+€?([\d.,]+)\s+(?:to|a)\s+(.+)/i,
+      income: /(?:You\s+received|Hai\s+ricevuto)\s+€?([\d.,]+)\s+(?:from|da)\s+(.+)/i
     }
   },
   {
@@ -30,7 +41,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'postepay',
     accountName: 'Postepay',
     patterns: {
-      expense: /(?:Pagamento|Addebito).*?€?([\d.,]+).*?(?:presso|at)\s+(.+)/i,
+      expense: /(?:Pagamento|Addebito).*?€?([\d.,]+).*?(?:presso|at|c\/o)\s+(.+)/i,
       income: /(?:Accredito|Ricarica).*?€?([\d.,]+)/i,
       transfer: /Bonifico.*?€?([\d.,]+).*?(?:a|verso)\s+(.+)/i
     }
@@ -40,7 +51,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'bbva',
     accountName: 'BBVA',
     patterns: {
-      expense: /(?:Compra|Pago|Cargo).*?€?([\d.,]+).*?en\s+(.+)/i,
+      expense: /(?:Compra|Pago|Cargo).*?€?([\d.,]+).*?(?:en|c\/o)\s+(.+)/i,
       income: /(?:Ingreso|Abono).*?€?([\d.,]+)/i,
       transfer: /Transferencia.*?€?([\d.,]+).*?a\s+(.+)/i
     }
@@ -50,7 +61,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'intesa',
     accountName: 'Intesa Sanpaolo',
     patterns: {
-      expense: /(?:Addebito|Pagamento)\s+carta.*?€?([\d.,]+).*?presso\s+(.+)/i,
+      expense: /(?:Addebito|Pagamento)\s+carta.*?€?([\d.,]+).*?(?:presso|c\/o)\s+(.+)/i,
       income: /Accredito.*?€?([\d.,]+)/i,
       transfer: /Bonifico.*?€?([\d.,]+).*?a\s+(.+)/i
     }
@@ -60,17 +71,19 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'bnl',
     accountName: 'BNL',
     patterns: {
-      expense: /(?:Pagamento|Prelievo).*?€?([\d.,]+).*?presso\s+(.+)/i,
+      expense: /(?:Pagamento|Prelievo).*?€?([\d.,]+).*?(?:presso|c\/o)\s+(.+)/i,
       income: /Accredito.*?€?([\d.,]+)/i
     }
   },
   {
-    name: 'Unicredit',
+    name: 'UniCredit',
     identifier: 'unicredit',
-    accountName: 'Unicredit',
+    accountName: 'UniCredit',
     patterns: {
-      expense: /(?:Addebito|Pagamento).*?€?([\d.,]+).*?(?:presso|at)\s+(.+)/i,
-      income: /Accredito.*?€?([\d.,]+)/i
+      // ✅ EXPANDED: "autorizzata op.Internet" + "Bonifico Istantaneo"
+      expense: /(?:Addebito|Pagamento|autorizzata\s+op\.Internet|Transazione\s+autorizzata).*?€?([\d.,]+)\s+(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+?)(?:\s+\d{2}\/\d{2}\/\d{2}|$)/i,
+      income: /(?:Accredito|hai\s+appena\s+ricevuto\s+un\s+bonifico).*?€?([\d.,]+)\s+(?:EUR)?/i,
+      transfer: /Bonifico(?:\s+Istantaneo)?.*?€?([\d.,]+)\s+(?:EUR)?.*?(?:verso|a)\s+(.+)/i
     }
   }
 ];
@@ -79,6 +92,7 @@ export class NotificationTransactionParser {
 
   /**
    * Parse notifica bancaria
+   * ✅ NEW: Returns parsed data + flag if requires user confirmation
    */
   static async parseNotification(
     appName: string,
@@ -110,7 +124,34 @@ export class NotificationTransactionParser {
       return null;
     }
 
-    // Aggiungi tramite AutoTransactionService (con check duplicati)
+    // ✅ CRITICAL: Check if merchant/recipient is another bank account
+    const requiresConfirmation = this.isLikelyTransfer(parsed);
+
+    if (requiresConfirmation) {
+      console.log(`⚠️ Transaction looks like transfer between accounts - requires user confirmation`);
+      console.log(`   From: ${parsed.account}`);
+      console.log(`   To: ${parsed.description}`);
+      
+      // Mark as pending with special flag
+      const pendingTransaction = {
+        ...parsed,
+        requiresConfirmation: true,
+        confirmationType: 'transfer_or_expense' as const
+      };
+
+      // Add as pending (will show dialog to user)
+      const added = await AutoTransactionService.addAutoTransaction(pendingTransaction);
+      
+      if (added) {
+        console.log(`✅ Pending transaction added - awaiting user confirmation`);
+        // Dispatch event per mostrare dialog
+        this.dispatchConfirmationNeeded(added);
+      }
+      
+      return added;
+    }
+
+    // Normal flow: add transaction directly
     const added = await AutoTransactionService.addAutoTransaction(parsed);
     
     if (added) {
@@ -120,6 +161,97 @@ export class NotificationTransactionParser {
     }
 
     return added;
+  }
+
+  /**
+   * ✅ NEW: Check if transaction is likely a transfer between own accounts
+   * Returns true if merchant/recipient contains bank keywords
+   */
+  private static isLikelyTransfer(
+    parsed: Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'>
+  ): boolean {
+    // Solo per transazioni expense (uscite)
+    if (parsed.type !== 'expense') return false;
+
+    const merchantLower = (parsed.description || '').toLowerCase();
+    
+    // Check se contiene keyword bancaria
+    const containsBankKeyword = BANK_KEYWORDS.some(keyword => 
+      merchantLower.includes(keyword.toLowerCase())
+    );
+
+    if (containsBankKeyword) {
+      console.log(`🏦 Detected bank keyword in merchant: "${parsed.description}"`);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * ✅ NEW: Dispatch event per mostrare dialog conferma
+   */
+  private static dispatchConfirmationNeeded(transaction: AutoTransaction): void {
+    const event = new CustomEvent('auto-transaction-confirmation-needed', {
+      detail: { transaction }
+    });
+    window.dispatchEvent(event);
+  }
+
+  /**
+   * ✅ NEW: Conferma transazione come trasferimento
+   * Crea 2 movimenti: uscita da account origine + entrata su account destinazione
+   */
+  static async confirmAsTransfer(
+    transactionId: string,
+    fromAccount: string,
+    toAccount: string,
+    amount: number,
+    date: string
+  ): Promise<boolean> {
+    try {
+      console.log(`✅ Confirming as transfer: ${fromAccount} -> ${toAccount} (€${amount})`);
+      
+      // 1. Aggiorna transazione originale come "trasferimento" (uscita)
+      await AutoTransactionService.updateTransactionType(transactionId, 'transfer');
+      
+      // 2. Crea movimento di entrata sul conto destinazione
+      const incomeTransaction = {
+        type: 'income' as const,
+        amount,
+        description: `Trasferimento da ${fromAccount}`,
+        date,
+        account: toAccount,
+        sourceType: 'notification' as const,
+        sourceApp: 'transfer_confirmation',
+        rawText: `Transfer from ${fromAccount} to ${toAccount}`,
+        linkedTransactionId: transactionId // Link alla transazione originale
+      };
+
+      await AutoTransactionService.addAutoTransaction(incomeTransaction);
+      
+      console.log(`✅ Transfer confirmed: created 2 linked transactions`);
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Error confirming transfer:', error);
+      return false;
+    }
+  }
+
+  /**
+   * ✅ NEW: Conferma transazione come spesa normale
+   */
+  static async confirmAsExpense(transactionId: string): Promise<boolean> {
+    try {
+      console.log(`✅ Confirming as regular expense: ${transactionId}`);
+      // Rimuovi flag "requiresConfirmation" e marca come confermata
+      await AutoTransactionService.confirmTransaction(transactionId);
+      return true;
+    } catch (error) {
+      console.error('❌ Error confirming expense:', error);
+      return false;
+    }
   }
 
   /**
@@ -138,7 +270,7 @@ export class NotificationTransactionParser {
         return {
           type: 'expense',
           amount: this.parseAmount(match[1]),
-          description: match[2]?.trim() || 'Pagamento',
+          description: this.cleanMerchantName(match[2]?.trim() || 'Pagamento'),
           date: this.formatDate(timestamp),
           account: config.accountName,
           sourceType: 'notification',
@@ -187,6 +319,21 @@ export class NotificationTransactionParser {
   }
 
   /**
+   * ✅ NEW: Clean merchant name (remove trailing info)
+   */
+  private static cleanMerchantName(merchant: string): string {
+    // Remove trailing info like city, dates, reference numbers
+    let cleaned = merchant
+      .replace(/\s+\d{2}\/\d{2}\/\d{2,4}.*$/i, '') // Remove dates
+      .replace(/\s+\d{2}:\d{2}.*$/i, '') // Remove times
+      .replace(/Per info.*$/i, '') // Remove "Per info o blocco..."
+      .replace(/\*+\d+\*+/g, '') // Remove card numbers like **7215*
+      .trim();
+    
+    return cleaned || merchant; // Fallback to original if cleaning removed everything
+  }
+
+  /**
    * Parse amount da stringa
    */
   private static parseAmount(amountStr: string): number {
@@ -215,5 +362,12 @@ export class NotificationTransactionParser {
    */
   static addAppConfig(config: BankConfig): void {
     NOTIFICATION_CONFIGS.push(config);
+  }
+
+  /**
+   * ✅ NEW: Get list of all bank keywords (for UI)
+   */
+  static getBankKeywords(): string[] {
+    return [...BANK_KEYWORDS];
   }
 }
