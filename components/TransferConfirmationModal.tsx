@@ -1,0 +1,234 @@
+// components/TransferConfirmationModal.tsx
+
+import React, { useState, useEffect } from 'react';
+import { AutoTransaction } from '../types/transaction';
+import { NotificationTransactionParser } from '../services/notification-transaction-parser';
+import { Account } from '../types';
+
+interface Props {
+  isOpen: boolean;
+  transaction: AutoTransaction | null;
+  accounts: Account[];
+  onClose: () => void;
+  onConfirmAsTransfer: (fromAccount: string, toAccount: string) => void;
+  onConfirmAsExpense: () => void;
+}
+
+const TransferConfirmationModal: React.FC<Props> = ({
+  isOpen,
+  transaction,
+  accounts,
+  onClose,
+  onConfirmAsTransfer,
+  onConfirmAsExpense
+}) => {
+  const [selectedToAccount, setSelectedToAccount] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Auto-detect possible destination account from merchant name
+  useEffect(() => {
+    if (!transaction) return;
+    
+    const merchantLower = (transaction.description || '').toLowerCase();
+    const matchingAccount = accounts.find(acc => 
+      merchantLower.includes(acc.name.toLowerCase())
+    );
+    
+    if (matchingAccount) {
+      setSelectedToAccount(matchingAccount.id);
+    } else if (accounts.length > 0) {
+      // Default to first account that's NOT the source account
+      const otherAccount = accounts.find(acc => acc.name !== transaction.account);
+      setSelectedToAccount(otherAccount?.id || accounts[0].id);
+    }
+  }, [transaction, accounts]);
+
+  if (!isOpen || !transaction) return null;
+
+  const handleTransferConfirm = async () => {
+    if (!selectedToAccount) {
+      alert('Seleziona un conto di destinazione');
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      const toAccountName = accounts.find(a => a.id === selectedToAccount)?.name || selectedToAccount;
+      onConfirmAsTransfer(transaction.account, toAccountName);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleExpenseConfirm = async () => {
+    setIsProcessing(true);
+    try {
+      onConfirmAsExpense();
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">🤔</span>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Trasferimento o Spesa?</h2>
+              <p className="text-sm text-slate-500 mt-1">Questa transazione potrebbe essere un trasferimento tra i tuoi conti</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isProcessing}
+            className="text-slate-400 hover:text-slate-600 text-3xl font-light leading-none disabled:opacity-50"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Transaction Info */}
+        <div className="p-6 border-b border-slate-200 bg-slate-50">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <div className="text-sm text-slate-500 mb-1">Da</div>
+              <div className="text-lg font-semibold text-slate-900">{transaction.account}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-red-600">-€{transaction.amount.toFixed(2)}</div>
+              <div className="text-sm text-slate-500 mt-1">{new Date(transaction.date).toLocaleDateString('it-IT')}</div>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🏦</span>
+              <div>
+                <div className="font-semibold text-yellow-900 mb-1">Possibile trasferimento rilevato</div>
+                <div className="text-sm text-yellow-700">Il beneficiario “<span className="font-medium">{transaction.description}</span>” sembra essere un altro tuo conto.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Option 1: Transfer */}
+          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">🔄</span>
+              <div>
+                <h3 className="text-xl font-bold text-indigo-900">Trasferimento tra conti</h3>
+                <p className="text-sm text-indigo-700">Hai spostato denaro tra i tuoi conti</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Verso quale conto?
+                </label>
+                <select
+                  value={selectedToAccount}
+                  onChange={(e) => setSelectedToAccount(e.target.value)}
+                  disabled={isProcessing}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} {acc.name === transaction.account && '(sorgente)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                <div className="text-sm text-slate-600 mb-2 font-medium">Verrà registrato:</div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-700">• Uscita da <span className="font-semibold">{transaction.account}</span></span>
+                    <span className="text-red-600 font-semibold">-€{transaction.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-700">• Entrata su <span className="font-semibold">{accounts.find(a => a.id === selectedToAccount)?.name || 'conto selezionato'}</span></span>
+                    <span className="text-green-600 font-semibold">+€{transaction.amount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleTransferConfirm}
+                disabled={isProcessing || !selectedToAccount}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-semibold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
+              >
+                {isProcessing ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                ) : (
+                  <>
+                    <span>✅</span>
+                    <span>Conferma come Trasferimento</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Option 2: Normal Expense */}
+          <div className="bg-gradient-to-br from-slate-50 to-gray-50 border-2 border-slate-200 rounded-xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">💸</span>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Spesa normale</h3>
+                <p className="text-sm text-slate-600">Hai pagato un servizio/prodotto</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-4 border border-slate-200 mb-4">
+              <div className="text-sm text-slate-600 mb-2 font-medium">Verrà registrato:</div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-700">Spesa su <span className="font-semibold">{transaction.account}</span></span>
+                <span className="text-red-600 font-semibold">-€{transaction.amount.toFixed(2)}</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-2">
+                Beneficiario: <span className="font-medium">{transaction.description}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleExpenseConfirm}
+              disabled={isProcessing}
+              className="w-full bg-slate-600 hover:bg-slate-700 disabled:bg-slate-300 text-white font-semibold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
+            >
+              {isProcessing ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <span>✔️</span>
+                  <span>Conferma come Spesa</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-slate-200 bg-slate-50">
+          <p className="text-sm text-slate-600 text-center">
+            💡 <span className="font-medium">Suggerimento:</span> I trasferimenti creano due movimenti linkati per mantenere i saldi corretti su entrambi i conti
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TransferConfirmationModal;
