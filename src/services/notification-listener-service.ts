@@ -14,7 +14,7 @@ export interface PendingTransaction {
   amount: number;
   description: string;
   currency: string;
-  type: 'expense' | 'income';
+  type: 'expense' | 'income' | 'transfer'; // ✅ Added 'transfer'
   timestamp: number;
   rawNotification: BankNotification;
   confirmed: boolean;
