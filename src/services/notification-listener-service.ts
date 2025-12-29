@@ -46,6 +46,9 @@ class NotificationListenerService {
         return;
       }
 
+      // ✅ NEW: Recover pending notifications from persistent queue FIRST
+      await this.recoverPendingNotifications();
+
       // Start listening
       await NotificationListener.startListening();
 
@@ -101,6 +104,99 @@ class NotificationListenerService {
   async checkPermission(): Promise<{ enabled: boolean }> {
     const enabled = await this.isEnabled();
     return { enabled };
+  }
+  
+  /**
+   * 🆕 NEW: Recover pending notifications from persistent queue
+   * Retrieves notifications saved by native service while app was closed/killed
+   * Called automatically during initialize() and can be called manually
+   * @returns Number of notifications recovered
+   */
+  async recoverPendingNotifications(): Promise<number> {
+    try {
+      console.log('📬 Recovering pending notifications from persistent queue...');
+      
+      // Get pending notifications from native queue
+      const pendingNotifications = await NotificationListener.getPendingNotifications();
+      
+      if (pendingNotifications.length === 0) {
+        console.log('✅ No pending notifications in queue');
+        return 0;
+      }
+      
+      console.log(`📬 Found ${pendingNotifications.length} pending notifications in queue`);
+      
+      let recoveredCount = 0;
+      const existing = await this.getPendingTransactions();
+      
+      // Process each pending notification
+      for (const notification of pendingNotifications) {
+        try {
+          // Parse transaction
+          const parsed = parseNotificationTransaction(
+            notification.appName,
+            notification.title,
+            notification.text
+          );
+          
+          if (!parsed) {
+            console.warn('⚠️ Could not parse pending notification:', notification);
+            continue;
+          }
+          
+          // Generate hash for deduplication
+          const hash = generateTransactionHash(
+            notification.appName,
+            parsed.amount,
+            notification.timestamp
+          );
+          
+          // Check if already exists
+          if (existing.some(t => t.hash === hash)) {
+            console.log('⏭️ Transaction already exists, skipping:', hash);
+            continue;
+          }
+          
+          // Create pending transaction
+          const pending: PendingTransaction = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            hash,
+            appName: notification.appName,
+            amount: parsed.amount,
+            description: parsed.description,
+            currency: parsed.currency,
+            type: parsed.type,
+            timestamp: notification.timestamp,
+            rawNotification: notification,
+            confirmed: false,
+          };
+          
+          // Add to existing list
+          existing.push(pending);
+          recoveredCount++;
+          
+          console.log('✅ Recovered transaction:', pending.description, pending.amount, pending.currency);
+        } catch (error) {
+          console.error('❌ Error processing pending notification:', error);
+        }
+      }
+      
+      // Save all at once if we recovered any
+      if (recoveredCount > 0) {
+        await this.savePendingTransactions(existing);
+        console.log(`✅ Successfully recovered ${recoveredCount} transactions from persistent queue!`);
+        
+        // Emit event for each recovered transaction
+        for (const transaction of existing.slice(-recoveredCount)) {
+          this.emitTransactionAdded(transaction);
+        }
+      }
+      
+      return recoveredCount;
+    } catch (error) {
+      console.error('❌ Failed to recover pending notifications:', error);
+      return 0;
+    }
   }
   
   /**
