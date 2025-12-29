@@ -77,6 +77,14 @@ export class AutoTransactionService {
     // Notifica utente
     await this.notifyNewTransaction(transaction);
     
+    // ✅ NEW: Dispatch custom event for confirmation-required transactions
+    if (transaction.requiresConfirmation) {
+      const event = new CustomEvent('auto-transaction-confirmation-needed', {
+        detail: { transaction }
+      });
+      window.dispatchEvent(event);
+    }
+    
     return transaction;
   }
 
@@ -89,12 +97,21 @@ export class AutoTransactionService {
     const action = tx.type === 'expense' ? 'Spesa' : 
                    tx.type === 'income' ? 'Entrata' : 'Trasferimento';
     
+    // ✅ Different notification for confirmation-required transactions
+    const title = tx.requiresConfirmation 
+      ? `${emoji} Transazione da Confermare`
+      : `${emoji} ${action} Rilevata`;
+    
+    const body = tx.requiresConfirmation
+      ? `${tx.description} - €${tx.amount.toFixed(2)} (richiede conferma)`
+      : `${tx.description} - €${tx.amount.toFixed(2)}`;
+    
     try {
       await LocalNotifications.schedule({
         notifications: [{
           id: Date.now(),
-          title: `${emoji} ${action} Rilevata`,
-          body: `${tx.description} - €${tx.amount.toFixed(2)}`,
+          title,
+          body,
           actionTypeId: 'REVIEW_TRANSACTION',
           extra: { transactionId: tx.id },
           smallIcon: 'ic_stat_notification'
@@ -114,9 +131,34 @@ export class AutoTransactionService {
   }
 
   /**
-   * Conferma transazione → crea expense/income/transfer reale
+   * ✅ NEW: Update transaction type (for transfer confirmation)
    */
-  static async confirmTransaction(
+  static async updateTransactionType(
+    id: string,
+    newType: 'expense' | 'income' | 'transfer'
+  ): Promise<void> {
+    await updateAutoTransaction(id, { type: newType });
+    console.log(`✅ Transaction ${id} type updated to ${newType}`);
+  }
+
+  /**
+   * ✅ NEW: Confirm transaction without requiring expense creation callback
+   * (Used by TransferConfirmationModal)
+   */
+  static async confirmTransaction(id: string): Promise<void> {
+    await updateAutoTransaction(id, {
+      status: 'confirmed',
+      confirmedAt: Date.now(),
+      requiresConfirmation: false
+    });
+    console.log('✅ Transaction confirmed:', id);
+  }
+
+  /**
+   * Conferma transazione → crea expense/income/transfer reale
+   * (Legacy method - kept for backward compatibility with PendingTransactionsModal)
+   */
+  static async confirmTransactionWithCallback(
     id: string,
     createExpenseFn: (data: Omit<Expense, 'id'>) => void
   ): Promise<void> {
