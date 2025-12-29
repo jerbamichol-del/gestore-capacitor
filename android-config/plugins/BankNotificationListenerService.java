@@ -302,13 +302,15 @@ public class BankNotificationListenerService extends NotificationListenerService
     /**
      * Invia dati al layer JavaScript tramite Capacitor
      * ✅ UPDATED: Now also saves to persistent queue for app-closed scenarios
+     * ✅ CRITICAL FIX: Made broadcast explicit to ensure delivery
      */
     private void sendToCapacitor(JSObject data) {
         // 1. Invia broadcast intent che verrà catturato dal plugin (se app è aperta)
         Intent intent = new Intent("com.gestore.spese.BANK_NOTIFICATION");
+        intent.setPackage(getPackageName()); // ✅ CRITICAL: Makes broadcast explicit
         intent.putExtra("data", data.toString());
         sendBroadcast(intent);
-        Log.d(TAG, "✅ Notification data sent to Capacitor (broadcast)");
+        Log.d(TAG, "✅ Notification data sent to Capacitor (explicit broadcast)");
         
         // 2. ✅ NEW: Salva anche in SharedPreferences (per app chiusa)
         try {
