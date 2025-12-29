@@ -125,6 +125,14 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Copy configs (CRITICAL - must run after cap sync)
+        run: |
+          echo "✅ Copying MainActivity and AndroidManifest (AFTER cap sync to prevent overwrite)..."
+          cp android-config/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          cp android-config/MainActivity.java android/app/src/main/java/com/gestore/spese/MainActivity.java
+          echo "✅ MainActivity copied - verifying plugin registration..."
+          grep -q "registerPlugin" android/app/src/main/java/com/gestore/spese/MainActivity.java && echo "✅ MainActivity has registerPlugin calls" || (echo "❌ MainActivity missing registerPlugin!" && exit 1)
+
       - name: Copy keystore
         run: |
           cp android-config/debug.keystore android/app/debug.keystore
@@ -135,11 +143,6 @@ jobs:
           DEST="android/app/src/main/java/com/gestore/spese"
           mkdir -p "$DEST"
           cp android-config/plugins/*.java "$DEST/"
-
-      - name: Copy configs
-        run: |
-          cp android-config/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          cp android-config/MainActivity.java android/app/src/main/java/com/gestore/spese/MainActivity.java
 
       - name: Copy assets
         run: npx cap copy android
