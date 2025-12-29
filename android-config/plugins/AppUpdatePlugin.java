@@ -6,7 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -37,15 +37,24 @@ public class AppUpdatePlugin extends Plugin {
     private static final int INSTALL_NOTIFICATION_ID = 7001;
     private static final int POLL_INTERVAL_MS = 1000; // Poll every 1 second
 
+    // Persist info so we can delete the APK AFTER a successful app update
+    static final String PREFS_NAME = "app_update";
+    static final String KEY_LAST_DOWNLOAD_ID = "last_download_id";
+    static final String KEY_LAST_APK_PATH = "last_apk_path";
+    static final String KEY_LAST_FILE_NAME = "last_file_name";
+
     private Handler handler;
     private Runnable pollRunnable;
     private long currentDownloadId = -1;
     private boolean installerLaunched = false;
 
+    private SharedPreferences prefs;
+
     @Override
     public void load() {
         super.load();
         handler = new Handler(Looper.getMainLooper());
+        prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     @PluginMethod
@@ -71,14 +80,28 @@ public class AppUpdatePlugin extends Plugin {
             request.setTitle(title);
             request.setDescription(description);
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
             request.setMimeType("application/vnd.android.package-archive");
+
+            // ✅ Store in app-specific external folder (NOT public Downloads)
+            // This prevents clutter and makes cleanup easier.
+            File destFile = null;
+            File appDownloadsDir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+            if (appDownloadsDir != null) {
+                request.setDestinationInExternalFilesDir(getContext(), Environment.DIRECTORY_DOWNLOADS, fileName);
+                destFile = new File(appDownloadsDir, fileName);
+                Log.d(TAG, "[DEST] Using app-specific downloads dir: " + destFile.getAbsolutePath());
+            } else {
+                // Fallback (should be rare)
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+                destFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
+                Log.w(TAG, "[DEST] Fallback to public Downloads: " + destFile.getAbsolutePath());
+            }
 
             try {
                 request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
                 request.setAllowedOverMetered(true);
                 request.setAllowedOverRoaming(true);
-                request.setVisibleInDownloadsUi(true);
+                request.setVisibleInDownloadsUi(false); // Hide from Downloads UI (best-effort)
                 request.addRequestHeader("User-Agent", "Android");
             } catch (Exception ignored) {
             }
@@ -86,6 +109,15 @@ public class AppUpdatePlugin extends Plugin {
             currentDownloadId = downloadManager.enqueue(request);
             installerLaunched = false;
             Log.d(TAG, "Download started with ID: " + currentDownloadId);
+
+            // Persist for cleanup after update
+            if (prefs != null) {
+                prefs.edit()
+                    .putLong(KEY_LAST_DOWNLOAD_ID, currentDownloadId)
+                    .putString(KEY_LAST_APK_PATH, destFile != null ? destFile.getAbsolutePath() : null)
+                    .putString(KEY_LAST_FILE_NAME, fileName)
+                    .apply();
+            }
 
             // Start polling for completion
             startPolling(downloadManager, currentDownloadId);
@@ -156,7 +188,6 @@ public class AppUpdatePlugin extends Plugin {
                 ret.put("status", "failed");
                 notifyListeners("downloadComplete", ret);
             }
-            // For RUNNING, PENDING, PAUSED - keep polling
 
             cursor.close();
         } else {
