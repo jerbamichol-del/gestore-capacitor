@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PendingTransaction } from '../services/notification-listener-service';
+import { Account } from '../../types';
 
 // Saved rule for auto-categorization
 interface SavedRule {
@@ -17,8 +18,16 @@ interface SavedRule {
 interface PendingTransactionsModalProps {
   isOpen: boolean;
   transactions: PendingTransaction[];
+  accounts: Account[]; // NEW: account list
   onClose: () => void;
-  onConfirm: (id: string, transaction: PendingTransaction, selectedType: 'expense' | 'income' | 'transfer', saveRule: boolean) => void;
+  onConfirm: (
+    id: string,
+    transaction: PendingTransaction,
+    selectedType: 'expense' | 'income' | 'transfer',
+    saveRule: boolean,
+    accountFrom?: string, // NEW: for transfers
+    accountTo?: string // NEW: for transfers
+  ) => void;
   onIgnore: (id: string) => void;
 }
 
@@ -89,6 +98,7 @@ function findMatchingRule(
 export function PendingTransactionsModal({
   isOpen,
   transactions,
+  accounts,
   onClose,
   onConfirm,
   onIgnore,
@@ -97,6 +107,9 @@ export function PendingTransactionsModal({
   const [selectedTypes, setSelectedTypes] = useState<Record<string, 'expense' | 'income' | 'transfer'>>({});
   const [saveRuleFlags, setSaveRuleFlags] = useState<Record<string, boolean>>({});
   const [matchedRules, setMatchedRules] = useState<Record<string, { rule: SavedRule | null; confidence: number }>>({});
+  
+  // NEW: Account selections for transfers
+  const [transferAccounts, setTransferAccounts] = useState<Record<string, { from: string; to: string }>>({});
 
   // Load saved rules on mount
   useEffect(() => {
@@ -110,6 +123,7 @@ export function PendingTransactionsModal({
 
     const newSelectedTypes: Record<string, 'expense' | 'income' | 'transfer'> = {};
     const newMatchedRules: Record<string, { rule: SavedRule | null; confidence: number }> = {};
+    const newTransferAccounts: Record<string, { from: string; to: string }> = {};
 
     transactions.forEach((transaction) => {
       // Try to find matching rule
@@ -119,15 +133,34 @@ export function PendingTransactionsModal({
       // If exact match (100%), pre-select type from rule
       if (match.confidence === 100 && match.rule) {
         newSelectedTypes[transaction.id] = match.rule.type;
+        
+        // If rule has saved accounts for transfer, pre-fill them
+        if (match.rule.type === 'transfer' && match.rule.accountFrom && match.rule.accountTo) {
+          newTransferAccounts[transaction.id] = {
+            from: match.rule.accountFrom,
+            to: match.rule.accountTo,
+          };
+        } else {
+          // Default accounts
+          const defaultFrom = accounts[0]?.id || '';
+          const defaultTo = accounts.length > 1 ? accounts[1].id : accounts[0]?.id || '';
+          newTransferAccounts[transaction.id] = { from: defaultFrom, to: defaultTo };
+        }
       } else {
         // Default: use transaction's detected type
         newSelectedTypes[transaction.id] = transaction.type;
+        
+        // Initialize default transfer accounts
+        const defaultFrom = accounts[0]?.id || '';
+        const defaultTo = accounts.length > 1 ? accounts[1].id : accounts[0]?.id || '';
+        newTransferAccounts[transaction.id] = { from: defaultFrom, to: defaultTo };
       }
     });
 
     setSelectedTypes(newSelectedTypes);
     setMatchedRules(newMatchedRules);
-  }, [isOpen, transactions, savedRules]);
+    setTransferAccounts(newTransferAccounts);
+  }, [isOpen, transactions, savedRules, accounts]);
 
   if (!isOpen || transactions.length === 0) return null;
 
@@ -153,9 +186,36 @@ export function PendingTransactionsModal({
     setSaveRuleFlags((prev) => ({ ...prev, [transactionId]: checked }));
   };
 
+  const handleTransferAccountChange = (
+    transactionId: string,
+    direction: 'from' | 'to',
+    accountId: string
+  ) => {
+    setTransferAccounts((prev) => ({
+      ...prev,
+      [transactionId]: {
+        ...prev[transactionId],
+        [direction]: accountId,
+      },
+    }));
+  };
+
   const handleConfirm = (transaction: PendingTransaction) => {
     const selectedType = selectedTypes[transaction.id] || transaction.type;
     const saveRule = saveRuleFlags[transaction.id] || false;
+    const transferAccountSelection = transferAccounts[transaction.id];
+
+    // Validate transfer accounts
+    if (selectedType === 'transfer') {
+      if (!transferAccountSelection || !transferAccountSelection.from || !transferAccountSelection.to) {
+        alert('Seleziona entrambi i conti per il trasferimento.');
+        return;
+      }
+      if (transferAccountSelection.from === transferAccountSelection.to) {
+        alert('Il conto di origine e destinazione devono essere diversi.');
+        return;
+      }
+    }
 
     // If user wants to save rule, create and save it
     if (saveRule) {
@@ -169,6 +229,12 @@ export function PendingTransactionsModal({
           createdAt: Date.now(),
         };
 
+        // Save account info for transfers
+        if (selectedType === 'transfer' && transferAccountSelection) {
+          newRule.accountFrom = transferAccountSelection.from;
+          newRule.accountTo = transferAccountSelection.to;
+        }
+
         const updatedRules = [...savedRules, newRule];
         saveSavedRules(updatedRules);
         setSavedRules(updatedRules);
@@ -176,7 +242,15 @@ export function PendingTransactionsModal({
       }
     }
 
-    onConfirm(transaction.id, transaction, selectedType, saveRule);
+    // Pass account info to handler
+    onConfirm(
+      transaction.id,
+      transaction,
+      selectedType,
+      saveRule,
+      selectedType === 'transfer' ? transferAccountSelection?.from : undefined,
+      selectedType === 'transfer' ? transferAccountSelection?.to : undefined
+    );
   };
 
   const handleDeleteRule = (transactionId: string) => {
@@ -236,6 +310,12 @@ export function PendingTransactionsModal({
               const selectedType = selectedTypes[transaction.id] || transaction.type;
               const saveRule = saveRuleFlags[transaction.id] || false;
               const match = matchedRules[transaction.id];
+              const transferAccountSelection = transferAccounts[transaction.id];
+              const isTransferValid =
+                selectedType !== 'transfer' ||
+                (transferAccountSelection?.from &&
+                  transferAccountSelection?.to &&
+                  transferAccountSelection.from !== transferAccountSelection.to);
 
               return (
                 <div
@@ -321,6 +401,63 @@ export function PendingTransactionsModal({
                     </div>
                   </div>
 
+                  {/* Transfer Account Selection */}
+                  {selectedType === 'transfer' && (
+                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs font-medium text-blue-900 mb-2">Seleziona conti:</p>
+                      <div className="space-y-2">
+                        {/* From Account */}
+                        <div>
+                          <label className="text-xs text-blue-700 font-medium block mb-1">
+                            Da (origine):
+                          </label>
+                          <select
+                            value={transferAccountSelection?.from || ''}
+                            onChange={(e) =>
+                              handleTransferAccountChange(transaction.id, 'from', e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="">-- Seleziona conto --</option>
+                            {accounts.map((account) => (
+                              <option key={account.id} value={account.id}>
+                                {account.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* To Account */}
+                        <div>
+                          <label className="text-xs text-blue-700 font-medium block mb-1">
+                            Verso (destinazione):
+                          </label>
+                          <select
+                            value={transferAccountSelection?.to || ''}
+                            onChange={(e) =>
+                              handleTransferAccountChange(transaction.id, 'to', e.target.value)
+                            }
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="">-- Seleziona conto --</option>
+                            {accounts.map((account) => (
+                              <option key={account.id} value={account.id}>
+                                {account.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Validation Warning */}
+                        {!isTransferValid && (
+                          <p className="text-xs text-red-600 font-medium mt-1">
+                            ⚠️ I conti devono essere diversi
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Save Rule Checkbox */}
                   {!match?.rule && (
                     <div className="mb-3">
@@ -340,7 +477,12 @@ export function PendingTransactionsModal({
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleConfirm(transaction)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                      disabled={!isTransferValid}
+                      className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${
+                        isTransferValid
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
                     >
                       ✓ Conferma
                     </button>
