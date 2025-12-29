@@ -44,7 +44,8 @@ public class NotificationListenerPlugin extends Plugin {
         "it.nogood.container",
         "eu.unicredit.mobile",
         "it.unicredit.mobile",
-        "com.unicredit.euromobile"
+        "com.unicredit.euromobile",
+        "com.unicredit"
     );
 
     @Override
@@ -171,8 +172,133 @@ public class NotificationListenerPlugin extends Plugin {
     }
     
     /**
+     * ✅ NEW: Reprocess active bank notifications (for missed/stuck notifications)
+     * This manually triggers processing of all active bank notifications,
+     * ignoring the "already processed" cache.
+     */
+    @PluginMethod
+    public void reprocessActiveNotifications(PluginCall call) {
+        Log.d(TAG, "========================================");
+        Log.d(TAG, "🔄 reprocessActiveNotifications() called - FORCING REPROCESS");
+        Log.d(TAG, "========================================");
+        
+        if (!isNotificationListenerEnabled()) {
+            Log.w(TAG, "⚠️ Notification listener not enabled");
+            call.reject("Notification listener not enabled");
+            return;
+        }
+        
+        try {
+            BankNotificationListenerService service = BankNotificationListenerService.getInstance();
+            
+            if (service == null) {
+                Log.w(TAG, "⚠️ NotificationListenerService not running");
+                call.reject("NotificationListenerService not running");
+                return;
+            }
+            
+            StatusBarNotification[] activeNotifications = service.getActiveNotifications();
+            Log.d(TAG, "Found " + activeNotifications.length + " total active notifications");
+            
+            int reprocessedCount = 0;
+            
+            for (StatusBarNotification sbn : activeNotifications) {
+                String packageName = sbn.getPackageName();
+                
+                // Check if it's a bank notification
+                boolean isBank = BANK_PACKAGES.contains(packageName) ||
+                                packageName.contains("bank") ||
+                                packageName.contains("unicredit") ||
+                                packageName.contains("revolut") ||
+                                packageName.contains("paypal");
+                
+                if (!isBank) continue;
+                
+                try {
+                    android.app.Notification notification = sbn.getNotification();
+                    Bundle extras = notification.extras;
+                    
+                    if (extras == null) {
+                        Log.w(TAG, "[REPROCESS] Skipping notification with no extras: " + packageName);
+                        continue;
+                    }
+                    
+                    String title = extras.getString(android.app.Notification.EXTRA_TITLE, "");
+                    String text = extractNotificationText(extras);
+                    long timestamp = sbn.getPostTime();
+                    
+                    if (text == null || text.isEmpty()) {
+                        Log.w(TAG, "[REPROCESS] Skipping notification with no text: " + packageName);
+                        continue;
+                    }
+                    
+                    Log.d(TAG, "🔄 REPROCESSING notification from: " + packageName);
+                    Log.d(TAG, "   Title: " + title);
+                    Log.d(TAG, "   Text: " + text.substring(0, Math.min(text.length(), 100)) + "...");
+                    
+                    // Build data object
+                    JSObject data = new JSObject();
+                    data.put("packageName", packageName);
+                    data.put("appName", getAppName(packageName));
+                    data.put("title", title);
+                    data.put("text", text);
+                    data.put("timestamp", timestamp);
+                    data.put("reprocessed", true); // Mark as reprocessed
+                    
+                    // Send directly to JS listeners (bypass broadcast)
+                    notifyListeners("notificationReceived", data);
+                    
+                    reprocessedCount++;
+                    Log.d(TAG, "✅ Notification reprocessed and sent to JS");
+                    
+                } catch (Exception e) {
+                    Log.e(TAG, "❌ Error reprocessing notification from " + packageName, e);
+                }
+            }
+            
+            Log.d(TAG, "✅ Reprocessed " + reprocessedCount + " bank notifications");
+            
+            JSObject ret = new JSObject();
+            ret.put("reprocessed", reprocessedCount);
+            ret.put("total", activeNotifications.length);
+            call.resolve(ret);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error reprocessing notifications", e);
+            call.reject("Failed to reprocess notifications: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Extract text from notification extras (resilient multi-field strategy)
+     */
+    private String extractNotificationText(Bundle extras) {
+        // Try BIG_TEXT first
+        String bigText = extras.getString(android.app.Notification.EXTRA_BIG_TEXT);
+        if (bigText != null && !bigText.isEmpty()) return bigText;
+        
+        // Try standard TEXT
+        String text = extras.getString(android.app.Notification.EXTRA_TEXT);
+        if (text != null && !text.isEmpty()) return text;
+        
+        // Try TEXT_LINES
+        CharSequence[] textLines = extras.getCharSequenceArray(android.app.Notification.EXTRA_TEXT_LINES);
+        if (textLines != null && textLines.length > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (CharSequence line : textLines) {
+                if (line != null) {
+                    if (sb.length() > 0) sb.append(" ");
+                    sb.append(line.toString());
+                }
+            }
+            if (sb.length() > 0) return sb.toString();
+        }
+        
+        return null;
+    }
+    
+    /**
      * ✅ NEW: Get ALL active notifications with full details (for debugging)
-     * This helps identify unknown bank packages and notification structures
      */
     @PluginMethod
     public void getAllActiveNotifications(PluginCall call) {
@@ -391,6 +517,7 @@ public class NotificationListenerPlugin extends Plugin {
             case "eu.unicredit.mobile":
             case "it.unicredit.mobile":
             case "com.unicredit.euromobile":
+            case "com.unicredit":
                 return "unicredit";
             default:
                 String[] parts = packageName.split("\\.");
