@@ -35,6 +35,14 @@ export interface NotificationListenerPlugin {
   checkMissedNotifications(): Promise<{ missed: NotificationData[] }>;
 
   /**
+   * ✅ NEW: Get pending notifications from persistent queue
+   * Retrieves notifications that were saved while app was closed/killed
+   * Queue is cleared after retrieval to prevent duplicates
+   * @returns Object with notifications array and count
+   */
+  getPendingNotifications(): Promise<{ notifications: NotificationData[]; count: number }>;
+
+  /**
    * Add listener for notification events
    */
   addListener(
@@ -138,6 +146,34 @@ class NotificationListenerWrapper {
       return [];
     } catch (error) {
       console.error('❌ Failed to check missed notifications:', error);
+      return [];
+    }
+  }
+
+  /**
+   * ✅ NEW: Get pending notifications from persistent queue
+   * These are notifications saved while the app was closed/killed
+   */
+  async getPendingNotifications(): Promise<BankNotification[]> {
+    try {
+      console.log('📬 Retrieving pending notifications from queue...');
+      const result = await NotificationListenerPlugin.getPendingNotifications();
+      console.log(`✅ Found ${result.count} pending notifications in queue`);
+      
+      // Convert to BankNotification format
+      if (result.notifications && Array.isArray(result.notifications)) {
+        return result.notifications.map((data: NotificationData) => ({
+          appName: data.appName || PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
+          packageName: data.packageName,
+          title: data.title,
+          text: data.text,
+          timestamp: data.timestamp,
+        }));
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to get pending notifications:', error);
       return [];
     }
   }
