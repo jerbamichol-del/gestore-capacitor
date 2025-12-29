@@ -491,17 +491,19 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     }
   };
 
-  // --- ✅ UPDATED: Auto-Transaction Handlers with Type Selection ---
+  // --- ✅ UPDATED: Auto-Transaction Handlers with Type Selection and Account Selection ---
   const handleConfirmTransaction = async (
     id: string, 
     transaction: PendingTransaction, 
     selectedType: 'expense' | 'income' | 'transfer',
-    saveRule: boolean
+    saveRule: boolean,
+    accountFrom?: string,
+    accountTo?: string
   ) => {
     try {
       await confirmTransaction(id);
 
-      // Find matching account
+      // Find matching account (for non-transfer types)
       let accountId = safeAccounts[0]?.id || '';
       const matchingAccount = safeAccounts.find(
         acc => acc.name.toLowerCase().includes(transaction.appName.toLowerCase())
@@ -512,26 +514,27 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
       // Handle TRANSFER type
       if (selectedType === 'transfer') {
-        // For transfers, we need two accounts
-        // Source = matching account (Revolut, PayPal, etc.)
-        // Destination = first non-matching account or prompt user
-        
-        const sourceAccountId = accountId;
-        const destinationAccountId = safeAccounts.find(acc => acc.id !== sourceAccountId)?.id || safeAccounts[0]?.id || '';
-
-        if (!destinationAccountId || sourceAccountId === destinationAccountId) {
-          showToast({ message: 'Serve almeno 2 conti per un trasferimento.', type: 'error' });
+        if (!accountFrom || !accountTo) {
+          showToast({ message: 'Seleziona entrambi i conti per il trasferimento.', type: 'error' });
           return;
         }
+
+        if (accountFrom === accountTo) {
+          showToast({ message: 'I conti devono essere diversi.', type: 'error' });
+          return;
+        }
+
+        const sourceAccountName = safeAccounts.find(a => a.id === accountFrom)?.name || 'Conto Origine';
+        const destinationAccountName = safeAccounts.find(a => a.id === accountTo)?.name || 'Conto Destinazione';
 
         // Outgoing transaction (from source)
         const outgoingExpense: Omit<Expense, 'id'> = {
           type: 'expense',
-          description: `Trasferimento → ${safeAccounts.find(a => a.id === destinationAccountId)?.name || 'Altro conto'}`,
+          description: `Trasferimento → ${destinationAccountName}`,
           amount: transaction.amount,
           date: new Date(transaction.timestamp).toISOString().split('T')[0],
           category: 'Trasferimenti',
-          accountId: sourceAccountId,
+          accountId: accountFrom,
           tags: ['auto-rilevata', 'transfer'],
           receipts: [],
           frequency: 'single',
@@ -541,11 +544,11 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         // Incoming transaction (to destination)
         const incomingExpense: Omit<Expense, 'id'> = {
           type: 'income',
-          description: `Trasferimento ← ${safeAccounts.find(a => a.id === sourceAccountId)?.name || transaction.appName}`,
+          description: `Trasferimento ← ${sourceAccountName}`,
           amount: transaction.amount,
           date: new Date(transaction.timestamp).toISOString().split('T')[0],
           category: 'Trasferimenti',
-          accountId: destinationAccountId,
+          accountId: accountTo,
           tags: ['auto-rilevata', 'transfer'],
           receipts: [],
           frequency: 'single',
@@ -733,6 +736,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       <PendingTransactionsModal
         isOpen={isPendingTransactionsModalOpen}
         transactions={pendingTransactions}
+        accounts={safeAccounts}
         onClose={() => setIsPendingTransactionsModalOpen(false)}
         onConfirm={handleConfirmTransaction}
         onIgnore={handleIgnoreTransaction}
