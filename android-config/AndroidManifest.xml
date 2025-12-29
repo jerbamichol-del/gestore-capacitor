@@ -70,6 +70,15 @@
             </intent-filter>
 
         </activity>
+
+        <!-- Cleanup the downloaded update APK after a successful install/update -->
+        <receiver
+            android:name=".UpdateCleanupReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         
         <!-- Bank Notification Listener Service -->
         <service
