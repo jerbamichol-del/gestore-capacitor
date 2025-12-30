@@ -32,8 +32,7 @@ import java.util.List;
 @CapacitorPlugin(
     name = "SMSReader",
     permissions = {
-        @Permission(strings = {Manifest.permission.READ_SMS}, alias = "readSMS"),
-        @Permission(strings = {Manifest.permission.RECEIVE_SMS}, alias = "receiveSMS")
+        @Permission(strings = {Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS}, alias = "sms")
     }
 )
 public class SMSReaderPlugin extends Plugin {
@@ -106,7 +105,7 @@ public class SMSReaderPlugin extends Plugin {
 
     @PluginMethod
     public void checkPermission(PluginCall call) {
-        Log.d(TAG, "\u2705 checkPermission() called");
+        Log.d(TAG, "✅ checkPermission() called");
         
         boolean hasReadPermission = ContextCompat.checkSelfPermission(
             getContext(),
@@ -119,9 +118,9 @@ public class SMSReaderPlugin extends Plugin {
         ) == PackageManager.PERMISSION_GRANTED;
 
         // ✅ DETAILED LOGGING
-        Log.d(TAG, "\ud83d\udcdd READ_SMS permission: " + (hasReadPermission ? "GRANTED" : "DENIED"));
-        Log.d(TAG, "\ud83d\udcdd RECEIVE_SMS permission: " + (hasReceivePermission ? "GRANTED" : "DENIED"));
-        Log.d(TAG, "\ud83d\udcca Final result: " + (hasReadPermission && hasReceivePermission ? "GRANTED" : "DENIED"));
+        Log.d(TAG, "📝 READ_SMS permission: " + (hasReadPermission ? "GRANTED" : "DENIED"));
+        Log.d(TAG, "📝 RECEIVE_SMS permission: " + (hasReceivePermission ? "GRANTED" : "DENIED"));
+        Log.d(TAG, "📊 Final result: " + (hasReadPermission && hasReceivePermission ? "GRANTED" : "DENIED"));
 
         JSObject result = new JSObject();
         result.put("granted", hasReadPermission && hasReceivePermission);
@@ -132,7 +131,7 @@ public class SMSReaderPlugin extends Plugin {
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
-        Log.d(TAG, "\ud83d\udcf1 requestPermission() called");
+        Log.d(TAG, "📱 requestPermission() called");
         
         boolean hasReadPermission = ContextCompat.checkSelfPermission(
             getContext(), 
@@ -145,27 +144,36 @@ public class SMSReaderPlugin extends Plugin {
         ) == PackageManager.PERMISSION_GRANTED;
 
         if (hasReadPermission && hasReceivePermission) {
-            Log.d(TAG, "\u2705 Both permissions already granted");
+            Log.d(TAG, "✅ Both permissions already granted");
             JSObject result = new JSObject();
             result.put("granted", true);
             call.resolve(result);
             return;
         }
 
-        Log.d(TAG, "\ud83d\udd11 Requesting SMS permissions via Capacitor...");
-        // Use Capacitor's permission request system
-        requestPermissionForAlias("readSMS", call, "smsPermissionCallback");
+        Log.d(TAG, "🔑 Requesting BOTH SMS permissions (READ_SMS + RECEIVE_SMS)...");
+        
+        // ✅ FIX: Request ALL permissions in the "sms" alias (both READ_SMS and RECEIVE_SMS)
+        requestPermissionForAlias("sms", call, "smsPermissionCallback");
     }
 
     @PermissionCallback
     private void smsPermissionCallback(PluginCall call) {
-        Log.d(TAG, "\ud83d\udd14 smsPermissionCallback invoked");
+        Log.d(TAG, "🔔 smsPermissionCallback invoked");
         
-        boolean readGranted = getPermissionState("readSMS") == com.getcapacitor.PermissionState.GRANTED;
-        boolean receiveGranted = getPermissionState("receiveSMS") == com.getcapacitor.PermissionState.GRANTED;
+        // Re-check actual permissions after request
+        boolean readGranted = ContextCompat.checkSelfPermission(
+            getContext(),
+            Manifest.permission.READ_SMS
+        ) == PackageManager.PERMISSION_GRANTED;
         
-        Log.d(TAG, "READ_SMS state: " + getPermissionState("readSMS"));
-        Log.d(TAG, "RECEIVE_SMS state: " + getPermissionState("receiveSMS"));
+        boolean receiveGranted = ContextCompat.checkSelfPermission(
+            getContext(),
+            Manifest.permission.RECEIVE_SMS
+        ) == PackageManager.PERMISSION_GRANTED;
+        
+        Log.d(TAG, "READ_SMS after request: " + (readGranted ? "GRANTED" : "DENIED"));
+        Log.d(TAG, "RECEIVE_SMS after request: " + (receiveGranted ? "DENIED"));
         
         boolean granted = readGranted && receiveGranted;
         
@@ -178,12 +186,12 @@ public class SMSReaderPlugin extends Plugin {
 
     @PluginMethod
     public void getRecentSMS(PluginCall call) {
-        Log.d(TAG, "\ud83d\udcec getRecentSMS() called");
+        Log.d(TAG, "📬 getRecentSMS() called");
         
         // Check permission first
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_SMS) 
             != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "\u274c Permission denied for READ_SMS");
+            Log.e(TAG, "❌ Permission denied for READ_SMS");
             call.reject("Permission denied. Call requestPermission() first.");
             return;
         }
@@ -191,7 +199,7 @@ public class SMSReaderPlugin extends Plugin {
         int hours = call.getInt("hours", 24);
         long cutoffTime = System.currentTimeMillis() - (hours * 60 * 60 * 1000L);
 
-        Log.d(TAG, "\ud83d\udd0d Scanning SMS from last " + hours + " hours");
+        Log.d(TAG, "🔍 Scanning SMS from last " + hours + " hours");
 
         List<JSObject> smsList = new ArrayList<>();
 
@@ -239,7 +247,7 @@ public class SMSReaderPlugin extends Plugin {
                 cursor.close();
             }
 
-            Log.d(TAG, "\u2705 Found " + smsList.size() + " SMS messages");
+            Log.d(TAG, "✅ Found " + smsList.size() + " SMS messages");
 
             JSObject result = new JSObject();
             result.put("messages", new JSArray(smsList));
@@ -247,7 +255,7 @@ public class SMSReaderPlugin extends Plugin {
             call.resolve(result);
 
         } catch (Exception e) {
-            Log.e(TAG, "\u274c Error reading SMS: " + e.getMessage(), e);
+            Log.e(TAG, "❌ Error reading SMS: " + e.getMessage(), e);
             call.reject("Error reading SMS: " + e.getMessage(), e);
         }
     }
