@@ -83,6 +83,23 @@ const PACKAGE_TO_APP_NAME: Record<string, string> = {
   'it.nogood.container': 'UniCredit',
 };
 
+// ✅ IMPORTANT: UniCredit often sends a variable appName (e.g. "UniCredit Mobile")
+// This breaks parser matching which expects appName.toLowerCase() === "unicredit".
+// To avoid breaking other banks (e.g. Intesa Sanpaolo key mismatch), normalize ONLY UniCredit here.
+const UNICREDIT_PACKAGES = new Set<string>([
+  'com.unicredit',
+  'com.unicredit.mobile',
+  'it.nogood.container',
+]);
+
+function normalizeAppName(data: NotificationData): string {
+  if (UNICREDIT_PACKAGES.has(data.packageName)) {
+    return 'UniCredit';
+  }
+
+  return data.appName || PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown';
+}
+
 const NotificationListenerPlugin = registerPlugin<NotificationListenerPlugin>('NotificationListener', {
   web: () => import('./notification-listener-web').then(m => new m.NotificationListenerWeb()),
 });
@@ -135,7 +152,7 @@ class NotificationListenerWrapper {
       // Convert to BankNotification format
       if (result.missed && Array.isArray(result.missed)) {
         return result.missed.map((data: NotificationData) => ({
-          appName: data.appName || PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
+          appName: normalizeAppName(data),
           packageName: data.packageName,
           title: data.title,
           text: data.text,
@@ -163,7 +180,7 @@ class NotificationListenerWrapper {
       // Convert to BankNotification format
       if (result.notifications && Array.isArray(result.notifications)) {
         return result.notifications.map((data: NotificationData) => ({
-          appName: data.appName || PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
+          appName: normalizeAppName(data),
           packageName: data.packageName,
           title: data.title,
           text: data.text,
@@ -188,7 +205,7 @@ class NotificationListenerWrapper {
         console.log('🔔 Notification received:', data);
         // Convert to BankNotification format
         const bankNotification: BankNotification = {
-          appName: data.appName || PACKAGE_TO_APP_NAME[data.packageName] || 'Unknown',
+          appName: normalizeAppName(data),
           packageName: data.packageName,
           title: data.title,
           text: data.text,
