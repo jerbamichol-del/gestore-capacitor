@@ -62,7 +62,8 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'UNICREDIT',
     accountName: 'UniCredit',
     patterns: {
-      expense: /(?:autorizzata|addebito).*?([\d.,]+)\s*EUR.*?(?:carta|presso)\s+(.+)/i,
+      // ✅ FIX: Pattern migliorato per supportare "c/o", "presso", "carta", etc.
+      expense: /(?:autorizzata|addebito).*?([\d.,]+)\s*EUR.*?(?:carta|presso|c\/o)\s+(.+?)(?:\s+\d{2}\/\d{2}\/\d{2}|$)/i,
       income: /accredito.*?([\d.,]+)\s*EUR/i,
       transfer: /bonifico.*?([\d.,]+)\s*EUR.*?(?:a|verso)\s+(.+)/i
     }
@@ -195,6 +196,7 @@ export class SMSTransactionParser {
       const match = body.match(config.patterns.expense);
       if (match) {
         console.log(`✅ Matched expense pattern`);
+        console.log(`💶 Amount: ${match[1]}, Merchant: ${match[2]}`);
         return {
           type: 'expense',
           amount: this.parseAmount(match[1]),
