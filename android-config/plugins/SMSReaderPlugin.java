@@ -1,11 +1,17 @@
 package com.gestore.spese;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.ContentResolver;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.Telephony;
+import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -18,6 +24,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,23 +37,102 @@ import java.util.List;
     }
 )
 public class SMSReaderPlugin extends Plugin {
+    private static final String TAG = "SMSReaderPlugin";
+    private static final String SMS_RECEIVED_EVENT = "smsReceived";
+    
+    private BroadcastReceiver smsReceiver;
+
+    @Override
+    public void load() {
+        super.load();
+        registerSMSReceiver();
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        unregisterSMSReceiver();
+        super.handleOnDestroy();
+    }
+
+    private void registerSMSReceiver() {
+        Log.d(TAG, "Registering SMS BroadcastReceiver");
+        
+        smsReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "SMS broadcast received in plugin");
+                
+                try {
+                    String smsDataJson = intent.getStringExtra("smsData");
+                    if (smsDataJson != null) {
+                        JSONObject smsData = new JSONObject(smsDataJson);
+                        
+                        JSObject data = new JSObject();
+                        data.put("sender", smsData.getString("sender"));
+                        data.put("body", smsData.getString("body"));
+                        data.put("timestamp", smsData.getLong("timestamp"));
+                        
+                        Log.d(TAG, "Notifying JavaScript listeners for SMS: " + data.toString());
+                        notifyListeners(SMS_RECEIVED_EVENT, data);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error processing SMS broadcast: " + e.getMessage(), e);
+                }
+            }
+        };
+
+        IntentFilter filter = new IntentFilter("com.gestore.spese.SMS_RECEIVED");
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getContext().registerReceiver(smsReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            getContext().registerReceiver(smsReceiver, filter);
+        }
+        
+        Log.d(TAG, "SMS BroadcastReceiver registered successfully");
+    }
+
+    private void unregisterSMSReceiver() {
+        if (smsReceiver != null) {
+            try {
+                getContext().unregisterReceiver(smsReceiver);
+                Log.d(TAG, "SMS BroadcastReceiver unregistered");
+            } catch (Exception e) {
+                Log.e(TAG, "Error unregistering SMS receiver: " + e.getMessage());
+            }
+        }
+    }
 
     @PluginMethod
     public void checkPermission(PluginCall call) {
-        boolean hasPermission = ContextCompat.checkSelfPermission(
+        boolean hasReadPermission = ContextCompat.checkSelfPermission(
             getContext(),
             Manifest.permission.READ_SMS
         ) == PackageManager.PERMISSION_GRANTED;
+        
+        boolean hasReceivePermission = ContextCompat.checkSelfPermission(
+            getContext(),
+            Manifest.permission.RECEIVE_SMS
+        ) == PackageManager.PERMISSION_GRANTED;
 
         JSObject result = new JSObject();
-        result.put("granted", hasPermission);
+        result.put("granted", hasReadPermission && hasReceivePermission);
         call.resolve(result);
     }
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_SMS) 
-            == PackageManager.PERMISSION_GRANTED) {
+        boolean hasReadPermission = ContextCompat.checkSelfPermission(
+            getContext(), 
+            Manifest.permission.READ_SMS
+        ) == PackageManager.PERMISSION_GRANTED;
+        
+        boolean hasReceivePermission = ContextCompat.checkSelfPermission(
+            getContext(),
+            Manifest.permission.RECEIVE_SMS
+        ) == PackageManager.PERMISSION_GRANTED;
+
+        if (hasReadPermission && hasReceivePermission) {
             JSObject result = new JSObject();
             result.put("granted", true);
             call.resolve(result);
