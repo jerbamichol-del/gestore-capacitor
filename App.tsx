@@ -407,35 +407,23 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         currentConfirmationTransaction.date
       );
 
-      // Create the two linked transactions
-      const outgoingExpense: Omit<Expense, 'id'> = {
-        type: 'expense',
+      const destinationAccountName = safeAccounts.find(a => a.id === toAccount)?.name || 'Conto Destinazione';
+
+      // ✅ IMPORTANT: Save as a real transfer (single row with toAccountId)
+      const transferTx: Omit<Expense, 'id'> = {
+        type: 'transfer',
         amount: currentConfirmationTransaction.amount,
-        description: `Trasferimento → ${toAccount}`,
+        description: `Trasferimento → ${destinationAccountName}`,
         date: currentConfirmationTransaction.date,
         accountId: fromAccount,
+        toAccountId: toAccount,
         category: 'Trasferimenti',
-        notes: `Auto-rilevato da ${currentConfirmationTransaction.sourceType}`,
         tags: ['transfer', 'auto'],
         receipts: [],
         frequency: 'single'
       };
 
-      const incomingExpense: Omit<Expense, 'id'> = {
-        type: 'income',
-        amount: currentConfirmationTransaction.amount,
-        description: `Trasferimento ← ${fromAccount}`,
-        date: currentConfirmationTransaction.date,
-        accountId: toAccount,
-        category: 'Trasferimenti',
-        notes: `Auto-rilevato da ${currentConfirmationTransaction.sourceType}`,
-        tags: ['transfer', 'auto'],
-        receipts: [],
-        frequency: 'single'
-      };
-
-      handleAddExpense(outgoingExpense);
-      handleAddExpense(incomingExpense);
+      handleAddExpense(transferTx);
       
       showToast({ message: 'Trasferimento registrato correttamente!', type: 'success' });
       setIsTransferConfirmationModalOpen(false);
@@ -501,8 +489,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     accountTo?: string
   ) => {
     try {
-      await confirmTransaction(id);
-
       // Find matching account (for non-transfer types)
       let accountId = safeAccounts[0]?.id || '';
       const matchingAccount = safeAccounts.find(
@@ -524,42 +510,31 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           return;
         }
 
-        const sourceAccountName = safeAccounts.find(a => a.id === accountFrom)?.name || 'Conto Origine';
+        await confirmTransaction(id);
+
         const destinationAccountName = safeAccounts.find(a => a.id === accountTo)?.name || 'Conto Destinazione';
 
-        // Outgoing transaction (from source)
-        const outgoingExpense: Omit<Expense, 'id'> = {
-          type: 'expense',
+        // ✅ IMPORTANT: Save as a real transfer (single row with toAccountId)
+        const transferTx: Omit<Expense, 'id'> = {
+          type: 'transfer',
           description: `Trasferimento → ${destinationAccountName}`,
           amount: transaction.amount,
           date: new Date(transaction.timestamp).toISOString().split('T')[0],
           category: 'Trasferimenti',
           accountId: accountFrom,
+          toAccountId: accountTo,
           tags: ['auto-rilevata', 'transfer'],
           receipts: [],
           frequency: 'single',
           notes: `Da ${transaction.appName}: ${transaction.description}`,
         };
 
-        // Incoming transaction (to destination)
-        const incomingExpense: Omit<Expense, 'id'> = {
-          type: 'income',
-          description: `Trasferimento ← ${sourceAccountName}`,
-          amount: transaction.amount,
-          date: new Date(transaction.timestamp).toISOString().split('T')[0],
-          category: 'Trasferimenti',
-          accountId: accountTo,
-          tags: ['auto-rilevata', 'transfer'],
-          receipts: [],
-          frequency: 'single',
-          notes: `Da ${transaction.appName}: ${transaction.description}`,
-        };
-
-        handleAddExpense(outgoingExpense);
-        handleAddExpense(incomingExpense);
+        handleAddExpense(transferTx);
         showToast({ message: 'Trasferimento registrato!', type: 'success' });
         
       } else {
+        await confirmTransaction(id);
+
         // Handle EXPENSE or INCOME type
         const newExpense: Omit<Expense, 'id'> = {
           description: transaction.description,

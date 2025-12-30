@@ -54,10 +54,19 @@ function saveSavedRules(rules: SavedRule[]): void {
   }
 }
 
+function getTextForRules(transaction: PendingTransaction): string {
+  const raw = (transaction as any)?.rawNotification;
+  const rawTitle = (raw?.title || '').toString();
+  const rawText = (raw?.text || '').toString();
+  const combined = `${rawTitle} ${rawText}`.replace(/\s+/g, ' ').trim();
+  if (combined.length >= 3) return combined;
+  return (transaction.description || '').toString();
+}
+
 // Extract destinatario from description
 function extractDestinatario(description: string): string | null {
   // Pattern: "a [NAME]" or "to [NAME]"
-  const match = description.match(/(?:a|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i);
+  const match = description.match(/(?:a|to)\s+([^€\n.]+?)(?:\s+è|\s+has|\s+was|\.|$)/i);
   if (match && match[1]) {
     return match[1].trim();
   }
@@ -107,15 +116,33 @@ export function PendingTransactionsModal({
   const [selectedTypes, setSelectedTypes] = useState<Record<string, 'expense' | 'income' | 'transfer'>>({});
   const [saveRuleFlags, setSaveRuleFlags] = useState<Record<string, boolean>>({});
   const [matchedRules, setMatchedRules] = useState<Record<string, { rule: SavedRule | null; confidence: number }>>({});
-  
+
   // NEW: Account selections for transfers
   const [transferAccounts, setTransferAccounts] = useState<Record<string, { from: string; to: string }>>({});
+
+  // NEW: UX state (step-by-step)
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   // Load saved rules on mount
   useEffect(() => {
     const rules = loadSavedRules();
     setSavedRules(rules);
   }, []);
+
+  // Reset index when modal opens
+  useEffect(() => {
+    if (isOpen) setCurrentIndex(0);
+  }, [isOpen]);
+
+  // Clamp index when list changes
+  useEffect(() => {
+    if (!isOpen) return;
+    setCurrentIndex((prev) => {
+      const max = Math.max(0, transactions.length - 1);
+      return Math.min(prev, max);
+    });
+  }, [isOpen, transactions.length]);
 
   // Initialize selected types and match rules when transactions change
   useEffect(() => {
@@ -126,14 +153,16 @@ export function PendingTransactionsModal({
     const newTransferAccounts: Record<string, { from: string; to: string }> = {};
 
     transactions.forEach((transaction) => {
+      const textForRules = getTextForRules(transaction);
+
       // Try to find matching rule
-      const match = findMatchingRule(transaction.appName, transaction.description, savedRules);
+      const match = findMatchingRule(transaction.appName, textForRules, savedRules);
       newMatchedRules[transaction.id] = match;
 
       // If exact match (100%), pre-select type from rule
       if (match.confidence === 100 && match.rule) {
         newSelectedTypes[transaction.id] = match.rule.type;
-        
+
         // If rule has saved accounts for transfer, pre-fill them
         if (match.rule.type === 'transfer' && match.rule.accountFrom && match.rule.accountTo) {
           newTransferAccounts[transaction.id] = {
@@ -149,7 +178,7 @@ export function PendingTransactionsModal({
       } else {
         // Default: use transaction's detected type
         newSelectedTypes[transaction.id] = transaction.type;
-        
+
         // Initialize default transfer accounts
         const defaultFrom = accounts[0]?.id || '';
         const defaultTo = accounts.length > 1 ? accounts[1].id : accounts[0]?.id || '';
@@ -163,6 +192,8 @@ export function PendingTransactionsModal({
   }, [isOpen, transactions, savedRules, accounts]);
 
   if (!isOpen || transactions.length === 0) return null;
+
+  const currentTransaction = transactions[currentIndex];
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -200,7 +231,7 @@ export function PendingTransactionsModal({
     }));
   };
 
-  const handleConfirm = (transaction: PendingTransaction) => {
+  const handleConfirm = async (transaction: PendingTransaction) => {
     const selectedType = selectedTypes[transaction.id] || transaction.type;
     const saveRule = saveRuleFlags[transaction.id] || false;
     const transferAccountSelection = transferAccounts[transaction.id];
@@ -217,9 +248,11 @@ export function PendingTransactionsModal({
       }
     }
 
+    setProcessingId(transaction.id);
+
     // If user wants to save rule, create and save it
     if (saveRule) {
-      const destinatario = extractDestinatario(transaction.description);
+      const destinatario = extractDestinatario(getTextForRules(transaction));
       if (destinatario) {
         const newRule: SavedRule = {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -251,6 +284,15 @@ export function PendingTransactionsModal({
       selectedType === 'transfer' ? transferAccountSelection?.from : undefined,
       selectedType === 'transfer' ? transferAccountSelection?.to : undefined
     );
+
+    // UX: keep index (after removal the next element will slide into same index)
+    setTimeout(() => setProcessingId(null), 250);
+  };
+
+  const handleIgnore = async (transactionId: string) => {
+    setProcessingId(transactionId);
+    onIgnore(transactionId);
+    setTimeout(() => setProcessingId(null), 250);
   };
 
   const handleDeleteRule = (transactionId: string) => {
@@ -272,6 +314,16 @@ export function PendingTransactionsModal({
 
     console.log('🗑️ Deleted rule:', match.rule.id);
   };
+
+  const selectedType = selectedTypes[currentTransaction.id] || currentTransaction.type;
+  const saveRule = saveRuleFlags[currentTransaction.id] || false;
+  const match = matchedRules[currentTransaction.id];
+  const transferAccountSelection = transferAccounts[currentTransaction.id];
+  const isTransferValid =
+    selectedType !== 'transfer' ||
+    (transferAccountSelection?.from &&
+      transferAccountSelection?.to &&
+      transferAccountSelection.from !== transferAccountSelection.to);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -298,213 +350,218 @@ export function PendingTransactionsModal({
               </svg>
             </button>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
-            {transactions.length} {transactions.length === 1 ? 'transazione' : 'transazioni'} da confermare
-          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-sm text-gray-600">
+              {transactions.length} {transactions.length === 1 ? 'transazione' : 'transazioni'} da confermare
+            </p>
+            <p className="text-sm text-gray-500">
+              {currentIndex + 1}/{transactions.length}
+            </p>
+          </div>
         </div>
 
-        {/* Transactions List */}
+        {/* Single Transaction (step-by-step) */}
         <div className="overflow-y-auto max-h-[calc(80vh-140px)] px-6 py-4">
-          <div className="space-y-4">
-            {transactions.map((transaction) => {
-              const selectedType = selectedTypes[transaction.id] || transaction.type;
-              const saveRule = saveRuleFlags[transaction.id] || false;
-              const match = matchedRules[transaction.id];
-              const transferAccountSelection = transferAccounts[transaction.id];
-              const isTransferValid =
-                selectedType !== 'transfer' ||
-                (transferAccountSelection?.from &&
-                  transferAccountSelection?.to &&
-                  transferAccountSelection.from !== transferAccountSelection.to);
-
-              return (
-                <div
-                  key={transaction.id}
-                  className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                >
-                  {/* Transaction Info */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-gray-500 uppercase">
-                          {transaction.appName}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {formatDate(transaction.timestamp)}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed">
-                        {transaction.description}
-                      </p>
-                      <p className="text-lg font-bold text-red-600">
-                        {formatAmount(transaction.amount, transaction.currency)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Rule Match Info */}
-                  {match && match.rule && match.confidence === 100 && (
-                    <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-xs font-medium text-green-700">
-                        ✅ Regola riconosciuta: {match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}
-                      </p>
-                      <p className="text-xs text-green-600 mt-0.5">
-                        "{match.rule.destinatario}"
-                      </p>
-                    </div>
-                  )}
-                  {match && match.rule && match.confidence === 75 && (
-                    <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-xs font-medium text-yellow-700">
-                        ⚠️ Possibile corrispondenza
-                      </p>
-                      <p className="text-xs text-yellow-600 mt-0.5">
-                        Simile a "{match.rule.destinatario}"
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Type Selection */}
-                  <div className="mb-3">
-                    <p className="text-xs font-medium text-gray-700 mb-2">Seleziona tipo:</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleTypeChange(transaction.id, 'expense')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          selectedType === 'expense'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        💸 Spesa
-                      </button>
-                      <button
-                        onClick={() => handleTypeChange(transaction.id, 'income')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          selectedType === 'income'
-                            ? 'bg-green-600 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        💰 Entrata
-                      </button>
-                      <button
-                        onClick={() => handleTypeChange(transaction.id, 'transfer')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          selectedType === 'transfer'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        🔄 Trasferimento
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Transfer Account Selection */}
-                  {selectedType === 'transfer' && (
-                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-xs font-medium text-blue-900 mb-2">Seleziona conti:</p>
-                      <div className="space-y-2">
-                        {/* From Account */}
-                        <div>
-                          <label className="text-xs text-blue-700 font-medium block mb-1">
-                            Da (origine):
-                          </label>
-                          <select
-                            value={transferAccountSelection?.from || ''}
-                            onChange={(e) =>
-                              handleTransferAccountChange(transaction.id, 'from', e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            <option value="">-- Seleziona conto --</option>
-                            {accounts.map((account) => (
-                              <option key={account.id} value={account.id}>
-                                {account.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* To Account */}
-                        <div>
-                          <label className="text-xs text-blue-700 font-medium block mb-1">
-                            Verso (destinazione):
-                          </label>
-                          <select
-                            value={transferAccountSelection?.to || ''}
-                            onChange={(e) =>
-                              handleTransferAccountChange(transaction.id, 'to', e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            <option value="">-- Seleziona conto --</option>
-                            {accounts.map((account) => (
-                              <option key={account.id} value={account.id}>
-                                {account.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Validation Warning */}
-                        {!isTransferValid && (
-                          <p className="text-xs text-red-600 font-medium mt-1">
-                            ⚠️ I conti devono essere diversi
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Save Rule Checkbox */}
-                  {!match?.rule && (
-                    <div className="mb-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={saveRule}
-                          onChange={(e) => handleSaveRuleChange(transaction.id, e.target.checked)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">Ricorda per il futuro</span>
-                      </label>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleConfirm(transaction)}
-                      disabled={!isTransferValid}
-                      className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${
-                        isTransferValid
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      ✓ Conferma
-                    </button>
-                    <button
-                      onClick={() => onIgnore(transaction.id)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors"
-                    >
-                      ✕ Ignora
-                    </button>
-                    {match?.rule && (
-                      <button
-                        onClick={() => handleDeleteRule(transaction.id)}
-                        className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors"
-                        title="Elimina regola salvata"
-                      >
-                        🗑️
-                      </button>
-                    )}
-                  </div>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            {/* Transaction Info */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500 uppercase">
+                    {currentTransaction.appName}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {formatDate(currentTransaction.timestamp)}
+                  </span>
                 </div>
-              );
-            })}
+                <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed">
+                  {currentTransaction.description}
+                </p>
+                <p className="text-lg font-bold text-red-600">
+                  {formatAmount(currentTransaction.amount, currentTransaction.currency)}
+                </p>
+              </div>
+            </div>
+
+            {/* Rule Match Info */}
+            {match && match.rule && match.confidence === 100 && (
+              <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs font-medium text-green-700">
+                  ✅ Regola riconosciuta: {match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}
+                </p>
+                <p className="text-xs text-green-600 mt-0.5">
+                  "{match.rule.destinatario}"
+                </p>
+              </div>
+            )}
+            {match && match.rule && match.confidence === 75 && (
+              <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs font-medium text-yellow-700">
+                  ⚠️ Possibile corrispondenza
+                </p>
+                <p className="text-xs text-yellow-600 mt-0.5">
+                  Simile a "{match.rule.destinatario}"
+                </p>
+              </div>
+            )}
+
+            {/* Type Selection */}
+            <div className="mb-3">
+              <p className="text-xs font-medium text-gray-700 mb-2">Seleziona tipo:</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleTypeChange(currentTransaction.id, 'expense')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                    selectedType === 'expense'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  💸 Spesa
+                </button>
+                <button
+                  onClick={() => handleTypeChange(currentTransaction.id, 'income')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                    selectedType === 'income'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  💰 Entrata
+                </button>
+                <button
+                  onClick={() => handleTypeChange(currentTransaction.id, 'transfer')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                    selectedType === 'transfer'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  🔄 Trasferimento
+                </button>
+              </div>
+            </div>
+
+            {/* Transfer Account Selection */}
+            {selectedType === 'transfer' && (
+              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs font-medium text-blue-900 mb-2">Seleziona conti:</p>
+                <div className="space-y-2">
+                  {/* From Account */}
+                  <div>
+                    <label className="text-xs text-blue-700 font-medium block mb-1">
+                      Da (origine):
+                    </label>
+                    <select
+                      value={transferAccountSelection?.from || ''}
+                      onChange={(e) =>
+                        handleTransferAccountChange(currentTransaction.id, 'from', e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">-- Seleziona conto --</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* To Account */}
+                  <div>
+                    <label className="text-xs text-blue-700 font-medium block mb-1">
+                      Verso (destinazione):
+                    </label>
+                    <select
+                      value={transferAccountSelection?.to || ''}
+                      onChange={(e) =>
+                        handleTransferAccountChange(currentTransaction.id, 'to', e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">-- Seleziona conto --</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Validation Warning */}
+                  {!isTransferValid && (
+                    <p className="text-xs text-red-600 font-medium mt-1">
+                      ⚠️ I conti devono essere diversi
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Save Rule Checkbox */}
+            {!match?.rule && (
+              <div className="mb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={saveRule}
+                    onChange={(e) => handleSaveRuleChange(currentTransaction.id, e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Ricorda per il futuro</span>
+                </label>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleConfirm(currentTransaction)}
+                disabled={!isTransferValid || processingId === currentTransaction.id}
+                className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${
+                  isTransferValid && processingId !== currentTransaction.id
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                ✓ Conferma
+              </button>
+              <button
+                onClick={() => handleIgnore(currentTransaction.id)}
+                disabled={processingId === currentTransaction.id}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                ✕ Ignora
+              </button>
+              {match?.rule && (
+                <button
+                  onClick={() => handleDeleteRule(currentTransaction.id)}
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors"
+                  title="Elimina regola salvata"
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+              disabled={currentIndex === 0}
+              className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+            >
+              ← Precedente
+            </button>
+            <button
+              onClick={() => setCurrentIndex((i) => Math.min(transactions.length - 1, i + 1))}
+              disabled={currentIndex >= transactions.length - 1}
+              className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Successiva →
+            </button>
           </div>
         </div>
 
