@@ -6,7 +6,7 @@ import { BankConfig } from '../types/transaction';
 import { Capacitor } from '@capacitor/core';
 import SMSReader from '../plugins/sms-reader';
 
-// Configurazioni banche italiane
+// Configurazioni banche italiane (FALLBACK)
 const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'Revolut',
@@ -62,7 +62,6 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'UNICREDIT',
     accountName: 'UniCredit',
     patterns: {
-      // ✅ FIX: Pattern migliorato per supportare "c/o", "presso", "carta", etc.
       expense: /(?:autorizzata|addebito).*?([\d.,]+)\s*EUR.*?(?:carta|presso|c\/o)\s+(.+?)(?:\s+\d{2}\/\d{2}\/\d{2}|$)/i,
       income: /accredito.*?([\d.,]+)\s*EUR/i,
       transfer: /bonifico.*?([\d.,]+)\s*EUR.*?(?:a|verso)\s+(.+)/i
@@ -134,7 +133,7 @@ export class SMSTransactionParser {
 
       // Parse each SMS
       for (const sms of result.messages) {
-        const transaction = this.parseSMS(sms.sender, sms.body, sms.timestamp);
+        const transaction = await this.parseSMS(sms.sender, sms.body, sms.timestamp);
         
         if (transaction) {
           // Check if duplicate
@@ -168,16 +167,44 @@ export class SMSTransactionParser {
   }
 
   /**
-   * Parse singolo SMS
+   * Parse singolo SMS con AI + Regex fallback
    */
-  static parseSMS(
+  static async parseSMS(
+    sender: string,
+    body: string,
+    timestamp: number
+  ): Promise<Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> | null> {
+    
+    console.log(`📨 Parsing SMS from: ${sender}`);
+    console.log(`📄 Body: ${body}`);
+    
+    // 🎯 STEP 1: Prova regex veloce (offline)
+    const regexResult = this.parseWithRegex(sender, body, timestamp);
+    if (regexResult) {
+      console.log('✅ Parsed with REGEX (fast)');
+      return regexResult;
+    }
+
+    // 🤖 STEP 2: Se regex fallisce, usa AI
+    console.log('🤖 Regex failed, trying AI parsing...');
+    const aiResult = await this.parseWithAI(sender, body, timestamp);
+    if (aiResult) {
+      console.log('✅ Parsed with AI (smart)');
+      return aiResult;
+    }
+
+    console.log('⚠️ Failed to parse SMS with both regex and AI');
+    return null;
+  }
+
+  /**
+   * Parse con REGEX (veloce, offline)
+   */
+  private static parseWithRegex(
     sender: string,
     body: string,
     timestamp: number
   ): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> | null {
-    
-    console.log(`📨 Parsing SMS from: ${sender}`);
-    console.log(`📄 Body: ${body}`);
     
     // Trova config banca
     const config = BANK_CONFIGS.find(c => 
@@ -185,7 +212,6 @@ export class SMSTransactionParser {
     );
 
     if (!config) {
-      console.log(`⚠️ No bank config found for sender: ${sender}`);
       return null;
     }
 
@@ -195,8 +221,6 @@ export class SMSTransactionParser {
     if (config.patterns.expense) {
       const match = body.match(config.patterns.expense);
       if (match) {
-        console.log(`✅ Matched expense pattern`);
-        console.log(`💶 Amount: ${match[1]}, Merchant: ${match[2]}`);
         return {
           type: 'expense',
           amount: this.parseAmount(match[1]),
@@ -214,7 +238,6 @@ export class SMSTransactionParser {
     if (config.patterns.income) {
       const match = body.match(config.patterns.income);
       if (match) {
-        console.log(`✅ Matched income pattern`);
         return {
           type: 'income',
           amount: this.parseAmount(match[1]),
@@ -232,7 +255,6 @@ export class SMSTransactionParser {
     if (config.patterns.transfer) {
       const match = body.match(config.patterns.transfer);
       if (match) {
-        console.log(`✅ Matched transfer pattern`);
         return {
           type: 'transfer',
           amount: this.parseAmount(match[1]),
@@ -247,8 +269,100 @@ export class SMSTransactionParser {
       }
     }
 
-    console.log(`⚠️ No pattern matched for SMS`);
     return null;
+  }
+
+  /**
+   * Parse con AI (Gemini Flash 2.0 Experimental)
+   */
+  private static async parseWithAI(
+    sender: string,
+    body: string,
+    timestamp: number
+  ): Promise<Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> | null> {
+    
+    try {
+      const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!GEMINI_API_KEY) {
+        console.error('❌ Gemini API key not found');
+        return null;
+      }
+
+      const prompt = `You are an expert SMS banking transaction parser.
+
+Extract transaction information from this SMS:
+
+Sender: ${sender}
+Message: ${body}
+
+Extract:
+1. Transaction type: "expense" (spesa/pagamento), "income" (accredito/ricevuto), or "transfer" (bonifico/trasferimento)
+2. Amount in EUR (numeric value)
+3. Merchant/description (where the transaction happened or who sent/received money)
+4. Bank account name (based on sender, e.g., "UniCredit", "Revolut", "BBVA", "PayPal", etc.)
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "type": "expense|income|transfer",
+  "amount": 11.50,
+  "description": "Merchant name",
+  "account": "Bank name"
+}
+
+If this is NOT a banking transaction SMS, respond with: null`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: prompt }]
+            }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 200
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        console.error('❌ Gemini API error:', response.status);
+        return null;
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      
+      if (!text || text === 'null') {
+        return null;
+      }
+
+      // Parse JSON response
+      const parsed = JSON.parse(text);
+      
+      if (!parsed || !parsed.type || !parsed.amount || !parsed.account) {
+        console.error('❌ Invalid AI response structure');
+        return null;
+      }
+
+      return {
+        type: parsed.type,
+        amount: parseFloat(parsed.amount),
+        description: parsed.description || 'Transazione',
+        date: this.formatDate(timestamp),
+        account: parsed.account,
+        sourceType: 'sms',
+        sourceApp: parsed.account.toLowerCase().replace(/\s+/g, ''),
+        rawText: body
+      };
+      
+    } catch (error) {
+      console.error('❌ Error parsing SMS with AI:', error);
+      return null;
+    }
   }
 
   /**
