@@ -45,6 +45,7 @@ public class SMSReaderPlugin extends Plugin {
     @Override
     public void load() {
         super.load();
+        Log.d(TAG, "SMSReaderPlugin loaded");
         registerSMSReceiver();
     }
 
@@ -105,6 +106,8 @@ public class SMSReaderPlugin extends Plugin {
 
     @PluginMethod
     public void checkPermission(PluginCall call) {
+        Log.d(TAG, "\u2705 checkPermission() called");
+        
         boolean hasReadPermission = ContextCompat.checkSelfPermission(
             getContext(),
             Manifest.permission.READ_SMS
@@ -115,13 +118,22 @@ public class SMSReaderPlugin extends Plugin {
             Manifest.permission.RECEIVE_SMS
         ) == PackageManager.PERMISSION_GRANTED;
 
+        // ✅ DETAILED LOGGING
+        Log.d(TAG, "\ud83d\udcdd READ_SMS permission: " + (hasReadPermission ? "GRANTED" : "DENIED"));
+        Log.d(TAG, "\ud83d\udcdd RECEIVE_SMS permission: " + (hasReceivePermission ? "GRANTED" : "DENIED"));
+        Log.d(TAG, "\ud83d\udcca Final result: " + (hasReadPermission && hasReceivePermission ? "GRANTED" : "DENIED"));
+
         JSObject result = new JSObject();
         result.put("granted", hasReadPermission && hasReceivePermission);
+        result.put("readSMS", hasReadPermission);
+        result.put("receiveSMS", hasReceivePermission);
         call.resolve(result);
     }
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
+        Log.d(TAG, "\ud83d\udcf1 requestPermission() called");
+        
         boolean hasReadPermission = ContextCompat.checkSelfPermission(
             getContext(), 
             Manifest.permission.READ_SMS
@@ -133,35 +145,53 @@ public class SMSReaderPlugin extends Plugin {
         ) == PackageManager.PERMISSION_GRANTED;
 
         if (hasReadPermission && hasReceivePermission) {
+            Log.d(TAG, "\u2705 Both permissions already granted");
             JSObject result = new JSObject();
             result.put("granted", true);
             call.resolve(result);
             return;
         }
 
+        Log.d(TAG, "\ud83d\udd11 Requesting SMS permissions via Capacitor...");
         // Use Capacitor's permission request system
         requestPermissionForAlias("readSMS", call, "smsPermissionCallback");
     }
 
     @PermissionCallback
     private void smsPermissionCallback(PluginCall call) {
-        boolean granted = getPermissionState("readSMS") == com.getcapacitor.PermissionState.GRANTED;
+        Log.d(TAG, "\ud83d\udd14 smsPermissionCallback invoked");
+        
+        boolean readGranted = getPermissionState("readSMS") == com.getcapacitor.PermissionState.GRANTED;
+        boolean receiveGranted = getPermissionState("receiveSMS") == com.getcapacitor.PermissionState.GRANTED;
+        
+        Log.d(TAG, "READ_SMS state: " + getPermissionState("readSMS"));
+        Log.d(TAG, "RECEIVE_SMS state: " + getPermissionState("receiveSMS"));
+        
+        boolean granted = readGranted && receiveGranted;
+        
         JSObject result = new JSObject();
         result.put("granted", granted);
+        result.put("readSMS", readGranted);
+        result.put("receiveSMS", receiveGranted);
         call.resolve(result);
     }
 
     @PluginMethod
     public void getRecentSMS(PluginCall call) {
+        Log.d(TAG, "\ud83d\udcec getRecentSMS() called");
+        
         // Check permission first
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_SMS) 
             != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG, "\u274c Permission denied for READ_SMS");
             call.reject("Permission denied. Call requestPermission() first.");
             return;
         }
 
         int hours = call.getInt("hours", 24);
         long cutoffTime = System.currentTimeMillis() - (hours * 60 * 60 * 1000L);
+
+        Log.d(TAG, "\ud83d\udd0d Scanning SMS from last " + hours + " hours");
 
         List<JSObject> smsList = new ArrayList<>();
 
@@ -209,12 +239,15 @@ public class SMSReaderPlugin extends Plugin {
                 cursor.close();
             }
 
+            Log.d(TAG, "\u2705 Found " + smsList.size() + " SMS messages");
+
             JSObject result = new JSObject();
             result.put("messages", new JSArray(smsList));
             result.put("count", smsList.size());
             call.resolve(result);
 
         } catch (Exception e) {
+            Log.e(TAG, "\u274c Error reading SMS: " + e.getMessage(), e);
             call.reject("Error reading SMS: " + e.getMessage(), e);
         }
     }
