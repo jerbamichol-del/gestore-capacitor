@@ -41,6 +41,7 @@ import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { usePrivacyGate } from './hooks/usePrivacyGate';
 import { useBackNavigation } from './hooks/useBackNavigation';
 import { useNotificationListener } from './src/hooks/useNotificationListener';
+import { useSMSListener } from './src/hooks/useSMSListener';
 import { useUpdateChecker } from './hooks/useUpdateChecker';
 import { PendingTransaction } from './src/services/notification-listener-service';
 import { Capacitor } from '@capacitor/core';
@@ -90,6 +91,13 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     confirmTransaction,
     ignoreTransaction,
   } = useNotificationListener();
+
+  // --- ✅ NEW: SMS Listener (real-time SMS + scan recent SMS) ---
+  const {
+    isEnabled: isSMSReaderEnabled,
+    requestPermission: requestSMSPermission,
+    manualCheckPermission: manualCheckSMSPermission,
+  } = useSMSListener();
 
   // --- Auto-Update System ---
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -156,7 +164,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     };
   }, []);
 
-  // --- Auto-Transaction Permission Request ---
+  // --- Auto-Transaction Permission Request (Notification Listener) ---
   const hasShownPermissionModalRef = useRef(false);
   
   useEffect(() => {
@@ -173,6 +181,28 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       }
     }
   }, [isNotificationListenerEnabled]);
+
+  // --- ✅ NEW: Auto-request SMS permission ONCE (Android only) ---
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return;
+
+    // If already enabled, nothing to do
+    if (isSMSReaderEnabled) return;
+
+    const hasAskedBefore = localStorage.getItem('has_asked_sms_permission');
+    if (hasAskedBefore) return;
+
+    // Ask once after a short delay (avoid prompting instantly at app boot)
+    setTimeout(async () => {
+      try {
+        console.log('📩 Asking SMS permission (first run)...');
+        await requestSMSPermission();
+        await manualCheckSMSPermission();
+      } finally {
+        localStorage.setItem('has_asked_sms_permission', 'true');
+      }
+    }, 3000);
+  }, [isSMSReaderEnabled, requestSMSPermission, manualCheckSMSPermission]);
 
   // --- Auto-open pending transactions modal when new transaction arrives ---
   useEffect(() => {
