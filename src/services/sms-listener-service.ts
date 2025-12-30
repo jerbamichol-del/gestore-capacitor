@@ -3,8 +3,8 @@
 import { Capacitor } from '@capacitor/core';
 import type { PluginListenerHandle } from '@capacitor/core';
 import SMSReader from '../plugins/sms-reader';
-import { SMSTransactionParser } from './sms-transaction-parser';
-import { AutoTransactionService } from './auto-transaction-service';
+import { SMSTransactionParser } from '../../services/sms-transaction-parser';
+import { AutoTransactionService } from '../../services/auto-transaction-service';
 import type { SMSMessage } from '../plugins/sms-reader';
 import type { AutoTransaction } from '../types/transaction';
 
