@@ -155,7 +155,11 @@ const BANK_PATTERNS: Record<string, BankPattern> = {
   },
 
   unicredit: {
-    amountRegex: /€\s*([\d,.]+)|EUR\s*([\d,.]+)/i,
+    // ✅ UniCredit notifications can contain amounts in multiple formats, e.g.
+    // - "€ 12,05"
+    // - "EUR 12,05"
+    // - "12,05 EUR" (amount before currency)
+    amountRegex: /€\s*([\d,.]+)|EUR\s*([\d,.]+)|([\d,.]+)\s*EUR/i,
     descriptionRegex: /(?:presso|su|merchant|a)\s*[:.:]?\s*([^€\n.]+?)(?:\.|$)/i,
     getType: (text, description) => {
       const lowerText = text.toLowerCase();
@@ -196,7 +200,7 @@ export function parseNotificationTransaction(
     return null;
   }
 
-  const amountStr = amountMatch[1] || amountMatch[2] || amountMatch[0];
+  const amountStr = amountMatch[1] || amountMatch[2] || amountMatch[3] || amountMatch[0];
   const amount = parseFloat(amountStr.replace(',', '.').replace(/[^\d.]/g, ''));
 
   if (isNaN(amount) || amount <= 0) {
