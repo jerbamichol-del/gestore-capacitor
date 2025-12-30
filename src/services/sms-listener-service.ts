@@ -3,8 +3,8 @@
 import { Capacitor } from '@capacitor/core';
 import type { PluginListenerHandle } from '@capacitor/core';
 import SMSReader from '../plugins/sms-reader';
-import { SMSTransactionParser } from '../../services/sms-transaction-parser';
-import { AutoTransactionService } from '../../services/auto-transaction-service';
+import { SMSTransactionParser } from './sms-transaction-parser';
+import { AutoTransactionService } from './auto-transaction-service';
 import type { SMSMessage } from '../plugins/sms-reader';
 import type { AutoTransaction } from '../types/transaction';
 
@@ -90,6 +90,7 @@ class SMSListenerService {
 
       // Scan recent SMS (last 24 hours)
       console.log('📱 Scanning recent SMS (last 24 hours)...');
+      // ✅ FIX: Missing await!
       await SMSTransactionParser.scanRecentSMS(24);
 
       this.isInitialized = true;
@@ -138,7 +139,8 @@ class SMSListenerService {
       console.log('🔍 Processing incoming SMS...');
 
       // Parse SMS to transaction
-      const transaction = SMSTransactionParser.parseSMS(
+      // ✅ FIX: Missing await!
+      const transaction = await SMSTransactionParser.parseSMS(
         sms.sender,
         sms.body,
         sms.timestamp
