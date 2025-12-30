@@ -173,7 +173,7 @@ public class SMSReaderPlugin extends Plugin {
         ) == PackageManager.PERMISSION_GRANTED;
         
         Log.d(TAG, "READ_SMS after request: " + (readGranted ? "GRANTED" : "DENIED"));
-        Log.d(TAG, "RECEIVE_SMS after request: " + (receiveGranted ? "DENIED"));
+        Log.d(TAG, "RECEIVE_SMS after request: " + (receiveGranted ? "GRANTED" : "DENIED"));
         
         boolean granted = readGranted && receiveGranted;
         
