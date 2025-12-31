@@ -1,7 +1,8 @@
 // services/sms-transaction-parser.ts
 
 import { AutoTransaction } from '../types/transaction';
-import { AutoTransactionService } from './auto-transaction-service';
+// ✅ FIX: AutoTransactionService is in /services (project root), not in /src/services
+import { AutoTransactionService } from '../../services/auto-transaction-service';
 import { BankConfig } from '../types/transaction';
 import { Capacitor } from '@capacitor/core';
 import SMSReader from '../plugins/sms-reader';
