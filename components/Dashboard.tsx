@@ -537,11 +537,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); onToggleBalanceVisibility(); }}
                                             className="p-2 -ml-2 rounded-full text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            aria-label={isBalanceVisible ? "Nascondi saldo" : "Mostra saldo"}
+                                            aria-label={isBalanceVisible ? "Nascondi patrimonio" : "Mostra patrimonio"}
                                         >
                                             {isBalanceVisible ? <EyeSlashIcon className="w-6 h-6" /> : <EyeIcon className="w-6 h-6" />}
                                         </button>
-                                        <h4 className="text-sm font-medium text-slate-400 cursor-default select-none">Saldo</h4>
+                                        <h4 className="text-sm font-medium text-slate-400 cursor-default select-none">Patrimonio</h4>
                                     </div>
                                     <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800' : totalAccountsBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {isBalanceVisible ? (
