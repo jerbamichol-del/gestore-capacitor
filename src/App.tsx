@@ -21,6 +21,7 @@ import SuccessIndicator from './components/SuccessIndicator';
 import PinVerifierModal from './components/PinVerifierModal';
 import { PendingTransactionsModal, PendingTransactionsBadge } from './components/PendingTransactionsModal';
 import { NotificationPermissionModal } from './components/NotificationPermissionModal';
+import MultipleExpensesModal from './components/MultipleExpensesModal'; // Restored import
 import { MainLayout } from './components/MainLayout';
 import LoadingOverlay from './components/LoadingOverlay';
 
@@ -105,8 +106,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         window.history.replaceState({ modal: 'form' }, '');
         ui.nav.setIsFormOpen(true);
       } else if (parsedData && parsedData.length > 1) {
-        // Multi-expense logic could go here if implemented
-        ui.showToast({ message: 'Trovate più spese, non ancora supportato.', type: 'info' });
+        // Handle multiple expenses
+        ui.setMultipleExpensesData(parsedData.map(e => data.sanitizeExpenseData(e, image.base64Image)));
+        ui.nav.setIsMultipleExpensesModalOpen(true);
+        window.history.replaceState({ modal: 'multiple_expenses' }, '');
       } else {
         ui.showToast({ message: 'Nessuna spesa trovata.', type: 'error' });
       }
@@ -244,6 +247,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             isOpen={auto.isPendingTransactionsModalOpen}
             onClose={() => auto.setIsPendingTransactionsModalOpen(false)}
             transactions={auto.pendingTransactions}
+            expenses={data.expenses} // Pass existing expenses for duplicate check
             accounts={data.accounts}
             onConfirm={auto.handleConfirmTransaction}
             onIgnore={auto.handleIgnoreTransaction}
@@ -299,6 +303,20 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
               onDateModalStateChange={() => { }}
               onFilterPanelOpenStateChange={(isOpen) => ui.nav.setIsHistoryFilterOpen(isOpen)}
               isOverlayed={false}
+            />
+          )}
+
+          {ui.nav.isMultipleExpensesModalOpen && (
+            <MultipleExpensesModal
+              isOpen={ui.nav.isMultipleExpensesModalOpen}
+              expenses={ui.multipleExpensesData}
+              accounts={data.accounts}
+              onClose={() => ui.nav.closeModalWithHistory()}
+              onConfirm={(expenses) => {
+                expenses.forEach(exp => data.handleAddExpense(exp));
+                ui.nav.closeModalWithHistory();
+                ui.showToast({ message: `${expenses.length} spese aggiunte!`, type: 'success' });
+              }}
             />
           )}
 

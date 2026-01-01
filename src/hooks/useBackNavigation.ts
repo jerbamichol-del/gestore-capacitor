@@ -4,96 +4,98 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 
 export const useBackNavigation = (
-    onToast: (msg: any) => void,
-    setAnalysisImage: (img: any) => void
+  onToast: (msg: any) => void,
+  setAnalysisImage: (img: any) => void
 ) => {
   // UI State
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCalculatorContainerOpen, setIsCalculatorContainerOpen] = useState(false);
   const [isImageSourceModalOpen, setIsImageSourceModalOpen] = useState(false);
+  /* New Modals */
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isMultipleExpensesModalOpen, setIsMultipleExpensesModalOpen] = useState(false);
-  
+
   const [isRecurringScreenOpen, setIsRecurringScreenOpen] = useState(false);
-  const [isRecurringClosing, setIsRecurringClosing] = useState(false); 
+  const [isRecurringClosing, setIsRecurringClosing] = useState(false);
 
   const [isHistoryScreenOpen, setIsHistoryScreenOpen] = useState(false);
   const [isHistoryClosing, setIsHistoryClosing] = useState(false);
-  
+
   const [isIncomeHistoryOpen, setIsIncomeHistoryOpen] = useState(false);
   const [isIncomeHistoryClosing, setIsIncomeHistoryClosing] = useState(false);
 
   const [isAccountsScreenOpen, setIsAccountsScreenOpen] = useState(false);
-  
+
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isHistoryFilterOpen, setIsHistoryFilterOpen] = useState(false);
 
   const lastBackPressTime = useRef(0);
 
   const closeAllModals = () => {
-      setIsFormOpen(false); setIsCalculatorContainerOpen(false); setIsImageSourceModalOpen(false);
-      setIsVoiceModalOpen(false); setIsMultipleExpensesModalOpen(false); setIsQrModalOpen(false);
-      setIsHistoryScreenOpen(false); setIsHistoryFilterOpen(false); setIsRecurringScreenOpen(false);
-      setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); setIsAccountsScreenOpen(false);
-      setAnalysisImage(null);
+    setIsFormOpen(false); setIsCalculatorContainerOpen(false); setIsImageSourceModalOpen(false);
+    setIsVoiceModalOpen(false); setIsMultipleExpensesModalOpen(false); setIsQrModalOpen(false);
+    setIsHistoryScreenOpen(false); setIsHistoryFilterOpen(false); setIsRecurringScreenOpen(false);
+    setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); setIsAccountsScreenOpen(false);
+    setAnalysisImage(null);
   };
 
   const forceNavigateHome = () => {
-      try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) {}
-      window.dispatchEvent(new PopStateEvent('popstate', { state: { modal: 'home' } }));
+    try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) { }
+    window.dispatchEvent(new PopStateEvent('popstate', { state: { modal: 'home' } }));
   };
 
   const closeModalWithHistory = () => {
-      if (window.history.state?.modal === 'history') { setIsHistoryScreenOpen(false); setIsHistoryClosing(false); }
-      if (window.history.state?.modal === 'income_history') { setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); }
-      if (window.history.state?.modal === 'recurring') { setIsRecurringScreenOpen(false); setIsRecurringClosing(false); }
-      if (window.history.state?.modal === 'accounts') { setIsAccountsScreenOpen(false); }
-      
-      if (window.history.state?.modal && window.history.state.modal !== 'home' && window.history.state.modal !== 'exit_guard') window.history.back();
-      else forceNavigateHome();
+    if (window.history.state?.modal === 'history') { setIsHistoryScreenOpen(false); setIsHistoryClosing(false); }
+    if (window.history.state?.modal === 'income_history') { setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); }
+    if (window.history.state?.modal === 'recurring') { setIsRecurringScreenOpen(false); setIsRecurringClosing(false); }
+    if (window.history.state?.modal === 'accounts') { setIsAccountsScreenOpen(false); }
+
+    if (window.history.state?.modal && window.history.state.modal !== 'home' && window.history.state.modal !== 'exit_guard') window.history.back();
+    else forceNavigateHome();
   };
 
   // Setup Exit Guard (Web-only). On Android native we rely on Capacitor backButton + App.exitApp.
   useEffect(() => {
     if (!window.history.state?.modal) {
-        if (Capacitor.getPlatform() === 'android') {
-            // Ensure a stable baseline state without introducing an extra history entry that can break exit logic.
-            try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) {}
-            return;
-        }
+      if (Capacitor.getPlatform() === 'android') {
+        // Ensure a stable baseline state without introducing an extra history entry that can break exit logic.
+        try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) { }
+        return;
+      }
 
-        window.history.replaceState({ modal: 'exit_guard' }, ''); 
-        window.history.pushState({ modal: 'home' }, '');
+      window.history.replaceState({ modal: 'exit_guard' }, '');
+      window.history.pushState({ modal: 'home' }, '');
     }
   }, []);
 
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const modal = event.state?.modal as ModalType | undefined;
-      
+
       if (modal === 'exit_guard') {
-          const now = Date.now();
+        const now = Date.now();
 
-          // Double back press on HOME should exit the native Android app.
-          if (now - lastBackPressTime.current < 2000) {
-              try {
-                  if (Capacitor.getPlatform() === 'android') {
-                      CapacitorApp.exitApp();
-                      return;
-                  }
-              } catch (e) {
-                  // Ignore and fallback to history back.
-              }
-
-              window.history.back();
+        // Double back press on HOME should exit the native Android app.
+        if (now - lastBackPressTime.current < 2000) {
+          try {
+            if (Capacitor.getPlatform() === 'android') {
+              CapacitorApp.exitApp();
               return;
-          } else {
-              lastBackPressTime.current = now;
-              onToast({ message: 'Premi di nuovo indietro per uscire', type: 'info' });
-              window.history.pushState({ modal: 'home' }, ''); 
-              closeAllModals();
+            }
+          } catch (e) {
+            // Ignore and fallback to history back.
           }
+
+          window.history.back();
           return;
+        } else {
+          lastBackPressTime.current = now;
+          onToast({ message: 'Premi di nuovo indietro per uscire', type: 'info' });
+          window.history.pushState({ modal: 'home' }, '');
+          closeAllModals();
+        }
+        return;
       }
 
       // Close specific modals based on state changes
@@ -107,12 +109,12 @@ export const useBackNavigation = (
       // Handle Screen Navigation
       if (!modal || modal === 'home') {
         setIsHistoryScreenOpen(false);
-        setIsHistoryClosing(false); 
+        setIsHistoryClosing(false);
         setIsIncomeHistoryOpen(false);
         setIsIncomeHistoryClosing(false);
-        setIsHistoryFilterOpen(false); 
+        setIsHistoryFilterOpen(false);
         setIsRecurringScreenOpen(false);
-        setIsRecurringClosing(false); 
+        setIsRecurringClosing(false);
         setIsAccountsScreenOpen(false);
         setAnalysisImage(null);
       } else if (modal === 'history') {
@@ -130,7 +132,7 @@ export const useBackNavigation = (
         setIsAccountsScreenOpen(false);
       } else if (modal === 'recurring') {
         setIsRecurringScreenOpen(true);
-        if (isRecurringClosing) setIsRecurringClosing(false); 
+        if (isRecurringClosing) setIsRecurringClosing(false);
         setIsHistoryScreenOpen(false);
         setIsIncomeHistoryOpen(false);
         setIsAccountsScreenOpen(false);
@@ -150,12 +152,15 @@ export const useBackNavigation = (
     isCalculatorContainerOpen, setIsCalculatorContainerOpen,
     isImageSourceModalOpen, setIsImageSourceModalOpen,
     isVoiceModalOpen, setIsVoiceModalOpen,
-    isMultipleExpensesModalOpen, setIsMultipleExpensesModalOpen,
     isRecurringScreenOpen, setIsRecurringScreenOpen, isRecurringClosing, setIsRecurringClosing,
     isHistoryScreenOpen, setIsHistoryScreenOpen, isHistoryClosing, setIsHistoryClosing,
     isIncomeHistoryOpen, setIsIncomeHistoryOpen, isIncomeHistoryClosing, setIsIncomeHistoryClosing,
     isAccountsScreenOpen, setIsAccountsScreenOpen,
     isQrModalOpen, setIsQrModalOpen,
+    isUpdateModalOpen,
+    setIsUpdateModalOpen,
+    isMultipleExpensesModalOpen,
+    setIsMultipleExpensesModalOpen,
     isHistoryFilterOpen, setIsHistoryFilterOpen,
     closeModalWithHistory,
     forceNavigateHome,

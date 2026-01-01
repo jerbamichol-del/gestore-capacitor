@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { PendingTransaction } from '../services/notification-listener-service';
-import { Account, CATEGORIES } from '../types';
+import { Account, CATEGORIES, Expense } from '../types';
 import { pickImage, processImageFile } from '../utils/fileHelper';
 
-// Saved rule for auto-categorization
+// Helper for YYYY-MM-DD
+const toYYYYMMDD = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface SavedRule {
   id: string;
   appName: string;
@@ -18,6 +25,7 @@ interface PendingTransactionsModalProps {
   isOpen: boolean;
   transactions: PendingTransaction[];
   accounts: Account[]; // NEW: account list
+  expenses: Expense[]; // NEW: existing expenses for duplicate check
   onClose: () => void;
   onConfirm: (
     id: string,
@@ -113,6 +121,7 @@ export function PendingTransactionsModal({
   isOpen,
   transactions,
   accounts,
+  expenses,
   onClose,
   onConfirm,
   onIgnore,
@@ -172,7 +181,7 @@ export function PendingTransactionsModal({
     // Build match map first
     transactions.forEach((transaction) => {
       const textForRules = getTextForRules(transaction);
-      nextMatchedRules[transaction.id] = findMatchingRule(transaction.appName, textForRules, savedRules);
+      nextMatchedRules[transaction.id] = findMatchingRule(transaction.sourceApp || 'Note', textForRules, savedRules);
     });
     setMatchedRules(nextMatchedRules);
 
@@ -356,7 +365,7 @@ export function PendingTransactionsModal({
       if (destinatario) {
         const newRule: SavedRule = {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          appName: transaction.appName,
+          appName: transaction.sourceApp || 'Sconosciuto',
           destinatario: destinatario.toLowerCase().trim(),
           type: selectedType,
           createdAt: Date.now(),
@@ -424,6 +433,11 @@ export function PendingTransactionsModal({
   const saveRule = saveRuleFlags[currentTransaction.id] || false;
   const match = matchedRules[currentTransaction.id];
   const transferAccountSelection = transferAccounts[currentTransaction.id];
+  const duplicateCandidate = expenses.find(e =>
+    e.amount === currentTransaction.amount &&
+    (Math.abs(new Date(e.date + ' ' + (e.time || '00:00')).getTime() - currentTransaction.createdAt) < 2 * 60 * 60 * 1000 || // Within 2 hours
+      e.date === toYYYYMMDD(new Date(currentTransaction.createdAt)))
+  );
 
   const isTransferValid =
     selectedType !== 'transfer' ||
@@ -478,16 +492,17 @@ export function PendingTransactionsModal({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-500 uppercase">{currentTransaction.appName}</span>
-                  <span className="text-xs text-gray-400">{formatDate(currentTransaction.timestamp)}</span>
+                  <span className="text-xs font-medium text-gray-500 uppercase">{currentTransaction.sourceApp || 'APP'}</span>
+                  <span className="text-xs text-gray-400">{formatDate(currentTransaction.createdAt)}</span>
                 </div>
                 <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed">{currentTransaction.description}</p>
                 <p className={`text-lg font-bold ${selectedType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatAmount(currentTransaction.amount, currentTransaction.currency)}
+                  {formatAmount(currentTransaction.amount, '€')}
                 </p>
               </div>
             </div>
 
+            {/* Rule Match Info */}
             {/* Rule Match Info */}
             {match && match.rule && match.confidence === 100 && (
               <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
@@ -504,6 +519,29 @@ export function PendingTransactionsModal({
               </div>
             )}
 
+            {/* Duplicate Warning */}
+            {duplicateCandidate && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-xs font-bold text-red-700 flex items-center gap-1">
+                  ⚠️ Possibile Duplicato!
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  Esiste già una spesa di <b>{formatAmount(duplicateCandidate.amount, '€')}</b> del {duplicateCandidate.date} ({duplicateCandidate.description}).
+                </p>
+              </div>
+            )}
+
+            {/* Raw Info (Time & Text) */}
+            <div className="mb-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">Dettagli originali:</p>
+              <p className="text-xs text-slate-700 font-mono bg-white p-1 rounded border border-slate-100">
+                {(currentTransaction as any).rawText || getTextForRules(currentTransaction)}
+              </p>
+              <p className="text-xs text-slate-400 mt-1 text-right">
+                Rilevato alle: {new Date(currentTransaction.createdAt).toLocaleTimeString()}
+              </p>
+            </div>
+
             {/* Type Selection */}
             <div className="mb-3">
               <p className="text-xs font-medium text-gray-700 mb-2">Seleziona tipo:</p>
@@ -511,8 +549,8 @@ export function PendingTransactionsModal({
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'expense')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'expense'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                 >
                   💸 Spesa
@@ -520,8 +558,8 @@ export function PendingTransactionsModal({
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'income')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'income'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                 >
                   💰 Entrata
@@ -529,8 +567,8 @@ export function PendingTransactionsModal({
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'transfer')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'transfer'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                 >
                   🔄 Trasferimento
@@ -719,8 +757,8 @@ export function PendingTransactionsModal({
                 onClick={() => handleConfirm(currentTransaction)}
                 disabled={!isTransferValid || processingId === currentTransaction.id}
                 className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${isTransferValid && processingId !== currentTransaction.id
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
               >
                 ✓ Conferma
@@ -770,7 +808,7 @@ export function PendingTransactionsModal({
           </button>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 
