@@ -1,6 +1,7 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { ModalType } from '../types/navigation';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 export const useBackNavigation = (
     onToast: (msg: any) => void,
@@ -66,8 +67,21 @@ export const useBackNavigation = (
       
       if (modal === 'exit_guard') {
           const now = Date.now();
-          if (now - lastBackPressTime.current < 2000) { window.history.back(); return; } 
-          else {
+
+          // Double back press on HOME should exit the native Android app.
+          if (now - lastBackPressTime.current < 2000) {
+              try {
+                  if (Capacitor.getPlatform() === 'android') {
+                      CapacitorApp.exitApp();
+                      return;
+                  }
+              } catch (e) {
+                  // Ignore and fallback to history back.
+              }
+
+              window.history.back();
+              return;
+          } else {
               lastBackPressTime.current = now;
               onToast({ message: 'Premi di nuovo indietro per uscire', type: 'info' });
               window.history.pushState({ modal: 'home' }, ''); 
