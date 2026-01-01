@@ -151,11 +151,11 @@ export class NotificationTransactionParser {
       return added;
     }
 
-    // Filter out 0 or invalid amounts
-    if (parsed.amount <= 0) {
-      console.log(`⚠️ Transaction skipped: Amount is ${parsed.amount} (likely system message or parse error)`);
-      return null;
-    }
+    // Filter out 0 or invalid amounts - DISABLED to debug "missing transactions"
+    // if (parsed.amount <= 0) {
+    //   console.log(`⚠️ Transaction skipped: Amount is ${parsed.amount} (likely system message or parse error)`);
+    //   return null;
+    // }
 
     // Normal flow: add transaction directly
     const added = await AutoTransactionService.addAutoTransaction(parsed);

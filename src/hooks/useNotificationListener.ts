@@ -160,9 +160,11 @@ export function useNotificationListener() {
 
       // Schedule check with 3 second delay (SAFE)
       resumeTimeoutRef.current = setTimeout(async () => {
-        console.log('⏰ 3 seconds elapsed - checking permission now (SAFE)');
+        console.log('⏰ 3 seconds elapsed - checking permission and pending transactions (SAFE)');
         try {
           await checkPermissionStatus();
+          // ✅ FORCE check pending info on resume, even if already initialized
+          await notificationListenerService.checkPendingNotifications();
         } catch (error) {
           console.error('❌ Error in resume permission check:', error);
           // Swallow error - don't crash
