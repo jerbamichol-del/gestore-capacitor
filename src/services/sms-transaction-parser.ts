@@ -184,14 +184,50 @@ export class SMSTransactionParser {
     timestamp: number
   ): Promise<Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> | null> {
 
-    // Trova config banca
-    const config = BANK_CONFIGS.find(c =>
+    // Trova config banca specifica
+    let config = BANK_CONFIGS.find(c =>
       sender.toUpperCase().includes(c.identifier)
     );
 
+    // 🧠 UNIVERSAL DETECTION: Se non troviamo una banca nota, cerchiamo segnali di "Finanza"
+    if (!config) {
+      // Parole chiave nei mittenti (Case insensitive)
+      const FINANCIAL_SENDERS = [
+        'BANK', 'BANCA', 'PAY', 'CARD', 'CARTA', 'CREDIT', 'DEBIT', 'ALERT', 'INFO', 'CONTO',
+        'POSTE', 'HYPE', 'N26', 'REVOLUT', 'CURVE', 'WISE', 'SATISPAY', 'AMEX', 'VISA',
+        'MASTERCARD', 'ING', 'BNL', 'BPER', 'FINECO', 'WEBANK', 'WIDIBA', 'ILLIMITY',
+        'NEXI', 'FINDOMESTIC', 'COMPASS', 'SANTANDER', 'UBI', 'CREDEM', 'MEDIOLANUM'
+      ];
+
+      // Parole chiave nel testo (Money signals)
+      const MONEY_SIGNALS = [
+        '€', 'EUR', 'SPESO', 'PAGATO', 'ADDEBITO', 'ACCREDITO', 'BONIFICO', 'AUTHORIZED',
+        'SPENT', 'PURCHASE', 'TRANSAZIONE', 'TRANSACTION', 'PAGAMENTO'
+      ];
+
+      const isFinancialSender = FINANCIAL_SENDERS.some(k => sender.toUpperCase().includes(k));
+      const hasMoneySignal = MONEY_SIGNALS.some(k => body.toUpperCase().includes(k));
+
+      if (isFinancialSender || hasMoneySignal) {
+        console.log(`🧠 Universal Parser detected potential financial SMS from: "${sender}"`);
+        // Usiamo una configurazione generica
+        config = {
+          name: sender, // Usiamo il nome del mittente come nome banca
+          identifier: 'GENERIC',
+          accountName: 'Conto ' + sender, // Fallback account name
+          patterns: {
+            // Pattern ultra-generici
+            expense: /(?:speso|pagato|addebito|autorizzata|transazione|purchase|sent|spent|payment).*?([\d.,]+)\s*€?.*?(?:presso|at|c\/o|to|a)\s+(.+)/i,
+            income: /(?:ricevuto|accredito|ricarica|received|credit).*?([\d.,]+)\s*€?.*?(?:da|from)\s*(.*)/i,
+            transfer: /(?:bonifico|transfer).*?([\d.,]+)\s*€?/i
+          }
+        };
+      }
+    }
+
     if (!config) {
       // ✅ LOGGING PER DEBUG: Vediamo chi stiamo ignorando
-      console.log(`⚠️ Ignored SMS from unknown sender: "${sender}"`);
+      console.log(`⚠️ Ignored SMS from non-financial sender: "${sender}"`);
       return null;
     }
 
