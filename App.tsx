@@ -45,6 +45,7 @@ import { useSMSListener } from './src/hooks/useSMSListener';
 import { useUpdateChecker } from './hooks/useUpdateChecker';
 import { PendingTransaction } from './src/services/notification-listener-service';
 import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
 import { AutoTransaction } from './types/transaction';
 import { NotificationTransactionParser } from './services/notification-transaction-parser';
 
@@ -82,6 +83,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   
   // Track if form was opened from calculator
   const formOpenedFromCalculatorRef = useRef(false);
+  const lastExitBackPressTimeRef = useRef(0);
 
   // --- Online Status ---
   const isOnline = useOnlineStatus();
@@ -429,6 +431,74 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       refreshPendingImages();
       setImageForAnalysis(null);
   };
+
+  // --- ✅ Android hardware BACK: close overlays first, then double-tap to exit ---
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return;
+
+    const sub = CapApp.addListener('backButton', ({ canGoBack }) => {
+      // 1) Close top-level overlays not managed by history
+      if (isPinVerifierOpen) {
+        setIsPinVerifierOpen(false);
+        return;
+      }
+      if (isTransferConfirmationModalOpen) {
+        setIsTransferConfirmationModalOpen(false);
+        setCurrentConfirmationTransaction(null);
+        return;
+      }
+      if (isPendingTransactionsModalOpen) {
+        setIsPendingTransactionsModalOpen(false);
+        return;
+      }
+      if (isNotificationPermissionModalOpen) {
+        setIsNotificationPermissionModalOpen(false);
+        return;
+      }
+      if (isUpdateModalOpen) {
+        setIsUpdateModalOpen(false);
+        return;
+      }
+      if (isConfirmDeleteModalOpen) {
+        setIsConfirmDeleteModalOpen(false);
+        return;
+      }
+      if (imageForAnalysis) {
+        void handleModalClose();
+        return;
+      }
+
+      // 2) Navigate back in web history (closes modals/screens managed via pushState)
+      if (canGoBack) {
+        window.history.back();
+        return;
+      }
+
+      // 3) Home: double tap to exit
+      const now = Date.now();
+      if (now - lastExitBackPressTimeRef.current < 2000) {
+        CapApp.exitApp();
+        return;
+      }
+
+      lastExitBackPressTimeRef.current = now;
+      showToast({ message: 'Premi di nuovo indietro per uscire', type: 'info' });
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, [
+    showToast,
+    imageForAnalysis,
+    isPinVerifierOpen,
+    setIsPinVerifierOpen,
+    isTransferConfirmationModalOpen,
+    isPendingTransactionsModalOpen,
+    isNotificationPermissionModalOpen,
+    isUpdateModalOpen,
+    isConfirmDeleteModalOpen,
+  ]);
 
   // --- ✅ NEW: Transfer Confirmation Handlers ---
   const handleConfirmAsTransfer = async (fromAccount: string, toAccount: string) => {

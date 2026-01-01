@@ -53,9 +53,15 @@ export const useBackNavigation = (
       else forceNavigateHome();
   };
 
-  // Setup Exit Guard
+  // Setup Exit Guard (Web-only). On Android native we rely on Capacitor backButton + App.exitApp.
   useEffect(() => {
     if (!window.history.state?.modal) {
+        if (Capacitor.getPlatform() === 'android') {
+            // Ensure a stable baseline state without introducing an extra history entry that can break exit logic.
+            try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) {}
+            return;
+        }
+
         window.history.replaceState({ modal: 'exit_guard' }, ''); 
         window.history.pushState({ modal: 'home' }, '');
     }
