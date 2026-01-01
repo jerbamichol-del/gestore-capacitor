@@ -83,6 +83,13 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   );
 
   // --- Image Analysis Handling ---
+  useEffect(() => {
+    if (ui.imageForAnalysis) {
+      handleAnalyzeImage(ui.imageForAnalysis);
+      // Reset after triggering analysis (handleAnalyzeImage also nulls it, but safe to be sure)
+      // ui.setImageForAnalysis(null); // Let handleAnalyzeImage do it after processing
+    }
+  }, [ui.imageForAnalysis]);
 
   const handleAnalyzeImage = async (image: OfflineImage) => {
     if (!isOnline) { ui.showToast({ message: 'Connettiti a internet per analizzare.', type: 'error' }); return; }

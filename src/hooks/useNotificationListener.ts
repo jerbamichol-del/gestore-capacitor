@@ -25,15 +25,15 @@ export function useNotificationListener() {
       console.log('⏭️ Permission check already in progress, skipping');
       return;
     }
-    
+
     isCheckingRef.current = true;
     console.log(`🔍 Checking permission status (attempt ${retryCount + 1})...`);
-    
+
     try {
       const enabled = await notificationListenerService.isEnabled();
       console.log(`✅ Permission check result: ${enabled}`);
       setIsEnabled(enabled);
-      
+
       // ✅✅✅ CRITICAL FIX: Initialize service if enabled
       // This registers the 'notificationReceived' event listener!
       if (enabled) {
@@ -41,7 +41,7 @@ export function useNotificationListener() {
           console.log('🚀 Initializing notification listener service...');
           await notificationListenerService.initialize();
           console.log('✅ Notification listener service initialized');
-          
+
           // Load pending transactions
           const pending = await notificationListenerService.getPendingTransactions();
           setPendingTransactions(pending);
@@ -52,7 +52,7 @@ export function useNotificationListener() {
       }
     } catch (error) {
       console.error(`❌ Error checking notification permission (attempt ${retryCount + 1}):`, error);
-      
+
       // ✅ Retry up to 2 times with delays
       if (retryCount < 2) {
         const nextDelay = (retryCount + 1) * 1000; // 1s, 2s
@@ -63,7 +63,7 @@ export function useNotificationListener() {
         }, nextDelay);
         return;
       }
-      
+
       // After 2 retries, give up gracefully
       console.warn('⚠️ Failed to check permission after retries, setting safe defaults');
       setIsEnabled(false);
@@ -104,6 +104,7 @@ export function useNotificationListener() {
       } catch (refreshError) {
         console.error('❌ Error refreshing transactions:', refreshError);
       }
+      throw error; // RETHROW so UI knows it failed
     }
   }, []);
 
@@ -151,12 +152,12 @@ export function useNotificationListener() {
     // This gives Android enough time to update Settings.Secure after user returns
     const resumeListener = CapApp.addListener('resume', () => {
       console.log('📱 App resumed - scheduling SAFE permission check in 3000ms...');
-      
+
       // Clear any existing timeout
       if (resumeTimeoutRef.current) {
         clearTimeout(resumeTimeoutRef.current);
       }
-      
+
       // Schedule check with 3 second delay (SAFE)
       resumeTimeoutRef.current = setTimeout(async () => {
         console.log('⏰ 3 seconds elapsed - checking permission now (SAFE)');
@@ -170,7 +171,7 @@ export function useNotificationListener() {
     });
 
     console.log('✅ SAFE resume listener registered (3s delay)');
-    
+
     // Cleanup
     return () => {
       console.log('🧹 useNotificationListener unmounting');
