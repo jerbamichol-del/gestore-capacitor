@@ -44,16 +44,8 @@ export class NotificationListenerService {
       // Start listening
       await this.startListening();
 
-      // ✅ NEW: Sync pending notifications from native cache
-      // This handles notifications received while the app was closed/killed
-      console.log('🔄 Checking for pending notifications from native queue...');
-      const pendingNative = await NotificationListener.getPendingNotifications();
-      if (pendingNative.length > 0) {
-        console.log(`📥 Processing ${pendingNative.length} pending native notifications...`);
-        for (const notification of pendingNative) {
-          await this.handleNotification(notification);
-        }
-      }
+      // ✅ Sync pending on init
+      await this.checkPendingNotifications();
 
       this.initialized = true;
       return true;
@@ -61,6 +53,26 @@ export class NotificationListenerService {
     } catch (error) {
       console.error('Error initializing notification listener:', error);
       return false;
+    }
+  }
+
+  /**
+   * ✅ NEW: Public method to manually trigger pending check
+   * Useful on app resume
+   */
+  static async checkPendingNotifications(): Promise<void> {
+    try {
+      console.log('🔄 Checking for pending notifications from native queue...');
+      const pendingNative = await NotificationListener.getPendingNotifications();
+
+      if (pendingNative.length > 0) {
+        console.log(`📥 Processing ${pendingNative.length} pending native notifications...`);
+        for (const notification of pendingNative) {
+          await this.handleNotification(notification);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking pending notifications:', error);
     }
   }
 

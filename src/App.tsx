@@ -22,6 +22,7 @@ import PinVerifierModal from './components/PinVerifierModal';
 import { PendingTransactionsModal, PendingTransactionsBadge } from './components/PendingTransactionsModal';
 import { NotificationPermissionModal } from './components/NotificationPermissionModal';
 import { MainLayout } from './components/MainLayout';
+import LoadingOverlay from './components/LoadingOverlay';
 
 // Screens
 import HistoryScreen from './screens/HistoryScreen';
@@ -345,6 +346,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         showToast={ui.showToast}
       />
       <PendingImages images={ui.pendingImages} onAnalyze={handleAnalyzeImage} onDelete={async (id) => { await deleteImageFromQueue(id); ui.refreshPendingImages(); }} isOnline={isOnline} syncingImageId={ui.syncingImageId} />
+
+      {/* Global Loading Overlay for Image Analysis */}
+      <LoadingOverlay isVisible={ui.isParsingImage} message="Analisi scontrino in corso..." />
+
     </MainLayout>
   );
 };

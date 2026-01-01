@@ -102,7 +102,7 @@ export class NotificationTransactionParser {
   ): Promise<AutoTransaction | null> {
 
     // Trova configurazione banca
-    const config = NOTIFICATION_CONFIGS.find(c => 
+    const config = NOTIFICATION_CONFIGS.find(c =>
       c.identifier.toLowerCase() === appName.toLowerCase()
     );
 
@@ -113,12 +113,12 @@ export class NotificationTransactionParser {
 
     // Combina title e text per pattern matching
     const fullText = `${title} ${text}`.trim();
-    
+
     console.log(`🔍 Parsing notification from ${appName}:`, fullText);
 
     // Prova tutti i pattern
     const parsed = this.tryParseTransaction(config, fullText, timestamp);
-    
+
     if (!parsed) {
       console.log(`❌ No match found for ${appName} notification`);
       return null;
@@ -131,7 +131,7 @@ export class NotificationTransactionParser {
       console.log(`⚠️ Transaction looks like transfer between accounts - requires user confirmation`);
       console.log(`   From: ${parsed.account}`);
       console.log(`   To: ${parsed.description}`);
-      
+
       // Mark as pending with special flag
       const pendingTransaction = {
         ...parsed,
@@ -141,19 +141,25 @@ export class NotificationTransactionParser {
 
       // Add as pending (will show dialog to user)
       const added = await AutoTransactionService.addAutoTransaction(pendingTransaction);
-      
+
       if (added) {
         console.log(`✅ Pending transaction added - awaiting user confirmation`);
         // Dispatch event per mostrare dialog
         this.dispatchConfirmationNeeded(added);
       }
-      
+
       return added;
+    }
+
+    // Filter out 0 or invalid amounts
+    if (parsed.amount <= 0) {
+      console.log(`⚠️ Transaction skipped: Amount is ${parsed.amount} (likely system message or parse error)`);
+      return null;
     }
 
     // Normal flow: add transaction directly
     const added = await AutoTransactionService.addAutoTransaction(parsed);
-    
+
     if (added) {
       console.log(`✅ Auto transaction added from ${appName} notification`);
     } else {
@@ -174,9 +180,9 @@ export class NotificationTransactionParser {
     if (parsed.type !== 'expense') return false;
 
     const merchantLower = (parsed.description || '').toLowerCase();
-    
+
     // Check se contiene keyword bancaria
-    const containsBankKeyword = BANK_KEYWORDS.some(keyword => 
+    const containsBankKeyword = BANK_KEYWORDS.some(keyword =>
       merchantLower.includes(keyword.toLowerCase())
     );
 
@@ -211,10 +217,10 @@ export class NotificationTransactionParser {
   ): Promise<boolean> {
     try {
       console.log(`✅ Confirming as transfer: ${fromAccount} -> ${toAccount} (€${amount})`);
-      
+
       // 1. Aggiorna transazione originale come "trasferimento" (uscita)
       await AutoTransactionService.updateTransactionType(transactionId, 'transfer');
-      
+
       // 2. Crea movimento di entrata sul conto destinazione
       const incomeTransaction = {
         type: 'income' as const,
@@ -229,10 +235,10 @@ export class NotificationTransactionParser {
       };
 
       await AutoTransactionService.addAutoTransaction(incomeTransaction);
-      
+
       console.log(`✅ Transfer confirmed: created 2 linked transactions`);
       return true;
-      
+
     } catch (error) {
       console.error('❌ Error confirming transfer:', error);
       return false;
@@ -329,7 +335,7 @@ export class NotificationTransactionParser {
       .replace(/Per info.*$/i, '') // Remove "Per info o blocco..."
       .replace(/\*+\d+\*+/g, '') // Remove card numbers like **7215*
       .trim();
-    
+
     return cleaned || merchant; // Fallback to original if cleaning removed everything
   }
 
