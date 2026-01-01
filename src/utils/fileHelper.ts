@@ -20,7 +20,7 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
  * Converte una stringa di testo in un'immagine base64 (PNG).
  * Usato per passare dati testuali (CSV) all'AI che accetta immagini.
  */
-const textToImage = (text: string): Promise<string> => {
+export const textToImage = (text: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     try {
       const canvas = document.createElement('canvas');
@@ -47,7 +47,7 @@ const textToImage = (text: string): Promise<string> => {
       const finalWidth = Math.min(Math.max(maxWidth + padding * 2, 600), 2000);
       // Tagliamo se troppe righe per evitare errori AI o memory, 
       // ma Gemini gestisce bene immagini alte. Limitiamo a ~300 righe per sicurezza performance
-      const maxLines = 300; 
+      const maxLines = 300;
       const renderLines = lines.slice(0, maxLines);
       const finalHeight = renderLines.length * lineHeight + padding * 2;
 
@@ -68,8 +68,8 @@ const textToImage = (text: string): Promise<string> => {
       });
 
       if (lines.length > maxLines) {
-          ctx.fillStyle = '#666666';
-          ctx.fillText(`... e altre ${lines.length - maxLines} righe ...`, padding, padding + maxLines * lineHeight);
+        ctx.fillStyle = '#666666';
+        ctx.fillText(`... e altre ${lines.length - maxLines} righe ...`, padding, padding + maxLines * lineHeight);
       }
 
       // Export
@@ -97,7 +97,7 @@ export const processFileToImage = async (file: File): Promise<{ base64: string; 
   } else {
     // Se è già un'immagine, la processiamo standard
     if (file.type.startsWith('image/')) {
-        return processImageFile(file);
+      return processImageFile(file);
     }
     throw new Error('Formato file non supportato. Usa CSV, Excel o Immagini.');
   }
@@ -109,7 +109,7 @@ export const processFileToImage = async (file: File): Promise<{ base64: string; 
 
   // Converti il testo CSV in un'immagine "screenshot"
   const base64Image = await textToImage(textContent);
-  
+
   return {
     base64: base64Image,
     mimeType: 'image/png',
@@ -117,40 +117,40 @@ export const processFileToImage = async (file: File): Promise<{ base64: string; 
 };
 
 export const processImageFile = (file: File): Promise<{ base64: string; mimeType: string }> => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let { width, height } = img;
-            const MAX = 1024; 
-            if (width > height && width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
-            else if (height >= width && height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if(ctx) { 
-                ctx.drawImage(img, 0, 0, width, height);
-                const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-                resolve({ base64: canvas.toDataURL(mime, 0.8).split(',')[1], mimeType: mime });
-            } else reject(new Error('Canvas error'));
-        };
-        img.onerror = () => reject(new Error('Image load error'));
-        img.src = url;
-    });
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+      const MAX = 1024;
+      if (width > height && width > MAX) { height = Math.round((height * MAX) / width); width = MAX; }
+      else if (height >= width && height > MAX) { width = Math.round((width * MAX) / height); height = MAX; }
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        resolve({ base64: canvas.toDataURL(mime, 0.8).split(',')[1], mimeType: mime });
+      } else reject(new Error('Canvas error'));
+    };
+    img.onerror = () => reject(new Error('Image load error'));
+    img.src = url;
+  });
 };
 
 export const pickImage = (source: 'camera' | 'gallery'): Promise<File> => {
-    return new Promise((resolve, reject) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        if(source === 'camera') input.capture = 'environment';
-        input.onchange = (e: any) => {
-            if(e.target.files && e.target.files[0]) resolve(e.target.files[0]);
-            else reject(new Error('Nessun file'));
-        };
-        input.click();
-    });
+  return new Promise((resolve, reject) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    if (source === 'camera') input.capture = 'environment';
+    input.onchange = (e: any) => {
+      if (e.target.files && e.target.files[0]) resolve(e.target.files[0]);
+      else reject(new Error('Nessun file'));
+    };
+    input.click();
+  });
 };
 
 /**
@@ -160,114 +160,114 @@ export const pickImage = (source: 'camera' | 'gallery'): Promise<File> => {
  * @returns Promise con { success: boolean, message: string }
  */
 export const exportExpenses = async (expenses: Expense[], format: 'excel' | 'json' = 'excel'): Promise<{ success: boolean; message: string }> => {
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const isNative = Capacitor.isNativePlatform();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const isNative = Capacitor.isNativePlatform();
 
-    if (format === 'excel') {
-        try {
-            const rows = expenses.map(e => ({
-                Data: e.date,
-                Ora: e.time || '',
-                Importo: e.amount,
-                Descrizione: e.description,
-                Categoria: e.category,
-                Sottocategoria: e.subcategory || '',
-                Conto: e.accountId,
-                Tags: e.tags ? e.tags.join(', ') : '',
-                Frequenza: e.frequency === 'recurring' ? 'Ricorrente' : 'Singola'
-            }));
+  if (format === 'excel') {
+    try {
+      const rows = expenses.map(e => ({
+        Data: e.date,
+        Ora: e.time || '',
+        Importo: e.amount,
+        Descrizione: e.description,
+        Categoria: e.category,
+        Sottocategoria: e.subcategory || '',
+        Conto: e.accountId,
+        Tags: e.tags ? e.tags.join(', ') : '',
+        Frequenza: e.frequency === 'recurring' ? 'Ricorrente' : 'Singola'
+      }));
 
-            const worksheet = XLSX.utils.json_to_sheet(rows);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Spese");
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const fileName = `Spese_Export_${dateStr}.xlsx`;
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Spese");
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const fileName = `Spese_Export_${dateStr}.xlsx`;
 
-            if (isNative) {
-                // MOBILE: Salva in cache + condividi
-                const base64Data = arrayBufferToBase64(excelBuffer);
-                
-                const result = await Filesystem.writeFile({
-                    path: fileName,
-                    data: base64Data,
-                    directory: Directory.Cache
-                });
+      if (isNative) {
+        // MOBILE: Salva in cache + condividi
+        const base64Data = arrayBufferToBase64(excelBuffer);
 
-                await Share.share({
-                    title: 'Esporta Spese Excel',
-                    text: `File Excel delle spese del ${dateStr}`,
-                    url: result.uri,
-                    dialogTitle: 'Salva o Condividi Excel'
-                });
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache
+        });
 
-                return { success: true, message: `Salvataggio Excel riuscito` };
-            } else {
-                // WEB: Blob download
-                const blob = new Blob([excelBuffer], { 
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-                });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+        await Share.share({
+          title: 'Esporta Spese Excel',
+          text: `File Excel delle spese del ${dateStr}`,
+          url: result.uri,
+          dialogTitle: 'Salva o Condividi Excel'
+        });
 
-                return { success: true, message: `File Excel scaricato: ${fileName}` };
-            }
-        } catch (e) {
-            console.error("Export Excel failed", e);
-            return { 
-                success: false, 
-                message: `Errore export Excel: ${e instanceof Error ? e.message : 'Errore sconosciuto'}` 
-            };
-        }
-    } else if (format === 'json') {
-        try {
-            const jsonStr = JSON.stringify(expenses, null, 2);
-            const fileName = `Spese_Export_${dateStr}.json`;
+        return { success: true, message: `Salvataggio Excel riuscito` };
+      } else {
+        // WEB: Blob download
+        const blob = new Blob([excelBuffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-            if (isNative) {
-                // MOBILE: Salva + condividi
-                const result = await Filesystem.writeFile({
-                    path: fileName,
-                    data: jsonStr,
-                    directory: Directory.Cache,
-                    encoding: 'utf8' as any
-                });
-
-                await Share.share({
-                    title: 'Esporta Spese JSON',
-                    text: `File JSON delle spese del ${dateStr}`,
-                    url: result.uri,
-                    dialogTitle: 'Salva o Condividi JSON'
-                });
-
-                return { success: true, message: `Salvataggio JSON riuscito` };
-            } else {
-                // WEB: Blob download
-                const blob = new Blob([jsonStr], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                return { success: true, message: `File JSON scaricato: ${fileName}` };
-            }
-        } catch (e) {
-            console.error("Export JSON failed", e);
-            return { 
-                success: false, 
-                message: `Errore export JSON: ${e instanceof Error ? e.message : 'Errore sconosciuto'}` 
-            };
-        }
+        return { success: true, message: `File Excel scaricato: ${fileName}` };
+      }
+    } catch (e) {
+      console.error("Export Excel failed", e);
+      return {
+        success: false,
+        message: `Errore export Excel: ${e instanceof Error ? e.message : 'Errore sconosciuto'}`
+      };
     }
-    
-    return { success: false, message: 'Formato non supportato.' };
+  } else if (format === 'json') {
+    try {
+      const jsonStr = JSON.stringify(expenses, null, 2);
+      const fileName = `Spese_Export_${dateStr}.json`;
+
+      if (isNative) {
+        // MOBILE: Salva + condividi
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: jsonStr,
+          directory: Directory.Cache,
+          encoding: 'utf8' as any
+        });
+
+        await Share.share({
+          title: 'Esporta Spese JSON',
+          text: `File JSON delle spese del ${dateStr}`,
+          url: result.uri,
+          dialogTitle: 'Salva o Condividi JSON'
+        });
+
+        return { success: true, message: `Salvataggio JSON riuscito` };
+      } else {
+        // WEB: Blob download
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        return { success: true, message: `File JSON scaricato: ${fileName}` };
+      }
+    } catch (e) {
+      console.error("Export JSON failed", e);
+      return {
+        success: false,
+        message: `Errore export JSON: ${e instanceof Error ? e.message : 'Errore sconosciuto'}`
+      };
+    }
+  }
+
+  return { success: false, message: 'Formato non supportato.' };
 };

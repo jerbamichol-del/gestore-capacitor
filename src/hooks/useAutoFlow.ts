@@ -58,14 +58,15 @@ export function useAutoFlow(
         options?: PendingConfirmOptions
     ) => {
         try {
-            const dt = new Date(transaction.timestamp);
+            // ✅ Fix: use createdAt (timestamp property does not exist on AutoTransaction)
+            const dt = new Date(transaction.createdAt);
             const date = toYYYYMMDD(dt);
             const time = dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
             // Find matching account (fallback)
             let fallbackAccountId = accounts[0]?.id || '';
             const matchingAccount = accounts.find(
-                acc => acc.name.toLowerCase().includes(transaction.appName.toLowerCase())
+                acc => acc.name.toLowerCase().includes((transaction.sourceApp || '').toLowerCase())
             );
             if (matchingAccount) {
                 fallbackAccountId = matchingAccount.id;
@@ -99,7 +100,7 @@ export function useAutoFlow(
                     category: 'Trasferimenti',
                     accountId: accountFrom,
                     toAccountId: accountTo,
-                    tags: ['auto-rilevata', 'transfer', transaction.appName],
+                    tags: ['auto-rilevata', 'transfer', transaction.sourceApp || 'auto'],
                     receipts: [],
                     frequency: 'single',
                 };
@@ -121,7 +122,7 @@ export function useAutoFlow(
                     subcategory: selectedType === 'expense' ? (options?.subcategory || undefined) : undefined,
                     accountId,
                     type: selectedType,
-                    tags: ['auto-rilevata', transaction.appName],
+                    tags: ['auto-rilevata', transaction.sourceApp || 'auto'],
                     receipts: selectedType === 'expense' ? (options?.receipts || []) : [],
                     frequency: 'single',
                 };
