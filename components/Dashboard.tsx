@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
-import { Expense } from '../types';
+import { Expense, Account } from '../types';
 import { formatCurrency } from './icons/formatters';
 import { getCategoryStyle } from '../utils/categoryStyles';
 import { ArrowsUpDownIcon } from './icons/ArrowsUpDownIcon';
@@ -74,6 +74,7 @@ const renderActiveShape = (props: any) => {
 };
 
 interface DashboardProps {
+  accounts: Account[];
   expenses: Expense[];
   recurringExpenses: Expense[];
   onNavigateToRecurring: () => void;
@@ -113,6 +114,7 @@ const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null =>
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ 
+    accounts,
     expenses, 
     recurringExpenses, 
     onNavigateToRecurring, 
@@ -275,6 +277,34 @@ const Dashboard: React.FC<DashboardProps> = ({
   useEffect(() => {
       setIsPeriodMenuOpen(false);
   }, [activeViewIndex]);
+
+  // ✅ Saldo Home = somma dei saldi di tutti i conti (non "budget" del periodo)
+  const totalAccountsBalance = useMemo(() => {
+    const safeAccounts = accounts || [];
+    const safeExpenses = expenses || [];
+
+    const balances: Record<string, number> = {};
+    safeAccounts.forEach(acc => {
+      balances[acc.id] = 0;
+    });
+
+    safeExpenses.forEach(e => {
+      const amt = Number(e.amount) || 0;
+
+      if (e.type === 'expense') {
+        if (balances[e.accountId] !== undefined) balances[e.accountId] -= amt;
+      } else if (e.type === 'income') {
+        if (balances[e.accountId] !== undefined) balances[e.accountId] += amt;
+      } else if (e.type === 'transfer') {
+        if (balances[e.accountId] !== undefined) balances[e.accountId] -= amt;
+        if (e.toAccountId && balances[e.toAccountId] !== undefined) balances[e.toAccountId] += amt;
+      } else if (e.type === 'adjustment') {
+        if (balances[e.accountId] !== undefined) balances[e.accountId] += amt;
+      }
+    });
+
+    return (Object.values(balances) as number[]).reduce((acc, val) => acc + val, 0);
+  }, [accounts, expenses]);
 
   const { totalExpenses, totalIncome, netBudget, dailyTotal, categoryData, recurringCountInPeriod, periodLabel, dateRangeLabel } = useMemo(() => {
     const safeExpenses = expenses || [];
@@ -513,10 +543,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         </button>
                                         <h4 className="text-sm font-medium text-slate-400 cursor-default select-none">Saldo</h4>
                                     </div>
-                                    <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800' : netBudget >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800' : totalAccountsBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {isBalanceVisible ? (
                                             <>
-                                                {netBudget >= 0 ? '+' : ''}{formatCurrency(netBudget)}
+                                                {totalAccountsBalance >= 0 ? '+' : ''}{formatCurrency(totalAccountsBalance)}
                                             </>
                                         ) : (
                                             '******'

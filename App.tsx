@@ -628,6 +628,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       <main className="flex-grow bg-slate-100">
         <div className="w-full h-full overflow-y-auto space-y-6" style={{ touchAction: 'pan-y' }}>
            <Dashboard 
+              accounts={safeAccounts}
               expenses={expenses || []} 
               recurringExpenses={recurringExpenses || []} 
               onNavigateToRecurring={() => { window.history.pushState({ modal: 'recurring' }, ''); nav.setIsRecurringScreenOpen(true); }}
