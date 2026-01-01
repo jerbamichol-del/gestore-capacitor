@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { OfflineImage, deleteImageFromQueue, addImageToQueue, getQueuedImages } from './utils/db';
+import { Expense } from './types';
 
 // Components
 import Header from './components/Header';
@@ -113,10 +114,15 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     }
   };
 
-  const handleVoiceParsed = (text: string) => {
-    // Basic voice parsing logic or integration with AI
-    // For now simplistic
-    ui.showToast({ message: 'Input vocale ricevuto: ' + text, type: 'info' });
+  const handleVoiceParsed = (data: Partial<Omit<Expense, 'id'>>) => {
+    ui.setPrefilledData(data);
+    ui.nav.setIsVoiceModalOpen(false);
+
+    // Open form
+    window.history.pushState({ modal: 'form' }, '');
+    ui.nav.setIsFormOpen(true);
+
+    ui.showToast({ message: 'Dati vocali rilevati', type: 'success' });
   };
 
   const handleImportFile = async (content: string) => {
@@ -133,36 +139,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     }
   };
 
-  // --- Back Button Handling ---
-  const lastExitBackPressTimeRef = React.useRef(0);
-  useEffect(() => {
-    const sub = CapApp.addListener('backButton', ({ canGoBack }) => {
-      if (ui.nav.isFormOpen || ui.nav.isCalculatorContainerOpen || ui.nav.isVoiceModalOpen || ui.nav.isImageSourceModalOpen || ui.nav.isQrModalOpen || ui.nav.isRecurringScreenOpen || ui.nav.isHistoryScreenOpen || ui.nav.isIncomeHistoryOpen || ui.nav.isAccountsScreenOpen) {
-        ui.nav.handleBackPress();
-        return;
-      }
-      if (isUpdateModalOpen) { setIsUpdateModalOpen(false); return; }
-      if (data.isConfirmDeleteModalOpen) { data.setIsConfirmDeleteModalOpen(false); return; }
-      if (ui.imageForAnalysis) {
-        if (ui.imageForAnalysis.id === ui.sharedImageIdRef.current) ui.sharedImageIdRef.current = null;
-        ui.setImageForAnalysis(null);
-        return;
-      }
-
-      if (canGoBack) { window.history.back(); return; }
-
-      const now = Date.now();
-      if (now - lastExitBackPressTimeRef.current < 2000) { CapApp.exitApp(); return; }
-      lastExitBackPressTimeRef.current = now;
-      ui.showToast({ message: 'Premi di nuovo indietro per uscire', type: 'info' });
-    });
-    return () => { sub.remove(); };
-  }, [
-    ui.showToast, ui.imageForAnalysis, isPinVerifierOpen, setIsPinVerifierOpen,
-    auto.isTransferConfirmationModalOpen, auto.isPendingTransactionsModalOpen,
-    auto.isNotificationPermissionModalOpen, isUpdateModalOpen, data.isConfirmDeleteModalOpen,
-    ui.nav
-  ]);
 
   const fabStyle = (ui.nav.isHistoryScreenOpen && !ui.nav.isHistoryClosing) || (ui.nav.isIncomeHistoryOpen && !ui.nav.isIncomeHistoryClosing) ? { bottom: `calc(90px + env(safe-area-inset-bottom, 0px))` } : undefined;
 
@@ -275,7 +251,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           <NotificationPermissionModal
             isOpen={auto.isNotificationPermissionModalOpen}
             onClose={() => auto.setIsNotificationPermissionModalOpen(false)}
-            onEnableClick={auto.requestNotificationPermission}
+            onEnableClick={async () => { await auto.requestNotificationPermission(); }}
             isEnabled={auto.isNotificationListenerEnabled}
           />
 
