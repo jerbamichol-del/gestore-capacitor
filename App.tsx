@@ -50,6 +50,15 @@ import { NotificationTransactionParser } from './services/notification-transacti
 
 type ToastMessage = { message: string; type: 'success' | 'info' | 'error' };
 
+type PendingConfirmOptions = {
+  accountId?: string;
+  accountFrom?: string;
+  accountTo?: string;
+  category?: string;
+  subcategory?: string;
+  receipts?: string[];
+};
+
 const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogout, currentEmail }) => {
   // --- Data State ---
   const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses_v2', []);
@@ -491,7 +500,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         date: currentConfirmationTransaction.date,
         accountId: accountId,
         category: currentConfirmationTransaction.category || 'Da Categorizzare',
-        notes: `Auto-rilevato da ${currentConfirmationTransaction.sourceType}`,
         tags: ['auto'],
         receipts: [],
         frequency: 'single'
@@ -515,21 +523,27 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     transaction: PendingTransaction, 
     selectedType: 'expense' | 'income' | 'transfer',
     saveRule: boolean,
-    accountFrom?: string,
-    accountTo?: string
+    options?: PendingConfirmOptions
   ) => {
     try {
-      // Find matching account (for non-transfer types)
-      let accountId = safeAccounts[0]?.id || '';
+      const dt = new Date(transaction.timestamp);
+      const date = toYYYYMMDD(dt);
+      const time = dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+      // Find matching account (fallback)
+      let fallbackAccountId = safeAccounts[0]?.id || '';
       const matchingAccount = safeAccounts.find(
         acc => acc.name.toLowerCase().includes(transaction.appName.toLowerCase())
       );
       if (matchingAccount) {
-        accountId = matchingAccount.id;
+        fallbackAccountId = matchingAccount.id;
       }
 
       // Handle TRANSFER type
       if (selectedType === 'transfer') {
+        const accountFrom = options?.accountFrom;
+        const accountTo = options?.accountTo;
+
         if (!accountFrom || !accountTo) {
           showToast({ message: 'Seleziona entrambi i conti per il trasferimento.', type: 'error' });
           return;
@@ -544,19 +558,18 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
         const destinationAccountName = safeAccounts.find(a => a.id === accountTo)?.name || 'Conto Destinazione';
 
-        // ✅ IMPORTANT: Save as a real transfer (single row with toAccountId)
         const transferTx: Omit<Expense, 'id'> = {
           type: 'transfer',
           description: `Trasferimento → ${destinationAccountName}`,
           amount: transaction.amount,
-          date: new Date(transaction.timestamp).toISOString().split('T')[0],
+          date,
+          time,
           category: 'Trasferimenti',
           accountId: accountFrom,
           toAccountId: accountTo,
-          tags: ['auto-rilevata', 'transfer'],
+          tags: ['auto-rilevata', 'transfer', transaction.appName],
           receipts: [],
           frequency: 'single',
-          notes: `Da ${transaction.appName}: ${transaction.description}`,
         };
 
         handleAddExpense(transferTx);
@@ -565,21 +578,23 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       } else {
         await confirmTransaction(id);
 
-        // Handle EXPENSE or INCOME type
-        const newExpense: Omit<Expense, 'id'> = {
+        const accountId = options?.accountId || fallbackAccountId;
+
+        const newTx: Omit<Expense, 'id'> = {
           description: transaction.description,
           amount: transaction.amount,
-          date: new Date(transaction.timestamp).toISOString().split('T')[0],
-          category: 'Altro',
-          account: transaction.appName,
-          accountId: accountId,
+          date,
+          time,
+          category: selectedType === 'expense' ? (options?.category || 'Altro') : 'Altro',
+          subcategory: selectedType === 'expense' ? (options?.subcategory || undefined) : undefined,
+          accountId,
           type: selectedType,
-          tags: ['auto-rilevata'],
-          receipts: [],
+          tags: ['auto-rilevata', transaction.appName],
+          receipts: selectedType === 'expense' ? (options?.receipts || []) : [],
           frequency: 'single',
         };
 
-        handleAddExpense(newExpense);
+        handleAddExpense(newTx);
         showToast({ message: 'Transazione confermata e aggiunta!', type: 'success' });
       }
       

@@ -1,8 +1,7 @@
-// src/components/PendingTransactionsModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import { PendingTransaction } from '../services/notification-listener-service';
-import { Account } from '../../types';
+import { Account, CATEGORIES } from '../../types';
+import { pickImage, processImageFile } from '../../utils/fileHelper';
 
 // Saved rule for auto-categorization
 interface SavedRule {
@@ -25,8 +24,14 @@ interface PendingTransactionsModalProps {
     transaction: PendingTransaction,
     selectedType: 'expense' | 'income' | 'transfer',
     saveRule: boolean,
-    accountFrom?: string, // NEW: for transfers
-    accountTo?: string // NEW: for transfers
+    options?: {
+      accountId?: string;
+      accountFrom?: string;
+      accountTo?: string;
+      category?: string;
+      subcategory?: string;
+      receipts?: string[];
+    }
   ) => void;
   onIgnore: (id: string) => void;
 }
@@ -113,14 +118,28 @@ export function PendingTransactionsModal({
   onIgnore,
 }: PendingTransactionsModalProps) {
   const [savedRules, setSavedRules] = useState<SavedRule[]>([]);
+
+  // Selected type per transaction
   const [selectedTypes, setSelectedTypes] = useState<Record<string, 'expense' | 'income' | 'transfer'>>({});
+
+  // ✅ Lock manual choice to avoid auto-reset
+  const [lockedTypes, setLockedTypes] = useState<Record<string, boolean>>({});
+
   const [saveRuleFlags, setSaveRuleFlags] = useState<Record<string, boolean>>({});
   const [matchedRules, setMatchedRules] = useState<Record<string, { rule: SavedRule | null; confidence: number }>>({});
 
-  // NEW: Account selections for transfers
+  // Accounts for transfers
   const [transferAccounts, setTransferAccounts] = useState<Record<string, { from: string; to: string }>>({});
 
-  // NEW: UX state (step-by-step)
+  // Account for expense/income
+  const [accountByTx, setAccountByTx] = useState<Record<string, string>>({});
+
+  // Extra fields for expense only
+  const [expenseMetaByTx, setExpenseMetaByTx] = useState<
+    Record<string, { category: string; subcategory?: string; receipts: string[] }>
+  >({});
+
+  // UX state (step-by-step)
   const [currentIndex, setCurrentIndex] = useState(0);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -144,52 +163,79 @@ export function PendingTransactionsModal({
     });
   }, [isOpen, transactions.length]);
 
-  // Initialize selected types and match rules when transactions change
+  // Initialize defaults + match rules (NON-DESTRUCTIVE)
   useEffect(() => {
     if (!isOpen || transactions.length === 0) return;
 
-    const newSelectedTypes: Record<string, 'expense' | 'income' | 'transfer'> = {};
-    const newMatchedRules: Record<string, { rule: SavedRule | null; confidence: number }> = {};
-    const newTransferAccounts: Record<string, { from: string; to: string }> = {};
+    const nextMatchedRules: Record<string, { rule: SavedRule | null; confidence: number }> = {};
 
+    // Build match map first
     transactions.forEach((transaction) => {
       const textForRules = getTextForRules(transaction);
+      nextMatchedRules[transaction.id] = findMatchingRule(transaction.appName, textForRules, savedRules);
+    });
+    setMatchedRules(nextMatchedRules);
 
-      // Try to find matching rule
-      const match = findMatchingRule(transaction.appName, textForRules, savedRules);
-      newMatchedRules[transaction.id] = match;
-
-      // If exact match (100%), pre-select type from rule
-      if (match.confidence === 100 && match.rule) {
-        newSelectedTypes[transaction.id] = match.rule.type;
-
-        // If rule has saved accounts for transfer, pre-fill them
-        if (match.rule.type === 'transfer' && match.rule.accountFrom && match.rule.accountTo) {
-          newTransferAccounts[transaction.id] = {
-            from: match.rule.accountFrom,
-            to: match.rule.accountTo,
-          };
-        } else {
-          // Default accounts
-          const defaultFrom = accounts[0]?.id || '';
-          const defaultTo = accounts.length > 1 ? accounts[1].id : accounts[0]?.id || '';
-          newTransferAccounts[transaction.id] = { from: defaultFrom, to: defaultTo };
-        }
-      } else {
-        // Default: use transaction's detected type
-        newSelectedTypes[transaction.id] = transaction.type;
-
-        // Initialize default transfer accounts
+    // Transfer accounts
+    setTransferAccounts((prev) => {
+      const next = { ...prev };
+      transactions.forEach((transaction) => {
+        if (next[transaction.id]) return;
         const defaultFrom = accounts[0]?.id || '';
         const defaultTo = accounts.length > 1 ? accounts[1].id : accounts[0]?.id || '';
-        newTransferAccounts[transaction.id] = { from: defaultFrom, to: defaultTo };
-      }
+        next[transaction.id] = { from: defaultFrom, to: defaultTo };
+      });
+      return next;
     });
 
-    setSelectedTypes(newSelectedTypes);
-    setMatchedRules(newMatchedRules);
-    setTransferAccounts(newTransferAccounts);
-  }, [isOpen, transactions, savedRules, accounts]);
+    // Account for non-transfer
+    setAccountByTx((prev) => {
+      const next = { ...prev };
+      transactions.forEach((transaction) => {
+        if (next[transaction.id]) return;
+        next[transaction.id] = accounts[0]?.id || '';
+      });
+      return next;
+    });
+
+    // Expense meta
+    setExpenseMetaByTx((prev) => {
+      const next = { ...prev };
+      transactions.forEach((transaction) => {
+        if (next[transaction.id]) return;
+        next[transaction.id] = { category: '', subcategory: '', receipts: [] };
+      });
+      return next;
+    });
+
+    // Selected type (respect lock)
+    setSelectedTypes((prev) => {
+      const next = { ...prev };
+      transactions.forEach((transaction) => {
+        if (lockedTypes[transaction.id]) return;
+
+        const match = nextMatchedRules[transaction.id];
+        if (match?.confidence === 100 && match.rule) {
+          next[transaction.id] = match.rule.type;
+
+          // Pre-fill transfer accounts if present
+          if (match.rule.type === 'transfer' && match.rule.accountFrom && match.rule.accountTo) {
+            setTransferAccounts((prevTA) => ({
+              ...prevTA,
+              [transaction.id]: { from: match.rule.accountFrom!, to: match.rule.accountTo! },
+            }));
+          }
+          return;
+        }
+
+        // Default to detected type
+        if (!next[transaction.id]) {
+          next[transaction.id] = transaction.type;
+        }
+      });
+      return next;
+    });
+  }, [isOpen, transactions, savedRules, accounts, lockedTypes]);
 
   if (!isOpen || transactions.length === 0) return null;
 
@@ -210,6 +256,7 @@ export function PendingTransactionsModal({
   };
 
   const handleTypeChange = (transactionId: string, type: 'expense' | 'income' | 'transfer') => {
+    setLockedTypes((prev) => ({ ...prev, [transactionId]: true }));
     setSelectedTypes((prev) => ({ ...prev, [transactionId]: type }));
   };
 
@@ -231,9 +278,62 @@ export function PendingTransactionsModal({
     }));
   };
 
+  const handleAccountChange = (transactionId: string, accountId: string) => {
+    setAccountByTx((prev) => ({ ...prev, [transactionId]: accountId }));
+  };
+
+  const handleExpenseCategoryChange = (transactionId: string, category: string) => {
+    setExpenseMetaByTx((prev) => ({
+      ...prev,
+      [transactionId]: {
+        ...prev[transactionId],
+        category,
+        subcategory: '',
+      },
+    }));
+  };
+
+  const handleExpenseSubcategoryChange = (transactionId: string, subcategory: string) => {
+    setExpenseMetaByTx((prev) => ({
+      ...prev,
+      [transactionId]: {
+        ...prev[transactionId],
+        subcategory,
+      },
+    }));
+  };
+
+  const handlePickReceipt = async (transactionId: string, source: 'camera' | 'gallery') => {
+    try {
+      const file = await pickImage(source);
+      const { base64 } = await processImageFile(file);
+      setExpenseMetaByTx((prev) => ({
+        ...prev,
+        [transactionId]: {
+          ...prev[transactionId],
+          receipts: [...(prev[transactionId]?.receipts || []), base64],
+        },
+      }));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRemoveReceipt = (transactionId: string, index: number) => {
+    setExpenseMetaByTx((prev) => {
+      const current = prev[transactionId];
+      const receipts = (current?.receipts || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        [transactionId]: { ...current, receipts },
+      };
+    });
+  };
+
   const handleConfirm = async (transaction: PendingTransaction) => {
     const selectedType = selectedTypes[transaction.id] || transaction.type;
     const saveRule = saveRuleFlags[transaction.id] || false;
+
     const transferAccountSelection = transferAccounts[transaction.id];
 
     // Validate transfer accounts
@@ -275,15 +375,19 @@ export function PendingTransactionsModal({
       }
     }
 
-    // Pass account info to handler
-    onConfirm(
-      transaction.id,
-      transaction,
-      selectedType,
-      saveRule,
-      selectedType === 'transfer' ? transferAccountSelection?.from : undefined,
-      selectedType === 'transfer' ? transferAccountSelection?.to : undefined
-    );
+    const accountId = accountByTx[transaction.id] || accounts[0]?.id || '';
+    const expenseMeta = expenseMetaByTx[transaction.id];
+
+    const options = {
+      accountId: selectedType === 'transfer' ? undefined : accountId,
+      accountFrom: selectedType === 'transfer' ? transferAccountSelection?.from : undefined,
+      accountTo: selectedType === 'transfer' ? transferAccountSelection?.to : undefined,
+      category: selectedType === 'expense' ? expenseMeta?.category : undefined,
+      subcategory: selectedType === 'expense' ? expenseMeta?.subcategory : undefined,
+      receipts: selectedType === 'expense' ? expenseMeta?.receipts || [] : undefined,
+    };
+
+    onConfirm(transaction.id, transaction, selectedType, saveRule, options);
 
     // UX: keep index (after removal the next element will slide into same index)
     setTimeout(() => setProcessingId(null), 250);
@@ -303,9 +407,10 @@ export function PendingTransactionsModal({
     saveSavedRules(updatedRules);
     setSavedRules(updatedRules);
 
-    // Reset to default type
+    // Reset to default type (and unlock)
     const transaction = transactions.find((t) => t.id === transactionId);
     if (transaction) {
+      setLockedTypes((prev) => ({ ...prev, [transactionId]: false }));
       setSelectedTypes((prev) => ({ ...prev, [transactionId]: transaction.type }));
     }
 
@@ -319,11 +424,19 @@ export function PendingTransactionsModal({
   const saveRule = saveRuleFlags[currentTransaction.id] || false;
   const match = matchedRules[currentTransaction.id];
   const transferAccountSelection = transferAccounts[currentTransaction.id];
+
   const isTransferValid =
     selectedType !== 'transfer' ||
     (transferAccountSelection?.from &&
       transferAccountSelection?.to &&
       transferAccountSelection.from !== transferAccountSelection.to);
+
+  const currentAccountId = accountByTx[currentTransaction.id] || accounts[0]?.id || '';
+  const expenseMeta = expenseMetaByTx[currentTransaction.id] || { category: '', subcategory: '', receipts: [] };
+
+  const categoryOptions = Object.keys(CATEGORIES);
+  const subcategoryOptions = expenseMeta.category && CATEGORIES[expenseMeta.category] ? CATEGORIES[expenseMeta.category] : [];
+  const isSubcategoryDisabled = !expenseMeta.category || expenseMeta.category === 'Altro' || subcategoryOptions.length === 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -334,13 +447,11 @@ export function PendingTransactionsModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[80vh] overflow-hidden">
+      <div className="relative w-full max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Transazioni Rilevate
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Transazioni Rilevate</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -360,24 +471,18 @@ export function PendingTransactionsModal({
           </div>
         </div>
 
-        {/* Single Transaction (step-by-step) */}
-        <div className="overflow-y-auto max-h-[calc(80vh-140px)] px-6 py-4">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             {/* Transaction Info */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-500 uppercase">
-                    {currentTransaction.appName}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {formatDate(currentTransaction.timestamp)}
-                  </span>
+                  <span className="text-xs font-medium text-gray-500 uppercase">{currentTransaction.appName}</span>
+                  <span className="text-xs text-gray-400">{formatDate(currentTransaction.timestamp)}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed">
-                  {currentTransaction.description}
-                </p>
-                <p className="text-lg font-bold text-red-600">
+                <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed">{currentTransaction.description}</p>
+                <p className={`text-lg font-bold ${selectedType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                   {formatAmount(currentTransaction.amount, currentTransaction.currency)}
                 </p>
               </div>
@@ -389,19 +494,13 @@ export function PendingTransactionsModal({
                 <p className="text-xs font-medium text-green-700">
                   ✅ Regola riconosciuta: {match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}
                 </p>
-                <p className="text-xs text-green-600 mt-0.5">
-                  "{match.rule.destinatario}"
-                </p>
+                <p className="text-xs text-green-600 mt-0.5">"{match.rule.destinatario}"</p>
               </div>
             )}
             {match && match.rule && match.confidence === 75 && (
               <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs font-medium text-yellow-700">
-                  ⚠️ Possibile corrispondenza
-                </p>
-                <p className="text-xs text-yellow-600 mt-0.5">
-                  Simile a "{match.rule.destinatario}"
-                </p>
+                <p className="text-xs font-medium text-yellow-700">⚠️ Possibile corrispondenza</p>
+                <p className="text-xs text-yellow-600 mt-0.5">Simile a "{match.rule.destinatario}"</p>
               </div>
             )}
 
@@ -442,16 +541,32 @@ export function PendingTransactionsModal({
               </div>
             </div>
 
+            {/* Account selection for expense/income */}
+            {selectedType !== 'transfer' && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-700 mb-2">Seleziona conto:</p>
+                <select
+                  value={currentAccountId}
+                  onChange={(e) => handleAccountChange(currentTransaction.id, e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">-- Seleziona conto --</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Transfer Account Selection */}
             {selectedType === 'transfer' && (
               <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-xs font-medium text-blue-900 mb-2">Seleziona conti:</p>
                 <div className="space-y-2">
-                  {/* From Account */}
                   <div>
-                    <label className="text-xs text-blue-700 font-medium block mb-1">
-                      Da (origine):
-                    </label>
+                    <label className="text-xs text-blue-700 font-medium block mb-1">Da (origine):</label>
                     <select
                       value={transferAccountSelection?.from || ''}
                       onChange={(e) =>
@@ -468,11 +583,8 @@ export function PendingTransactionsModal({
                     </select>
                   </div>
 
-                  {/* To Account */}
                   <div>
-                    <label className="text-xs text-blue-700 font-medium block mb-1">
-                      Verso (destinazione):
-                    </label>
+                    <label className="text-xs text-blue-700 font-medium block mb-1">Verso (destinazione):</label>
                     <select
                       value={transferAccountSelection?.to || ''}
                       onChange={(e) =>
@@ -489,12 +601,103 @@ export function PendingTransactionsModal({
                     </select>
                   </div>
 
-                  {/* Validation Warning */}
                   {!isTransferValid && (
-                    <p className="text-xs text-red-600 font-medium mt-1">
-                      ⚠️ I conti devono essere diversi
-                    </p>
+                    <p className="text-xs text-red-600 font-medium mt-1">⚠️ I conti devono essere diversi</p>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Expense-only fields */}
+            {selectedType === 'expense' && (
+              <div className="mb-3 p-3 bg-white border border-gray-200 rounded-lg">
+                <p className="text-xs font-medium text-gray-900 mb-2">Dettagli spesa:</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-700 font-medium block mb-1">Categoria (opzionale)</label>
+                    <select
+                      value={expenseMeta.category || ''}
+                      onChange={(e) => handleExpenseCategoryChange(currentTransaction.id, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">-- Seleziona categoria --</option>
+                      {categoryOptions.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-gray-400' : 'text-gray-700'}`}>
+                      Sottocategoria (opzionale)
+                    </label>
+                    <select
+                      value={expenseMeta.subcategory || ''}
+                      disabled={isSubcategoryDisabled}
+                      onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isSubcategoryDisabled ? 'border-gray-200 bg-gray-100 text-gray-400' : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      <option value="">-- Seleziona sottocategoria --</option>
+                      {subcategoryOptions.map((sub) => (
+                        <option key={sub} value={sub}>
+                          {sub}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <p className="text-xs font-medium text-gray-700 mb-2">Ricevute</p>
+
+                  {expenseMeta.receipts?.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      {expenseMeta.receipts.map((receipt, index) => (
+                        <div
+                          key={index}
+                          className="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm aspect-video bg-gray-50"
+                        >
+                          <img
+                            src={`data:image/png;base64,${receipt}`}
+                            alt="Ricevuta"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveReceipt(currentTransaction.id, index)}
+                            className="absolute top-1 right-1 p-1 bg-white/90 text-red-600 rounded-full shadow-md hover:bg-red-50 hover:text-red-700 transition-colors"
+                            aria-label="Rimuovi ricevuta"
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePickReceipt(currentTransaction.id, 'camera')}
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                    >
+                      Fotocamera
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePickReceipt(currentTransaction.id, 'gallery')}
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                    >
+                      Galleria
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -567,10 +770,7 @@ export function PendingTransactionsModal({
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-3 z-10">
-          <button
-            onClick={onClose}
-            className="w-full text-gray-600 text-sm font-medium py-2"
-          >
+          <button onClick={onClose} className="w-full text-gray-600 text-sm font-medium py-2">
             Chiudi
           </button>
         </div>
