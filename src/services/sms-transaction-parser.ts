@@ -201,8 +201,9 @@ export class SMSTransactionParser {
 
       // Parole chiave nel testo (Money signals)
       const MONEY_SIGNALS = [
-        '€', 'EUR', 'SPESO', 'PAGATO', 'ADDEBITO', 'ACCREDITO', 'BONIFICO', 'AUTHORIZED',
-        'SPENT', 'PURCHASE', 'TRANSAZIONE', 'TRANSACTION', 'PAGAMENTO'
+        '€', 'EUR', 'SPESO', 'SPESA', 'PAGATO', 'PAGAMENTO', 'ADDEBITO', 'ACCREDITO', 'BONIFICO',
+        'AUTHORIZED', 'AUTORIZZAZIONE', 'SPENT', 'PURCHASE', 'TRANSAZIONE', 'TRANSACTION',
+        'PRELIEVO', 'WITHDRAWAL', 'USCITA', 'ENTRATA', 'GIROCONTO', 'SALARY', 'STIPENDIO'
       ];
 
       const isFinancialSender = FINANCIAL_SENDERS.some(k => sender.toUpperCase().includes(k));
@@ -217,9 +218,9 @@ export class SMSTransactionParser {
           accountName: 'Conto ' + sender, // Fallback account name
           patterns: {
             // Pattern ultra-generici
-            expense: /(?:speso|pagato|addebito|autorizzata|transazione|purchase|sent|spent|payment).*?([\d.,]+)\s*€?.*?(?:presso|at|c\/o|to|a)\s+(.+)/i,
-            income: /(?:ricevuto|accredito|ricarica|received|credit).*?([\d.,]+)\s*€?.*?(?:da|from)\s*(.*)/i,
-            transfer: /(?:bonifico|transfer).*?([\d.,]+)\s*€?/i
+            expense: /(?:speso|spesa|pagato|pagamento|addebito|autorizzata|autorizzazione|transazione|purchase|sent|spent|payment|prelievo|withdrawal|uscita).*?([\d.,]+)\s*€?.*?(?:presso|at|c\/o|to|a|da|in)\s+(.+)/i,
+            income: /(?:ricevuto|accredito|ricarica|received|credit|entrata|stipendio|salary).*?([\d.,]+)\s*€?.*?(?:da|from)\s*(.*)/i,
+            transfer: /(?:bonifico|transfer|giroconto).*?([\d.,]+)\s*€?/i
           }
         };
       }
