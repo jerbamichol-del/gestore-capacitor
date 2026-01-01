@@ -1,47 +1,49 @@
-// services/notification-listener-service.ts
-
 import NotificationListener, { BankNotification } from '../plugins/notification-listener';
 import { NotificationTransactionParser } from './notification-transaction-parser';
+import { AutoTransactionService } from './auto-transaction-service';
 import { Capacitor } from '@capacitor/core';
+import type { AutoTransaction } from '../types/transaction';
 
-export interface PendingTransaction {
-  id: string;
-  hash: string;
-  appName: string;
-  amount: number;
-  description: string;
-  currency: string;
-  type: 'expense' | 'income' | 'transfer';
-  timestamp: number;
-  rawNotification?: any;
-}
+// Re-export type for consumers
+export type PendingTransaction = AutoTransaction;
 
 export class NotificationListenerService {
   private static isListening = false;
   private static listenerHandle: { remove: () => void } | null = null;
+  private static initialized = false;
 
   /**
-   * Inizializza e avvia il listener
+   * Initialize the service
+   * Alias for init() to match hook expectation
+   */
+  static async initialize(): Promise<boolean> {
+    return this.init();
+  }
+
+  /**
+   * Main initialization logic
    */
   static async init(): Promise<boolean> {
-    // Solo su Android
+    // Only on Android
     if (Capacitor.getPlatform() !== 'android') {
       console.log('⚠️ NotificationListener only available on Android');
       return false;
     }
 
+    if (this.initialized) return true;
+
     try {
-      // Controlla se già abilitato
+      // Check if already enabled
       const { enabled } = await NotificationListener.isEnabled();
 
       if (!enabled) {
-        console.log('🔔 Notification listener not enabled, requesting permission...');
-        await NotificationListener.requestPermission();
+        console.log('🔔 Notification listener not enabled');
         return false;
       }
 
-      // Avvia listener
+      // Start listening
       await this.startListening();
+      this.initialized = true;
       return true;
 
     } catch (error) {
@@ -51,22 +53,26 @@ export class NotificationListenerService {
   }
 
   /**
-   * Avvia ascolto notifiche
+   * Start listening for notifications
    */
   static async startListening(): Promise<void> {
     if (this.isListening) {
-      console.log('⚠️ Already listening to notifications');
       return;
     }
 
     try {
-      // Registra listener
+      // Remove existing listener if any
+      if (this.listenerHandle) {
+        this.listenerHandle.remove();
+      }
+
+      // Register JS listener
       this.listenerHandle = await NotificationListener.addListener(
         'notificationReceived',
         this.handleNotification.bind(this)
       );
 
-      // Avvia servizio Android
+      // Start Android Service
       await NotificationListener.startListening();
 
       this.isListening = true;
@@ -79,43 +85,13 @@ export class NotificationListenerService {
   }
 
   /**
-   * Ferma ascolto notifiche
-   */
-  static async stopListening(): Promise<void> {
-    if (!this.isListening) {
-      return;
-    }
-
-    try {
-      // Rimuovi listener JavaScript
-      if (this.listenerHandle) {
-        this.listenerHandle.remove();
-        this.listenerHandle = null;
-      }
-
-      // Nota: il servizio Android continuerà a girare
-      // fino a quando l'utente lo disabilita dalle impostazioni
-
-      this.isListening = false;
-      console.log('✅ Notification listener stopped');
-
-    } catch (error) {
-      console.error('Error stopping notification listener:', error);
-    }
-  }
-
-  /**
-   * Gestisce notifica ricevuta
+   * Handle incoming notification
    */
   private static async handleNotification(notification: BankNotification): Promise<void> {
-    console.log('🔔 Bank notification received:', {
-      app: notification.appName,
-      title: notification.title,
-      timestamp: new Date(notification.timestamp).toISOString()
-    });
+    console.log('🔔 Bank notification received:', notification.appName);
 
     try {
-      // Parse e aggiungi transazione
+      // Parser handles logic: parsing -> checking transfer -> saving to DB -> dispatching events
       const transaction = await NotificationTransactionParser.parseNotification(
         notification.appName,
         notification.title,
@@ -124,14 +100,9 @@ export class NotificationListenerService {
       );
 
       if (transaction) {
-        console.log('✅ Transaction added from notification:', transaction.id);
-
-        // Dispatch evento custom per l'UI
-        window.dispatchEvent(
-          new CustomEvent('auto-transaction-added', {
-            detail: { transaction, source: 'notification' }
-          })
-        );
+        console.log('✅ Transaction processed:', transaction.id);
+        // Note: NotificationTransactionParser already dispatches 'auto-transaction-added' 
+        // or 'auto-transaction-confirmation-needed' via AutoTransactionService/Parser
       }
 
     } catch (error) {
@@ -140,35 +111,71 @@ export class NotificationListenerService {
   }
 
   /**
-   * Controlla se il listener è attivo
+   * Stop listening
    */
-  static isActive(): boolean {
-    return this.isListening;
+  static async stopListening(): Promise<void> {
+    if (!this.isListening) return;
+
+    try {
+      if (this.listenerHandle) {
+        this.listenerHandle.remove();
+        this.listenerHandle = null;
+      }
+      this.isListening = false;
+      console.log('✅ Notification listener stopped');
+    } catch (error) {
+      console.error('Error stopping notification listener:', error);
+    }
   }
 
   /**
-   * Controlla permesso notification listener
+   * Cleanup method called by hook on unmount
    */
-  static async checkPermission(): Promise<boolean> {
+  static destroy(): void {
+    this.stopListening();
+  }
+
+  // --- Permission/Status Methods ---
+
+  static async isEnabled(): Promise<boolean> {
     try {
       const { enabled } = await NotificationListener.isEnabled();
       return enabled;
     } catch (error) {
-      console.error('Error checking notification permission:', error);
+      console.error('Error checking permission:', error);
       return false;
     }
   }
 
-  /**
-   * Apri impostazioni per abilitare listener
-   */
-  static async openSettings(): Promise<void> {
+  static async requestPermission(): Promise<{ enabled: boolean }> {
     try {
+      console.log('📱 Requesting Android Notification Permission...');
       await NotificationListener.requestPermission();
+      // On Android, this opens settings. user needs to come back.
+      // We return current state (likely false until they come back)
+      return NotificationListener.isEnabled();
     } catch (error) {
-      console.error('Error opening settings:', error);
+      console.error('Error requesting permission:', error);
+      return { enabled: false };
     }
+  }
+
+  // --- Transaction Management (Delegates to AutoTransactionService) ---
+
+  static async getPendingTransactions(): Promise<PendingTransaction[]> {
+    return AutoTransactionService.getPendingTransactions();
+  }
+
+  static async confirmTransaction(id: string): Promise<void> {
+    // Determine if it's a transfer logic? 
+    // For simple confirmation from list:
+    return AutoTransactionService.confirmTransaction(id);
+  }
+
+  static async ignoreTransaction(id: string): Promise<void> {
+    return AutoTransactionService.ignoreTransaction(id);
   }
 }
 
 export default NotificationListenerService;
+

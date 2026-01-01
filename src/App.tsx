@@ -254,12 +254,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           <ConfirmationModal isOpen={data.isConfirmDeleteModalOpen} onClose={() => data.setIsConfirmDeleteModalOpen(false)} onConfirm={data.confirmDelete} title="Conferma Eliminazione" message="Azione irreversibile." variant="danger" />
 
           {/* --- Overlay Modals (Auto/System) --- */}
-          <UpdateAvailableModal isOpen={isUpdateModalOpen} onClose={handleSkipUpdate} updateInfo={updateInfo} />
-          <PinVerifierModal isOpen={isPinVerifierOpen} onClose={() => setIsPinVerifierOpen(false)} onSuccess={handlePinVerified} />
+          <UpdateAvailableModal isOpen={isUpdateModalOpen} onClose={() => setIsUpdateModalOpen(false)} onSkip={handleSkipUpdate} updateInfo={updateInfo} />
+          <PinVerifierModal isOpen={isPinVerifierOpen} onClose={() => setIsPinVerifierOpen(false)} onSuccess={handlePinVerified} email={currentEmail} />
           <PendingTransactionsModal
             isOpen={auto.isPendingTransactionsModalOpen}
             onClose={() => auto.setIsPendingTransactionsModalOpen(false)}
-            pendingTransactions={auto.pendingTransactions}
+            transactions={auto.pendingTransactions}
             accounts={data.accounts}
             onConfirm={auto.handleConfirmTransaction}
             onIgnore={auto.handleIgnoreTransaction}
@@ -269,8 +269,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             onClose={() => auto.setIsTransferConfirmationModalOpen(false)}
             transaction={auto.currentConfirmationTransaction}
             accounts={data.accounts}
-            onConfirmTransfer={auto.handleConfirmAsTransfer}
-            onConfirmExpense={auto.handleConfirmAsExpense}
+            onConfirmAsTransfer={auto.handleConfirmAsTransfer}
+            onConfirmAsExpense={auto.handleConfirmAsExpense}
           />
           <NotificationPermissionModal
             isOpen={auto.isNotificationPermissionModalOpen}
@@ -284,7 +284,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           {/* Screens */}
           {ui.nav.isRecurringScreenOpen && (
             <RecurringExpensesScreen
-              expenses={data.recurringExpenses}
+              recurringExpenses={data.recurringExpenses}
+              expenses={data.expenses}
               accounts={data.accounts}
               onClose={() => ui.nav.closeModalWithHistory()}
               onEdit={(e) => {
@@ -299,7 +300,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
           {(ui.nav.isHistoryScreenOpen || ui.nav.isIncomeHistoryOpen) && (
             <HistoryScreen
-              isOpen={true}
               filterType={ui.nav.isIncomeHistoryOpen ? 'income' : 'expense'}
               onClose={() => ui.nav.closeModalWithHistory()}
               expenses={data.expenses}
@@ -351,7 +351,11 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           }
         }}
         onReceiveSharedFile={ui.handleSharedFile}
-        onImportFile={handleImportFile}
+        onImportFile={(file: File) => {
+          const reader = new FileReader();
+          reader.onload = (e) => handleImportFile(e.target?.result as string);
+          reader.readAsText(file);
+        }}
         onSync={() => handleSyncFromCloud(false)}
         isBalanceVisible={isBalanceVisible}
         onToggleBalanceVisibility={handleToggleBalanceVisibility}
