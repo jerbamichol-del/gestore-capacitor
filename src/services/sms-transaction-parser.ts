@@ -172,6 +172,8 @@ export class SMSTransactionParser {
     );
 
     if (!config) {
+      // ✅ LOGGING PER DEBUG: Vediamo chi stiamo ignorando
+      console.log(`⚠️ Ignored SMS from unknown sender: "${sender}"`);
       return null;
     }
 
