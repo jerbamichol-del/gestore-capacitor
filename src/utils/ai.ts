@@ -47,21 +47,21 @@ async function callAiEndpoint<T>(payload: any): Promise<T> {
 
     // Leggiamo prima il testo per poterlo loggare in caso di JSON non valido
     const text = await res.text();
-    
+
     try {
-        const json = JSON.parse(text);
-        return json as T;
+      const json = JSON.parse(text);
+      return json as T;
     } catch (e) {
-        console.error('[AI] Errore parsing JSON. Risposta grezza:', text);
-        throw new Error("Il server ha restituito una risposta non valida.");
+      console.error('[AI] Errore parsing JSON. Risposta grezza:', text);
+      throw new Error("Il server ha restituito una risposta non valida.");
     }
 
   } catch (e: any) {
     clearTimeout(timeoutId);
     console.error("AI Call Error:", e);
-    
+
     if (e.name === 'AbortError') {
-        throw new Error("Tempo scaduto. Il server ci sta mettendo troppo tempo.");
+      throw new Error("Tempo scaduto. Il server ci sta mettendo troppo tempo.");
     }
     // Rilanciamo l'errore per farlo gestire alla UI (VoiceInputModal)
     throw e;
@@ -106,7 +106,7 @@ export async function parseExpenseFromAudio(
 ): Promise<Partial<Expense> | null> {
   // Controllo preventivo se il blob è vuoto
   if (!audioBlob || audioBlob.size === 0) {
-      throw new Error("Registrazione vuota o non valida.");
+    throw new Error("Registrazione vuota o non valida.");
   }
 
   const mimeType = audioBlob.type || 'audio/webm';
@@ -123,4 +123,23 @@ export async function parseExpenseFromAudio(
   }
 
   return result.expense || null;
+}
+
+// ====== TESTO → 1 SPESA (FALLBACK) ======
+export async function parseExpenseFromText(
+  text: string
+): Promise<Partial<Expense> | null> {
+  const { textToImage } = await import('./fileHelper');
+
+  // 1. Convert text to image (base64 PNG)
+  // This workaround allows us to use the existing image-analysis backend endpoint
+  // without modifying the Google Apps Script code.
+  const base64Image = await textToImage(text);
+
+  // 2. Call existing image parser
+  // It returns Promise<Partial<Expense>[]>
+  const expenses = await parseExpensesFromImage(base64Image, 'image/png');
+
+  // 3. Return first result or null
+  return expenses && expenses.length > 0 ? expenses[0] : null;
 }

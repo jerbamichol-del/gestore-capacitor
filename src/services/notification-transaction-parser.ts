@@ -118,10 +118,36 @@ export class NotificationTransactionParser {
     console.log(`🔍 Parsing notification from ${appName}:`, fullText);
 
     // Prova tutti i pattern
-    const parsed = this.tryParseTransaction(config, fullText, timestamp);
+    let parsed = this.tryParseTransaction(config, fullText, timestamp);
+
+    // ✅ AI FALLBACK: Se la regex fallisce, prova Gemini
+    if (!parsed) {
+      console.log(`❌ No regex match for ${appName}. Trying AI Fallback...`);
+      try {
+        const { parseExpenseFromText } = await import('../utils/ai');
+        const aiResult = await parseExpenseFromText(fullText);
+
+        if (aiResult && aiResult.amount) {
+          console.log('🤖 AI successfully parsed the notification:', aiResult);
+
+          parsed = {
+            type: (aiResult.type as 'expense' | 'income' | 'transfer') || 'expense',
+            amount: aiResult.amount,
+            description: aiResult.description || 'Spesa rilevata (AI)',
+            date: aiResult.date || this.formatDate(timestamp),
+            account: config.accountName,
+            sourceType: 'notification',
+            sourceApp: config.name.toLowerCase(),
+            rawText: fullText
+          };
+        }
+      } catch (e) {
+        console.error('⚠️ AI Fallback failed:', e);
+      }
+    }
 
     if (!parsed) {
-      console.log(`❌ No match found for ${appName} notification`);
+      console.log(`❌ No match found (Regex + AI) for ${appName} notification`);
       return null;
     }
 

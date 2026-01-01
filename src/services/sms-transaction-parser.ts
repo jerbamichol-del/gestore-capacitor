@@ -123,7 +123,8 @@ export class SMSTransactionParser {
 
       // Parse each SMS
       for (const sms of result.messages) {
-        const transaction = this.parseSMS(sms.sender, sms.body, sms.timestamp);
+        // ✅ Await parseSMS (async because of AI fallback)
+        const transaction = await this.parseSMS(sms.sender, sms.body, sms.timestamp);
 
         if (transaction) {
           // Check if duplicate
@@ -159,11 +160,11 @@ export class SMSTransactionParser {
   /**
    * Parse singolo SMS
    */
-  static parseSMS(
+  static async parseSMS(
     sender: string,
     body: string,
     timestamp: number
-  ): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> | null {
+  ): Promise<Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> | null> {
 
     // Trova config banca
     const config = BANK_CONFIGS.find(c =>
@@ -174,11 +175,13 @@ export class SMSTransactionParser {
       return null;
     }
 
+    let parsed: Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> | null = null;
+
     // Prova pattern expense
     if (config.patterns.expense) {
       const match = body.match(config.patterns.expense);
       if (match) {
-        return {
+        parsed = {
           type: 'expense',
           amount: this.parseAmount(match[1]),
           description: match[2]?.trim() || 'Pagamento',
@@ -192,10 +195,10 @@ export class SMSTransactionParser {
     }
 
     // Prova pattern income
-    if (config.patterns.income) {
+    if (!parsed && config.patterns.income) {
       const match = body.match(config.patterns.income);
       if (match) {
-        return {
+        parsed = {
           type: 'income',
           amount: this.parseAmount(match[1]),
           description: match[2]?.trim() || 'Accredito',
@@ -209,10 +212,10 @@ export class SMSTransactionParser {
     }
 
     // Prova pattern transfer
-    if (config.patterns.transfer) {
+    if (!parsed && config.patterns.transfer) {
       const match = body.match(config.patterns.transfer);
       if (match) {
-        return {
+        parsed = {
           type: 'transfer',
           amount: this.parseAmount(match[1]),
           description: 'Trasferimento',
@@ -226,7 +229,32 @@ export class SMSTransactionParser {
       }
     }
 
-    return null;
+    // ✅ AI FALLBACK
+    if (!parsed) {
+      console.log(`❌ No regex match for SMS from ${sender}. Trying AI Fallback...`);
+      try {
+        const { parseExpenseFromText } = await import('../utils/ai');
+        const aiResult = await parseExpenseFromText(body);
+
+        if (aiResult && aiResult.amount) {
+          console.log('🤖 AI successfully parsed the SMS:', aiResult);
+          parsed = {
+            type: (aiResult.type as 'expense' | 'income' | 'transfer') || 'expense',
+            amount: aiResult.amount,
+            description: aiResult.description || 'Spesa rilevata (AI)',
+            date: aiResult.date || this.formatDate(timestamp),
+            account: config.accountName,
+            sourceType: 'sms',
+            sourceApp: config.name.toLowerCase(),
+            rawText: body
+          };
+        }
+      } catch (e) {
+        console.error('AI Fallback failed for SMS:', e);
+      }
+    }
+
+    return parsed;
   }
 
   /**
