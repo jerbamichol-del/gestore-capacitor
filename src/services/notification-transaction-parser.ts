@@ -22,9 +22,10 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'revolut',
     accountName: 'Revolut',
     patterns: {
-      expense: /(?:You\s+spent|Hai\s+speso|Payment|Pagamento\s+riuscito)\s+€?([\d.,]+)\s+(?:at|presso|in|to|a)\s+(.+)/i,
-      income: /(?:You\s+received|Hai\s+ricevuto|Received)\s+€?([\d.,]+)\s+(?:from|da)\s+(.+)/i,
-      transfer: /(?:Transfer|Trasferimento)\s+€?([\d.,]+)\s+(?:to|a)\s+(.+)/i
+      // ✅ Allow any text/emojis between keyword, amount, and merchant
+      expense: /(?:You\s+spent|Hai\s+speso|Payment|Pagamento).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:at|presso|in|to|a|di)\s+(.+)/i,
+      income: /(?:You\s+received|Hai\s+ricevuto|Received|Accredito).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:from|da)\s+(.+)/i,
+      transfer: /(?:Transfer|Trasferimento|Bonifico).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:to|a)\s+(.+)/i
     }
   },
   {
@@ -32,8 +33,8 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'paypal',
     accountName: 'PayPal',
     patterns: {
-      expense: /(?:You\s+sent|Hai\s+inviato)\s+€?([\d.,]+)\s+(?:to|a)\s+(.+)/i,
-      income: /(?:You\s+received|Hai\s+ricevuto)\s+€?([\d.,]+)\s+(?:from|da)\s+(.+)/i
+      expense: /(?:You\s+sent|Hai\s+inviato|Pagamento).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:to|a)\s+(.+)/i,
+      income: /(?:You\s+received|Hai\s+ricevuto).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:from|da)\s+(.+)/i
     }
   },
   {
@@ -41,9 +42,9 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'postepay',
     accountName: 'Postepay',
     patterns: {
-      expense: /(?:Pagamento|Addebito).*?€?([\d.,]+).*?(?:presso|at|c\/o)\s+(.+)/i,
-      income: /(?:Accredito|Ricarica).*?€?([\d.,]+)/i,
-      transfer: /Bonifico.*?€?([\d.,]+).*?(?:a|verso)\s+(.+)/i
+      expense: /(?:Pagamento|Addebito|Autorizzazione).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at|c\/o)\s+(.+)/i,
+      income: /(?:Accredito|Ricarica).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
+      transfer: /Bonifico.*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:a|verso)\s+(.+)/i
     }
   },
   {
@@ -51,9 +52,9 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'bbva',
     accountName: 'BBVA',
     patterns: {
-      expense: /(?:Compra|Pago|Cargo).*?€?([\d.,]+).*?(?:en|c\/o)\s+(.+)/i,
-      income: /(?:Ingreso|Abono).*?€?([\d.,]+)/i,
-      transfer: /Transferencia.*?€?([\d.,]+).*?a\s+(.+)/i
+      expense: /(?:Compra|Pago|Cargo|Acquisto).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:en|c\/o)\s+(.+)/i,
+      income: /(?:Ingreso|Abono|Entrata).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
+      transfer: /Transferencia.*?€?\s*([\d.,]+)\s*(?:EUR)?.*?a\s+(.+)/i
     }
   },
   {
@@ -61,9 +62,9 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'intesa',
     accountName: 'Intesa Sanpaolo',
     patterns: {
-      expense: /(?:Addebito|Pagamento)\s+carta.*?€?([\d.,]+).*?(?:presso|c\/o)\s+(.+)/i,
-      income: /Accredito.*?€?([\d.,]+)/i,
-      transfer: /Bonifico.*?€?([\d.,]+).*?a\s+(.+)/i
+      expense: /(?:Addebito|Pagamento|Pos).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|c\/o)\s+(.+)/i,
+      income: /Accredito.*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
+      transfer: /Bonifico.*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:a|favore)\s+(.+)/i
     }
   },
   {
@@ -71,8 +72,8 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'bnl',
     accountName: 'BNL',
     patterns: {
-      expense: /(?:Pagamento|Prelievo).*?€?([\d.,]+).*?(?:presso|c\/o)\s+(.+)/i,
-      income: /Accredito.*?€?([\d.,]+)/i
+      expense: /(?:Pagamento|Prelievo|Addebito).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|c\/o)\s+(.+)/i,
+      income: /Accredito.*?€?\s*([\d.,]+)\s*(?:EUR)?/i
     }
   },
   {
@@ -80,10 +81,10 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'unicredit',
     accountName: 'UniCredit',
     patterns: {
-      // ✅ EXPANDED: "autorizzata op.Internet" + "Bonifico Istantaneo"
-      expense: /(?:Addebito|Pagamento|autorizzata\s+op\.Internet|Transazione\s+autorizzata).*?€?([\d.,]+)\s+(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+?)(?:\s+\d{2}\/\d{2}\/\d{2}|$)/i,
-      income: /(?:Accredito|hai\s+appena\s+ricevuto\s+un\s+bonifico).*?€?([\d.,]+)\s+(?:EUR)?/i,
-      transfer: /Bonifico(?:\s+Istantaneo)?.*?€?([\d.,]+)\s+(?:EUR)?.*?(?:verso|a)\s+(.+)/i
+      // ✅ EXPANDED: "autorizzata op.Internet" + "Bonifico Istantaneo" + Emojis
+      expense: /(?:Addebito|Pagamento|autorizzata|Transazione).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+?)(?:\s+\d{2}\/\d{2}\/\d{2}|$)/i,
+      income: /(?:Accredito|bonifico).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
+      transfer: /Bonifico.*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
     }
   }
 ];
