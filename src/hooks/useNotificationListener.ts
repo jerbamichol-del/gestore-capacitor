@@ -184,6 +184,20 @@ export function useNotificationListener() {
     };
   }, [isAndroid, checkPermissionStatus]);
 
+  // ✅ NEW: Listen for global updates (e.g. from SMS scan or AutoService)
+  useEffect(() => {
+    const handleUpdate = async () => {
+      console.log('🔄 Received auto-transactions-updated event - refreshing list');
+      try {
+        const pending = await notificationListenerService.getPendingTransactions();
+        setPendingTransactions(pending);
+      } catch (e) { console.error(e); }
+    };
+
+    window.addEventListener('auto-transactions-updated', handleUpdate);
+    return () => window.removeEventListener('auto-transactions-updated', handleUpdate);
+  }, []);
+
   // Poll for new transactions every 30 seconds if enabled
   // ✅ Increased to 30 seconds to reduce checks
   useEffect(() => {

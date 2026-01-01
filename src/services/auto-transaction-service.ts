@@ -1,12 +1,12 @@
 // services/auto-transaction-service.ts
 
-import { 
-    addAutoTransaction as dbAddAutoTransaction,
-    getAutoTransactions,
-    getAutoTransactionByHash,
-    getAutoTransactionsByStatus,
-    updateAutoTransaction,
-    deleteOldAutoTransactions
+import {
+  addAutoTransaction as dbAddAutoTransaction,
+  getAutoTransactions,
+  getAutoTransactionByHash,
+  getAutoTransactionsByStatus,
+  updateAutoTransaction,
+  deleteOldAutoTransactions
 } from '../utils/db';
 import { AutoTransaction } from '../types/transaction';
 import { md5, normalizeForHash } from '../utils/hash';
@@ -14,7 +14,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Expense } from '../types';
 
 export class AutoTransactionService {
-  
+
   /**
    * Genera hash univoco per detect duplicati
    */
@@ -43,7 +43,7 @@ export class AutoTransactionService {
   static async addAutoTransaction(
     data: Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'>
   ): Promise<AutoTransaction | null> {
-    
+
     const hash = this.generateTransactionHash(
       data.amount,
       data.date,
@@ -71,12 +71,12 @@ export class AutoTransactionService {
     };
 
     await dbAddAutoTransaction(transaction);
-    
+
     console.log('✅ New auto transaction added:', transaction);
-    
+
     // Notifica utente
     await this.notifyNewTransaction(transaction);
-    
+
     // ✅ NEW: Dispatch custom event for confirmation-required transactions
     if (transaction.requiresConfirmation) {
       const event = new CustomEvent('auto-transaction-confirmation-needed', {
@@ -84,7 +84,10 @@ export class AutoTransactionService {
       });
       window.dispatchEvent(event);
     }
-    
+
+    // ✅ NEW: Dispatch generic update event for UI refresh
+    window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
+
     return transaction;
   }
 
@@ -92,20 +95,20 @@ export class AutoTransactionService {
    * Notifica nuova transazione rilevata
    */
   static async notifyNewTransaction(tx: AutoTransaction): Promise<void> {
-    const emoji = tx.type === 'expense' ? '💸' : 
-                  tx.type === 'income' ? '💰' : '🔄';
-    const action = tx.type === 'expense' ? 'Spesa' : 
-                   tx.type === 'income' ? 'Entrata' : 'Trasferimento';
-    
+    const emoji = tx.type === 'expense' ? '💸' :
+      tx.type === 'income' ? '💰' : '🔄';
+    const action = tx.type === 'expense' ? 'Spesa' :
+      tx.type === 'income' ? 'Entrata' : 'Trasferimento';
+
     // ✅ Different notification for confirmation-required transactions
-    const title = tx.requiresConfirmation 
+    const title = tx.requiresConfirmation
       ? `${emoji} Transazione da Confermare`
       : `${emoji} ${action} Rilevata`;
-    
+
     const body = tx.requiresConfirmation
       ? `${tx.description} - €${tx.amount.toFixed(2)} (richiede conferma)`
       : `${tx.description} - €${tx.amount.toFixed(2)}`;
-    
+
     try {
       await LocalNotifications.schedule({
         notifications: [{
@@ -164,7 +167,7 @@ export class AutoTransactionService {
   ): Promise<void> {
     const allTransactions = await getAutoTransactions();
     const tx = allTransactions.find(t => t.id === id);
-    
+
     if (!tx) {
       throw new Error('Transaction not found');
     }
@@ -188,7 +191,7 @@ export class AutoTransactionService {
    * Ignora transazione
    */
   static async ignoreTransaction(id: string): Promise<void> {
-    await updateAutoTransaction(id, { 
+    await updateAutoTransaction(id, {
       status: 'ignored',
       confirmedAt: Date.now()
     });
@@ -205,7 +208,7 @@ export class AutoTransactionService {
     if (!tx.toAccount) {
       throw new Error('Transfer requires toAccount');
     }
-    
+
     // Sottrai da account sorgente
     createExpenseFn({
       type: 'expense',
@@ -260,7 +263,7 @@ export class AutoTransactionService {
     total: number;
   }> {
     const all = await getAutoTransactions();
-    
+
     return {
       pending: all.filter(t => t.status === 'pending').length,
       confirmed: all.filter(t => t.status === 'confirmed').length,
