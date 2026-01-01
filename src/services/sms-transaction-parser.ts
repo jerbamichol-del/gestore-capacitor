@@ -13,9 +13,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'REVOLUT',
     accountName: 'Revolut',
     patterns: {
-      expense: /(?:hai\s+speso|payment\s+of|spent)\s+([\d.,]+)\s*€?\s+(?:at|presso|da|in)\s+(.+)/i,
-      income: /(?:ricevuto|received)\s+([\d.,]+)\s*€?\s+(?:from|da)\s+(.+)/i,
-      transfer: /(?:trasferimento|transfer).*?([\d.,]+)\s*€?\s+(?:to|a|verso)\s+(.+)/i
+      expense: /(?:hai\s+speso|payment\s+of|spent).*?([\d.,]+)\s*€?.*?(?:at|presso|da|in)\s+(.+)/i,
+      income: /(?:ricevuto|received).*?([\d.,]+)\s*€?.*?(?:from|da)\s+(.+)/i,
+      transfer: /(?:trasferimento|transfer).*?([\d.,]+)\s*€?.*?(?:to|a|verso)\s+(.+)/i
     }
   },
   {
@@ -23,8 +23,8 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'PayPal',
     accountName: 'PayPal',
     patterns: {
-      expense: /(?:sent|inviato|hai\s+inviato)\s+([\d.,]+)\s*€?\s+(?:to|a)\s+(.+)/i,
-      income: /(?:received|ricevuto|hai\s+ricevuto)\s+([\d.,]+)\s*€?\s+(?:from|da)\s+(.+)/i
+      expense: /(?:sent|inviato|hai\s+inviato).*?([\d.,]+)\s*€?.*?(?:to|a)\s+(.+)/i,
+      income: /(?:received|ricevuto|hai\s+ricevuto).*?([\d.,]+)\s*€?.*?(?:from|da)\s+(.+)/i
     }
   },
   {
@@ -32,9 +32,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'POSTEPAY',
     accountName: 'Postepay',
     patterns: {
-      expense: /(?:pagamento|addebito).*?([\d.,]+)\s*€.*?(?:presso|at)\s+(.+)/i,
-      income: /accredito.*?([\d.,]+)\s*€/i,
-      transfer: /bonifico.*?([\d.,]+)\s*€.*?(?:a|verso)\s+(.+)/i
+      expense: /(?:pagamento|addebito).*?([\d.,]+)\s*€?.*?(?:presso|at)\s+(.+)/i,
+      income: /(?:accredito|ricarica).*?([\d.,]+)\s*€?/i,
+      transfer: /bonifico.*?([\d.,]+)\s*€?.*?(?:a|verso)\s+(.+)/i
     }
   },
   {
@@ -43,8 +43,8 @@ const BANK_CONFIGS: BankConfig[] = [
     accountName: 'BBVA',
     patterns: {
       expense: /(?:compra|pago|cargo).*?([\d.,]+)\s*€?.*?(?:en|at)\s+(.+)/i,
-      income: /(?:ingreso|abono).*?([\d.,]+)\s*€/i,
-      transfer: /transferencia.*?([\d.,]+)\s*€.*?(?:a|para)\s+(.+)/i
+      income: /(?:ingreso|abono).*?([\d.,]+)\s*€?/i,
+      transfer: /transferencia.*?([\d.,]+)\s*€?.*?(?:a|para)\s+(.+)/i
     }
   },
   {
@@ -52,9 +52,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'INTESA',
     accountName: 'Intesa Sanpaolo',
     patterns: {
-      expense: /(?:addebito|pagamento)\s+carta.*?([\d.,]+)\s*€.*?presso\s+(.+)/i,
-      income: /accredito.*?([\d.,]+)\s*€/i,
-      transfer: /bonifico.*?([\d.,]+)\s*€.*?(?:a|verso)\s+(.+)/i
+      expense: /(?:addebito|pagamento)\s+carta.*?([\d.,]+)\s*€?.*?presso\s+(.+)/i,
+      income: /accredito.*?([\d.,]+)\s*€?/i,
+      transfer: /bonifico.*?([\d.,]+)\s*€?.*?(?:a|verso)\s+(.+)/i
     }
   }
 ];
