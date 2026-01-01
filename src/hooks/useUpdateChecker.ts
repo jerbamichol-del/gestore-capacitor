@@ -1,72 +1,81 @@
-// src/hooks/useUpdateChecker.ts
-import { useState, useEffect } from 'react';
-import { App as CapApp } from '@capacitor/app';
+import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
 
-interface UpdateInfo {
+export interface UpdateInfo {
   available: boolean;
   currentVersion: string;
-  currentBuild: string;
-  latestVersion: string;
-  latestBuild: string;
-  latestTagName?: string; // exact GitHub release tag_name
-  downloadUrl: string;
-  releaseNotes: string;
-}
-
-interface CachedUpdateInfo {
-  tagName: string;
-  latestVersion: string;
-  latestBuild: number;
-  downloadUrl: string;
-  releaseNotes: string;
-  cachedAt: number;
+  currentBuild?: string;
+  latestVersion?: string;
+  latestBuild?: string;
+  latestTagName?: string;
+  downloadUrl?: string;
+  releaseNotes?: string;
 }
 
 const GITHUB_REPO_OWNER = 'jerbamichol-del';
 const GITHUB_REPO_NAME = 'gestore-capacitor';
 
 // Re-check often enough to catch new releases quickly, but not on every foreground event.
-const CHECK_INTERVAL = 15 * 60 * 1000; // 15 minutes
+const CHECK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 const STORAGE_KEY_LAST_CHECK = 'last_update_check';
-const STORAGE_KEY_SKIPPED_VERSION = 'skipped_version';
 const STORAGE_KEY_CACHED_UPDATE = 'cached_update_info';
 
-function safeParseInt(value: string | null, fallback: number = 0) {
-  const n = value ? parseInt(value, 10) : NaN;
+// New (tag-based) skip key
+const STORAGE_KEY_SKIPPED_TAG = 'skipped_version';
+// Legacy (build-number) skip key used by old code
+const STORAGE_KEY_SKIPPED_BUILD = 'skipped_update_version';
+
+function safeParseInt(value: string | null | undefined, fallback: number = 0) {
+  const n = typeof value === 'string' ? parseInt(value, 10) : NaN;
   return Number.isFinite(n) ? n : fallback;
 }
 
-function readCachedUpdate(): CachedUpdateInfo | null {
+function readCachedUpdateRaw(): any | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CACHED_UPDATE);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedUpdateInfo;
-    if (!parsed || !parsed.tagName || !parsed.latestBuild || !parsed.downloadUrl) return null;
-    return parsed;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
 }
 
-function writeCachedUpdate(update: CachedUpdateInfo) {
+function writeCachedUpdateInfo(info: UpdateInfo) {
   try {
-    localStorage.setItem(STORAGE_KEY_CACHED_UPDATE, JSON.stringify(update));
+    localStorage.setItem(STORAGE_KEY_CACHED_UPDATE, JSON.stringify(info));
   } catch {
-    // ignore storage errors
+    // ignore
   }
 }
 
-export function useUpdateChecker() {
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
+function clearCachedUpdateInfo() {
+  try {
+    localStorage.removeItem(STORAGE_KEY_CACHED_UPDATE);
+  } catch {
+    // ignore
+  }
+}
 
-  const checkForUpdates = async (force: boolean = false): Promise<UpdateInfo | null> => {
-    // Only check on native platforms
-    if (!Capacitor.isNativePlatform()) {
-      console.log('⏭️ Not on native platform - skipping update check');
-      return null;
+export const useUpdateChecker = () => {
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo>({
+    available: false,
+    currentVersion: 'unknown',
+    currentBuild: '0',
+  });
+  const [isChecking, setIsChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const checkForUpdates = useCallback(async (force = false): Promise<UpdateInfo> => {
+    console.log('🚀 useUpdateChecker - checkForUpdates called', { force });
+
+    // Only check on Android native
+    if (Capacitor.getPlatform() !== 'android') {
+      console.log('⏭️ Not on Android - skipping update check');
+      const info: UpdateInfo = { available: false, currentVersion: 'web' };
+      setUpdateInfo(info);
+      return info;
     }
 
     // Get current app version early (needed also for cached logic)
@@ -76,187 +85,233 @@ export function useUpdateChecker() {
 
     console.log(`📱 Current version: ${currentVersionName} (Build ${currentVersionCode})`);
 
-    // If we recently checked, do NOT hit the network again.
-    // But if we already know (cached) that a newer build exists, show it immediately.
+    // Within interval: avoid network, BUT if cached says a newer build exists, show it immediately.
     if (!force) {
       const lastCheck = localStorage.getItem(STORAGE_KEY_LAST_CHECK);
       if (lastCheck) {
-        const timeSinceLastCheck = Date.now() - safeParseInt(lastCheck, 0);
-        if (timeSinceLastCheck < CHECK_INTERVAL) {
-          const cached = readCachedUpdate();
-          const skippedTag = localStorage.getItem(STORAGE_KEY_SKIPPED_VERSION);
+        const elapsed = Date.now() - safeParseInt(lastCheck, 0);
+        if (elapsed < CHECK_INTERVAL_MS) {
+          console.log(`⏱️ Within check interval (${Math.round(elapsed / 1000 / 60)}m ago) - checking cache`);
+          const cachedRaw = readCachedUpdateRaw();
+          const skippedTag = localStorage.getItem(STORAGE_KEY_SKIPPED_TAG);
+          const skippedBuild = localStorage.getItem(STORAGE_KEY_SKIPPED_BUILD);
 
-          if (cached && cached.latestBuild > currentVersionCode && skippedTag !== cached.tagName) {
-            const info: UpdateInfo = {
-              available: true,
-              currentVersion: currentVersionName,
-              currentBuild: currentVersionCode.toString(),
-              latestVersion: cached.latestVersion,
-              latestBuild: cached.latestBuild.toString(),
-              latestTagName: cached.tagName,
-              downloadUrl: cached.downloadUrl,
-              releaseNotes: cached.releaseNotes || 'Nessuna nota di rilascio disponibile.',
-            };
+          // Old cache format: UpdateInfo-like
+          if (cachedRaw && typeof cachedRaw === 'object' && typeof cachedRaw.available === 'boolean') {
+            const cached = cachedRaw as UpdateInfo;
+            const cachedLatestBuild = safeParseInt(cached.latestBuild, 0);
 
-            setUpdateInfo(info);
-            console.log('✅ Using cached update info (within interval).');
-            return info;
+            console.log(`💾 Cache: latest build ${cachedLatestBuild}, skipped tag: ${skippedTag}, skipped build: ${skippedBuild}`);
+
+            if (
+              cachedLatestBuild > currentVersionCode &&
+              (!cached.latestTagName || cached.latestTagName !== skippedTag) &&
+              (!cached.latestBuild || cached.latestBuild !== skippedBuild)
+            ) {
+              console.log(`✅ Cache shows update available: ${currentVersionCode} → ${cachedLatestBuild}`);
+              const info: UpdateInfo = {
+                ...cached,
+                available: true,
+                currentVersion: currentVersionName,
+                currentBuild: currentVersionCode.toString(),
+              };
+              setUpdateInfo(info);
+              return info;
+            }
+
+            // If cached is stale (user updated), clear it.
+            if (cachedLatestBuild <= currentVersionCode) {
+              console.log(`🗑️ Clearing stale cache (cached ${cachedLatestBuild} <= current ${currentVersionCode})`);
+              clearCachedUpdateInfo();
+            }
           }
 
-          console.log(`⏭️ Skipping network update check - last checked ${Math.round(timeSinceLastCheck / 1000 / 60)}m ago`);
-          return null;
+          // Return minimal info (no network)
+          console.log('⏭️ No cached update - skipping network check');
+          const info: UpdateInfo = {
+            available: false,
+            currentVersion: currentVersionName,
+            currentBuild: currentVersionCode.toString(),
+          };
+          setUpdateInfo(info);
+          return info;
         }
       }
     }
 
+    setIsChecking(true);
+    setError(null);
+
     try {
-      setIsChecking(true);
-      console.log('🔍 Checking for app updates...');
-
-      // Fetch latest release from GitHub
-      const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/releases/latest`;
-      console.log(`🌐 Fetching: ${apiUrl}`);
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-        },
-      });
+      console.log('🔍 Checking for app updates from GitHub...');
+      const response = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/releases/latest`,
+        { headers: { Accept: 'application/vnd.github.v3+json' } }
+      );
 
       if (!response.ok) {
-        console.error(`❌ Failed to fetch release info: ${response.status} ${response.statusText}`);
-        return null;
+        // No releases yet (404) => treat as up-to-date
+        if (response.status === 404) {
+          console.log('⚠️ No releases found (404)');
+          const info: UpdateInfo = {
+            available: false,
+            currentVersion: currentVersionName,
+            currentBuild: currentVersionCode.toString(),
+          };
+          setUpdateInfo(info);
+          writeCachedUpdateInfo(info);
+          localStorage.setItem(STORAGE_KEY_LAST_CHECK, Date.now().toString());
+          return info;
+        }
+        throw new Error(`GitHub API error: ${response.status}`);
       }
 
       const release = await response.json();
-      const tagName: string = release.tag_name; // expected: v<versionName>-build<code>
-      console.log(`🏷️ Release tag: ${tagName}`);
-      console.log(`📝 Release name: ${release.name}`);
+      const tagName: string = release.tag_name || '';
+      console.log(`🏷️ Latest release: ${tagName}`);
 
-      const buildMatch = typeof tagName === 'string' ? tagName.match(/build(\d+)/i) : null;
+      const buildMatch = tagName.match(/build(\d+)/i);
       if (!buildMatch) {
-        console.warn(`⚠️ Could not extract build number from tag: ${tagName}`);
-        return null;
-      }
-
-      const remoteVersionCode = safeParseInt(buildMatch[1], 0);
-      console.log(`🌐 Remote build: ${remoteVersionCode}`);
-
-      // Update last check time (network check completed successfully)
-      localStorage.setItem(STORAGE_KEY_LAST_CHECK, Date.now().toString());
-
-      // Check if skipped
-      const skippedVersion = localStorage.getItem(STORAGE_KEY_SKIPPED_VERSION);
-      if (skippedVersion === tagName && !force) {
-        console.log(`⏭️ User previously skipped version: ${tagName}`);
-        return null;
-      }
-
-      // Compare build numbers
-      console.log(`🔢 Comparing: Current build ${currentVersionCode} vs Remote build ${remoteVersionCode}`);
-
-      if (remoteVersionCode > currentVersionCode) {
-        console.log(`✅ UPDATE AVAILABLE! ${currentVersionCode} → ${remoteVersionCode}`);
-
-        const apkAsset = release.assets?.find((asset: any) => typeof asset?.name === 'string' && asset.name.endsWith('.apk'));
-        if (!apkAsset) {
-          console.error('❌ No APK found in release assets');
-          console.log('Available assets:', (release.assets || []).map((a: any) => a?.name));
-          return null;
-        }
-
+        console.log(`⚠️ Could not extract build number from tag: ${tagName}`);
         const info: UpdateInfo = {
-          available: true,
+          available: false,
           currentVersion: currentVersionName,
           currentBuild: currentVersionCode.toString(),
-          latestVersion: release.name,
-          latestBuild: remoteVersionCode.toString(),
+          latestVersion: release.name || tagName,
           latestTagName: tagName,
-          downloadUrl: apkAsset.browser_download_url,
-          releaseNotes: release.body || 'Nessuna nota di rilascio disponibile.',
         };
-
-        // Cache it so the modal can appear immediately even if the user reopens the app within the interval.
-        writeCachedUpdate({
-          tagName,
-          latestVersion: release.name,
-          latestBuild: remoteVersionCode,
-          downloadUrl: apkAsset.browser_download_url,
-          releaseNotes: release.body || '',
-          cachedAt: Date.now(),
-        });
-
         setUpdateInfo(info);
+        writeCachedUpdateInfo(info);
+        localStorage.setItem(STORAGE_KEY_LAST_CHECK, Date.now().toString());
         return info;
       }
 
-      // If no update, clear stale cached update (optional but prevents old cached popups)
-      const cached = readCachedUpdate();
-      if (cached && cached.latestBuild <= currentVersionCode) {
-        try {
-          localStorage.removeItem(STORAGE_KEY_CACHED_UPDATE);
-        } catch {
-          // ignore
-        }
+      const remoteBuildNumber = safeParseInt(buildMatch[1], 0);
+      console.log(`🌐 Remote build: ${remoteBuildNumber}`);
+
+      // Check skip (tag-based, and legacy build-based)
+      const skippedTag = localStorage.getItem(STORAGE_KEY_SKIPPED_TAG);
+      const skippedBuild = localStorage.getItem(STORAGE_KEY_SKIPPED_BUILD);
+      if ((skippedTag && skippedTag === tagName) || (skippedBuild && safeParseInt(skippedBuild, -1) === remoteBuildNumber)) {
+        console.log(`⏭️ User skipped this version: ${tagName}`);
+        const info: UpdateInfo = {
+          available: false,
+          currentVersion: currentVersionName,
+          currentBuild: currentVersionCode.toString(),
+          latestVersion: release.name || tagName,
+          latestBuild: remoteBuildNumber.toString(),
+          latestTagName: tagName,
+        };
+        setUpdateInfo(info);
+        writeCachedUpdateInfo(info);
+        localStorage.setItem(STORAGE_KEY_LAST_CHECK, Date.now().toString());
+        return info;
       }
 
-      console.log('✅ App is up to date');
-      return null;
-    } catch (error) {
-      console.error('❌ Error checking for updates:', error);
-      if (error instanceof Error) {
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
+      const apkAsset = release.assets?.find((asset: any) => typeof asset?.name === 'string' && asset.name.endsWith('.apk'));
+
+      const updateAvailable = remoteBuildNumber > currentVersionCode;
+      console.log(`🔢 Comparing: ${currentVersionCode} vs ${remoteBuildNumber} → Update available: ${updateAvailable}`);
+
+      const info: UpdateInfo = {
+        available: updateAvailable,
+        currentVersion: currentVersionName,
+        currentBuild: currentVersionCode.toString(),
+        latestVersion: release.name || tagName,
+        latestBuild: remoteBuildNumber.toString(),
+        latestTagName: tagName,
+        downloadUrl: apkAsset?.browser_download_url,
+        releaseNotes: release.body,
+      };
+
+      if (updateAvailable) {
+        console.log(`✅ UPDATE AVAILABLE! ${currentVersionCode} → ${remoteBuildNumber}`);
+      } else {
+        console.log(`✅ App is up to date`);
       }
-      return null;
+
+      setUpdateInfo(info);
+      writeCachedUpdateInfo(info);
+      localStorage.setItem(STORAGE_KEY_LAST_CHECK, Date.now().toString());
+
+      // If user already updated, clear stale cache
+      if (!updateAvailable) {
+        clearCachedUpdateInfo();
+      }
+
+      return info;
+    } catch (err) {
+      console.error('❌ Error checking for updates:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Network error';
+      setError(errorMsg);
+
+      const info: UpdateInfo = {
+        available: false,
+        currentVersion: currentVersionName,
+        currentBuild: currentVersionCode.toString(),
+      };
+      setUpdateInfo(info);
+      return info;
     } finally {
       setIsChecking(false);
     }
-  };
+  }, []); // Empty deps: checkForUpdates is stable
 
-  const skipVersion = () => {
-    if (updateInfo) {
-      const tagToSkip = updateInfo.latestTagName;
-      if (tagToSkip) {
-        console.log(`⏭️ Skipping version: ${tagToSkip}`);
-        localStorage.setItem(STORAGE_KEY_SKIPPED_VERSION, tagToSkip);
-      } else {
-        console.log('⚠️ skipVersion called but latestTagName is missing');
-      }
-      setUpdateInfo(null);
+  const skipVersion = useCallback(() => {
+    console.log('⏭️ skipVersion called', updateInfo);
+    // Prefer skipping by tagName (stable), but also store legacy build key.
+    const tagToSkip = updateInfo.latestTagName;
+    const buildToSkip = updateInfo.latestBuild;
+
+    if (tagToSkip) {
+      console.log(`💾 Skipping tag: ${tagToSkip}`);
+      localStorage.setItem(STORAGE_KEY_SKIPPED_TAG, tagToSkip);
     }
-  };
+    if (buildToSkip) {
+      console.log(`💾 Skipping build: ${buildToSkip}`);
+      localStorage.setItem(STORAGE_KEY_SKIPPED_BUILD, buildToSkip);
+    }
 
-  const clearSkipped = () => {
-    console.log('🗑️ Clearing skipped version');
-    localStorage.removeItem(STORAGE_KEY_SKIPPED_VERSION);
-  };
+    setUpdateInfo(prev => ({ ...prev, available: false }));
+  }, [updateInfo]);
+
+  const clearSkipped = useCallback(() => {
+    console.log('🗑️ Clearing skipped versions');
+    localStorage.removeItem(STORAGE_KEY_SKIPPED_TAG);
+    localStorage.removeItem(STORAGE_KEY_SKIPPED_BUILD);
+  }, []);
 
   useEffect(() => {
-    console.log('🚀 useUpdateChecker mounted');
-
-    // Initial check
+    console.log('🚀 useUpdateChecker mounted - starting initial check');
     checkForUpdates();
 
-    // Check when app comes to foreground
-    const listener = CapApp.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) {
-        console.log('📱 App became active - checking for updates');
-        checkForUpdates();
-      }
-    });
+    let listener: any;
+
+    const setupListener = async () => {
+      listener = await CapApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          console.log('📱 App became active - checking for updates');
+          checkForUpdates();
+        }
+      });
+    };
+
+    setupListener();
 
     return () => {
       console.log('🧹 useUpdateChecker unmounting');
-      listener.then((l) => l.remove());
+      if (listener) {
+        listener.remove();
+      }
     };
-  }, []);
+  }, [checkForUpdates]);
 
   return {
     updateInfo,
     isChecking,
+    error,
     checkForUpdates,
     skipVersion,
     clearSkipped,
   };
-}
+};

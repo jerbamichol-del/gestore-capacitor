@@ -1,11 +1,8 @@
-// src/services/notification-listener-service.ts
+// services/notification-listener-service.ts
 
 import NotificationListener, { BankNotification } from '../plugins/notification-listener';
-import { 
-  parseNotificationTransaction, 
-  generateTransactionHash,
-  ParsedTransaction 
-} from './notification-transaction-parser';
+import { NotificationTransactionParser } from './notification-transaction-parser';
+import { Capacitor } from '@capacitor/core';
 
 export interface PendingTransaction {
   id: string;
@@ -14,470 +11,164 @@ export interface PendingTransaction {
   amount: number;
   description: string;
   currency: string;
-  type: 'expense' | 'income' | 'transfer'; // ✅ Added 'transfer'
+  type: 'expense' | 'income' | 'transfer';
   timestamp: number;
-  rawNotification: BankNotification;
-  confirmed: boolean;
+  rawNotification?: any;
 }
 
-const STORAGE_KEY = 'pending_transactions';
-const MAX_AGE_DAYS = 30;
-
-class NotificationListenerService {
-  private isInitialized = false;
-  private listenerRemove: (() => void) | null = null;
-  private eventTarget = new EventTarget();
+export class NotificationListenerService {
+  private static isListening = false;
+  private static listenerHandle: { remove: () => void } | null = null;
 
   /**
-   * Initialize the notification listener service
+   * Inizializza e avvia il listener
    */
-  async initialize(): Promise<void> {
-    if (this.isInitialized) {
-      console.log('NotificationListenerService already initialized');
-      return;
+  static async init(): Promise<boolean> {
+    // Solo su Android
+    if (Capacitor.getPlatform() !== 'android') {
+      console.log('⚠️ NotificationListener only available on Android');
+      return false;
     }
 
     try {
-      // Check if enabled
+      // Controlla se già abilitato
       const { enabled } = await NotificationListener.isEnabled();
-      
+
       if (!enabled) {
-        console.warn('Notification listener not enabled');
-        return;
+        console.log('🔔 Notification listener not enabled, requesting permission...');
+        await NotificationListener.requestPermission();
+        return false;
       }
 
-      // ✅ NEW: Recover pending notifications from persistent queue FIRST
-      await this.recoverPendingNotifications();
+      // Avvia listener
+      await this.startListening();
+      return true;
 
-      // Start listening
-      await NotificationListener.startListening();
-
-      // Add listener for notifications
-      const result = await NotificationListener.addListener(
-        'notificationReceived',
-        (notification) => this.handleNotification(notification)
-      );
-
-      this.listenerRemove = result.remove;
-      this.isInitialized = true;
-
-      // Clean old transactions
-      this.cleanOldTransactions();
-
-      console.log('NotificationListenerService initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize NotificationListenerService:', error);
-    }
-  }
-
-  /**
-   * Request notification listener permission
-   * Opens Android settings and returns current status
-   */
-  async requestPermission(): Promise<{ enabled: boolean }> {
-    try {
-      // This opens settings and returns the current status
-      const result = await NotificationListener.requestPermission();
-      return result;
-    } catch (error) {
-      console.error('Failed to request permission:', error);
-      return { enabled: false };
-    }
-  }
-
-  /**
-   * Check if permission is granted
-   */
-  async isEnabled(): Promise<boolean> {
-    try {
-      const { enabled } = await NotificationListener.isEnabled();
-      return enabled;
-    } catch (error) {
-      console.error('Failed to check if enabled:', error);
+      console.error('Error initializing notification listener:', error);
       return false;
     }
   }
 
   /**
-   * Check permission status (alias for consistency)
+   * Avvia ascolto notifiche
    */
-  async checkPermission(): Promise<{ enabled: boolean }> {
-    const enabled = await this.isEnabled();
-    return { enabled };
-  }
-  
-  /**
-   * 🆕 NEW: Recover pending notifications from persistent queue
-   * Retrieves notifications saved by native service while app was closed/killed
-   * Called automatically during initialize() and can be called manually
-   * @returns Number of notifications recovered
-   */
-  async recoverPendingNotifications(): Promise<number> {
-    try {
-      console.log('📬 Recovering pending notifications from persistent queue...');
-      
-      // Get pending notifications from native queue
-      const pendingNotifications = await NotificationListener.getPendingNotifications();
-      
-      if (pendingNotifications.length === 0) {
-        console.log('✅ No pending notifications in queue');
-        return 0;
-      }
-      
-      console.log(`📬 Found ${pendingNotifications.length} pending notifications in queue`);
-      
-      let recoveredCount = 0;
-      const existing = await this.getPendingTransactions();
-      
-      // Process each pending notification
-      for (const notification of pendingNotifications) {
-        try {
-          // Parse transaction
-          const parsed = parseNotificationTransaction(
-            notification.appName,
-            notification.title,
-            notification.text
-          );
-          
-          if (!parsed) {
-            console.warn('⚠️ Could not parse pending notification:', notification);
-            continue;
-          }
-          
-          // Generate hash for deduplication
-          const hash = generateTransactionHash(
-            notification.appName,
-            parsed.amount,
-            notification.timestamp
-          );
-          
-          // Check if already exists
-          if (existing.some(t => t.hash === hash)) {
-            console.log('⏭️ Transaction already exists, skipping:', hash);
-            continue;
-          }
-          
-          // Create pending transaction
-          const pending: PendingTransaction = {
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            hash,
-            appName: notification.appName,
-            amount: parsed.amount,
-            description: parsed.description,
-            currency: parsed.currency,
-            type: parsed.type,
-            timestamp: notification.timestamp,
-            rawNotification: notification,
-            confirmed: false,
-          };
-          
-          // Add to existing list
-          existing.push(pending);
-          recoveredCount++;
-          
-          console.log('✅ Recovered transaction:', pending.description, pending.amount, pending.currency);
-        } catch (error) {
-          console.error('❌ Error processing pending notification:', error);
-        }
-      }
-      
-      // Save all at once if we recovered any
-      if (recoveredCount > 0) {
-        await this.savePendingTransactions(existing);
-        console.log(`✅ Successfully recovered ${recoveredCount} transactions from persistent queue!`);
-        
-        // Emit event for each recovered transaction
-        for (const transaction of existing.slice(-recoveredCount)) {
-          this.emitTransactionAdded(transaction);
-        }
-      }
-      
-      return recoveredCount;
-    } catch (error) {
-      console.error('❌ Failed to recover pending notifications:', error);
-      return 0;
-    }
-  }
-  
-  /**
-   * 🆕 NEW: Check for missed notifications while app was closed
-   * Scans active notifications from last 24 hours and adds them to pending
-   */
-  async checkAndRecoverMissedNotifications(): Promise<number> {
-    try {
-      console.log('📬 Checking for missed notifications...');
-      
-      // Call plugin method to get missed notifications
-      const missedNotifications = await NotificationListener.checkMissedNotifications();
-      
-      if (missedNotifications.length === 0) {
-        console.log('✅ No missed notifications found');
-        return 0;
-      }
-      
-      console.log(`📬 Found ${missedNotifications.length} missed notifications`);
-      
-      let recoveredCount = 0;
-      const existing = await this.getPendingTransactions();
-      
-      // Process each missed notification
-      for (const notification of missedNotifications) {
-        // Parse transaction
-        const parsed = parseNotificationTransaction(
-          notification.appName,
-          notification.title,
-          notification.text
-        );
-        
-        if (!parsed) {
-          console.warn('⚠️ Could not parse missed notification:', notification);
-          continue;
-        }
-        
-        // Generate hash for deduplication
-        const hash = generateTransactionHash(
-          notification.appName,
-          parsed.amount,
-          notification.timestamp
-        );
-        
-        // Check if already exists
-        if (existing.some(t => t.hash === hash)) {
-          console.log('⏭️ Transaction already exists, skipping:', hash);
-          continue;
-        }
-        
-        // Create pending transaction
-        const pending: PendingTransaction = {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          hash,
-          appName: notification.appName,
-          amount: parsed.amount,
-          description: parsed.description,
-          currency: parsed.currency,
-          type: parsed.type,
-          timestamp: notification.timestamp,
-          rawNotification: notification,
-          confirmed: false,
-        };
-        
-        // Add to existing list
-        existing.push(pending);
-        recoveredCount++;
-        
-        console.log('✅ Recovered transaction:', pending);
-      }
-      
-      // Save all at once if we recovered any
-      if (recoveredCount > 0) {
-        await this.savePendingTransactions(existing);
-        console.log(`✅ Successfully recovered ${recoveredCount} transactions!`);
-        
-        // Emit event for each recovered transaction
-        for (const transaction of existing.slice(-recoveredCount)) {
-          this.emitTransactionAdded(transaction);
-        }
-      }
-      
-      return recoveredCount;
-    } catch (error) {
-      console.error('❌ Failed to check missed notifications:', error);
-      return 0;
-    }
-  }
-
-  /**
-   * Handle incoming bank notification
-   */
-  private async handleNotification(notification: BankNotification): Promise<void> {
-    console.log('Received bank notification:', notification);
-
-    // Parse transaction
-    const parsed = parseNotificationTransaction(
-      notification.appName,
-      notification.title,
-      notification.text
-    );
-
-    if (!parsed) {
-      console.warn('Could not parse notification:', notification);
+  static async startListening(): Promise<void> {
+    if (this.isListening) {
+      console.log('⚠️ Already listening to notifications');
       return;
     }
 
-    // Generate hash for deduplication
-    const hash = generateTransactionHash(
-      notification.appName,
-      parsed.amount,
-      notification.timestamp
-    );
+    try {
+      // Registra listener
+      this.listenerHandle = await NotificationListener.addListener(
+        'notificationReceived',
+        this.handleNotification.bind(this)
+      );
 
-    // Check if already exists
-    const existing = await this.getPendingTransactions();
-    if (existing.some(t => t.hash === hash)) {
-      console.log('Transaction already exists, skipping');
+      // Avvia servizio Android
+      await NotificationListener.startListening();
+
+      this.isListening = true;
+      console.log('✅ Notification listener started');
+
+    } catch (error) {
+      console.error('Error starting notification listener:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ferma ascolto notifiche
+   */
+  static async stopListening(): Promise<void> {
+    if (!this.isListening) {
       return;
     }
 
-    // Create pending transaction
-    const pending: PendingTransaction = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      hash,
-      appName: notification.appName,
-      amount: parsed.amount,
-      description: parsed.description,
-      currency: parsed.currency,
-      type: parsed.type,
-      timestamp: notification.timestamp,
-      rawNotification: notification,
-      confirmed: false,
-    };
-
-    // Add to storage
-    const transactions = [...existing, pending];
-    await this.savePendingTransactions(transactions);
-
-    // Emit event
-    this.emitTransactionAdded(pending);
-
-    console.log('Pending transaction added:', pending);
-  }
-
-  /**
-   * Get all pending transactions
-   */
-  async getPendingTransactions(): Promise<PendingTransaction[]> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return [];
+      // Rimuovi listener JavaScript
+      if (this.listenerHandle) {
+        this.listenerHandle.remove();
+        this.listenerHandle = null;
+      }
 
-      const transactions: PendingTransaction[] = JSON.parse(stored);
-      return transactions.filter(t => !t.confirmed);
+      // Nota: il servizio Android continuerà a girare
+      // fino a quando l'utente lo disabilita dalle impostazioni
+
+      this.isListening = false;
+      console.log('✅ Notification listener stopped');
+
     } catch (error) {
-      console.error('Failed to get pending transactions:', error);
-      return [];
+      console.error('Error stopping notification listener:', error);
     }
   }
 
   /**
-   * Save pending transactions to storage
+   * Gestisce notifica ricevuta
    */
-  private async savePendingTransactions(transactions: PendingTransaction[]): Promise<void> {
+  private static async handleNotification(notification: BankNotification): Promise<void> {
+    console.log('🔔 Bank notification received:', {
+      app: notification.appName,
+      title: notification.title,
+      timestamp: new Date(notification.timestamp).toISOString()
+    });
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      // Parse e aggiungi transazione
+      const transaction = await NotificationTransactionParser.parseNotification(
+        notification.appName,
+        notification.title,
+        notification.text,
+        notification.timestamp
+      );
+
+      if (transaction) {
+        console.log('✅ Transaction added from notification:', transaction.id);
+
+        // Dispatch evento custom per l'UI
+        window.dispatchEvent(
+          new CustomEvent('auto-transaction-added', {
+            detail: { transaction, source: 'notification' }
+          })
+        );
+      }
+
     } catch (error) {
-      console.error('Failed to save pending transactions:', error);
+      console.error('Error handling notification:', error);
     }
   }
 
   /**
-   * Confirm a pending transaction
+   * Controlla se il listener è attivo
    */
-  async confirmTransaction(id: string): Promise<void> {
-    const transactions = await this.getAllTransactions();
-    const transaction = transactions.find(t => t.id === id);
-    
-    if (transaction) {
-      transaction.confirmed = true;
-      await this.savePendingTransactions(transactions);
-      this.emitTransactionConfirmed(transaction);
-    }
+  static isActive(): boolean {
+    return this.isListening;
   }
 
   /**
-   * Ignore/delete a pending transaction
+   * Controlla permesso notification listener
    */
-  async ignoreTransaction(id: string): Promise<void> {
-    const transactions = await this.getAllTransactions();
-    const filtered = transactions.filter(t => t.id !== id);
-    await this.savePendingTransactions(filtered);
-    this.emitTransactionIgnored(id);
-  }
-
-  /**
-   * Get all transactions (including confirmed)
-   */
-  private async getAllTransactions(): Promise<PendingTransaction[]> {
+  static async checkPermission(): Promise<boolean> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return [];
-      return JSON.parse(stored);
+      const { enabled } = await NotificationListener.isEnabled();
+      return enabled;
     } catch (error) {
-      console.error('Failed to get all transactions:', error);
-      return [];
+      console.error('Error checking notification permission:', error);
+      return false;
     }
   }
 
   /**
-   * Clean old transactions (> MAX_AGE_DAYS)
+   * Apri impostazioni per abilitare listener
    */
-  private async cleanOldTransactions(): Promise<void> {
-    const transactions = await this.getAllTransactions();
-    const cutoff = Date.now() - (MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
-    
-    const filtered = transactions.filter(t => t.timestamp > cutoff);
-    
-    if (filtered.length !== transactions.length) {
-      await this.savePendingTransactions(filtered);
-      console.log(`Cleaned ${transactions.length - filtered.length} old transactions`);
+  static async openSettings(): Promise<void> {
+    try {
+      await NotificationListener.requestPermission();
+    } catch (error) {
+      console.error('Error opening settings:', error);
     }
-  }
-
-  /**
-   * Get pending count
-   */
-  async getPendingCount(): Promise<number> {
-    const transactions = await this.getPendingTransactions();
-    return transactions.length;
-  }
-
-  /**
-   * Event emitters
-   */
-  private emitTransactionAdded(transaction: PendingTransaction): void {
-    this.eventTarget.dispatchEvent(
-      new CustomEvent('transactionAdded', { detail: transaction })
-    );
-  }
-
-  private emitTransactionConfirmed(transaction: PendingTransaction): void {
-    this.eventTarget.dispatchEvent(
-      new CustomEvent('transactionConfirmed', { detail: transaction })
-    );
-  }
-
-  private emitTransactionIgnored(id: string): void {
-    this.eventTarget.dispatchEvent(
-      new CustomEvent('transactionIgnored', { detail: id })
-    );
-  }
-
-  /**
-   * Add event listener
-   */
-  addEventListener(
-    event: 'transactionAdded' | 'transactionConfirmed' | 'transactionIgnored',
-    callback: (data: any) => void
-  ): () => void {
-    const listener = (e: Event) => callback((e as CustomEvent).detail);
-    this.eventTarget.addEventListener(event, listener);
-    return () => this.eventTarget.removeEventListener(event, listener);
-  }
-
-  /**
-   * Cleanup
-   */
-  async destroy(): Promise<void> {
-    if (this.listenerRemove) {
-      this.listenerRemove();
-      this.listenerRemove = null;
-    }
-    this.isInitialized = false;
   }
 }
 
-// Singleton instance
-const notificationListenerService = new NotificationListenerService();
-
-// Export both default and named for compatibility
-export { notificationListenerService };
-export default notificationListenerService;
+export default NotificationListenerService;

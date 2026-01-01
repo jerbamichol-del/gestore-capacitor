@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PendingTransaction } from '../services/notification-listener-service';
-import { Account, CATEGORIES } from '../../types';
-import { pickImage, processImageFile } from '../../utils/fileHelper';
+import { Account, CATEGORIES } from '../types';
+import { pickImage, processImageFile } from '../utils/fileHelper';
 
 // Saved rule for auto-categorization
 interface SavedRule {
@@ -510,31 +510,28 @@ export function PendingTransactionsModal({
               <div className="flex gap-2">
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'expense')}
-                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    selectedType === 'expense'
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'expense'
                       ? 'bg-red-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                    }`}
                 >
                   💸 Spesa
                 </button>
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'income')}
-                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    selectedType === 'income'
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'income'
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                    }`}
                 >
                   💰 Entrata
                 </button>
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'transfer')}
-                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    selectedType === 'transfer'
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'transfer'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                    }`}
                 >
                   🔄 Trasferimento
                 </button>
@@ -638,9 +635,8 @@ export function PendingTransactionsModal({
                       value={expenseMeta.subcategory || ''}
                       disabled={isSubcategoryDisabled}
                       onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isSubcategoryDisabled ? 'border-gray-200 bg-gray-100 text-gray-400' : 'border-gray-300 bg-white'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-gray-200 bg-gray-100 text-gray-400' : 'border-gray-300 bg-white'
+                        }`}
                     >
                       <option value="">-- Seleziona sottocategoria --</option>
                       {subcategoryOptions.map((sub) => (
@@ -722,11 +718,10 @@ export function PendingTransactionsModal({
               <button
                 onClick={() => handleConfirm(currentTransaction)}
                 disabled={!isTransferValid || processingId === currentTransaction.id}
-                className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${
-                  isTransferValid && processingId !== currentTransaction.id
+                className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${isTransferValid && processingId !== currentTransaction.id
                     ? 'bg-blue-600 hover:bg-blue-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 ✓ Conferma
               </button>

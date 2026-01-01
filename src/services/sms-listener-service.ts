@@ -5,7 +5,7 @@ import type { PluginListenerHandle } from '@capacitor/core';
 import SMSReader from '../plugins/sms-reader';
 import { SMSTransactionParser } from './sms-transaction-parser';
 // ✅ FIX: AutoTransactionService is in /services (project root), not in /src/services
-import { AutoTransactionService } from '../../services/auto-transaction-service';
+import { AutoTransactionService } from './auto-transaction-service';
 import type { SMSMessage } from '../plugins/sms-reader';
 import type { AutoTransaction } from '../types/transaction';
 

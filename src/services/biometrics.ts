@@ -2,7 +2,7 @@
 // Biometria adattata per Capacitor: usa il plugin nativo invece di WebAuthn
 
 import { Capacitor } from '@capacitor/core';
-import * as NativeBiometric from 'capacitor-native-biometric';
+import { NativeBiometric } from '@capgo/capacitor-native-biometric';
 
 const KEY_ENABLED = 'bio.enabled';
 const KEY_OPTOUT = 'bio.optOut';
@@ -92,13 +92,12 @@ export async function registerBiometric(displayName = 'Utente'): Promise<boolean
   }
 
   if (isNative) {
-    // Capacitor: verifica semplicemente che funzioni
     try {
       await NativeBiometric.verifyIdentity({
         reason: 'Abilita autenticazione biometrica',
         title: 'Gestore Spese',
         subtitle: 'Configurazione',
-        description: displayName,
+        description: 'Usa impronta o volto per confermare',
       });
       localStorage.setItem(KEY_ENABLED, '1');
       clearBiometricSnooze();
@@ -170,28 +169,18 @@ export async function unlockWithBiometric(reason = 'Sblocca Gestore Spese'): Pro
   }
 
   if (isNative) {
-    // Capacitor: usa plugin nativo
     try {
       await NativeBiometric.verifyIdentity({
         reason,
         title: 'Gestore Spese',
         subtitle: 'Autenticazione',
-        description: reason,
+        description: 'Usa impronta o volto',
       });
       clearBiometricSnooze();
       return true;
     } catch (e: any) {
-      const name = String(e?.name || '');
-      const msg = String(e?.message || '');
-      // Annullo/timeout → snooze
-      if (
-        name === 'NotAllowedError' ||
-        name === 'AbortError' ||
-        /timeout/i.test(msg) ||
-        /cancel/i.test(msg)
-      ) {
-        setBiometricSnooze();
-      }
+      // user canceled
+      setBiometricSnooze();
       throw e;
     }
   }
