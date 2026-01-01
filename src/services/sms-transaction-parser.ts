@@ -286,6 +286,13 @@ export class SMSTransactionParser {
       }
     }
 
+    // 🧠 SMART VALIDATION: Se la regex ha trovato 0, probabilmente ha sbagliato (es. auth check o parsing errato).
+    // In questo caso scartiamo il risultato regex e forziamo l'AI.
+    if (parsed && parsed.amount === 0) {
+      console.log(`⚠️ Suspicious 0.00 regex result from "${sender}". Discarding and forcing AI Fallback...`);
+      parsed = null;
+    }
+
     // ✅ AI FALLBACK
     if (!parsed) {
       console.log(`❌ No regex match for SMS from ${sender}. Trying AI Fallback...`);
