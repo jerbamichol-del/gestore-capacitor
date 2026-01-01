@@ -56,6 +56,24 @@ const BANK_CONFIGS: BankConfig[] = [
       income: /accredito.*?([\d.,]+)\s*€?/i,
       transfer: /bonifico.*?([\d.,]+)\s*€?.*?(?:a|verso)\s+(.+)/i
     }
+  },
+  {
+    name: 'UniCredit',
+    identifier: 'UNICREDIT',
+    accountName: 'UniCredit',
+    patterns: {
+      expense: /(?:Addebito|Pagamento|autorizzata|Transazione).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+)/i,
+      income: /(?:Accredito|bonifico).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
+      transfer: /Bonifico.*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
+    }
+  },
+  {
+    name: 'Mastercard',
+    identifier: 'MASTERCARD',
+    accountName: 'Carta Mastercard',
+    patterns: {
+      expense: /(?:Autorizzazione|Spesa|Pagamento).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at)\s+(.+)/i
+    }
   }
 ];
 
