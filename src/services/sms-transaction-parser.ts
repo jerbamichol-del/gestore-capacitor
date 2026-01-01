@@ -13,9 +13,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'REVOLUT',
     accountName: 'Revolut',
     patterns: {
-      expense: /(?:hai\s+speso|payment\s+of|spent).*?([\d.,]+)\s*€?.*?(?:at|presso|da|in)\s+(.+)/i,
-      income: /(?:ricevuto|received).*?([\d.,]+)\s*€?.*?(?:from|da)\s+(.+)/i,
-      transfer: /(?:trasferimento|transfer).*?([\d.,]+)\s*€?.*?(?:to|a|verso)\s+(.+)/i
+      expense: /(?:hai\s+speso|payment\s+of|spent).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:at|presso|da|in)\s+(.+)/i,
+      income: /(?:ricevuto|received).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:from|da)\s+(.+)/i,
+      transfer: /(?:trasferimento|transfer).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:to|a|verso)\s+(.+)/i
     }
   },
   {
@@ -23,8 +23,8 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'PayPal',
     accountName: 'PayPal',
     patterns: {
-      expense: /(?:sent|inviato|hai\s+inviato).*?([\d.,]+)\s*€?.*?(?:to|a)\s+(.+)/i,
-      income: /(?:received|ricevuto|hai\s+ricevuto).*?([\d.,]+)\s*€?.*?(?:from|da)\s+(.+)/i
+      expense: /(?:sent|inviato|hai\s+inviato).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:to|a)\s+(.+)/i,
+      income: /(?:received|ricevuto|hai\s+ricevuto).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:from|da)\s+(.+)/i
     }
   },
   {
@@ -32,9 +32,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'POSTEPAY',
     accountName: 'Postepay',
     patterns: {
-      expense: /(?:pagamento|addebito).*?([\d.,]+)\s*€?.*?(?:presso|at)\s+(.+)/i,
-      income: /(?:accredito|ricarica).*?([\d.,]+)\s*€?/i,
-      transfer: /bonifico.*?([\d.,]+)\s*€?.*?(?:a|verso)\s+(.+)/i
+      expense: /(?:pagamento|addebito).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:presso|at)\s+(.+)/i,
+      income: /(?:accredito|ricarica).*?(\d+(?:[.,]\d+)*)\s*€?/i,
+      transfer: /bonifico.*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:a|verso)\s+(.+)/i
     }
   },
   {
@@ -42,9 +42,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'BBVA',
     accountName: 'BBVA',
     patterns: {
-      expense: /(?:compra|pago|cargo).*?([\d.,]+)\s*€?.*?(?:en|at)\s+(.+)/i,
-      income: /(?:ingreso|abono).*?([\d.,]+)\s*€?/i,
-      transfer: /transferencia.*?([\d.,]+)\s*€?.*?(?:a|para)\s+(.+)/i
+      expense: /(?:compra|pago|cargo).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:en|at)\s+(.+)/i,
+      income: /(?:ingreso|abono).*?(\d+(?:[.,]\d+)*)\s*€?/i,
+      transfer: /transferencia.*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:a|para)\s+(.+)/i
     }
   },
   {
@@ -52,9 +52,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'INTESA',
     accountName: 'Intesa Sanpaolo',
     patterns: {
-      expense: /(?:addebito|pagamento)\s+carta.*?([\d.,]+)\s*€?.*?presso\s+(.+)/i,
-      income: /accredito.*?([\d.,]+)\s*€?/i,
-      transfer: /bonifico.*?([\d.,]+)\s*€?.*?(?:a|verso)\s+(.+)/i
+      expense: /(?:addebito|pagamento)\s+carta.*?(\d+(?:[.,]\d+)*)\s*€?.*?presso\s+(.+)/i,
+      income: /accredito.*?(\d+(?:[.,]\d+)*)\s*€?/i,
+      transfer: /bonifico.*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:a|verso)\s+(.+)/i
     }
   },
   {
@@ -62,9 +62,9 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'UNICREDIT',
     accountName: 'UniCredit',
     patterns: {
-      expense: /(?:Addebito|Pagamento|autorizzata|Transazione).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+)/i,
-      income: /(?:Accredito|bonifico).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
-      transfer: /Bonifico.*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
+      expense: /(?:Addebito|Pagamento|autorizzata|Transazione).*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+)/i,
+      income: /(?:Accredito|bonifico).*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?/i,
+      transfer: /Bonifico.*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
     }
   },
   {
@@ -72,7 +72,7 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'MASTERCARD',
     accountName: 'Carta Mastercard',
     patterns: {
-      expense: /(?:Autorizzazione|Spesa|Pagamento).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at)\s+(.+)/i
+      expense: /(?:Autorizzazione|Spesa|Pagamento).*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?.*?(?:presso|at)\s+(.+)/i
     }
   }
 ];
@@ -218,9 +218,9 @@ export class SMSTransactionParser {
           accountName: 'Conto ' + sender, // Fallback account name
           patterns: {
             // Pattern ultra-generici
-            expense: /(?:speso|spesa|pagato|pagamento|addebito|autorizzata|autorizzazione|transazione|purchase|sent|spent|payment|prelievo|withdrawal|uscita).*?([\d.,]+)\s*€?.*?(?:presso|at|c\/o|to|a|da|in)\s+(.+)/i,
-            income: /(?:ricevuto|accredito|ricarica|received|credit|entrata|stipendio|salary).*?([\d.,]+)\s*€?.*?(?:da|from)\s*(.*)/i,
-            transfer: /(?:bonifico|transfer|giroconto).*?([\d.,]+)\s*€?/i
+            expense: /(?:speso|spesa|pagato|pagamento|addebito|autorizzata|autorizzazione|transazione|purchase|sent|spent|payment|prelievo|withdrawal|uscita).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:presso|at|c\/o|to|a|da|in)\s+(.+)/i,
+            income: /(?:ricevuto|accredito|ricarica|received|credit|entrata|stipendio|salary).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:da|from)\s*(.*)/i,
+            transfer: /(?:bonifico|transfer|giroconto).*?(\d+(?:[.,]\d+)*)\s*€?/i
           }
         };
       }
@@ -318,9 +318,28 @@ export class SMSTransactionParser {
    * Parse amount da stringa (supporta virgola e punto)
    */
   private static parseAmount(amountStr: string): number {
-    // Sostituisci virgola con punto e rimuovi spazi
-    const cleaned = amountStr.replace(/,/g, '.').replace(/\s/g, '');
-    const amount = parseFloat(cleaned);
+    let clean = amountStr.replace(/\s/g, '');
+
+    // Gestione separatori migliaia/decimali
+    // Check format: 1.234,56 (EU) vs 1,234.56 (US/UK)
+    const hasComma = clean.includes(',');
+    const hasDot = clean.includes('.');
+
+    if (hasComma && hasDot) {
+      if (clean.lastIndexOf(',') > clean.lastIndexOf('.')) {
+        // EU: 1.234,56 -> remove dots, replace comma with dot
+        clean = clean.replace(/\./g, '').replace(/,/g, '.');
+      } else {
+        // US: 1,234.56 -> remove commas
+        clean = clean.replace(/,/g, '');
+      }
+    } else if (hasComma) {
+      // Ambiguous, assume comma is decimal (common in IT)
+      // 19,99 -> 19.99
+      clean = clean.replace(/,/g, '.');
+    }
+
+    const amount = parseFloat(clean);
     return isNaN(amount) ? 0 : amount;
   }
 
