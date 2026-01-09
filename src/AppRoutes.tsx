@@ -33,18 +33,20 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ currentEmail, onLogout, onSync, i
             } />
 
             <Route path="/accounts" element={
-                <AccountsScreen />
+                <AccountsScreen isBalanceVisible={isBalanceVisible} />
             } />
 
             <Route path="/history" element={
                 <HistoryScreen
                     filterType="expense"
+                    isBalanceVisible={isBalanceVisible}
                 />
             } />
 
             <Route path="/income" element={
                 <HistoryScreen
                     filterType="income"
+                    isBalanceVisible={isBalanceVisible}
                 />
             } />
 

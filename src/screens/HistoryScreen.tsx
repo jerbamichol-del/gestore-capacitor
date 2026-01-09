@@ -32,12 +32,13 @@ interface ExpenseItemProps {
   onToggleSelection: (id: string) => void;
   onLongPress: (id: string) => void;
   isIncomeMode: boolean;
+  isBalanceVisible: boolean;
 }
 
 const ACTION_WIDTH = 72;
 
 const ExpenseItem: React.FC<ExpenseItemProps> = ({
-  expense, accounts, onEdit, onDelete, isOpen, onOpen, isSelectionMode, isSelected, onToggleSelection, onLongPress, isIncomeMode,
+  expense, accounts, onEdit, onDelete, isOpen, onOpen, isSelectionMode, isSelected, onToggleSelection, onLongPress, isIncomeMode, isBalanceVisible
 }) => {
   const style = getCategoryStyle(expense.category);
   const account = accounts.find((a) => a.id === expense.accountId);
@@ -49,12 +50,15 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const isRecurringInstance = !!expense.recurringExpenseId;
   const isAdjustment = expense.type === 'adjustment';
   const itemBgClass = isSelected
-    ? 'bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700'
+    ? 'bg-indigo-50 dark:bg-slate-800 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700'
     : isRecurringInstance
-      ? 'bg-amber-50 dark:bg-amber-950/30'
+      ? 'bg-amber-50 dark:bg-amber-900/40' // Use slightly opaque but solid-looking or ensure it covers
       : isAdjustment
-        ? 'bg-slate-50 dark:bg-slate-900/50 opacity-90'
-        : 'bg-white dark:bg-slate-900';
+        ? 'bg-slate-50 dark:bg-slate-900 opacity-90'
+        : 'bg-white dark:bg-slate-950';
+
+  // Specific fix: ensure the background is fully opaque in dark mode to hide the trash icon bleed-through
+  const finalBgClass = `${itemBgClass} transition-colors duration-200`;
   const longPressTimer = useRef<number | null>(null);
 
   const handlePointerDownItem = (e: React.PointerEvent) => {
@@ -179,16 +183,34 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
 
   const renderAmount = () => {
     const amt = Number(expense.amount) || 0;
-    if (isAdjustment) return <span className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>{formatCurrency(amt)}</span>;
-    return <p className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-slate-100'}`}>{isIncomeMode ? '+' : ''}{formatCurrency(amt)}</p>;
+    if (isAdjustment) return <span className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>{isBalanceVisible ? formatCurrency(amt) : '******'}</span>;
+    return <p className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-slate-100'}`}>{isIncomeMode ? '+' : ''}{isBalanceVisible ? formatCurrency(amt) : '******'}</p>;
   };
 
   return (
     <div className={`relative ${itemBgClass} overflow-hidden transition-colors duration-200 select-none group`}>
-      <div className="absolute top-0 right-0 h-full flex items-center z-10">
-        <button onClick={() => onDelete(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa" {...tapBridge}><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button>
+      <div className={`absolute top-0 right-0 h-full flex items-center z-10 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+        <button
+          onClick={() => { if (isOpen) onDelete(expense.id); }}
+          className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white"
+          aria-label="Elimina spesa"
+          {...tapBridge}
+        >
+          <TrashIcon className="w-6 h-6" />
+          <span className="text-xs mt-1">Elimina</span>
+        </button>
       </div>
-      <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} z-20 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
+      <div
+        ref={itemRef}
+        data-expense-swipe="1"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onClick={handleClick}
+        className={`relative flex items-center gap-4 py-3 px-4 ${finalBgClass} z-20 cursor-pointer select-none`}
+        style={{ touchAction: 'pan-y' }}
+      >
         {isRecurringInstance && !isSelectionMode && !isAdjustment && (<span className="absolute top-1.5 right-1.5 w-5 h-5 text-slate-900 dark:text-amber-900 bg-amber-100 dark:bg-amber-400 border border-amber-400 rounded-full flex items-center justify-center z-20" title="Spesa Programmata">P</span>)}
         {renderIcon()}
         <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isAdjustment ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-slate-100'}`}>{isAdjustment ? 'Rettifica Saldo' : isIncomeMode ? accountName : `${expense.subcategory || style.label} • ${accountName}`}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`} title={expense.description}>{expense.description || 'Senza descrizione'}</p></div>
@@ -202,6 +224,7 @@ interface HistoryScreenProps {
   onClose?: () => void;
   onCloseStart?: () => void;
   filterType?: 'expense' | 'income';
+  isBalanceVisible: boolean;
 }
 
 interface ExpenseGroup { year: number; week: number; label: string; dateRange: string; expenses: Expense[]; total: number; }
@@ -236,7 +259,7 @@ const getWeekLabel = (y: number, w: number) => {
   return `Settimana ${w}`;
 };
 
-const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, filterType = 'expense' }) => {
+const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, filterType = 'expense', isBalanceVisible }) => {
   const { expenses, accounts, deleteExpenses: onDeleteExpenses, handleDeleteRequest: onDeleteExpense, isConfirmDeleteModalOpen } = useTransactions();
   const { setEditingExpense, setIsAddModalOpen, setIsHistoryFilterOpen, isAddModalOpen } = useUI();
   const navigate = useNavigate();
@@ -423,15 +446,15 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, fi
           {expenseGroups.length > 0 ? (
             expenseGroups.map((group) => (
               <div key={group.label} className="mb-6 last:mb-0">
-                <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-100 text-lg px-4 py-2 sticky top-0 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 transition-colors">
+                <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-100 text-lg px-4 py-2 sticky top-0 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-sm z-30 transition-colors">
                   <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500 dark:text-slate-400">{group.dateRange}</span></h2>
-                  <p className={`font-bold text-xl ${isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatCurrency(group.total)}</p>
+                  <p className={`font-bold text-xl ${isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{isBalanceVisible ? formatCurrency(group.total) : '******'}</p>
                 </div>
                 <div className="bg-white dark:bg-slate-900 rounded-xl shadow-md mx-2 overflow-hidden transition-colors">
                   {group.expenses.map((expense, index) => (
                     <React.Fragment key={expense.id}>
                       {index > 0 && <hr className="border-t border-slate-200 dark:border-slate-800 ml-16" />}
-                      <ExpenseItem expense={expense} accounts={accounts} onEdit={onEditExpense} onDelete={onDeleteExpense} isOpen={openItemId === expense.id} onOpen={handleOpenItem} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isIncomeMode={isIncomeMode} />
+                      <ExpenseItem expense={expense} accounts={accounts} onEdit={onEditExpense} onDelete={onDeleteExpense} isOpen={openItemId === expense.id} onOpen={handleOpenItem} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isIncomeMode={isIncomeMode} isBalanceVisible={isBalanceVisible} />
                     </React.Fragment>
                   ))}
                 </div>

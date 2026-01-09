@@ -84,10 +84,34 @@ const RecurringExpenseItem: React.FC<{
   const handlePointerCancel = (e: React.PointerEvent) => { cancelLongPress(); const ds = dragState.current; if (ds.pointerId !== e.pointerId) return; if (ds.pointerId !== null) itemRef.current?.releasePointerCapture(ds.pointerId); ds.isDragging = false; ds.isLocked = false; ds.pointerId = null; setTranslateX(isOpen ? -ACTION_WIDTH : 0, true); };
   const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); if (dragState.current.isDragging || dragState.current.wasHorizontal) return; if (isSelectionMode) { onToggleSelection(expense.id); } else if (isOpen) { onOpen(''); } else { onEdit(expense); } };
 
+  const itemBgClass = isSelected
+    ? 'bg-indigo-50 dark:bg-slate-800 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700'
+    : isFinished
+      ? 'bg-slate-50 dark:bg-slate-900 opacity-75'
+      : 'bg-amber-50 dark:bg-slate-950';
+
   return (
-    <div className={`relative overflow-hidden transition-colors duration-200 select-none group ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50 opacity-75' : 'bg-amber-50 dark:bg-amber-950/20'}`}>
-      <div className="absolute top-0 right-0 h-full flex items-center z-10"><button onClick={() => onDeleteRequest(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-colors focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa programmata"><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button></div>
-      <div ref={itemRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50' : 'bg-amber-50 dark:bg-amber-950/20'} z-20 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
+    <div className={`relative ${itemBgClass} overflow-hidden transition-colors duration-200 select-none group`}>
+      <div className={`absolute top-0 right-0 h-full flex items-center z-10 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+        <button
+          onClick={() => { if (isOpen) onDeleteRequest(expense.id); }}
+          className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white transition-colors focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white"
+          aria-label="Elimina spesa programmata"
+        >
+          <TrashIcon className="w-6 h-6" />
+          <span className="text-xs mt-1">Elimina</span>
+        </button>
+      </div>
+      <div
+        ref={itemRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onClick={handleClick}
+        className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} z-20 cursor-pointer transition-colors duration-200 select-none`}
+        style={{ touchAction: 'pan-y' }}
+      >
         {isSelected ? (<span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 dark:bg-indigo-500 text-white transition-transform duration-200 transform scale-100`}><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>) : (<style.Icon className={`w-10 h-10 flex-shrink-0 transition-transform duration-200 ${isFinished ? 'grayscale opacity-50' : ''}`} />)}
         <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isFinished ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100'}`}>{expense.description || 'Senza descrizione'}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>{getRecurrenceSummary(expense)} • {accountName}</p></div>
         <div className="flex flex-col items-end shrink-0 min-w-[90px]"><p className={`font-bold text-lg text-right whitespace-nowrap ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isFinished ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100'}`}>{formatCurrency(Number(expense.amount) || 0)}</p>{isFinished ? (<div className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">Completata</div>) : nextDueDate && (<div className={`text-sm font-medium mt-1 whitespace-nowrap ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>{formatDate(nextDueDate)}</div>)}</div>
@@ -151,11 +175,11 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ onClo
   }, [recurringExpenses, expenses]);
 
   useEffect(() => { const timer = setTimeout(() => setIsAnimatingIn(true), 10); return () => clearTimeout(timer); }, []);
-  useEffect(() => { if (!isAnimatingIn && openItemId) setOpenItemId(null); }, [isAnimatingIn, openItemId]);
+  // Removed automatic setOpenItemId(null) on isAnimatingIn false to avoid jump during exit
   useEffect(() => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); if (openItemId && !isConfirmDeleteModalOpen) autoCloseRef.current = window.setTimeout(() => setOpenItemId(null), 5000); return () => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); }; }, [openItemId, isConfirmDeleteModalOpen]);
 
   const handleClose = () => {
-    setOpenItemId(null);
+    // We DON'T clear openItemId here anymore to avoid visual jumps during slide-down
     if (onCloseStart) onCloseStart();
     setIsAnimatingIn(false);
     setTimeout(() => {
@@ -175,7 +199,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ onClo
 
   return (
     <div className={`fixed inset-0 z-50 bg-slate-100 dark:bg-slate-950 transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0' : 'translate-y-full'} transition-colors`} style={{ touchAction: 'pan-y' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
-      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm h-[60px] transition-colors">
+      <header className="sticky top-0 z-30 flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm h-[60px] transition-colors">
         {isSelectionMode ? (
           <>
             <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>

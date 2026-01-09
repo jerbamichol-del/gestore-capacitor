@@ -18,6 +18,7 @@ import { useTransactions } from '../context/TransactionsContext';
 
 interface AccountsScreenProps {
     onClose?: () => void;
+    isBalanceVisible?: boolean;
 }
 
 // Separati i tipi per permettere la combinazione
@@ -192,15 +193,18 @@ const SwipableTransferRow: React.FC<{
         }
     };
 
-    const bgClass = isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700' : 'bg-slate-50 dark:bg-slate-900/50';
+    const bgClass = isSelected
+        ? 'bg-indigo-50 dark:bg-slate-800 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700'
+        : 'bg-slate-50 dark:bg-slate-950';
+
+    const finalBgClass = `${bgClass} transition-colors duration-200`;
 
     return (
         <div className={`relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 mb-2 transition-colors duration-200 ${bgClass}`}>
-            <div className="absolute top-0 right-0 h-full flex items-center z-0">
+            <div className={`absolute top-0 right-0 h-full flex items-center z-0 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
                 <button
-                    onClick={() => onDelete(transfer.id)}
+                    onClick={() => { if (isOpen) onDelete(transfer.id); }}
                     className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white"
-                    {...tapBridge}
                 >
                     <TrashIcon className="w-6 h-6" />
                     <span className="text-xs mt-1">Elimina</span>
@@ -214,7 +218,7 @@ const SwipableTransferRow: React.FC<{
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerCancel}
                 onClick={handleClick}
-                className={`relative p-3 flex justify-between items-center z-10 touch-pan-y select-none transition-colors duration-200 ${bgClass}`}
+                className={`relative p-3 flex justify-between items-center z-10 touch-pan-y select-none ${finalBgClass}`}
             >
                 <div className="flex items-center gap-3">
                     {isSelected ? (
@@ -243,7 +247,7 @@ const SwipableTransferRow: React.FC<{
     );
 };
 
-const AccountsScreen: React.FC<AccountsScreenProps> = ({ onClose }) => {
+const AccountsScreen: React.FC<AccountsScreenProps> = ({ onClose, isBalanceVisible = true }) => {
     const { accounts, expenses, handleAddExpense: onAddTransaction, handleDeleteRequest: onDeleteTransaction, deleteExpenses: onDeleteTransactions } = useTransactions();
     const navigate = useNavigate();
 
@@ -527,7 +531,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ onClose }) => {
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="text-indigo-100 dark:text-indigo-200 text-sm font-medium mb-1">Patrimonio Totale</p>
-                            <p className="text-3xl font-bold">{formatCurrency(totalBalance)}</p>
+                            <p className="text-3xl font-bold">{isBalanceVisible ? formatCurrency(totalBalance) : '******'}</p>
                         </div>
                         <ChevronDownIcon className={`w-6 h-6 text-indigo-200 transition-transform duration-300 ${isTotalExpanded ? 'rotate-180' : ''}`} />
                     </div>
@@ -580,7 +584,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ onClose }) => {
                                     <span className="font-semibold text-slate-800 dark:text-slate-100 text-lg">{acc.name}</span>
                                 </div>
                                 <span className={`font-bold text-lg ${balance >= 0 ? 'text-slate-800 dark:text-slate-100' : 'text-red-600 dark:text-red-400'}`}>
-                                    {formatCurrency(balance)}
+                                    {isBalanceVisible ? formatCurrency(balance) : '******'}
                                 </span>
                             </div>
                         );

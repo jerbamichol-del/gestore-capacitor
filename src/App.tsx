@@ -132,6 +132,32 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     }
   }, [imageForAnalysis]);
 
+  // 8. History/Modal Sync
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      const modal = state?.modal;
+
+      // Close all modals by default, then open the one in state if any
+      setIsQrModalOpen(modal === 'qr');
+      setIsCalculatorContainerOpen(modal === 'calculator');
+      setIsImageSourceModalOpen(modal === 'source');
+      setIsVoiceModalOpen(modal === 'voice');
+      setIsAddModalOpen(modal === 'form');
+      setIsHistoryFilterOpen(modal === 'filter');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [
+    setIsQrModalOpen,
+    setIsCalculatorContainerOpen,
+    setIsImageSourceModalOpen,
+    setIsVoiceModalOpen,
+    setIsAddModalOpen,
+    setIsHistoryFilterOpen
+  ]);
+
   const handleAnalyzeImage = async (image: OfflineImage) => {
     if (!isOnline) { showToast({ message: 'Connettiti a internet per analizzare.', type: 'error' }); return; }
     setSyncingImageId(image.id);

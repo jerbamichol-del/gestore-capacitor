@@ -570,10 +570,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <button onClick={handleNavigateToHistory} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-indigo-900 bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900/60 focus:outline-none active:scale-95 transition-all border border-indigo-200">
                                         <ExpensesDetailedIcon className="w-7 h-7" /> <span className="text-sm">Spese</span>
                                     </button>
-                                    <button onClick={handleNavigateToIncomes} className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-emerald-900 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-900/60 focus:outline-none active:scale-95 transition-all border border-emerald-200 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
+                                    <button
+                                        onClick={handleNavigateToIncomes}
+                                        disabled={!isBalanceVisible}
+                                        className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-emerald-900 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-900/60 focus:outline-none active:scale-95 transition-all border border-emerald-200 ${!isBalanceVisible ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                                    >
                                         <IncomeDetailedIcon className="w-7 h-7" /> <span className="text-sm">Entrate</span>
                                     </button>
-                                    <button onClick={handleNavigateToAccounts} className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-sky-900 bg-sky-100 dark:bg-sky-900/40 dark:text-sky-300 rounded-full hover:bg-sky-200 dark:hover:bg-sky-900/60 focus:outline-none active:scale-95 transition-all border border-sky-200 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
+                                    <button
+                                        onClick={handleNavigateToAccounts}
+                                        disabled={!isBalanceVisible}
+                                        className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-sky-900 bg-sky-100 dark:bg-sky-900/40 dark:text-sky-300 rounded-full hover:bg-sky-200 dark:hover:bg-sky-900/60 focus:outline-none active:scale-95 transition-all border border-sky-200 ${!isBalanceVisible ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                                    >
                                         <AccountsDetailedIcon className="w-7 h-7" /> <span className="text-sm">Conti</span>
                                     </button>
                                 </div>

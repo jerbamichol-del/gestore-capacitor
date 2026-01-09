@@ -24,7 +24,7 @@ const PinInput: React.FC<PinInputProps> = ({ pin, onPinChange, pinLength = 4, on
   };
 
   const PinDots = () => (
-    <div className="flex justify-center space-x-4 mb-6">
+    <div className="flex justify-center gap-3 mb-6">
       {Array.from({ length: pinLength }).map((_, index) => (
         <div
           key={index}
