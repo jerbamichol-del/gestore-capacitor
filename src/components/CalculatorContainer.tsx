@@ -1,4 +1,4 @@
-// CalculatorContainer.tsx
+﻿// CalculatorContainer.tsx
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Expense, Account } from '../types';
 import CalculatorInputScreen from './CalculatorInputScreen';
@@ -6,8 +6,6 @@ import TransactionDetailPage from './TransactionDetailPage';
 import { useSwipe } from '../hooks/useSwipe';
 import { useTapBridge } from '../hooks/useTapBridge';
 import { toYYYYMMDD } from '../utils/date';
-import SmoothPullTab from './SmoothPullTab';
-import { ChevronDown } from 'lucide-react';
 
 interface CalculatorContainerProps {
   isOpen: boolean;
@@ -41,7 +39,7 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
   onClose,
   onSubmit,
   accounts,
-  onMenuStateChange = (_isOpen: boolean) => { },
+  onMenuStateChange = (_isOpen: boolean) => {},
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [view, setView] = useState<'calculator' | 'details'>('calculator');
@@ -173,32 +171,32 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
     if (isSubmitting || submittingRef.current) return;
     setIsSubmitting(true);
     submittingRef.current = true;
-
-    // ✅ Se stiamo in TransactionDetailPage, chiudi prima quella pagina
+    
+    // Ô£à Se stiamo in TransactionDetailPage, chiudi prima quella pagina
     if (view === 'details') {
       setView('calculator');
       window.history.back();
     }
-
-    // Poi chiama onSubmit che chiuderà anche la calcolatrice
+    
+    // Poi chiama onSubmit che chiuder├á anche la calcolatrice
     onSubmit(data);
   }, [isSubmitting, onSubmit, view]);
 
   const currentTransform = useMemo(() => {
-    let base = view === 'calculator' ? 0 : -50;
-    let shift = 0;
+      let base = view === 'calculator' ? 0 : -50;
+      let shift = 0;
 
-    if (isSwiping) {
-      shift = progress * 50;
-      if (view === 'calculator') {
-        if (shift > 0) shift = 0;
-        if (formData.type === 'transfer' && shift < 0) shift = 0;
-      } else {
-        if (shift < 0) shift = 0;
+      if (isSwiping) {
+          shift = progress * 50;
+          if (view === 'calculator') {
+              if (shift > 0) shift = 0;
+              if (formData.type === 'transfer' && shift < 0) shift = 0;
+          } else {
+              if (shift < 0) shift = 0;
+          }
       }
-    }
-
-    return `translateX(${base + shift}%)`;
+      
+      return `translateX(${base + shift}%)`;
   }, [view, isSwiping, progress, formData.type]);
 
   if (!isOpen && !isAnimating) return null;
@@ -209,49 +207,36 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
       className={`fixed inset-0 z-[5000] bg-slate-100 transition-transform duration-300 ease-in-out pb-[env(safe-area-inset-bottom)] ${isAnimating ? 'translate-y-0' : 'translate-y-full'}`}
       {...tapBridgeHandlers}
     >
-      {/* Pull Tab / Linguetta */}
-      <div
-        className="absolute top-0 left-0 right-0 h-8 flex justify-center items-start cursor-grab z-10"
-        style={{ transform: 'translateY(-19px)' }}
-        onPointerDown={(e) => {
-          // Allow dragging from the tab as well
-          (containerRef.current as any)?._handlePointerDown?.(e);
-        }}
-      >
-        <SmoothPullTab width="88" height="19" className="fill-slate-100 dark:fill-slate-950 transition-colors" />
-        <ChevronDown className="absolute top-0.5 w-5 h-5 text-slate-400 dark:text-slate-500" />
-      </div>
-
-      <div
+      <div 
         className="flex flex-row w-[200%] h-full will-change-transform"
-        style={{
-          transform: currentTransform,
-          transition: isSwiping ? 'none' : 'transform 0.12s ease-out'
+        style={{ 
+            transform: currentTransform,
+            transition: isSwiping ? 'none' : 'transform 0.12s ease-out'
         }}
       >
         <div className="w-1/2 h-full shrink-0 relative">
-          <CalculatorInputScreen
-            onClose={onClose}
-            onSubmit={handleSubmit}
-            accounts={accounts}
-            formData={formData}
-            onFormChange={handleFormChange}
-            onMenuStateChange={onMenuStateChange}
-            isDesktop={isDesktop}
-            onNavigateToDetails={() => navigateTo('details')}
-          />
+            <CalculatorInputScreen
+              onClose={onClose}
+              onSubmit={handleSubmit}
+              accounts={accounts}
+              formData={formData}
+              onFormChange={handleFormChange}
+              onMenuStateChange={onMenuStateChange}
+              isDesktop={isDesktop}
+              onNavigateToDetails={() => navigateTo('details')}
+            />
         </div>
         <div className="w-1/2 h-full shrink-0 relative">
-          <TransactionDetailPage
-            formData={formData}
-            onFormChange={handleFormChange}
-            accounts={accounts}
-            onClose={() => navigateTo('calculator')}
-            onSubmit={handleSubmit}
-            isDesktop={isDesktop}
-            onMenuStateChange={onMenuStateChange}
-            dateError={dateError}
-          />
+            <TransactionDetailPage
+              formData={formData}
+              onFormChange={handleFormChange}
+              accounts={accounts}
+              onClose={() => navigateTo('calculator')}
+              onSubmit={handleSubmit}
+              isDesktop={isDesktop}
+              onMenuStateChange={onMenuStateChange}
+              dateError={dateError}
+            />
         </div>
       </div>
     </div>
