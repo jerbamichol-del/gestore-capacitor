@@ -62,9 +62,10 @@ const BANK_CONFIGS: BankConfig[] = [
     identifier: 'UNICREDIT',
     accountName: 'UniCredit',
     patterns: {
-      expense: /(?:Addebito|Pagamento|autorizzata|Transazione).*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+)/i,
-      income: /(?:Accredito|bonifico).*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?/i,
-      transfer: /Bonifico.*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
+      // ✅ FIX: Pattern for "autorizzata op.Internet 60,40 EUR carta *1210 c/o PAYPAL"
+      expense: /(?:autorizzata|Addebito|Pagamento|Transazione)\s+(?:op\.?\w*\s+)?(\d+[.,]\d{2})\s*(?:EUR|€).*?(?:c\/o|presso|at)\s+(.+?)(?:\s+\d{6,}|\s+\d{2}\/\d{2}\/\d{2}|Per info|$)/i,
+      income: /(?:Accredito|bonifico).*?€?\s*(\d+[.,]\d{2})\s*(?:EUR)?/i,
+      transfer: /Bonifico.*?€?\s*(\d+[.,]\d{2})\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
     }
   },
   {

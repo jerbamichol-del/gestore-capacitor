@@ -81,10 +81,11 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'unicredit',
     accountName: 'UniCredit',
     patterns: {
-      // ✅ EXPANDED: "autorizzata op.Internet" + "Bonifico Istantaneo" + Emojis
-      expense: /(?:Addebito|Pagamento|autorizzata|Transazione).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at|c\/o|carta.*?c\/o)\s+(.+?)(?:\s+\d{2}\/\d{2}\/\d{2}|$)/i,
-      income: /(?:Accredito|bonifico).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
-      transfer: /Bonifico.*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
+      // ✅ FIX: Pattern for "autorizzata op.Internet 60,40 EUR carta *1210 c/o PAYPAL *KICKKICK.IT"
+      // Amount comes BEFORE "carta" or "c/o", so we capture it right after the keyword
+      expense: /(?:autorizzata|Addebito|Pagamento|Transazione)\s+(?:op\.?\w*\s+)?(\d+[.,]\d{2})\s*(?:EUR|€).*?(?:c\/o|presso|at)\s+(.+?)(?:\s+\d{6,}|\s+\d{2}\/\d{2}\/\d{2}|Per info|$)/i,
+      income: /(?:Accredito|bonifico).*?€?\s*(\d+[.,]\d{2})\s*(?:EUR)?/i,
+      transfer: /Bonifico.*?€?\s*(\d+[.,]\d{2})\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
     }
   }
 ];
