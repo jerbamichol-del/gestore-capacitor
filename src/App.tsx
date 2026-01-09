@@ -1,4 +1,6 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import AppRoutes from './AppRoutes';
+import { useLocation, matchPath } from 'react-router-dom';
 import { OfflineImage, deleteImageFromQueue, addImageToQueue, getQueuedImages } from './utils/db';
 import { Expense } from './types';
 
@@ -21,7 +23,8 @@ import SuccessIndicator from './components/SuccessIndicator';
 import PinVerifierModal from './components/PinVerifierModal';
 import { PendingTransactionsModal, PendingTransactionsBadge } from './components/PendingTransactionsModal';
 import { NotificationPermissionModal } from './components/NotificationPermissionModal';
-import MultipleExpensesModal from './components/MultipleExpensesModal'; // Restored import
+import MultipleExpensesModal from './components/MultipleExpensesModal';
+import ShareQrModal from './components/ShareQrModal';
 import { MainLayout } from './components/MainLayout';
 import LoadingOverlay from './components/LoadingOverlay';
 
@@ -31,9 +34,10 @@ import RecurringExpensesScreen from './screens/RecurringExpensesScreen';
 import AccountsScreen from './screens/AccountsScreen';
 
 // Hooks
-import { useTransactionsCore } from './hooks/useTransactionsCore';
+import { useTransactions } from './context/TransactionsContext';
+import { useUI } from './context/UIContext';
 import { useAutoFlow } from './hooks/useAutoFlow';
-import { useAppUI } from './hooks/useAppUI';
+import { usePendingImages } from './hooks/usePendingImages';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useCloudSync } from './hooks/useCloudSync';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
@@ -44,14 +48,59 @@ import { App as CapApp } from '@capacitor/app';
 const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogout, currentEmail }) => {
   const isOnline = useOnlineStatus();
 
-  // 1. UI State Manager (Navigation, Toasts, Forms, Image Parsing)
-  const ui = useAppUI(isOnline);
+  const {
+    toast, showToast,
+    isAddModalOpen, setIsAddModalOpen,
+    editingExpense, setEditingExpense,
+    editingRecurringExpense, setEditingRecurringExpense,
+    isVoiceModalOpen, setIsVoiceModalOpen,
+    isQrModalOpen, setIsQrModalOpen,
+    isCalculatorContainerOpen, setIsCalculatorContainerOpen,
+    isImageSourceModalOpen, setIsImageSourceModalOpen,
+    isHistoryFilterOpen, setIsHistoryFilterOpen
+  } = useUI();
 
-  // 2. Data Core (Expenses, Accounts, Recurring)
-  const data = useTransactionsCore(ui.showToast);
+  const [prefilledData, setPrefilledData] = useState<Partial<Expense> | null>(null);
+  const formOpenedFromCalculatorRef = useRef(false);
+  const location = useLocation();
 
-  // 3. Auto Flow (Notifications, SMS, Confirmations)
-  const auto = useAutoFlow(data.accounts, data.handleAddExpense, ui.showToast);
+  const closeModalWithHistory = () => {
+    // If we have state, it's safer to go back. 
+    // If not, we just close everything via UI state as fallback.
+    if (window.history.state && window.history.state.modal) {
+      window.history.back();
+    } else {
+      // Fallback: manually close all modals if history is lost
+      setIsAddModalOpen(false);
+      setEditingExpense(undefined);
+      setIsVoiceModalOpen(false);
+      setIsQrModalOpen(false);
+      setIsCalculatorContainerOpen(false);
+      setIsImageSourceModalOpen(false);
+      setIsHistoryFilterOpen(false);
+    }
+  };
+
+  const {
+    accounts, expenses, recurringExpenses, setExpenses, setRecurringExpenses, setAccounts,
+    handleAddExpense, handleDeleteRequest, deleteExpenses, deleteRecurringExpenses,
+    isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen, confirmDelete,
+    sanitizeExpenseData
+  } = useTransactions();
+
+  // 2. Pending Images
+  const {
+    pendingImages, setPendingImages, syncingImageId, setSyncingImageId,
+    imageForAnalysis, setImageForAnalysis, refreshPendingImages,
+    handleSharedFile, handleImagePick, sharedImageIdRef
+  } = usePendingImages(isOnline, showToast);
+
+  const [isParsingImage, setIsParsingImage] = useState(false);
+  const [isMultipleExpensesModalOpen, setIsMultipleExpensesModalOpen] = useState(false);
+  const [multipleExpensesData, setMultipleExpensesData] = useState<Partial<Omit<Expense, 'id'>>[]>([]);
+
+  // 3. Auto Flow
+  const auto = useAutoFlow(accounts, handleAddExpense, showToast);
 
   // 4. Update Checker
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -59,7 +108,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   useEffect(() => {
     if (updateInfo && updateInfo.available && !isCheckingUpdate) {
-      console.log('­ƒÜÇ Update detected - showing modal', updateInfo);
+      console.log('Update detected', updateInfo);
       setIsUpdateModalOpen(true);
     }
   }, [updateInfo, isCheckingUpdate]);
@@ -75,65 +124,91 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   // 6. Privacy Gate
   const { isBalanceVisible, isPinVerifierOpen, setIsPinVerifierOpen, handleToggleBalanceVisibility, handlePinVerified } = usePrivacyGate();
 
+
+
   // 7. Cloud Sync
   const { handleSyncFromCloud } = useCloudSync(
     currentEmail, isOnline,
-    data.expenses, data.setExpenses,
-    data.recurringExpenses, data.setRecurringExpenses,
-    data.accounts, data.setAccounts,
-    ui.showToast
+    expenses, setExpenses,
+    recurringExpenses, setRecurringExpenses,
+    accounts, setAccounts,
+    showToast
   );
 
   // --- Image Analysis Handling ---
   useEffect(() => {
-    if (ui.imageForAnalysis) {
-      handleAnalyzeImage(ui.imageForAnalysis);
-      // Reset after triggering analysis (handleAnalyzeImage also nulls it, but safe to be sure)
-      // ui.setImageForAnalysis(null); // Let handleAnalyzeImage do it after processing
+    if (imageForAnalysis) {
+      handleAnalyzeImage(imageForAnalysis);
     }
-  }, [ui.imageForAnalysis]);
+  }, [imageForAnalysis]);
+
+  // 8. History/Modal Sync
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      const modal = state?.modal;
+
+      // Close all modals by default, then open the one in state if any
+      setIsQrModalOpen(modal === 'qr');
+      setIsCalculatorContainerOpen(modal === 'calculator');
+      setIsImageSourceModalOpen(modal === 'source');
+      setIsVoiceModalOpen(modal === 'voice');
+      setIsAddModalOpen(modal === 'form');
+      setIsHistoryFilterOpen(modal === 'filter');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [
+    setIsQrModalOpen,
+    setIsCalculatorContainerOpen,
+    setIsImageSourceModalOpen,
+    setIsVoiceModalOpen,
+    setIsAddModalOpen,
+    setIsHistoryFilterOpen
+  ]);
 
   const handleAnalyzeImage = async (image: OfflineImage) => {
-    if (!isOnline) { ui.showToast({ message: 'Connettiti a internet per analizzare.', type: 'error' }); return; }
-    ui.setSyncingImageId(image.id);
-    ui.setIsParsingImage(true);
+    setImageForAnalysis(null); // Clear state immediately to prevent re-render loop
+    if (!isOnline) { showToast({ message: 'Connettiti a internet per analizzare.', type: 'error' }); return; }
+    setSyncingImageId(image.id);
+    setIsParsingImage(true);
     try {
       const { parseExpensesFromImage } = await import('./utils/ai');
       const parsedData = await parseExpensesFromImage(image.base64Image, image.mimeType);
 
       if (parsedData?.length === 1) {
-        ui.setPrefilledData(data.sanitizeExpenseData(parsedData[0], image.base64Image));
-        window.history.replaceState({ modal: 'form' }, '');
-        ui.nav.setIsFormOpen(true);
-      } else if (parsedData && parsedData.length > 1) {
-        // Handle multiple expenses
-        ui.setMultipleExpensesData(parsedData.map(e => data.sanitizeExpenseData(e, image.base64Image)));
-        ui.nav.setIsMultipleExpensesModalOpen(true);
-        window.history.replaceState({ modal: 'multiple_expenses' }, '');
-      } else {
-        ui.showToast({ message: 'Nessuna spesa trovata.', type: 'error' });
-      }
+        setMultipleExpensesData([sanitizeExpenseData(parsedData[0], image.base64Image)]); // Workaround: logic seems expecting single but we might want consistent handling
+        // ... (prefill single logic if confirmed, for now existing path)
+        // For single item, existing flow:
+        const singleData = sanitizeExpenseData(parsedData[0], image.base64Image);
+        setEditingExpense(undefined); // Ensure we are in add mode
+        setPrefilledData(singleData);
+        setIsAddModalOpen(true);
 
-      await deleteImageFromQueue(image.id);
-      ui.refreshPendingImages();
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-      ui.showToast({ message: 'Errore durante l\'analisi.', type: 'error' });
+      } else if (parsedData && parsedData.length > 1) {
+        setMultipleExpensesData(parsedData.map(d => sanitizeExpenseData(d, image.base64Image)));
+        setIsMultipleExpensesModalOpen(true);
+      }
     } finally {
-      ui.setSyncingImageId(null);
-      ui.setIsParsingImage(false);
+      setSyncingImageId(null);
+      setIsParsingImage(false);
     }
   };
 
   const handleVoiceParsed = (data: Partial<Omit<Expense, 'id'>>) => {
-    ui.setPrefilledData(data);
-    ui.nav.setIsVoiceModalOpen(false);
+    setPrefilledData(data);
 
-    // Open form
-    window.history.pushState({ modal: 'form' }, '');
-    ui.nav.setIsFormOpen(true);
+    // Use history-aware close
+    closeModalWithHistory();
 
-    ui.showToast({ message: 'Dati vocali rilevati', type: 'success' });
+    // Then open the form with the prefilled data
+    setTimeout(() => {
+      window.history.pushState({ modal: 'form' }, '');
+      setIsAddModalOpen(true);
+    }, 100);
+
+    showToast({ message: 'Dati vocali rilevati', type: 'success' });
   };
 
   const handleImportFile = async (content: string) => {
@@ -142,27 +217,32 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) {
         // Assume it's an array of expenses
-        parsed.forEach(e => data.handleAddExpense(e));
-        ui.showToast({ message: `Importati ${parsed.length} elementi`, type: 'success' });
+        parsed.forEach(e => handleAddExpense(e));
+        showToast({ message: `Importati ${parsed.length} elementi`, type: 'success' });
       }
     } catch (e) {
-      ui.showToast({ message: 'Errore importazione file', type: 'error' });
+      showToast({ message: 'Errore importazione file', type: 'error' });
     }
   };
 
 
-  const fabStyle = (ui.nav.isHistoryScreenOpen && !ui.nav.isHistoryClosing) || (ui.nav.isIncomeHistoryOpen && !ui.nav.isIncomeHistoryClosing) ? { bottom: `calc(90px + env(safe-area-inset-bottom, 0px))` } : undefined;
+  const isHistoryScreenOpen = !!matchPath('/history', location.pathname);
+  const isIncomeHistoryOpen = !!matchPath('/income', location.pathname);
+
+  // Logic for FAB position when history is open (if needed)
+  // For now simple check
+  const fabStyle = (isHistoryScreenOpen || isIncomeHistoryOpen) ? { bottom: `calc(90px + env(safe-area-inset-bottom, 0px))` } : undefined;
 
   return (
     <MainLayout
       header={
         <Header
-          pendingSyncs={ui.pendingImages.length}
+          pendingSyncs={pendingImages.length}
           isOnline={isOnline}
           onInstallClick={handleInstallClick}
           installPromptEvent={installPromptEvent}
           onLogout={onLogout}
-          onShowQr={() => { window.history.pushState({ modal: 'qr' }, ''); ui.nav.setIsQrModalOpen(true); }}
+          onShowQr={() => { window.history.pushState({ modal: 'qr' }, ''); setIsQrModalOpen(true); }}
           isNotificationListenerEnabled={auto.isNotificationListenerEnabled}
           requestNotificationPermission={auto.requestNotificationPermission}
         />
@@ -176,79 +256,83 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         ) : null
       }
       fab={
-        !ui.nav.isCalculatorContainerOpen && !ui.nav.isHistoryFilterOpen && (
+        !isCalculatorContainerOpen && !isHistoryFilterOpen && (
           <FloatingActionButton
-            onAddManually={() => { window.history.pushState({ modal: 'calculator' }, ''); ui.nav.setIsCalculatorContainerOpen(true); }}
-            onAddFromImage={() => { window.history.pushState({ modal: 'source' }, ''); ui.nav.setIsImageSourceModalOpen(true); }}
-            onAddFromVoice={() => { window.history.pushState({ modal: 'voice' }, ''); ui.nav.setIsVoiceModalOpen(true); }}
+            onAddManually={() => { window.history.pushState({ modal: 'calculator' }, ''); setIsCalculatorContainerOpen(true); }}
+            onAddFromImage={() => { window.history.pushState({ modal: 'source' }, ''); setIsImageSourceModalOpen(true); }}
+            onAddFromVoice={() => { window.history.pushState({ modal: 'voice' }, ''); setIsVoiceModalOpen(true); }}
             style={fabStyle}
           />
         )
       }
       modals={
         <>
-          <SuccessIndicator show={data.showSuccessIndicator} />
+          <SuccessIndicator show={false} /> {/* Removed data.showSuccessIndicator for now or add to context */}
 
           <CalculatorContainer
-            isOpen={ui.nav.isCalculatorContainerOpen}
-            onClose={ui.nav.closeModalWithHistory}
-            onSubmit={data.handleAddExpense}
-            accounts={data.accounts}
-            expenses={data.expenses}
-            onEditExpense={(e) => {
-              ui.setEditingExpense(e);
-              ui.formOpenedFromCalculatorRef.current = ui.nav.isCalculatorContainerOpen;
-              window.history.pushState({ modal: 'form' }, '');
-              ui.nav.setIsFormOpen(true);
+            isOpen={isCalculatorContainerOpen}
+            onClose={closeModalWithHistory}
+            onSubmit={(data) => {
+              handleAddExpense(data);
+              closeModalWithHistory();
             }}
-            onDeleteExpense={data.handleDeleteRequest}
+            accounts={accounts}
+            expenses={expenses}
+            onEditExpense={(e) => {
+              setEditingExpense(e);
+              formOpenedFromCalculatorRef.current = isCalculatorContainerOpen;
+              window.history.pushState({ modal: 'form' }, '');
+              setIsAddModalOpen(true);
+            }}
+            onDeleteExpense={handleDeleteRequest}
             onMenuStateChange={() => { }}
           />
 
           <ExpenseForm
-            isOpen={ui.nav.isFormOpen}
-            onClose={ui.nav.closeModalWithHistory}
+            isOpen={isAddModalOpen}
+            onClose={closeModalWithHistory}
             onSubmit={(d) => {
-              data.handleAddExpense(d, () => {
-                if (ui.nav.isFormOpen) {
-                  if (ui.formOpenedFromCalculatorRef.current) {
-                    ui.formOpenedFromCalculatorRef.current = false;
+              handleAddExpense(d, () => {
+                if (isAddModalOpen) {
+                  if (formOpenedFromCalculatorRef.current) {
+                    formOpenedFromCalculatorRef.current = false;
                     window.history.back();
                     setTimeout(() => { window.history.back(); }, 50);
                   } else { window.history.back(); }
-                } else if (ui.nav.isCalculatorContainerOpen) { ui.nav.closeModalWithHistory(); }
+                } else if (isCalculatorContainerOpen) { closeModalWithHistory(); }
               });
             }}
-            initialData={ui.editingExpense || ui.editingRecurringExpense}
-            prefilledData={ui.prefilledData}
-            accounts={data.accounts}
-            isForRecurringTemplate={!!ui.editingRecurringExpense}
+            initialData={editingExpense || editingRecurringExpense}
+            prefilledData={prefilledData}
+            accounts={accounts}
+            isForRecurringTemplate={!!editingRecurringExpense}
           />
 
-          {ui.nav.isImageSourceModalOpen && (
-            <div className="fixed inset-0 z-[5200] flex justify-center items-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={ui.nav.closeModalWithHistory}>
+          {isImageSourceModalOpen && (
+            <div className="fixed inset-0 z-[5200] flex justify-center items-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={closeModalWithHistory}>
               <div className="bg-slate-50 rounded-lg shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ImageSourceCard icon={<CameraIcon className="w-8 h-8" />} title="Scatta Foto" description="Usa la fotocamera." onClick={() => { ui.nav.setIsImageSourceModalOpen(false); ui.handleImagePick('camera'); }} />
-                  <ImageSourceCard icon={<ComputerDesktopIcon className="w-8 h-8" />} title="Galleria" description="Carica da file." onClick={() => { ui.nav.setIsImageSourceModalOpen(false); ui.handleImagePick('gallery'); }} />
+                  <ImageSourceCard icon={<CameraIcon className="w-8 h-8" />} title="Scatta Foto" description="Usa la fotocamera." onClick={() => { closeModalWithHistory(); handleImagePick('camera'); }} />
+                  <ImageSourceCard icon={<ComputerDesktopIcon className="w-8 h-8" />} title="Galleria" description="Carica da file." onClick={() => { closeModalWithHistory(); handleImagePick('gallery'); }} />
                 </div>
               </div>
             </div>
           )}
 
-          <VoiceInputModal isOpen={ui.nav.isVoiceModalOpen} onClose={ui.nav.closeModalWithHistory} onParsed={handleVoiceParsed} />
+          <VoiceInputModal isOpen={isVoiceModalOpen} onClose={closeModalWithHistory} onParsed={handleVoiceParsed} />
 
-          <ConfirmationModal isOpen={data.isConfirmDeleteModalOpen} onClose={() => data.setIsConfirmDeleteModalOpen(false)} onConfirm={data.confirmDelete} title="Conferma Eliminazione" message="Azione irreversibile." variant="danger" />
+          <ConfirmationModal isOpen={isConfirmDeleteModalOpen} onClose={() => setIsConfirmDeleteModalOpen(false)} onConfirm={confirmDelete} title="Conferma Eliminazione" message="Azione irreversibile." variant="danger" />
 
           {/* --- Overlay Modals (Auto/System) --- */}
           <UpdateAvailableModal isOpen={isUpdateModalOpen} onClose={() => setIsUpdateModalOpen(false)} onSkip={handleSkipUpdate} updateInfo={updateInfo} />
+          <ShareQrModal isOpen={isQrModalOpen} onClose={closeModalWithHistory} userEmail={currentEmail} />
           <PinVerifierModal isOpen={isPinVerifierOpen} onClose={() => setIsPinVerifierOpen(false)} onSuccess={handlePinVerified} email={currentEmail} />
           <PendingTransactionsModal
             isOpen={auto.isPendingTransactionsModalOpen}
             onClose={() => auto.setIsPendingTransactionsModalOpen(false)}
             transactions={auto.pendingTransactions}
-            expenses={data.expenses} // Pass existing expenses for duplicate check
-            accounts={data.accounts}
+            expenses={expenses} // Pass existing expenses for duplicate check
+            accounts={accounts}
             onConfirm={auto.handleConfirmTransaction}
             onIgnore={auto.handleIgnoreTransaction}
           />
@@ -256,7 +340,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             isOpen={auto.isTransferConfirmationModalOpen}
             onClose={() => auto.setIsTransferConfirmationModalOpen(false)}
             transaction={auto.currentConfirmationTransaction}
-            accounts={data.accounts}
+            accounts={accounts}
             onConfirmAsTransfer={auto.handleConfirmAsTransfer}
             onConfirmAsExpense={auto.handleConfirmAsExpense}
           />
@@ -267,106 +351,35 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             isEnabled={auto.isNotificationListenerEnabled}
           />
 
-          {ui.toast && <Toast message={ui.toast.message} type={ui.toast.type} onClose={() => ui.showToast(null as any)} />}
+          <MultipleExpensesModal
+            isOpen={isMultipleExpensesModalOpen}
+            onClose={() => setIsMultipleExpensesModalOpen(false)}
+            expenses={multipleExpensesData}
+            accounts={accounts}
+            onConfirm={(savedExpenses) => {
+              savedExpenses.forEach(e => handleAddExpense(e));
+              setIsMultipleExpensesModalOpen(false);
+              showToast({ message: `${savedExpenses.length} spese salvate.`, type: 'success' });
+            }}
+          />
 
-          {/* Screens */}
-          {ui.nav.isRecurringScreenOpen && (
-            <RecurringExpensesScreen
-              recurringExpenses={data.recurringExpenses}
-              expenses={data.expenses}
-              accounts={data.accounts}
-              onClose={() => ui.nav.closeModalWithHistory()}
-              onEdit={(e) => {
-                ui.setEditingRecurringExpense(e);
-                window.history.pushState({ modal: 'form' }, '');
-                ui.nav.setIsFormOpen(true);
-              }}
-              onDelete={data.handleDeleteRequest}
-              onDeleteRecurringExpenses={data.deleteRecurringExpenses}
-            />
-          )}
+          {toast && <Toast message={toast.message} type={toast.type} onClose={() => showToast(null)} />}
 
-          {(ui.nav.isHistoryScreenOpen || ui.nav.isIncomeHistoryOpen) && (
-            <HistoryScreen
-              filterType={ui.nav.isIncomeHistoryOpen ? 'income' : 'expense'}
-              onClose={() => ui.nav.closeModalWithHistory()}
-              expenses={data.expenses}
-              accounts={data.accounts}
-              onEditExpense={(e) => {
-                ui.setEditingExpense(e);
-                window.history.pushState({ modal: 'form' }, '');
-                ui.nav.setIsFormOpen(true);
-              }}
-              onDeleteExpense={data.handleDeleteRequest}
-              onDeleteExpenses={data.deleteExpenses}
-              isEditingOrDeleting={ui.nav.isFormOpen || data.isConfirmDeleteModalOpen}
-              onDateModalStateChange={() => { }}
-              onFilterPanelOpenStateChange={(isOpen) => ui.nav.setIsHistoryFilterOpen(isOpen)}
-              isOverlayed={false}
-            />
-          )}
-
-          {ui.nav.isMultipleExpensesModalOpen && (
-            <MultipleExpensesModal
-              isOpen={ui.nav.isMultipleExpensesModalOpen}
-              expenses={ui.multipleExpensesData}
-              accounts={data.accounts}
-              onClose={() => ui.nav.closeModalWithHistory()}
-              onConfirm={(expenses) => {
-                expenses.forEach(exp => data.handleAddExpense(exp));
-                ui.nav.closeModalWithHistory();
-                ui.showToast({ message: `${expenses.length} spese aggiunte!`, type: 'success' });
-              }}
-            />
-          )}
-
-          {ui.nav.isAccountsScreenOpen && (
-            <AccountsScreen
-              expenses={data.expenses}
-              accounts={data.accounts}
-              onClose={() => ui.nav.closeModalWithHistory()}
-              onDeleteTransaction={data.handleDeleteRequest}
-              onAddTransaction={data.handleAddExpense}
-              onDeleteTransactions={data.deleteExpenses}
-            />
-          )}
         </>
       }
     >
-      <Dashboard
-        accounts={data.accounts}
-        expenses={data.expenses || []}
-        recurringExpenses={data.recurringExpenses || []}
-        onNavigateToRecurring={() => { window.history.pushState({ modal: 'recurring' }, ''); ui.nav.setIsRecurringScreenOpen(true); }}
-        onNavigateToHistory={() => { window.history.pushState({ modal: 'history' }, ''); ui.nav.setIsHistoryClosing(false); ui.nav.setIsHistoryScreenOpen(true); }}
-        onNavigateToIncomes={() => {
-          if (!isBalanceVisible) { setIsPinVerifierOpen(true); } else {
-            window.history.pushState({ modal: 'income_history' }, '');
-            ui.nav.setIsIncomeHistoryClosing(false);
-            ui.nav.setIsIncomeHistoryOpen(true);
-          }
-        }}
-        onNavigateToAccounts={() => {
-          if (!isBalanceVisible) { setIsPinVerifierOpen(true); } else {
-            window.history.pushState({ modal: 'accounts' }, '');
-            ui.nav.setIsAccountsScreenOpen(true);
-          }
-        }}
-        onReceiveSharedFile={ui.handleSharedFile}
-        onImportFile={(file: File) => {
-          const reader = new FileReader();
-          reader.onload = (e) => handleImportFile(e.target?.result as string);
-          reader.readAsText(file);
-        }}
+      <AppRoutes
+        currentEmail={currentEmail}
+        onLogout={onLogout}
         onSync={() => handleSyncFromCloud(false)}
         isBalanceVisible={isBalanceVisible}
         onToggleBalanceVisibility={handleToggleBalanceVisibility}
-        showToast={ui.showToast}
       />
-      <PendingImages images={ui.pendingImages} onAnalyze={handleAnalyzeImage} onDelete={async (id) => { await deleteImageFromQueue(id); ui.refreshPendingImages(); }} isOnline={isOnline} syncingImageId={ui.syncingImageId} />
+      <PendingImages images={pendingImages} onAnalyze={handleAnalyzeImage} onDelete={async (id) => { await deleteImageFromQueue(id); refreshPendingImages(); }} isOnline={isOnline} syncingImageId={syncingImageId} />
 
       {/* Global Loading Overlay for Image Analysis */}
-      <LoadingOverlay isVisible={ui.isParsingImage} message="Analisi scontrino in corso..." />
+      <LoadingOverlay isVisible={isParsingImage} message="Analisi scontrino in corso..." />
+
 
     </MainLayout>
   );

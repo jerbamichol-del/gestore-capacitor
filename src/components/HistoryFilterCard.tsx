@@ -1,4 +1,4 @@
-﻿
+
 import React, {
   useState,
   useRef,
@@ -64,7 +64,7 @@ interface HistoryFilterCardProps {
 /* -------------------- Checkbox Component -------------------- */
 export const Checkbox: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked, onChange }) => (
   <div
-    className={`w-6 h-6 rounded border flex items-center justify-center transition-colors cursor-pointer ${checked ? 'bg-indigo-600 border-black' : 'bg-white border-black'}`}
+    className={`w-6 h-6 rounded border flex items-center justify-center transition-colors cursor-pointer ${checked ? 'bg-indigo-600 dark:bg-indigo-500 border-indigo-600 dark:border-indigo-500' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700'}`}
     onClick={(e) => { e.stopPropagation(); onChange(); }}
     onPointerDown={(e) => e.stopPropagation()}
   >
@@ -107,8 +107,8 @@ export const QuickFilterControl: React.FC<{
               `flex-1 flex items-center justify-center px-2 text-center font-semibold ${compact ? 'text-xs' : 'text-sm'} transition-colors duration-200 focus:outline-none ` +
               (i > 0 ? 'border-l ' : '') +
               (active
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : `bg-slate-100 text-slate-700 hover:bg-slate-200 ${isActive ? 'border-indigo-600' : 'border-indigo-200'
+                ? 'bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-500'
+                : `bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 ${isActive ? 'border-indigo-600 dark:border-indigo-500' : 'border-indigo-200 dark:border-slate-800'
                 }`)
             }
             {...tapBridge}
@@ -130,7 +130,7 @@ export const CustomDateRangeInputs: React.FC<{
   tapBridge?: any;
 }> = ({ range, onChange, isActive, compact, tapBridge }) => {
   // MODIFICATO: Colori sempre attivi (Indigo) come richiesto
-  const textColor = 'text-indigo-700';
+  const textColor = 'text-indigo-700 dark:text-indigo-400';
   const textSize = 'text-sm font-semibold';
 
   const formatDate = (iso: string) => {
@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
   return (
     <div
       className={
-        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-indigo-600 bg-indigo-50`
+        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30`
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -179,7 +179,7 @@ export const CustomDateRangeInputs: React.FC<{
           {...tapBridge}
         />
       </label>
-      <div className="w-px my-1 bg-indigo-200" />
+      <div className="w-px my-1 bg-indigo-200 dark:bg-indigo-800" />
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
         <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor}`}>
           {range.end ? formatDate(range.end) : 'Al'}
@@ -331,25 +331,25 @@ export const PeriodNavigator: React.FC<{
       <div
         ref={wrapperRef}
         className={
-          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg bg-white border-indigo-600`
+          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg bg-white dark:bg-slate-900 border-indigo-600 dark:border-indigo-500 transition-colors`
         }
       >
         <button
           onClick={() => step(-1)}
           type="button"
-          className={`h-full px-4 rounded-l-lg ${compact ? '' : 'hover:bg-slate-100'}`}
+          className={`h-full px-4 rounded-l-lg transition-colors ${compact ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           aria-label="Periodo precedente"
           data-no-drag
           {...tapBridge}
         >
-          <ChevronLeftIcon className="w-5 h-5 text-slate-700" />
+          <ChevronLeftIcon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
         </button>
         <button
           onClick={() => onMenuToggle(!isMenuOpen)}
           type="button"
           className={
-            `flex-1 h-full text-sm font-semibold bg-indigo-100 text-indigo-700 ` +
-            (compact ? '' : ' hover:bg-indigo-200')
+            `flex-1 h-full text-sm font-semibold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 transition-colors ` +
+            (compact ? '' : ' hover:bg-indigo-200 dark:hover:bg-indigo-900/60')
           }
           data-no-drag
           {...tapBridge}
@@ -359,17 +359,17 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(+1)}
           type="button"
-          className={`h-full px-4 rounded-r-lg ${compact ? '' : 'hover:bg-slate-100'}`}
+          className={`h-full px-4 rounded-r-lg transition-colors ${compact ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           aria-label="Periodo successivo"
           data-no-drag
           {...tapBridge}
         >
-          <ChevronRightIcon className="w-5 h-5 text-slate-700" />
+          <ChevronRightIcon className="w-5 h-5 text-slate-700 dark:text-slate-300 transition-colors" />
         </button>
 
         {isMenuOpen && (
           <div
-            className={`absolute left-0 right-0 mx-auto w-40 bg-white border border-slate-200 shadow-lg rounded-lg z-[1000] p-2 space-y-1 ${isPanelOpen ? 'top-full mt-1' : 'bottom-full mb-10'
+            className={`absolute left-0 right-0 mx-auto w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-lg z-[1000] p-2 space-y-1 transition-colors ${isPanelOpen ? 'top-full mt-1' : 'bottom-full mb-10'
               }`}
           >
             {(['day', 'week', 'month', 'year'] as PeriodType[]).map((v) => (
@@ -384,10 +384,10 @@ export const PeriodNavigator: React.FC<{
                 type="button"
                 data-no-drag
                 className={
-                  'w-full text-left px-4 py-2 text-sm font-semibold rounded-lg ' +
+                  'w-full text-left px-4 py-2 text-sm font-semibold rounded-lg transition-colors ' +
                   (isActive && periodType === v
-                    ? 'bg-indigo-100 text-indigo-800'
-                    : 'bg-slate-50 text-slate-800 hover:bg-slate-200')
+                    ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200'
+                    : 'bg-slate-50 dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700')
                 }
                 {...tapBridge}
               >
@@ -804,7 +804,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       {/* Search Description */}
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+          <MagnifyingGlassIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
         </div>
         <input
           id="filter-desc"
@@ -813,7 +813,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           onChange={(e) => props.onDescriptionChange(e.target.value)}
           onFocus={handleInputFocus}
           placeholder="Descrizione..."
-          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
           onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
           {...tapBridge}
         />
@@ -832,7 +832,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
             onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, min: e.target.value })}
             onFocus={handleInputFocus}
             placeholder="Da"
-            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 ${props.amountRange.min ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium' : 'bg-white border-slate-300'}`}
+            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors ${props.amountRange.min ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 font-medium' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700'}`}
             onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
             {...tapBridge}
           />
@@ -848,7 +848,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
             onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, max: e.target.value })}
             onFocus={handleInputFocus}
             placeholder="A"
-            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 ${props.amountRange.max ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium' : 'bg-white border-slate-300'}`}
+            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors ${props.amountRange.max ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 font-medium' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700'}`}
             onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
             {...tapBridge}
           />
@@ -863,7 +863,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       <button
         type="button"
         onClick={() => setCurrentView('account_selection')}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors text-left ${props.selectedAccountId ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors text-left ${props.selectedAccountId ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
         {...tapBridge}
       >
         <div className="flex items-center gap-2 overflow-hidden">
@@ -877,7 +877,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       <button
         type="button"
         onClick={() => setCurrentView('category_selection')}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors text-left ${props.selectedCategoryFilters.size > 0 ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors text-left ${props.selectedCategoryFilters.size > 0 ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
         {...tapBridge}
       >
         <div className="flex items-center gap-2 overflow-hidden">
@@ -891,16 +891,16 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
 
   const renderAccountSelection = () => (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
-        <button onClick={() => setCurrentView('main')} className="p-1 -ml-1 rounded-full hover:bg-slate-100 text-slate-500" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 transition-colors">
+        <button onClick={() => setCurrentView('main')} className="p-1 -ml-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" onPointerDown={(e) => e.stopPropagation()}>
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
-        <h3 className="text-base font-bold text-slate-800">Seleziona Conto</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Seleziona Conto</h3>
       </div>
       <div className="space-y-1">
         <button
           onClick={() => { props.onSelectAccount(null); setCurrentView('main'); }}
-          className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left text-sm transition-colors ${props.selectedAccountId === null ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}
+          className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left text-sm transition-colors ${props.selectedAccountId === null ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-semibold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
           onPointerDown={(e) => e.stopPropagation()}
         >
           <span>Tutti</span>
@@ -910,7 +910,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           <button
             key={acc.id}
             onClick={() => { props.onSelectAccount(acc.id); setCurrentView('main'); }}
-            className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left text-sm transition-colors ${props.selectedAccountId === acc.id ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}
+            className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left text-sm transition-colors ${props.selectedAccountId === acc.id ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-semibold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             onPointerDown={(e) => e.stopPropagation()}
           >
             <span>{acc.name}</span>
@@ -923,12 +923,12 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
 
   const renderCategorySelection = () => (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 sticky top-0 bg-white z-10">
-        <button onClick={() => setCurrentView('main')} className="p-1 -ml-1 rounded-full hover:bg-slate-100 text-slate-500" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10 transition-colors">
+        <button onClick={() => setCurrentView('main')} className="p-1 -ml-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" onPointerDown={(e) => e.stopPropagation()}>
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
         <div className="flex-1">
-          <h3 className="text-base font-bold text-slate-800">Seleziona Categorie</h3>
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Seleziona Categorie</h3>
           {props.selectedCategoryFilters.size > 0 && (
             <p className="text-xs text-indigo-600 font-semibold">{props.selectedCategoryFilters.size} selezionate</p>
           )}
@@ -936,7 +936,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         {props.selectedCategoryFilters.size > 0 && (
           <button
             onClick={props.onClearCategoryFilters}
-            className="text-xs font-semibold text-slate-500 hover:text-red-600 px-2 py-1 rounded bg-slate-100 hover:bg-red-50"
+            className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
             onPointerDown={(e) => e.stopPropagation()}
           >
             Reset
@@ -955,15 +955,15 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           const subcategories = CATEGORIES[cat] || [];
 
           return (
-            <div key={cat} className="rounded-lg overflow-hidden border border-transparent hover:border-slate-100">
-              <div className={`w-full flex items-center px-3 py-2 gap-3 transition-colors ${isParentVisuallyChecked ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}>
+            <div key={cat} className="rounded-lg overflow-hidden border border-transparent hover:border-slate-100 dark:hover:border-slate-800 transition-colors">
+              <div className={`w-full flex items-center px-3 py-2 gap-3 transition-colors ${isParentVisuallyChecked ? 'bg-indigo-50 dark:bg-indigo-900/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                 <button
                   onClick={() => handleCategoryClick(cat)}
                   className="flex items-center gap-3 flex-1 text-left min-w-0"
                   onPointerDown={(e) => e.stopPropagation()}
                 >
                   <style.Icon className="w-10 h-10 flex-shrink-0" />
-                  <span className={`text-base font-bold truncate ${isParentVisuallyChecked ? 'text-indigo-800' : 'text-slate-700'}`}>{style.label}</span>
+                  <span className={`text-base font-bold truncate ${isParentVisuallyChecked ? 'text-indigo-800 dark:text-indigo-200' : 'text-slate-700 dark:text-slate-200'}`}>{style.label}</span>
                   {subcategories.length > 0 && (
                     <ChevronDownIcon className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                   )}
@@ -976,14 +976,14 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
               </div>
 
               {isExpanded && subcategories.length > 0 && (
-                <div className="bg-slate-50 pl-16 pr-4 py-3 space-y-3 border-t border-slate-100 animate-fade-in-down">
+                <div className="bg-slate-50 dark:bg-slate-950/50 pl-16 pr-4 py-3 space-y-3 border-t border-slate-100 dark:border-slate-800 animate-fade-in-down transition-colors">
                   {subcategories.map(sub => {
                     const key = `${cat}:${sub}`;
                     const isSubVisuallyChecked = isParentExplicitlySelected || props.selectedCategoryFilters.has(key);
 
                     return (
                       <div key={sub} className="flex items-center justify-between">
-                        <span className={`text-base font-bold ${isSubVisuallyChecked ? 'text-indigo-700' : 'text-slate-600'}`}>{sub}</span>
+                        <span className={`text-base font-bold ${isSubVisuallyChecked ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400'}`}>{sub}</span>
                         <Checkbox
                           checked={isSubVisuallyChecked}
                           onChange={() => {
@@ -1017,7 +1017,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-[0_-3px_4px_rgba(71,85,105,0.6)] z-[1000] flex flex-col"
+      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-2xl shadow-[0_-3px_4px_rgba(71,85,105,0.6)] dark:shadow-[0_-3px_10px_rgba(0,0,0,0.5)] z-[1000] flex flex-col transition-colors"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
@@ -1034,14 +1034,14 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
     >
       {/* Pull Tab */}
       <div
-        className="absolute top-0 left-1/2 w-[88px] h-auto flex justify-center cursor-grab z-50"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[88px] h-auto flex justify-center cursor-grab z-50"
         style={{ transform: 'translateX(-50%) translateY(-19px)' }}
         aria-hidden="true"
       >
         <SmoothPullTab width="88" height="19" className="fill-slate-200 dark:fill-slate-800 transition-colors" />
         <ChevronDownIcon
           className={
-            'absolute w-5 h-5 text-slate-400 transition-transform duration-300 ' +
+            'absolute w-5 h-5 text-slate-400 dark:text-slate-500 transition-transform duration-300 ' +
             (isPanelOpen ? 'rotate-0' : 'rotate-180')
           }
           style={{ top: '2px' }}
@@ -1049,28 +1049,28 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       </div>
 
       {/* Header Content Wrapper */}
-      <div className="flex-shrink-0 z-20 relative bg-white rounded-t-2xl">
+      <div className="flex-shrink-0 z-20 relative bg-white dark:bg-slate-900 rounded-t-2xl transition-colors">
 
         {/* Header: Date Filters - Highest Z-Index to allow dropdown over inputs */}
         {/* ADDED data-swipe-area to mark this section as the only one allowing horizontal swipe */}
         <div className="pt-2 pb-1 relative z-30" data-swipe-area>
           <div className={'relative ' + (isPeriodMenuOpen ? 'overflow-visible' : 'overflow-hidden')}>
             <div
-              className="w-[300%] flex"
+              className="w-[300%] flex h-full"
               style={{
                 transform: listTransform,
-                transition: isSwipeAnimating ? 'transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none',
+                transition: isSwipeAnimating ? 'transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none',
               }}
               onTransitionEnd={() => setIsSwipeAnimating(false)}
             >
-              <div className="w-1/3 px-4 py-1">
+              <div className="w-1/3 flex-shrink-0 px-4 py-1">
                 <QuickFilterControl
                   onSelect={handleQuickSelect}
                   currentValue={props.currentQuickFilter}
                   isActive={isQuickFilterActive}
                 />
               </div>
-              <div className="w-1/3 px-4 py-1">
+              <div className="w-1/3 flex-shrink-0 px-4 py-1">
                 <PeriodNavigator
                   periodType={props.periodType}
                   periodDate={props.periodDate}
@@ -1084,7 +1084,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
                   compact={false}
                 />
               </div>
-              <div className="w-1/3 px-4 py-1">
+              <div className="w-1/3 flex-shrink-0 px-4 py-1">
                 <CustomDateRangeInputs
                   range={props.currentCustomRange}
                   onChange={handleCustomRangeChange}
@@ -1095,17 +1095,17 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           </div>
 
           {/* Pagination Dots */}
-          <div className="flex justify-center items-center pt-1 pb-1 gap-2">
+          <div className="flex justify-center items-center py-4 gap-3">
             {[0, 1, 2].map((i) => (
               <button
                 key={i}
                 onClick={() => setActiveViewIndex(i)}
                 type="button"
                 className={
-                  'w-2.5 h-2.5 rounded-full transition-colors ' +
+                  'w-2 h-2 rounded-full transition-all duration-300 ' +
                   (activeViewIndex === i
-                    ? 'bg-indigo-600'
-                    : 'bg-slate-300 hover:bg-slate-400')
+                    ? 'bg-indigo-600 dark:bg-indigo-500 w-5'
+                    : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600')
                 }
                 aria-label={'Vai al filtro ' + (i + 1)}
               />
@@ -1122,7 +1122,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         )}
       </div>
 
-      <div className="w-full h-px bg-slate-200 mb-2 flex-shrink-0 relative z-10" />
+      <div className="w-full h-px bg-slate-200 dark:bg-slate-800 mb-2 flex-shrink-0 relative z-10 transition-colors" />
 
       {/* Scrollable Content Area */}
       <div

@@ -1,4 +1,4 @@
-﻿// CalculatorInputScreen.tsx
+// CalculatorInputScreen.tsx
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { Expense, Account, CATEGORIES } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
@@ -64,7 +64,7 @@ const KeypadButton: React.FC<React.HTMLAttributes<HTMLDivElement> & {
       }}
       onPointerUp={(e) => blurSelf(e.currentTarget)}
       onMouseDown={(e) => e.preventDefault()}
-      className={`flex items-center justify-center text-5xl font-light focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 transition-colors duration-150 select-none cursor-pointer active:scale-95 ${className}`}
+      className={`flex items-center justify-center text-4xl sm:text-5xl font-light focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 transition-colors duration-150 select-none cursor-pointer active:scale-95 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 ${className}`}
       style={{
         WebkitTapHighlightColor: 'transparent',
         touchAction: 'manipulation',
@@ -93,7 +93,7 @@ const OperatorButton: React.FC<{ children: React.ReactNode; onClick: () => void 
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); blurSelf(e.currentTarget); } }}
       onPointerUp={(e) => blurSelf(e.currentTarget)}
       onMouseDown={(e) => e.preventDefault()}
-      className="flex-1 w-full text-5xl text-indigo-600 font-light active:bg-slate-300/80 transition-colors duration-150 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 select-none cursor-pointer active:scale-95"
+      className="flex-1 w-full text-5xl text-indigo-600 dark:text-indigo-400 font-light active:bg-slate-300/80 dark:active:bg-slate-700/80 transition-colors duration-150 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 select-none cursor-pointer active:scale-95"
       style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' } as React.CSSProperties}
     >
       <span className="pointer-events-none">{children}</span>
@@ -118,7 +118,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
   const isIncome = formData.type === 'income';
   const isTransfer = formData.type === 'transfer';
 
-  // ­ƒöº SEMPLIFICATO: Rimosso tap bridge complesso che blocca eventi
+  // 🔧 SEMPLIFICATO: Rimosso tap bridge complesso che blocca eventi
   useEffect(() => {
     onMenuStateChange(activeMenu !== null);
   }, [activeMenu, onMenuStateChange]);
@@ -198,7 +198,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     });
   }, [justCalculated, shouldResetCurrentValue, handleClearAmount]);
 
-  // Long press su Ôî½
+  // Long press su ⌫
   const delTimerRef = useRef<number | null>(null);
   const delDidLongRef = useRef(false);
   const delStartXRef = useRef(0);
@@ -264,8 +264,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     switch (operator) {
       case '+': result = prev + current; break;
       case '-': result = prev - current; break;
-      case '├ù': result = prev * current; break;
-      case '├À': if (current === 0) return 'Error'; result = prev / current; break;
+      case '×': result = prev * current; break;
+      case '÷': if (current === 0) return 'Error'; result = prev / current; break;
       default: return currentValue.replace('.', ',');
     }
     setJustCalculated(true);
@@ -276,7 +276,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
   const handleKeyPress = useCallback((key: string) => {
     typingSinceActivationRef.current = true;
 
-    if (['├À', '├ù', '-', '+'].includes(key)) {
+    if (['÷', '×', '-', '+'].includes(key)) {
       if (operator && previousValue && !shouldResetCurrentValue) {
         const result = calculate(); setPreviousValue(result); setCurrentValue(result);
       } else { setPreviousValue(currentValue); }
@@ -371,7 +371,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     <div
       ref={ref}
       tabIndex={-1}
-      className="bg-slate-100 w-full h-full flex flex-col focus:outline-none overflow-hidden"
+      className="bg-slate-100 dark:bg-slate-950 w-full h-full flex flex-col focus:outline-none overflow-hidden transition-colors"
       style={{ touchAction: 'pan-y' }}
     >
       <div className="flex-1 flex flex-col">
@@ -379,80 +379,63 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           <button
             onClick={() => onClose()}
             aria-label="Chiudi calcolatrice"
-            className="w-11 h-11 flex items-center justify-center border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 rounded-full transition-colors cursor-pointer"
+            className="w-12 h-12 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-full transition-all cursor-pointer"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <XMarkIcon className="w-7 h-7" />
           </button>
 
-          {/* Toggle Type - Updated for 3 options */}
-          <div className={`flex p-1 rounded-full transition-colors duration-300 ${isTransfer ? 'bg-sky-100' : isIncome ? 'bg-emerald-100' : 'bg-rose-100'}`}>
+          {/* Toggle Type - Premium Design */}
+          <div className="flex p-1.5 bg-slate-200 dark:bg-slate-900 rounded-full shadow-inner transition-colors">
             <button
               onClick={() => handleTypeChange('expense')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors duration-200 ${!isIncome && !isTransfer ? 'text-rose-700' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-5 py-2 text-xs font-bold rounded-full transition-all duration-300 ${!isIncome && !isTransfer ? 'bg-white dark:bg-slate-800 text-rose-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Spesa
             </button>
             <button
               onClick={() => handleTypeChange('income')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors duration-200 ${isIncome ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-5 py-2 text-xs font-bold rounded-full transition-all duration-300 ${isIncome ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Entrata
             </button>
             <button
               onClick={() => handleTypeChange('transfer')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors duration-200 ${isTransfer ? 'text-sky-700' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-5 py-2 text-xs font-bold rounded-full transition-all duration-300 ${isTransfer ? 'bg-white dark:bg-slate-800 text-sky-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Trasferisci
             </button>
           </div>
 
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              const preventGhost = (ev: Event) => {
-                ev.stopPropagation();
-                ev.stopImmediatePropagation();
-                ev.preventDefault();
-              };
-              const events = ['click', 'touchstart', 'touchend', 'pointerup', 'pointerdown', 'mousedown', 'mouseup'];
-              events.forEach(evt => window.addEventListener(evt, preventGhost, { capture: true }));
-              setTimeout(() => {
-                events.forEach(evt => window.removeEventListener(evt, preventGhost, { capture: true }));
-              }, 800);
-              setTimeout(() => {
-                handleSubmit();
-              }, 200);
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            data-no-synthetic-click
+            onClick={handleSubmit}
             disabled={!canSubmit}
             aria-label="Conferma"
-            className={`w-11 h-11 flex items-center justify-center border rounded-full transition-colors
-              border-green-500 bg-green-200 text-green-800 hover:bg-green-300 
-              focus:outline-none focus:ring-2 focus:ring-green-500 
-              disabled:bg-slate-100 disabled:border-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed
+            className={`w-12 h-12 flex items-center justify-center rounded-full transition-all
+              ${canSubmit
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700'
+                : 'bg-slate-100 dark:bg-slate-900 text-slate-400 border border-slate-200 dark:border-slate-800 cursor-not-allowed'}
               ${isDesktop ? 'hidden' : ''}`}
           >
-            <CheckIcon className="w-7 h-7" />
+            <CheckIcon className="w-8 h-8" />
           </button>
           {isDesktop && <div className="w-11 h-11" />}
         </header>
 
         <main className="flex-1 flex flex-col overflow-hidden relative" style={{ touchAction: 'pan-y' }}>
-          <div className="flex-1 flex flex-col justify-center items-center p-4">
+          {/* Pagination Dots */}
+          <div className="flex justify-center items-center py-3 gap-3">
             <div className="w-full px-4 text-center">
-              <span className="text-slate-500 text-2xl font-light h-8 block">{smallDisplayValue}</span>
-              <div className={`relative inline-block text-slate-800 font-light tracking-tighter whitespace-nowrap transition-all leading-none ${fontSizeClass}`}>
+              <span className="text-slate-500 dark:text-slate-400 text-2xl font-light h-8 block transition-colors">{smallDisplayValue}</span>
+              <div className={`relative inline-block text-slate-800 dark:text-slate-100 font-light tracking-tighter whitespace-nowrap transition-all leading-none ${fontSizeClass}`}>
                 <span
                   className={`absolute right-full top-1/2 -translate-y-1/2 mr-2 ${isIncome ? 'text-green-500' : isTransfer ? 'text-blue-600' : 'text-red-500'
                     }`}
                   style={{ fontSize: isTransfer ? '0.45em' : '0.6em' }}
                 >
-                  {isIncome ? '+' : isTransfer ? 'Ôçä' : '-'}
+                  {isIncome ? '+' : isTransfer ? '⇄' : '-'}
                 </span>
                 {displayValue}
-                <span className="absolute left-full top-1/2 -translate-y-1/2 opacity-75 ml-2" style={{ fontSize: '0.6em' }}>Ôé¼</span>
+                <span className="absolute left-full top-1/2 -translate-y-1/2 opacity-75 ml-2" style={{ fontSize: '0.6em' }}>€</span>
               </div>
             </div>
           </div>
@@ -481,7 +464,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         </main>
       </div>
 
-      {/* ­ƒöº FIX: 52vh + SAFE AREA + GAP RIDOTTO */}
+      {/* 🔧 FIX: 52vh + SAFE AREA + GAP RIDOTTO */}
       <div className="flex-shrink-0 flex flex-col" style={{ height: '52vh' }}>
         <div className="flex justify-between items-center my-2 w-full px-4 gap-0" style={{ touchAction: 'pan-y' }}>
 
@@ -489,17 +472,17 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             /* TRANSFER LAYOUT */
             <>
               <div className="flex flex-col items-center flex-1 min-w-0">
-                <span className="text-xs font-bold text-slate-500 mb-1">Da</span>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 transition-colors">Da</span>
                 <button
                   onClick={() => setActiveMenu('account')}
-                  className="font-semibold text-indigo-600 hover:text-indigo-800 text-lg truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-center w-full"
+                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-lg truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-center w-full transition-colors"
                   aria-label="Seleziona conto di origine"
                 >
                   {accounts.find(a => a.id === formData.accountId)?.name || 'Conto'}
                 </button>
               </div>
 
-              <div className="flex items-center justify-center pt-7 text-slate-400 shrink-0 -translate-x-3">
+              <div className="flex items-center justify-center pt-7 text-slate-400 dark:text-slate-600 shrink-0 -translate-x-3 transition-colors">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 100 24"
@@ -508,7 +491,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
                   strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="w-24 h-6"
+                  className="w-24 h-6 transition-colors"
                   preserveAspectRatio="none"
                 >
                   <path d="M0 12H88" />
@@ -517,10 +500,10 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
               </div>
 
               <div className="flex flex-col items-center flex-1 min-w-0">
-                <span className="text-xs font-bold text-slate-500 mb-1">A</span>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 transition-colors">A</span>
                 <button
                   onClick={() => setActiveMenu('toAccount')}
-                  className={`font-semibold text-lg truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-center w-full bg-slate-200 ${!formData.toAccountId ? 'text-slate-500 italic' : 'text-indigo-600'}`}
+                  className={`font-semibold text-lg truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-center w-full bg-slate-200 dark:bg-slate-900 transition-colors ${!formData.toAccountId ? 'text-slate-500 italic' : 'text-indigo-600 dark:text-indigo-400'}`}
                   aria-label="Seleziona conto di destinazione"
                 >
                   {accounts.find(a => a.id === formData.toAccountId)?.name || 'Scegli'}
@@ -533,7 +516,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
               <div className={`flex flex-col flex-1 min-w-0 ${isIncome ? 'w-full' : 'w-1/3'}`}>
                 <button
                   onClick={() => setActiveMenu('account')}
-                  className="font-semibold text-indigo-600 hover:text-indigo-800 text-lg truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-left w-full"
+                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-lg truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-left w-full transition-colors"
                   aria-label="Seleziona conto"
                 >
                   {accounts.find(a => a.id === formData.accountId)?.name || 'Conto'}
@@ -544,7 +527,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
                 <>
                   <button
                     onClick={() => setActiveMenu('category')}
-                    className={`font-semibold text-lg w-1/3 truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-center transition-opacity text-indigo-600 hover:text-indigo-800`}
+                    className={`font-semibold text-lg w-1/3 truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-center transition-all text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300`}
                     aria-label="Seleziona categoria"
                   >
                     {formData.category ? getCategoryStyle(formData.category).label : 'Categoria'}
@@ -553,7 +536,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
                   <button
                     onClick={() => setActiveMenu('subcategory')}
                     disabled={!formData.category}
-                    className={`font-semibold text-lg w-1/3 truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-right transition-opacity ${!formData.category ? 'text-slate-400 opacity-40 cursor-not-allowed' : 'text-indigo-600 hover:text-indigo-800'}`}
+                    className={`font-semibold text-lg w-1/3 truncate p-2 rounded-lg focus:outline-none focus:ring-0 text-right transition-all ${!formData.category ? 'text-slate-400 dark:text-slate-600 opacity-40 cursor-not-allowed' : 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300'}`}
                     aria-label="Seleziona sottocategoria"
                   >
                     {formData.subcategory || 'Sottocateg.'}
@@ -564,25 +547,26 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           )}
         </div>
 
-        {/* ­ƒöº FIX: GAP 1.5 + SAFE AREA */}
+        {/* 🔧 FIX: GAP 1.5 + SAFE AREA */}
         <div
           className="flex-1 p-2 flex flex-row gap-1.5 px-4"
           style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
           <div className="h-full w-4/5 grid grid-cols-3 grid-rows-4 gap-1.5 num-pad">
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('7')}>7</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('8')}>8</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('9')}>9</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('4')}>4</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('5')}>5</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('6')}>6</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('1')}>1</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('2')}>2</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('3')}>3</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress(',')}>,</KeypadButton>
-            <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('0')}>0</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('7')}>7</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('8')}>8</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('9')}>9</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('4')}>4</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('5')}>5</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('6')}>6</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('1')}>1</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('2')}>2</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('3')}>3</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress(',')} className="text-4xl sm:text-5xl font-medium">,</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress('0')}>0</KeypadButton>
             <KeypadButton
-              title="Tocca: cancella una cifra ÔÇö Tieni premuto: cancella tutto"
+              className="bg-slate-100 dark:bg-slate-800/50"
+              title="Tocca: cancella una cifra — Tieni premuto: cancella tutto"
               aria-label="Cancella"
               onPointerDownCapture={onDelPointerDownCapture}
               onPointerMoveCapture={onDelPointerMoveCapture}
@@ -590,22 +574,22 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
               onPointerCancelCapture={onDelPointerCancelCapture}
               onContextMenu={(e) => e.preventDefault()}
             >
-              <BackspaceIcon className="w-8 h-8 text-slate-800" />
+              <BackspaceIcon className="w-8 h-8 text-slate-800 dark:text-slate-100 transition-colors" />
             </KeypadButton>
           </div>
 
           <div
-            className="h-full w-1/5 flex flex-col gap-1.5 bg-slate-200 rounded-2xl p-1"
+            className="h-full w-1/5 flex flex-col gap-1.5 bg-slate-200 dark:bg-slate-800/80 rounded-2xl p-1 transition-colors"
             style={{ touchAction: 'pan-y' }}
           >
-            <OperatorButton onClick={() => handleKeyPress('├À')}>├À</OperatorButton>
-            <OperatorButton onClick={() => handleKeyPress('├ù')}>├ù</OperatorButton>
+            <OperatorButton onClick={() => handleKeyPress('÷')}>÷</OperatorButton>
+            <OperatorButton onClick={() => handleKeyPress('×')}>×</OperatorButton>
             <OperatorButton onClick={() => handleKeyPress('-')}>-</OperatorButton>
             <OperatorButton onClick={() => handleKeyPress('+')}>+</OperatorButton>
             <OperatorButton onClick={() => handleKeyPress('=')}>=</OperatorButton>
           </div>
         </div>
-      </div>
+      </div >
 
       <SelectionMenu
         isOpen={activeMenu === 'account'} onClose={() => setActiveMenu(null)}
@@ -635,7 +619,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         selectedValue={formData.toAccountId || ''}
         onSelect={(value) => handleSelectChange('toAccountId', value)}
       />
-    </div>
+    </div >
   );
 });
 
