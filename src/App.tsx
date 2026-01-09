@@ -65,10 +65,20 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const location = useLocation();
 
   const closeModalWithHistory = () => {
-    // Simple close logic for now, or window.history.back() if we trust stack
-    // For now, let's just close all modals if generic close is called, or map specific ones.
-    // But typically closeModalWithHistory in useAppUI did history.back().
-    window.history.back();
+    // If we have state, it's safer to go back. 
+    // If not, we just close everything via UI state as fallback.
+    if (window.history.state && window.history.state.modal) {
+      window.history.back();
+    } else {
+      // Fallback: manually close all modals if history is lost
+      setIsAddModalOpen(false);
+      setEditingExpense(undefined);
+      setIsVoiceModalOpen(false);
+      setIsQrModalOpen(false);
+      setIsCalculatorContainerOpen(false);
+      setIsImageSourceModalOpen(false);
+      setIsHistoryFilterOpen(false);
+    }
   };
 
   const {
@@ -189,12 +199,14 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const handleVoiceParsed = (data: Partial<Omit<Expense, 'id'>>) => {
     setPrefilledData(data);
 
-    // Close voice modal (manually or via history)
-    setIsVoiceModalOpen(false);
+    // Use history-aware close
+    closeModalWithHistory();
 
-    // Replace current 'voice' state with 'form' state so back button goes to home
-    window.history.replaceState({ modal: 'form' }, '');
-    setIsAddModalOpen(true);
+    // Then open the form with the prefilled data
+    setTimeout(() => {
+      window.history.pushState({ modal: 'form' }, '');
+      setIsAddModalOpen(true);
+    }, 100);
 
     showToast({ message: 'Dati vocali rilevati', type: 'success' });
   };

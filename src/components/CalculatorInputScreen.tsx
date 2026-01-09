@@ -64,7 +64,7 @@ const KeypadButton: React.FC<React.HTMLAttributes<HTMLDivElement> & {
       }}
       onPointerUp={(e) => blurSelf(e.currentTarget)}
       onMouseDown={(e) => e.preventDefault()}
-      className={`flex items-center justify-center text-5xl font-light focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 transition-colors duration-150 select-none cursor-pointer active:scale-95 text-slate-800 dark:text-slate-100 ${className}`}
+      className={`flex items-center justify-center text-4xl sm:text-5xl font-light focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 transition-colors duration-150 select-none cursor-pointer active:scale-95 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 ${className}`}
       style={{
         WebkitTapHighlightColor: 'transparent',
         touchAction: 'manipulation',
@@ -379,68 +379,51 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           <button
             onClick={() => onClose()}
             aria-label="Chiudi calcolatrice"
-            className="w-11 h-11 flex items-center justify-center border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 rounded-full transition-colors cursor-pointer"
+            className="w-12 h-12 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-full transition-all cursor-pointer"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <XMarkIcon className="w-7 h-7" />
           </button>
 
-          {/* Toggle Type - Updated for 3 options */}
-          <div className={`flex p-1 rounded-full transition-colors duration-300 ${isTransfer ? 'bg-sky-100 dark:bg-sky-900/30' : isIncome ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-rose-100 dark:bg-rose-900/30'}`}>
+          {/* Toggle Type - Premium Design */}
+          <div className="flex p-1.5 bg-slate-200 dark:bg-slate-900 rounded-full shadow-inner transition-colors">
             <button
               onClick={() => handleTypeChange('expense')}
-              className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${!isIncome && !isTransfer ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              className={`px-5 py-2 text-xs font-bold rounded-full transition-all duration-300 ${!isIncome && !isTransfer ? 'bg-white dark:bg-slate-800 text-rose-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Spesa
             </button>
             <button
               onClick={() => handleTypeChange('income')}
-              className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${isIncome ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              className={`px-5 py-2 text-xs font-bold rounded-full transition-all duration-300 ${isIncome ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Entrata
             </button>
             <button
               onClick={() => handleTypeChange('transfer')}
-              className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${isTransfer ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              className={`px-5 py-2 text-xs font-bold rounded-full transition-all duration-300 ${isTransfer ? 'bg-white dark:bg-slate-800 text-sky-600 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Trasferisci
             </button>
           </div>
 
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              const preventGhost = (ev: Event) => {
-                ev.stopPropagation();
-                ev.stopImmediatePropagation();
-                ev.preventDefault();
-              };
-              const events = ['click', 'touchstart', 'touchend', 'pointerup', 'pointerdown', 'mousedown', 'mouseup'];
-              events.forEach(evt => window.addEventListener(evt, preventGhost, { capture: true }));
-              setTimeout(() => {
-                events.forEach(evt => window.removeEventListener(evt, preventGhost, { capture: true }));
-              }, 800);
-              setTimeout(() => {
-                handleSubmit();
-              }, 200);
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            data-no-synthetic-click
+            onClick={handleSubmit}
             disabled={!canSubmit}
             aria-label="Conferma"
-            className={`w-11 h-11 flex items-center justify-center border rounded-full transition-colors
-              border-green-500 dark:border-green-800 bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-300 hover:bg-green-300 dark:hover:bg-green-900/60
-              focus:outline-none focus:ring-2 focus:ring-green-500 
-              disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:border-slate-200 dark:disabled:border-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed
+            className={`w-12 h-12 flex items-center justify-center rounded-full transition-all
+              ${canSubmit
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700'
+                : 'bg-slate-100 dark:bg-slate-900 text-slate-400 border border-slate-200 dark:border-slate-800 cursor-not-allowed'}
               ${isDesktop ? 'hidden' : ''}`}
           >
-            <CheckIcon className="w-7 h-7" />
+            <CheckIcon className="w-8 h-8" />
           </button>
           {isDesktop && <div className="w-11 h-11" />}
         </header>
 
         <main className="flex-1 flex flex-col overflow-hidden relative" style={{ touchAction: 'pan-y' }}>
-          <div className="flex-1 flex flex-col justify-center items-center p-4 pt-0">
+          {/* Pagination Dots */}
+          <div className="flex justify-center items-center py-3 gap-3">
             <div className="w-full px-4 text-center">
               <span className="text-slate-500 dark:text-slate-400 text-2xl font-light h-8 block transition-colors">{smallDisplayValue}</span>
               <div className={`relative inline-block text-slate-800 dark:text-slate-100 font-light tracking-tighter whitespace-nowrap transition-all leading-none ${fontSizeClass}`}>
@@ -464,19 +447,19 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             aria-hidden={isDesktop || isTransfer}
             onClick={onNavigateToDetails}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigateToDetails(); }}
-            className={`absolute top-1/2 -right-px w-8 h-[148px] flex items-center justify-center cursor-pointer ${isDesktop || isTransfer ? 'hidden' : ''}`}
+            className={`absolute top-1/2 -right-px w-10 h-[148px] flex items-center justify-center cursor-pointer z-20 ${isDesktop || isTransfer ? 'hidden' : ''}`}
             style={{ transform: 'translateY(calc(-50% + 2px))' }}
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="transform -rotate-90">
+            <div className="absolute inset-y-0 right-0 flex items-center justify-center">
+              <div className="transform -rotate-90 origin-center">
                 <SmoothPullTab
                   width="148"
-                  height="32"
-                  className="fill-indigo-100/80 dark:fill-indigo-900/40 transition-colors"
+                  height="34"
+                  className="fill-indigo-100/90 dark:fill-indigo-900/60 transition-colors shadow-sm"
                 />
               </div>
             </div>
-            <ChevronLeftIcon className="relative z-10 w-6 h-6 text-indigo-600 dark:text-indigo-400 transition-colors" />
+            <ChevronLeftIcon className="relative z-10 w-7 h-7 text-indigo-600 dark:text-indigo-400 transition-colors ml-2" />
           </div>
         </main>
       </div>
@@ -579,9 +562,10 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             <KeypadButton onClick={() => handleKeyPress('1')}>1</KeypadButton>
             <KeypadButton onClick={() => handleKeyPress('2')}>2</KeypadButton>
             <KeypadButton onClick={() => handleKeyPress('3')}>3</KeypadButton>
-            <KeypadButton onClick={() => handleKeyPress(',')}>,</KeypadButton>
+            <KeypadButton onClick={() => handleKeyPress(',')} className="text-4xl sm:text-5xl font-medium">,</KeypadButton>
             <KeypadButton onClick={() => handleKeyPress('0')}>0</KeypadButton>
             <KeypadButton
+              className="bg-slate-100 dark:bg-slate-800/50"
               title="Tocca: cancella una cifra — Tieni premuto: cancella tutto"
               aria-label="Cancella"
               onPointerDownCapture={onDelPointerDownCapture}

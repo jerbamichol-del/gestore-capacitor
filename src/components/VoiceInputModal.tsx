@@ -240,9 +240,21 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
     }
   };
 
-  const handleClose = () => {
+  const handleClose = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    console.log('[Voice] Closing modal...');
     // Segnaliamo che l'operazione è annullata, così onstop non farà nulla
     isCancelledRef.current = true;
+
+    // Stop recording immediately if active
+    try {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    } catch (err) {
+      console.warn('[Voice] Error stopping recorder on close:', err);
+    }
+
     cleanUp();
     setStatus('idle');
     setError(null);

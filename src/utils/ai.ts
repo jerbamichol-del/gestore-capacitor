@@ -61,9 +61,16 @@ async function callAiEndpoint<T>(payload: any): Promise<T> {
     console.error("AI Call Error:", e);
 
     if (e.name === 'AbortError') {
+      console.warn("[AI] Request aborted (timeout)");
       throw new Error("Tempo scaduto. Il server ci sta mettendo troppo tempo.");
     }
-    // Rilanciamo l'errore per farlo gestire alla UI (VoiceInputModal)
+
+    if (e instanceof TypeError && e.message === 'Failed to fetch') {
+      console.error("[AI] CORS or Network error. Check endpoint connectivity.");
+      throw new Error("Errore di connessione. Verifica che il server sia raggiungibile.");
+    }
+
+    // Rilanciamo l'errore per farlo gestire alla UI
     throw e;
   }
 }

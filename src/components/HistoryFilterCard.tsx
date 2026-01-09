@@ -1056,21 +1056,21 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         <div className="pt-2 pb-1 relative z-30" data-swipe-area>
           <div className={'relative ' + (isPeriodMenuOpen ? 'overflow-visible' : 'overflow-hidden')}>
             <div
-              className="w-[300%] flex"
+              className="w-[300%] flex h-full"
               style={{
                 transform: listTransform,
-                transition: isSwipeAnimating ? 'transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none',
+                transition: isSwipeAnimating ? 'transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none',
               }}
               onTransitionEnd={() => setIsSwipeAnimating(false)}
             >
-              <div className="w-1/3 px-4 py-1">
+              <div className="w-1/3 flex-shrink-0 px-4 py-1">
                 <QuickFilterControl
                   onSelect={handleQuickSelect}
                   currentValue={props.currentQuickFilter}
                   isActive={isQuickFilterActive}
                 />
               </div>
-              <div className="w-1/3 px-4 py-1">
+              <div className="w-1/3 flex-shrink-0 px-4 py-1">
                 <PeriodNavigator
                   periodType={props.periodType}
                   periodDate={props.periodDate}
@@ -1084,7 +1084,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
                   compact={false}
                 />
               </div>
-              <div className="w-1/3 px-4 py-1">
+              <div className="w-1/3 flex-shrink-0 px-4 py-1">
                 <CustomDateRangeInputs
                   range={props.currentCustomRange}
                   onChange={handleCustomRangeChange}
@@ -1095,7 +1095,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           </div>
 
           {/* Pagination Dots */}
-          <div className="w-full flex justify-center items-center py-2 gap-2.5">
+          <div className="flex justify-center items-center py-4 gap-3">
             {[0, 1, 2].map((i) => (
               <button
                 key={i}
@@ -1104,7 +1104,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
                 className={
                   'w-2 h-2 rounded-full transition-all duration-300 ' +
                   (activeViewIndex === i
-                    ? 'bg-indigo-600 dark:bg-indigo-500 w-4'
+                    ? 'bg-indigo-600 dark:bg-indigo-500 w-5'
                     : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600')
                 }
                 aria-label={'Vai al filtro ' + (i + 1)}
