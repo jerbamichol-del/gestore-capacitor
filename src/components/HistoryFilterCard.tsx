@@ -1095,7 +1095,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           </div>
 
           {/* Pagination Dots */}
-          <div className="flex justify-center items-center py-2 gap-2.5">
+          <div className="w-full flex justify-center items-center py-2 gap-2.5">
             {[0, 1, 2].map((i) => (
               <button
                 key={i}

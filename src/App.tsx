@@ -159,6 +159,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   ]);
 
   const handleAnalyzeImage = async (image: OfflineImage) => {
+    setImageForAnalysis(null); // Clear state immediately to prevent re-render loop
     if (!isOnline) { showToast({ message: 'Connettiti a internet per analizzare.', type: 'error' }); return; }
     setSyncingImageId(image.id);
     setIsParsingImage(true);
@@ -187,12 +188,13 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   const handleVoiceParsed = (data: Partial<Omit<Expense, 'id'>>) => {
     setPrefilledData(data);
+
+    // Close voice modal (manually or via history)
     setIsVoiceModalOpen(false);
 
-    // Open form
-    // Open form
+    // Replace current 'voice' state with 'form' state so back button goes to home
+    window.history.replaceState({ modal: 'form' }, '');
     setIsAddModalOpen(true);
-    window.history.pushState({ modal: 'form' }, '');
 
     showToast({ message: 'Dati vocali rilevati', type: 'success' });
   };

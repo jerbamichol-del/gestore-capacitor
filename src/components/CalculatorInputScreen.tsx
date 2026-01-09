@@ -385,7 +385,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           </button>
 
           {/* Toggle Type - Updated for 3 options */}
-          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 transition-all">
+          <div className={`flex p-1 rounded-full transition-colors duration-300 ${isTransfer ? 'bg-sky-100 dark:bg-sky-900/30' : isIncome ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-rose-100 dark:bg-rose-900/30'}`}>
             <button
               onClick={() => handleTypeChange('expense')}
               className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${!isIncome && !isTransfer ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
