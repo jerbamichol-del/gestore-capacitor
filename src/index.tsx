@@ -1,18 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import AuthGate from './AuthGate';
-// NESSUN import './index.css' qui se usi il CDN in HTML
+import AuthGate from './AuthGate'; // AuthGate renders App
+import './index.css';
+import { TransactionsProvider } from './context/TransactionsContext';
+import { UIProvider } from './context/UIContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { BrowserRouter } from 'react-router-dom';
 
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
-
-const root = ReactDOM.createRoot(rootElement);
-
-root.render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <AuthGate />
+    <BrowserRouter>
+      <ThemeProvider>
+        <TransactionsProvider>
+          <UIProvider>
+            <AuthGate />
+          </UIProvider>
+        </TransactionsProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
 
@@ -22,10 +27,10 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
       .then((registration) => {
         console.log('✅ SW Registrato con successo:', registration.scope);
-        
+
         // Se c'è un aggiornamento in attesa, forza l'update
         if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
       })
       .catch((error) => {
@@ -33,8 +38,8 @@ if ('serviceWorker' in navigator) {
       });
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-       // Ricarica la pagina quando il nuovo SW prende il controllo
-       window.location.reload();
+      // Ricarica la pagina quando il nuovo SW prende il controllo
+      window.location.reload();
     });
   });
 }

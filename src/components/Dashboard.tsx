@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { Expense, Account } from '../types';
 import { formatCurrency } from './icons/formatters';
@@ -49,13 +50,13 @@ const renderActiveShape = (props: any) => {
 
     return (
         <g>
-            <text x={cx} y={cy - 12} textAnchor="middle" fill="#1e293b" className="text-base font-bold">
+            <text x={cx} y={cy - 12} textAnchor="middle" fill="currentColor" className="text-base font-bold text-slate-900 dark:text-slate-100">
                 {payload.name}
             </text>
             <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-lg font-extrabold">
                 {formatCurrency(payload.value)}
             </text>
-            <text x={cx} y={cy + 32} textAnchor="middle" fill="#334155" className="text-sm font-bold">
+            <text x={cx} y={cy + 32} textAnchor="middle" fill="currentColor" className="text-sm font-bold text-slate-700 dark:text-slate-400">
                 {`(${(percent * 100).toFixed(2)}%)`}
             </text>
 
@@ -73,21 +74,10 @@ const renderActiveShape = (props: any) => {
     );
 };
 
-interface DashboardProps {
-    accounts: Account[];
-    expenses: Expense[];
-    recurringExpenses: Expense[];
-    onNavigateToRecurring: () => void;
-    onNavigateToHistory: () => void;
-    onNavigateToIncomes?: () => void;
-    onNavigateToAccounts?: () => void;
-    onImportFile: (file: File) => void;
-    onReceiveSharedFile?: (file: File) => void | Promise<void>;
-    onSync: () => Promise<void> | void;
-    isBalanceVisible: boolean;
-    onToggleBalanceVisibility: () => void;
-    showToast: (msg: { message: string; type: 'success' | 'info' | 'error' }) => void;
-}
+import { useTransactions } from '../context/TransactionsContext';
+import { useUI } from '../context/UIContext';
+
+// ... (imports remain)
 
 const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null => {
     if (template.frequency !== 'recurring' || !template.recurrence) return null;
@@ -113,20 +103,30 @@ const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null =>
     return nextDate;
 };
 
+
+
+interface DashboardProps {
+    // Removed navigation props
+    onImportFile: (file: File) => void;
+    onReceiveSharedFile?: (file: File) => void | Promise<void>;
+    onSync: () => Promise<void> | void;
+    isBalanceVisible: boolean;
+    onToggleBalanceVisibility: () => void;
+}
+
+// ... helper functions ...
+
 const Dashboard: React.FC<DashboardProps> = ({
-    accounts,
-    expenses,
-    recurringExpenses,
-    onNavigateToRecurring,
-    onNavigateToHistory,
-    onNavigateToIncomes,
-    onNavigateToAccounts,
     onImportFile,
     onSync,
     isBalanceVisible,
-    onToggleBalanceVisibility,
-    showToast
+    onToggleBalanceVisibility
 }) => {
+    // ✅ CONSUME CONTEXT
+    const { accounts, expenses, recurringExpenses } = useTransactions();
+    const { showToast } = useUI();
+    const navigate = useNavigate();
+
     const tapBridgeHandlers = useTapBridge();
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [activeViewIndex, setActiveViewIndex] = useState(1);
@@ -157,25 +157,24 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
-
     const handleNavigateToRecurring = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.blur();
-        onNavigateToRecurring();
+        navigate('/recurring');
     };
 
     const handleNavigateToHistory = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.blur();
-        onNavigateToHistory();
+        navigate('/history');
     };
 
     const handleNavigateToIncomes = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.blur();
-        onNavigateToIncomes?.();
+        navigate('/income');
     };
 
     const handleNavigateToAccounts = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.blur();
-        onNavigateToAccounts?.();
+        navigate('/accounts');
     };
 
     useEffect(() => {
@@ -454,11 +453,11 @@ const Dashboard: React.FC<DashboardProps> = ({
             <div className="md:p-6 pb-32 md:pb-32 space-y-6" {...tapBridgeHandlers}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 flex flex-col gap-4">
-                        <div className="bg-white p-6 md:rounded-2xl shadow-lg flex flex-col justify-between relative">
+                        <div className="bg-white dark:bg-slate-900 p-6 md:rounded-2xl shadow-lg flex flex-col justify-between relative transition-colors">
                             <div className="text-center mb-2 relative z-10">
-                                <h3 className="text-lg font-bold text-black leading-tight uppercase tracking-wide">{periodLabel}</h3>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight uppercase tracking-wide">{periodLabel}</h3>
                                 <p className="text-sm font-medium text-slate-400 capitalize mb-1">{dateRangeLabel}</p>
-                                <div className="relative flex justify-center items-center text-indigo-600 mt-1">
+                                <div className="relative flex justify-center items-center text-indigo-600 dark:text-indigo-400 mt-1">
                                     <div className="relative flex items-baseline">
                                         <span className="absolute right-full mr-2 text-3xl font-semibold opacity-80 top-1/2 -translate-y-1/2">€</span>
                                         <span className="text-5xl font-extrabold tracking-tight">
@@ -467,7 +466,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     </div>
                                     {recurringCountInPeriod > 0 && (
                                         <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                                            <span className="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-900 bg-amber-100 border border-amber-400 rounded-lg shadow-sm" title="Spese programmate in arrivo">
+                                            <span className="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-amber-900 bg-amber-100 dark:bg-amber-400 border border-amber-400 rounded-lg shadow-sm" title="Spese programmate in arrivo">
                                                 {recurringCountInPeriod}P
                                             </span>
                                         </div>
@@ -518,32 +517,32 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <button
                                             key={i}
                                             onClick={() => setActiveViewIndex(i)}
-                                            className={`w-2 h-2 rounded-full transition-colors ${activeViewIndex === i ? 'bg-indigo-600' : 'bg-slate-300 hover:bg-slate-400'}`}
+                                            className={`w-2 h-2 rounded-full transition-colors ${activeViewIndex === i ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600'}`}
                                             aria-label={`Vai alla pagina filtri ${i + 1}`}
                                         />
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="mt-4 pt-4 border-t border-slate-200 relative z-10">
+                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 relative z-10 transition-colors">
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1">
-                                        <h4 className="text-sm font-medium text-slate-500">Spesa Oggi</h4>
-                                        <p className="text-xl font-bold text-slate-800">{formatCurrency(dailyTotal)}</p>
+                                        <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400">Spesa Oggi</h4>
+                                        <p className="text-xl font-bold text-slate-800 dark:text-slate-100">{formatCurrency(dailyTotal)}</p>
                                     </div>
-                                    <div className="w-px h-12 bg-slate-200" />
+                                    <div className="w-px h-12 bg-slate-200 dark:bg-slate-800" />
                                     <div className="flex-1 flex flex-col">
                                         <div className="flex justify-between items-center mb-1">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onToggleBalanceVisibility(); }}
-                                                className="p-2 -ml-2 rounded-full text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="p-2 -ml-2 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 aria-label={isBalanceVisible ? "Nascondi patrimonio" : "Mostra patrimonio"}
                                             >
                                                 {isBalanceVisible ? <EyeSlashIcon className="w-6 h-6" /> : <EyeIcon className="w-6 h-6" />}
                                             </button>
-                                            <h4 className="text-sm font-medium text-slate-400 cursor-default select-none">Patrimonio</h4>
+                                            <h4 className="text-sm font-medium text-slate-400 dark:text-slate-500 cursor-default select-none">Patrimonio</h4>
                                         </div>
-                                        <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800' : totalAccountsBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800 dark:text-slate-100' : totalAccountsBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                             {isBalanceVisible ? (
                                                 <>
                                                     {totalAccountsBalance >= 0 ? '+' : ''}{formatCurrency(totalAccountsBalance)}
@@ -565,16 +564,16 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     }}
                                 >
                                     <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-                                    <button onClick={handleNavigateToRecurring} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-slate-900 bg-amber-100 rounded-full hover:bg-amber-200 focus:outline-none active:scale-95 active:bg-amber-200 active:ring-2 active:ring-offset-2 active:ring-amber-500 transition-all border border-amber-400">
+                                    <button onClick={handleNavigateToRecurring} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-slate-900 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300 rounded-full hover:bg-amber-200 dark:hover:bg-amber-900/60 focus:outline-none active:scale-95 transition-all border border-amber-400">
                                         <ProgrammateDetailedIcon className="w-7 h-7" /> <span className="text-sm">Programmate</span>
                                     </button>
-                                    <button onClick={handleNavigateToHistory} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-indigo-900 bg-indigo-100 rounded-full hover:bg-indigo-200 focus:outline-none active:scale-95 active:bg-indigo-200 active:ring-2 active:ring-offset-2 active:ring-indigo-500 transition-all border border-indigo-200">
+                                    <button onClick={handleNavigateToHistory} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-indigo-900 bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900/60 focus:outline-none active:scale-95 transition-all border border-indigo-200">
                                         <ExpensesDetailedIcon className="w-7 h-7" /> <span className="text-sm">Spese</span>
                                     </button>
-                                    <button onClick={handleNavigateToIncomes} className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-emerald-900 bg-emerald-100 rounded-full hover:bg-emerald-200 focus:outline-none active:scale-95 active:bg-emerald-200 active:ring-2 active:ring-offset-2 active:ring-emerald-500 transition-all border border-emerald-200 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
+                                    <button onClick={handleNavigateToIncomes} className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-emerald-900 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-900/60 focus:outline-none active:scale-95 transition-all border border-emerald-200 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
                                         <IncomeDetailedIcon className="w-7 h-7" /> <span className="text-sm">Entrate</span>
                                     </button>
-                                    <button onClick={handleNavigateToAccounts} className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-sky-900 bg-sky-100 rounded-full hover:bg-sky-200 focus:outline-none active:scale-95 active:bg-sky-200 active:ring-2 active:ring-offset-2 active:ring-sky-500 transition-all border border-sky-200 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
+                                    <button onClick={handleNavigateToAccounts} className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-sky-900 bg-sky-100 dark:bg-sky-900/40 dark:text-sky-300 rounded-full hover:bg-sky-200 dark:hover:bg-sky-900/60 focus:outline-none active:scale-95 transition-all border border-sky-200 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
                                         <AccountsDetailedIcon className="w-7 h-7" /> <span className="text-sm">Conti</span>
                                     </button>
                                 </div>
@@ -582,15 +581,15 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
 
                         <input type="file" ref={fileInputRef} className="hidden" accept=".csv, .xlsx, .xls, .json" onChange={handleFileChange} />
-                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 text-indigo-700 font-bold rounded-2xl border border-indigo-100 shadow-sm hover:bg-indigo-100 transition-colors">
+                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 font-bold rounded-2xl border border-indigo-100 dark:border-slate-800 shadow-sm hover:bg-indigo-100 dark:hover:bg-slate-800 transition-colors">
                             <ArrowsUpDownIcon className="w-6 h-6" /> Imp/Exp (CSV/Excel/JSON)
                         </button>
                     </div>
 
                     <div className="lg:col-span-2 flex flex-col gap-6">
-                        <div className="bg-white p-6 md:rounded-2xl shadow-lg flex flex-col">
+                        <div className="bg-white dark:bg-slate-900 p-6 md:rounded-2xl shadow-lg flex flex-col transition-colors">
                             <div className="mb-4">
-                                <h3 className="text-xl font-bold text-slate-700">Riepilogo Categorie</h3>
+                                <h3 className="text-xl font-bold text-slate-700 dark:text-slate-100">Riepilogo Categorie</h3>
                                 <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
                             </div>
 
@@ -603,12 +602,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             <div key={cat.name} className="flex items-center gap-4 text-base">
                                                 <style.Icon className="w-10 h-10 flex-shrink-0" />
                                                 <div className="flex-grow">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="font-semibold text-slate-700">{style.label}</span>
-                                                        <span className="font-bold text-slate-800">{formatCurrency(cat.value)}</span>
+                                                    <div className="flex justify-between items-center mb-1 text-slate-700 dark:text-slate-300">
+                                                        <span className="font-semibold">{style.label}</span>
+                                                        <span className="font-bold text-slate-800 dark:text-slate-100">{formatCurrency(cat.value)}</span>
                                                     </div>
-                                                    <div className="w-full bg-slate-200 rounded-full h-2.5">
-                                                        <div className="bg-indigo-500 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                                                    <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5">
+                                                        <div className="bg-indigo-500 dark:bg-indigo-400 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -620,9 +619,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white p-6 md:rounded-2xl shadow-lg">
+                <div className="bg-white dark:bg-slate-900 p-6 md:rounded-2xl shadow-lg transition-colors">
                     <div className="mb-2 text-center">
-                        <h3 className="text-xl font-bold text-slate-700">Spese per Categoria</h3>
+                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-100">Spese per Categoria</h3>
                         <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
                     </div>
 
@@ -651,8 +650,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </ResponsiveContainer>
                             {activeIndex === null && (
                                 <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
-                                    <span className="text-slate-800 text-base font-bold">Totale</span>
-                                    <span className="text-2xl font-extrabold text-slate-800 mt-1">
+                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
+                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
                                         {formatCurrency(totalExpenses)}
                                     </span>
                                 </div>
@@ -661,7 +660,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     ) : <p className="text-center text-slate-500 py-16">Nessun dato da visualizzare.</p>}
 
                     {categoryData.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
+                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 transition-colors">
                             <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
                                 {categoryData.map((entry, index) => {
                                     const style = getCategoryStyle(entry.name);
@@ -669,11 +668,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <button
                                             key={`item-${index}`}
                                             onClick={(e) => handleLegendItemClick(index, e)}
-                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-slate-100 hover:bg-slate-200`}
+                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700`}
                                         >
                                             <style.Icon className="w-8 h-8 flex-shrink-0" />
                                             <div className="min-w-0 pr-2">
-                                                <p className={`font-semibold text-sm truncate text-slate-700`}>{style.label}</p>
+                                                <p className={`font-semibold text-sm truncate text-slate-700 dark:text-slate-300 transition-colors`}>{style.label}</p>
                                             </div>
                                         </button>
                                     );
@@ -697,45 +696,45 @@ const Dashboard: React.FC<DashboardProps> = ({
             {isImportExportMenuOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in-up"
+                        className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in-up transition-colors"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-800 transition-colors">
                             {showExportOptions && (
-                                <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-500" aria-label="Indietro">
+                                <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" aria-label="Indietro">
                                     <ArrowLeftIcon className="w-5 h-5" />
                                 </button>
                             )}
-                            <h3 className={`text-lg font-bold text-slate-800 flex-1 text-center ${showExportOptions ? '' : 'pl-8'}`}>
+                            <h3 className={`text-lg font-bold text-slate-800 dark:text-slate-100 flex-1 text-center transition-colors ${showExportOptions ? '' : 'pl-8'}`}>
                                 {showExportOptions ? "Scegli Formato" : "Gestione Dati"}
                             </h3>
-                            <button onClick={handleCloseNavigation} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
+                            <button onClick={handleCloseNavigation} className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                 <XMarkIcon className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="p-4 space-y-3">
                             {!showExportOptions ? (
                                 <>
-                                    <button onClick={handleSyncClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
+                                    <button onClick={handleSyncClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left group">
+                                        <div className="w-12 h-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform">
                                             <ArrowPathIcon className="w-6 h-6" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 text-lg">Sincronizza Cloud</span>
-                                            <span className="text-xs text-slate-500">Scarica ultimi dati dal cloud</span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Sincronizza Cloud</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Scarica ultimi dati dal cloud</span>
                                         </div>
                                     </button>
-                                    <button onClick={handleImportClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform">
+                                    <button onClick={handleImportClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left group">
+                                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
                                             <ArrowDownTrayIcon className="w-6 h-6" />
                                         </div>
-                                        <span className="font-semibold text-slate-700 text-lg">Importa (CSV/Excel/JSON)</span>
+                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Importa (CSV/Excel/JSON)</span>
                                     </button>
-                                    <button onClick={openExportOptions} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                    <button onClick={openExportOptions} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left group">
+                                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                                             <ArrowUpTrayIcon className="w-6 h-6" />
                                         </div>
-                                        <span className="font-semibold text-slate-700 text-lg">Esporta (Excel/JSON)</span>
+                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Esporta (Excel/JSON)</span>
                                     </button>
                                 </>
                             ) : (
@@ -743,27 +742,27 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <button
                                         onClick={() => handleExportClick('excel')}
                                         disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
                                             <span className="font-bold text-sm">XLSX</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 text-lg">Excel (.xlsx)</span>
-                                            <span className="text-xs text-slate-500">Le ricevute non verranno salvate</span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Excel (.xlsx)</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Le ricevute non verranno salvate</span>
                                         </div>
                                     </button>
                                     <button
                                         onClick={() => handleExportClick('json')}
                                         disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 group-hover:scale-110 transition-transform">
+                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400 group-hover:scale-110 transition-transform">
                                             <span className="font-bold text-sm">JSON</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 text-lg">JSON (.json)</span>
-                                            <span className="text-xs text-slate-500">Backup completo dell'app</span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">JSON (.json)</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Backup completo dell'app</span>
                                         </div>
                                     </button>
                                 </>

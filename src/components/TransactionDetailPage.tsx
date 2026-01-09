@@ -37,8 +37,8 @@ const recurrenceLabels = {
 } as const;
 
 const daysOfWeekLabels = { 0: 'Dom', 1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Gio', 5: 'Ven', 6: 'Sab' } as const;
-const dayOfWeekNames = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
-const ordinalSuffixes = ['primo','secondo','terzo','quarto','ultimo'];
+const dayOfWeekNames = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+const ordinalSuffixes = ['primo', 'secondo', 'terzo', 'quarto', 'ultimo'];
 
 const formatShortDate = (s?: string) => {
   const d = parseLocalYYYYMMDD(s);
@@ -57,10 +57,10 @@ const Modal = memo<{
   className?: string;
 }>(({ isOpen, isAnimating, onClose, title, children, className }) => {
   if (!isOpen && !isAnimating) return null;
-  
+
   return (
     <div
-      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/60 backdrop-blur-sm`}
+      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm`}
       onClick={(e) => {
         e.stopPropagation();
         onClose();
@@ -72,15 +72,15 @@ const Modal = memo<{
       role="dialog"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${className || ''}`}
+        className={`bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${className || ''} transition-colors`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+        <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-800 transition-colors">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 transition-colors">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-800 p-1 rounded-full hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
             aria-label="Chiudi"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -118,10 +118,10 @@ const getRecurrenceSummary = (e: Partial<Expense>) => {
     s = recurrenceLabels[recurrence];
   } else {
     s =
-      recurrence === 'daily'   ? `Ogni ${recurrenceInterval} giorni` :
-      recurrence === 'weekly'  ? `Ogni ${recurrenceInterval} sett.` :
-      recurrence === 'monthly' ? `Ogni ${recurrenceInterval} mesi` :
-                                 `Ogni ${recurrenceInterval} anni`;
+      recurrence === 'daily' ? `Ogni ${recurrenceInterval} giorni` :
+        recurrence === 'weekly' ? `Ogni ${recurrenceInterval} sett.` :
+          recurrence === 'monthly' ? `Ogni ${recurrenceInterval} mesi` :
+            `Ogni ${recurrenceInterval} anni`;
   }
 
   if (recurrence === 'weekly' && recurrenceDays?.length) {
@@ -138,7 +138,7 @@ const getRecurrenceSummary = (e: Partial<Expense>) => {
       const dom = d.getUTCDate();
       const dow = d.getUTCDay();
       const wom = Math.floor((dom - 1) / 7);
-      s += ` (${ordinalSuffixes[wom]} ${dayOfWeekNames[dow].slice(0,3)}.)`;
+      s += ` (${ordinalSuffixes[wom]} ${dayOfWeekNames[dow].slice(0, 3)}.)`;
     }
   }
 
@@ -152,16 +152,16 @@ const getRecurrenceSummary = (e: Partial<Expense>) => {
 };
 
 const getIntervalLabel = (
-  recurrence?: 'daily'|'weekly'|'monthly'|'yearly',
+  recurrence?: 'daily' | 'weekly' | 'monthly' | 'yearly',
   n?: number
 ) => {
   const c = n || 1;
   switch (recurrence) {
-    case 'daily':   return c === 1 ? 'giorno'     : 'giorni';
-    case 'weekly':  return c === 1 ? 'settimana'  : 'settimane';
-    case 'monthly': return c === 1 ? 'mese'       : 'mesi';
-    case 'yearly':  return c === 1 ? 'anno'       : 'anni';
-    default:        return 'mese';
+    case 'daily': return c === 1 ? 'giorno' : 'giorni';
+    case 'weekly': return c === 1 ? 'settimana' : 'settimane';
+    case 'monthly': return c === 1 ? 'mese' : 'mesi';
+    case 'yearly': return c === 1 ? 'anno' : 'anni';
+    default: return 'mese';
   }
 };
 
@@ -177,7 +177,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
 }) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
-  
+
   const tapBridgeHandlers = useTapBridge();
 
   const [activeMenu, setActiveMenu] = useState<'account' | 'toAccount' | null>(null);
@@ -189,11 +189,11 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
   const [isRecurrenceModalAnimating, setIsRecurrenceModalAnimating] = useState(false);
   const [isRecurrenceOptionsOpen, setIsRecurrenceOptionsOpen] = useState(false);
   const [isRecurrenceEndOptionsOpen, setIsRecurrenceEndOptionsOpen] = useState(false);
-  
+
   // Receipt Menu
   const [isReceiptMenuOpen, setIsReceiptMenuOpen] = useState(false);
   const [isReceiptMenuAnimating, setIsReceiptMenuAnimating] = useState(false);
-  
+
   const receiptMenuCloseTimeRef = useRef(0);
 
   const [viewingImage, setViewingImage] = useState<string | null>(null);
@@ -220,10 +220,10 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
       const time = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
       onFormChange({ time });
     }
-  }, []); 
+  }, []);
 
   const handleKeyboardClose = useRef<(() => void) | null>(null);
-  
+
   useEffect(() => {
     handleKeyboardClose.current = () => {
       const activeEl = document.activeElement;
@@ -263,7 +263,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
       setIsFrequencyModalAnimating(false);
     }
   }, [isFrequencyModalOpen]);
-  
+
   useEffect(() => {
     if (isReceiptMenuOpen) {
       const t = setTimeout(() => setIsReceiptMenuAnimating(true), 10);
@@ -334,15 +334,15 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         recurrenceCount: undefined,
       });
     } else if (frequency === 'single') {
-        up.frequency = 'recurring';
-        up.recurrence = undefined;
-        up.recurrenceInterval = undefined;
-        up.recurrenceDays = undefined;
-        up.monthlyRecurrenceType = undefined;
-        up.recurrenceEndType = 'count';
-        up.recurrenceCount = 1;
-        up.recurrenceEndDate = undefined;
-    } else { 
+      up.frequency = 'recurring';
+      up.recurrence = undefined;
+      up.recurrenceInterval = undefined;
+      up.recurrenceDays = undefined;
+      up.monthlyRecurrenceType = undefined;
+      up.recurrenceEndType = 'count';
+      up.recurrenceCount = 1;
+      up.recurrenceEndDate = undefined;
+    } else {
       up.frequency = 'recurring';
       up.time = undefined;
       if (!formData.recurrence) up.recurrence = 'monthly';
@@ -365,38 +365,38 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     setIsRecurrenceModalOpen(false);
     setIsRecurrenceModalAnimating(false);
   };
-  
+
   const handleCloseReceiptMenu = useCallback(() => {
-      setIsReceiptMenuOpen(false);
-      setIsReceiptMenuAnimating(false);
-      receiptMenuCloseTimeRef.current = Date.now();
+    setIsReceiptMenuOpen(false);
+    setIsReceiptMenuAnimating(false);
+    receiptMenuCloseTimeRef.current = Date.now();
   }, []);
 
   const handlePickReceipt = (e: React.MouseEvent, source: 'camera' | 'gallery') => {
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const filePromise = pickImage(source);
-      
-      setTimeout(() => {
-          handleCloseReceiptMenu();
-      }, 500); 
-      
-      filePromise
-          .then(async (file) => {
-              const { base64 } = await processImageFile(file);
-              const currentReceipts = formDataRef.current.receipts || [];
-              onFormChange({ receipts: [...currentReceipts, base64] });
-          })
-          .catch(e => {
-              // User cancelled or error
-          });
+    e.stopPropagation();
+    e.preventDefault();
+
+    const filePromise = pickImage(source);
+
+    setTimeout(() => {
+      handleCloseReceiptMenu();
+    }, 500);
+
+    filePromise
+      .then(async (file) => {
+        const { base64 } = await processImageFile(file);
+        const currentReceipts = formDataRef.current.receipts || [];
+        onFormChange({ receipts: [...currentReceipts, base64] });
+      })
+      .catch(e => {
+        // User cancelled or error
+      });
   };
-  
+
   const handleRemoveReceipt = (index: number) => {
-      const currentReceipts = formData.receipts || [];
-      const newReceipts = currentReceipts.filter((_, i) => i !== index);
-      onFormChange({ receipts: newReceipts });
+    const currentReceipts = formData.receipts || [];
+    const newReceipts = currentReceipts.filter((_, i) => i !== index);
+    onFormChange({ receipts: newReceipts });
   };
 
   const dynamicMonthlyDayOfWeekLabel = useMemo(() => {
@@ -417,29 +417,29 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     if (t === 'count') return 'Numero di volte';
     return 'Per sempre';
   };
-  
+
   const renderImageViewer = () => {
-      if (!viewingImage) return null;
-      return createPortal(
-        <div 
-            className="fixed inset-0 z-[6000] bg-black/95 flex items-center justify-center p-4 animate-fade-in-up"
-            onClick={() => setViewingImage(null)}
+    if (!viewingImage) return null;
+    return createPortal(
+      <div
+        className="fixed inset-0 z-[6000] bg-black/95 flex items-center justify-center p-4 animate-fade-in-up"
+        onClick={() => setViewingImage(null)}
+      >
+        <button
+          className="absolute top-4 right-4 text-white/80 hover:text-white p-2 transition-colors z-50"
+          onClick={() => setViewingImage(null)}
         >
-            <button 
-                className="absolute top-4 right-4 text-white/80 hover:text-white p-2 transition-colors z-50"
-                onClick={() => setViewingImage(null)}
-            >
-                <XMarkIcon className="w-8 h-8" />
-            </button>
-            <img 
-                src={`data:image/png;base64,${viewingImage}`} 
-                className="max-w-full max-h-full object-contain rounded-sm shadow-2xl"
-                alt="Ricevuta Full Screen"
-                onClick={(e) => e.stopPropagation()} 
-            />
-        </div>,
-        document.body
-      );
+          <XMarkIcon className="w-8 h-8" />
+        </button>
+        <img
+          src={`data:image/png;base64,${viewingImage}`}
+          className="max-w-full max-h-full object-contain rounded-sm shadow-2xl"
+          alt="Ricevuta Full Screen"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>,
+      document.body
+    );
   };
 
   if (typeof formData.amount !== 'number') {
@@ -447,26 +447,26 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
       <div
         ref={rootRef}
         tabIndex={-1}
-        className="flex flex-col h-full bg-slate-100 items-center justify-center p-4"
+        className="flex flex-col h-full bg-slate-100 dark:bg-slate-950 items-center justify-center p-4 transition-colors"
         {...tapBridgeHandlers}
       >
-        <header className="p-4 flex items-center gap-4 text-slate-800 bg-white shadow-sm absolute top-0 left-0 right-0 z-10">
+        <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 shadow-sm absolute top-0 left-0 right-0 z-10 transition-colors">
           {!isDesktop && (
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200" aria-label="Torna alla calcolatrice">
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" aria-label="Torna alla calcolatrice">
               <ArrowLeftIcon className="w-6 h-6" />
             </button>
           )}
           <h2 className="text-xl font-bold">Aggiungi Dettagli</h2>
         </header>
-        <p className="text-slate-500 text-center">Nessun dato dall'importo. Torna indietro e inserisci una spesa.</p>
+        <p className="text-slate-500 dark:text-slate-400 text-center transition-colors">Nessun dato dall'importo. Torna indietro e inserisci una spesa.</p>
       </div>
     );
   }
 
   const isFrequencySet = !!formData.frequency;
   const selectedAccountLabel = accounts.find(a => a.id === formData.accountId)?.name;
-  
-  const accountOptions = useMemo(() => 
+
+  const accountOptions = useMemo(() =>
     accounts.map(a => ({ value: a.id, label: a.name })),
     [accounts]
   );
@@ -474,20 +474,20 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
   const selectedToAccountLabel = accounts.find(a => a.id === formData.toAccountId)?.name;
   const toAccountOptions = useMemo(() =>
     accounts
-        .filter(a => a.id !== formData.accountId)
-        .map(a => ({ value: a.id, label: a.name })),
+      .filter(a => a.id !== formData.accountId)
+      .map(a => ({ value: a.id, label: a.name })),
     [accounts, formData.accountId]
   );
 
   const DateTimeInputs = (
     <div className={`grid ${!formData.frequency ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
       <div>
-        <label htmlFor="date" className={`block text-base font-medium mb-1 ${dateError ? 'text-red-600' : 'text-slate-700'}`}>
+        <label htmlFor="date" className={`block text-base font-medium mb-1 transition-colors ${dateError ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
           {isSingleRecurring ? 'Data del Pagamento' : formData.frequency === 'recurring' ? 'Data di inizio' : 'Data'}
         </label>
         <div className="relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <CalendarIcon className="h-5 w-5 text-slate-400" />
+            <CalendarIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
           </div>
           <input
             id="date"
@@ -495,21 +495,21 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             type="date"
             value={formData.date || ''}
             onChange={handleInputChange}
-            className={`block w-full rounded-md bg-white py-2.5 pl-10 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none ${dateError ? 'border-red-500 ring-1 ring-red-500' : 'border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`}
+            className={`block w-full rounded-md bg-white dark:bg-slate-900 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none transition-colors ${dateError ? 'border-red-500 ring-1 ring-red-500 dark:border-red-800 dark:ring-red-900' : 'border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`}
             enterKeyHint="done"
             onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
             onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
           />
         </div>
-        {dateError && <p className="mt-1 text-sm text-red-600">Per favore, imposta una data.</p>}
+        {dateError && <p className="mt-1 text-sm text-red-600 dark:text-red-400 transition-colors">Per favore, imposta una data.</p>}
       </div>
 
       {!formData.frequency && (
         <div>
-          <label htmlFor="time" className="block text-base font-medium text-slate-700 mb-1">Ora</label>
+          <label htmlFor="time" className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">Ora</label>
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <ClockIcon className="h-5 w-5 text-slate-400" />
+              <ClockIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </div>
             <input
               id="time"
@@ -517,7 +517,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
               type="time"
               value={formData.time || ''}
               onChange={handleInputChange}
-              className="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
               enterKeyHint="done"
               onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
               onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -534,14 +534,14 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     <div
       ref={rootRef}
       tabIndex={-1}
-      className="flex flex-col h-full bg-slate-100 focus:outline-none"
+      className="flex flex-col h-full bg-slate-100 dark:bg-slate-950 focus:outline-none transition-colors"
       style={{ touchAction: 'pan-y' }}
       {...tapBridgeHandlers}
     >
-      <header className="p-4 flex items-center justify-between gap-4 text-slate-800 bg-white shadow-sm sticky top-0 z-10">
+      <header className="p-4 flex items-center justify-between gap-4 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-10 transition-colors">
         <div className="flex items-center gap-4">
           {!isDesktop && (
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200" aria-label="Torna alla calcolatrice">
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" aria-label="Torna alla calcolatrice">
               <ArrowLeftIcon className="w-6 h-6" />
             </button>
           )}
@@ -553,25 +553,25 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
       <main className="flex-1 p-4 flex flex-col overflow-y-auto" style={{ touchAction: 'pan-y' }}>
         <div className="space-y-2">
           <div className="flex justify-center items-center py-0">
-            <div className={`relative flex items-baseline justify-center ${isIncome ? 'text-green-600' : isTransfer ? 'text-sky-600' : isAdjustment ? 'text-slate-600' : 'text-indigo-600'}`}>
-                <span className="text-[2.6rem] leading-none font-bold tracking-tighter relative z-10">
-                    {isAdjustment 
-                      ? formatCurrency(formData.amount || 0).replace(/[€\s]/g, '')
-                      : formatCurrency(Math.abs(formData.amount || 0)).replace(/[^0-9,.]/g, '')}
+            <div className={`relative flex items-baseline justify-center ${isIncome ? 'text-green-600 dark:text-green-400' : isTransfer ? 'text-sky-600 dark:text-sky-400' : isAdjustment ? 'text-slate-600 dark:text-slate-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
+              <span className="text-[2.6rem] leading-none font-bold tracking-tighter relative z-10 transition-colors">
+                {isAdjustment
+                  ? formatCurrency(formData.amount || 0).replace(/[€\s]/g, '')
+                  : formatCurrency(Math.abs(formData.amount || 0)).replace(/[^0-9,.]/g, '')}
+              </span>
+              {!isAdjustment && (
+                <span className={`text-3xl font-medium opacity-70 absolute transition-colors ${isIncome ? 'text-green-400' : isTransfer ? 'text-sky-400' : 'text-indigo-400'}`} style={{ right: '100%', marginRight: '8px', top: '4px' }}>
+                  {isIncome ? '+' : isTransfer ? '' : '-'}
                 </span>
-                {!isAdjustment && (
-                  <span className={`text-3xl font-medium opacity-70 absolute ${isIncome ? 'text-green-400' : isTransfer ? 'text-sky-400' : 'text-indigo-400'}`} style={{ right: '100%', marginRight: '8px', top: '4px' }}>
-                      {isIncome ? '+' : isTransfer ? '' : '-'}
-                  </span>
-                )}
+              )}
             </div>
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-base font-medium text-slate-700 mb-1">Descrizione</label>
+            <label htmlFor="description" className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">Descrizione</label>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <DocumentTextIcon className="h-5 w-5 text-slate-400" />
+                <DocumentTextIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" />
               </div>
               <input
                 ref={descriptionInputRef}
@@ -580,7 +580,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 type="text"
                 value={formData.description || ''}
                 onChange={handleInputChange}
-                className="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="block w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                 placeholder="Es. Caffè al bar"
                 enterKeyHint="done"
                 onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
@@ -589,132 +589,131 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           </div>
 
           {isTransfer ? (
-              <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-base font-medium text-slate-700 mb-1">Da Conto</label>
-                    <button
-                        type="button"
-                        onClick={() => setActiveMenu('account')}
-                        className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white border-slate-300 text-slate-800 hover:bg-slate-50"
-                    >
-                        <CreditCardIcon className="h-7 w-7 text-slate-400" />
-                        <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
-                        <ChevronDownIcon className="w-5 h-5 text-slate-500" />
-                    </button>
-                  </div>
-                  <div>
-                    <label className="block text-base font-medium text-slate-700 mb-1">A Conto</label>
-                    <button
-                        type="button"
-                        onClick={() => setActiveMenu('toAccount')}
-                        className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white border-slate-300 text-slate-800 hover:bg-slate-50"
-                    >
-                        <CreditCardIcon className="h-7 w-7 text-slate-400" />
-                        <span className="truncate flex-1">{selectedToAccountLabel || 'Seleziona'}</span>
-                        <ChevronDownIcon className="w-5 h-5 text-slate-500" />
-                    </button>
-                  </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">Da Conto</label>
+                <button
+                  type="button"
+                  onClick={() => setActiveMenu('account')}
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  <CreditCardIcon className="h-7 w-7 text-slate-400 dark:text-slate-500" />
+                  <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
+                  <ChevronDownIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                </button>
               </div>
+              <div>
+                <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">A Conto</label>
+                <button
+                  type="button"
+                  onClick={() => setActiveMenu('toAccount')}
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  <CreditCardIcon className="h-7 w-7 text-slate-400 dark:text-slate-500" />
+                  <span className="truncate flex-1">{selectedToAccountLabel || 'Seleziona'}</span>
+                  <ChevronDownIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                </button>
+              </div>
+            </div>
           ) : (
             <div>
-                <label className="block text-base font-medium text-slate-700 mb-1">Conto</label>
-                <button
+              <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">Conto</label>
+              <button
                 type="button"
                 onClick={() => setActiveMenu('account')}
-                className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white border-slate-300 text-slate-800 hover:bg-slate-50"
-                >
-                <CreditCardIcon className="h-7 w-7 text-slate-400" />
+                className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <CreditCardIcon className="h-7 w-7 text-slate-400 dark:text-slate-500" />
                 <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
-                <ChevronDownIcon className="w-5 h-5 text-slate-500" />
-                </button>
+                <ChevronDownIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              </button>
             </div>
           )}
 
           {!isFrequencySet && DateTimeInputs}
-          
-          {canAttachReceipt && (
-              <div>
-                  <label className="block text-base font-medium text-slate-700 mb-1">Ricevuta</label>
-                  
-                  {formData.receipts && formData.receipts.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                          {formData.receipts.map((receipt, index) => (
-                              <div 
-                                key={index} 
-                                className="relative rounded-lg overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-50 cursor-pointer hover:border-indigo-300 transition-colors"
-                                onClick={() => setViewingImage(receipt)}
-                              >
-                                  <img 
-                                      src={`data:image/png;base64,${receipt}`} 
-                                      alt="Ricevuta" 
-                                      className="w-full h-full object-cover"
-                                  />
-                                  <button 
-                                      type="button"
-                                      onClick={(e) => { 
-                                          e.stopPropagation(); 
-                                          handleRemoveReceipt(index); 
-                                      }}
-                                      onPointerDown={(e) => e.stopPropagation()}
-                                      className="absolute top-1 right-1 p-1.5 bg-white/90 text-red-600 rounded-full shadow-md hover:bg-red-50 hover:text-red-700 transition-colors z-10 flex items-center justify-center"
-                                      aria-label="Rimuovi ricevuta"
-                                  >
-                                      <XMarkIcon className="w-5 h-5" />
-                                  </button>
-                              </div>
-                          ))}
-                      </div>
-                  )}
 
-                  <button
-                      type="button"
-                      onClick={() => {
-                          if (Date.now() - receiptMenuCloseTimeRef.current < 500) return;
-                          setIsReceiptMenuOpen(true);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg border border-dashed border-indigo-300 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:border-indigo-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                      <PaperClipIcon className="w-5 h-5" />
-                      <span>{formData.receipts && formData.receipts.length > 0 ? 'Aggiungi un\'altra ricevuta' : 'Allega Ricevuta'}</span>
-                  </button>
-              </div>
+          {canAttachReceipt && (
+            <div>
+              <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">Ricevuta</label>
+
+              {formData.receipts && formData.receipts.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  {formData.receipts.map((receipt, index) => (
+                    <div
+                      key={index}
+                      className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm aspect-video bg-slate-50 dark:bg-slate-900 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
+                      onClick={() => setViewingImage(receipt)}
+                    >
+                      <img
+                        src={`data:image/png;base64,${receipt}`}
+                        alt="Ricevuta"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveReceipt(index);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="absolute top-1 right-1 p-1.5 bg-white/90 dark:bg-slate-800/90 text-red-600 dark:text-red-400 rounded-full shadow-md hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-300 transition-colors z-10 flex items-center justify-center"
+                        aria-label="Rimuovi ricevuta"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (Date.now() - receiptMenuCloseTimeRef.current < 500) return;
+                  setIsReceiptMenuOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-400 dark:hover:border-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <PaperClipIcon className="w-5 h-5" />
+                <span>{formData.receipts && formData.receipts.length > 0 ? 'Aggiungi un\'altra ricevuta' : 'Allega Ricevuta'}</span>
+              </button>
+            </div>
           )}
 
           {!isIncome && !isTransfer && !isAdjustment && (
-            <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-4">
-                <div>
-                <label className="block text-base font-medium text-slate-700 mb-1">Frequenza</label>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4 transition-colors">
+              <div>
+                <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">Frequenza</label>
                 <button
-                    type="button"
-                    onClick={() => setIsFrequencyModalOpen(true)}
-                    className={`w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
-                    isFrequencySet
-                        ? 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50'
-                        : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
+                  type="button"
+                  onClick={() => setIsFrequencyModalOpen(true)}
+                  className={`w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${isFrequencySet
+                    ? 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-900'
                     }`}
                 >
-                    <span className="truncate flex-1 capitalize">
+                  <span className="truncate flex-1 capitalize">
                     {isSingleRecurring ? 'Singolo' : formData.frequency === 'recurring' ? 'Ricorrente' : 'Nessuna'}
-                    </span>
-                    <ChevronDownIcon className="w-5 h-5 text-slate-500" />
+                  </span>
+                  <ChevronDownIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                 </button>
-                </div>
+              </div>
 
-                {isFrequencySet && DateTimeInputs}
+              {isFrequencySet && DateTimeInputs}
 
-                {formData.frequency === 'recurring' && !isSingleRecurring && (
+              {formData.frequency === 'recurring' && !isSingleRecurring && (
                 <div>
-                    <label className="block text-base font-medium text-slate-700 mb-1">Ricorrenza</label>
-                    <button
+                  <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">Ricorrenza</label>
+                  <button
                     type="button"
                     onClick={() => setIsRecurrenceModalOpen(true)}
-                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white border-slate-300 text-slate-800 hover:bg-slate-50"
-                    >
+                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  >
                     <span className="truncate flex-1">{getRecurrenceSummary(formData)}</span>
-                    <ChevronDownIcon className="w-5 h-5 text-slate-500" />
-                    </button>
+                    <ChevronDownIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                  </button>
                 </div>
-                )}
+              )}
             </div>
           )}
         </div>
@@ -724,15 +723,14 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             type="button"
             onClick={() => onSubmit(formData as Omit<Expense, 'id'>)}
             disabled={(Math.abs(formData.amount ?? 0) <= 0 && !isAdjustment) || (isTransfer && (!formData.toAccountId || formData.toAccountId === formData.accountId))}
-            className={`w-full px-4 py-3 text-base font-semibold text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${
-                isIncome 
-                ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500 disabled:bg-green-300'
-                : isTransfer
-                ? 'bg-sky-600 hover:bg-sky-700 focus:ring-sky-500 disabled:bg-sky-300' 
+            className={`w-full px-4 py-3 text-base font-semibold text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${isIncome
+              ? 'bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 focus:ring-green-500 disabled:bg-green-300 dark:disabled:bg-green-900/30'
+              : isTransfer
+                ? 'bg-sky-600 dark:bg-sky-500 hover:bg-sky-700 dark:hover:bg-sky-600 focus:ring-sky-500 disabled:bg-sky-300 dark:disabled:bg-sky-900/30'
                 : isAdjustment
-                ? 'bg-slate-600 hover:bg-slate-700 focus:ring-slate-500'
-                : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 disabled:bg-indigo-300'
-            }`}
+                  ? 'bg-slate-600 dark:bg-slate-500 hover:bg-slate-700 dark:hover:bg-slate-600 focus:ring-slate-500'
+                  : 'bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:ring-indigo-500 disabled:bg-indigo-300 dark:disabled:bg-indigo-900/30'
+              }`}
           >
             {isTransfer ? 'Conferma Trasferimento' : isIncome ? 'Aggiungi Entrata' : isAdjustment ? 'Salva Rettifica' : 'Aggiungi Spesa'}
           </button>
@@ -747,7 +745,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         selectedValue={formData.accountId || ''}
         onSelect={handleAccountSelect}
       />
-      
+
       <SelectionMenu
         isOpen={activeMenu === 'toAccount'}
         onClose={() => setActiveMenu(null)}
@@ -764,12 +762,12 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         title="Seleziona Frequenza"
       >
         <div className="p-4 space-y-2">
-          <button onClick={() => handleFrequencySelect('none')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 text-slate-800 hover:bg-indigo-100 hover:text-indigo-800">Nessuna</button>
-          <button onClick={() => handleFrequencySelect('single')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 text-slate-800 hover:bg-indigo-100 hover:text-indigo-800">Singolo</button>
-          <button onClick={() => handleFrequencySelect('recurring')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 text-slate-800 hover:bg-indigo-100 hover:text-indigo-800">Ricorrente</button>
+          <button onClick={() => handleFrequencySelect('none')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors">Nessuna</button>
+          <button onClick={() => handleFrequencySelect('single')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors">Singolo</button>
+          <button onClick={() => handleFrequencySelect('recurring')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors">Ricorrente</button>
         </div>
       </Modal>
-      
+
       <Modal
         isOpen={isReceiptMenuOpen}
         isAnimating={isReceiptMenuAnimating}
@@ -777,23 +775,23 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         title="Allega Ricevuta"
       >
         <div className="p-4 grid grid-cols-2 gap-4">
-          <button 
-            onClick={(e) => handlePickReceipt(e, 'camera')} 
-            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
+          <button
+            onClick={(e) => handlePickReceipt(e, 'camera')}
+            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-200 dark:hover:border-indigo-700 transition-colors"
           >
-             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-indigo-600">
-                 <CameraIcon className="w-7 h-7" />
-             </div>
-             <span className="font-semibold text-slate-700">Fotocamera</span>
+            <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm text-indigo-600 dark:text-indigo-400 transition-colors">
+              <CameraIcon className="w-7 h-7" />
+            </div>
+            <span className="font-semibold text-slate-700 dark:text-slate-300 transition-colors">Fotocamera</span>
           </button>
-          <button 
-            onClick={(e) => handlePickReceipt(e, 'gallery')} 
-            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200 hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
+          <button
+            onClick={(e) => handlePickReceipt(e, 'gallery')}
+            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-200 dark:hover:border-indigo-700 transition-colors"
           >
-             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-purple-600">
-                 <PhotoIcon className="w-7 h-7" />
-             </div>
-             <span className="font-semibold text-slate-700">Galleria</span>
+            <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm text-purple-600 dark:text-purple-400 transition-colors">
+              <PhotoIcon className="w-7 h-7" />
+            </div>
+            <span className="font-semibold text-slate-700 dark:text-slate-300 transition-colors">Galleria</span>
           </button>
         </div>
       </Modal>
@@ -865,14 +863,13 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                         const next = arr.includes(d.value)
                           ? arr.filter(x => x !== d.value)
                           : [...arr, d.value];
-                        return next.sort((a,b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
+                        return next.sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
                       });
                     }}
-                    className={`w-14 h-14 rounded-full text-sm font-semibold border-2 transition-colors ${
-                      (tempRecurrenceDays || []).includes(d.value)
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white text-slate-800 border-indigo-400 hover:bg-indigo-50'
-                    }`}
+                    className={`w-14 h-14 rounded-full text-sm font-semibold border-2 transition-colors ${(tempRecurrenceDays || []).includes(d.value)
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-slate-800 border-indigo-400 hover:bg-indigo-50'
+                      }`}
                   >
                     {d.label}
                   </button>
@@ -921,13 +918,13 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
 
                 {isRecurrenceEndOptionsOpen && (
                   <div className="absolute top-full mt-1 w-full bg-white border border-slate-200 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">
-                    {(['forever','date','count'] as const).map(k => (
+                    {(['forever', 'date', 'count'] as const).map(k => (
                       <button
                         key={k}
                         onClick={() => {
                           if (k === 'forever') onFormChange({ recurrenceEndType: 'forever', recurrenceEndDate: undefined, recurrenceCount: undefined });
-                          if (k === 'date')    onFormChange({ recurrenceEndType: 'date',    recurrenceEndDate: formData.recurrenceEndDate || toYYYYMMDD(new Date()), recurrenceCount: undefined });
-                          if (k === 'count')   onFormChange({ recurrenceEndType: 'count',   recurrenceCount: formData.recurrenceCount || 1, recurrenceEndDate: undefined });
+                          if (k === 'date') onFormChange({ recurrenceEndType: 'date', recurrenceEndDate: formData.recurrenceEndDate || toYYYYMMDD(new Date()), recurrenceCount: undefined });
+                          if (k === 'count') onFormChange({ recurrenceEndType: 'count', recurrenceCount: formData.recurrenceCount || 1, recurrenceEndDate: undefined });
                           setIsRecurrenceEndOptionsOpen(false);
                         }}
                         className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg bg-slate-50 text-slate-800 hover:bg-indigo-100 hover:text-indigo-800"
@@ -942,7 +939,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
               {formData.recurrenceEndType === 'date' && (
                 <div>
                   <label htmlFor="recurrence-end-date" className="relative w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 text-indigo-600 hover:bg-indigo-100 font-semibold cursor-pointer h-[46.5px]">
-                    <CalendarIcon className="w-5 h-5"/>
+                    <CalendarIcon className="w-5 h-5" />
                     <span>{formData.recurrenceEndDate ? formatShortDate(formData.recurrenceEndDate) : 'Seleziona'}</span>
                     <input
                       type="date"
@@ -975,7 +972,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             </div>
           </div>
         </main>
-        
+
         <footer className="p-4 bg-slate-100 border-t border-slate-200 flex justify-end">
           <button
             type="button"
@@ -986,7 +983,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           </button>
         </footer>
       </Modal>
-      
+
       {renderImageViewer()}
     </div>
   );

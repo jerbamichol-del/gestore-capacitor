@@ -28,12 +28,12 @@ const TransferConfirmationModal: React.FC<Props> = ({
   // Auto-detect possible destination account from merchant name
   useEffect(() => {
     if (!transaction) return;
-    
+
     const merchantLower = (transaction.description || '').toLowerCase();
-    const matchingAccount = accounts.find(acc => 
+    const matchingAccount = accounts.find(acc =>
       merchantLower.includes(acc.name.toLowerCase())
     );
-    
+
     if (matchingAccount) {
       setSelectedToAccount(matchingAccount.id);
     } else if (accounts.length > 0) {
@@ -50,7 +50,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
       alert('Seleziona un conto di destinazione');
       return;
     }
-    
+
     setIsProcessing(true);
     try {
       const toAccountName = accounts.find(a => a.id === selectedToAccount)?.name || selectedToAccount;
@@ -70,51 +70,51 @@ const TransferConfirmationModal: React.FC<Props> = ({
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/70 backdrop-blur-sm"
+    <div
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/70 dark:bg-slate-950/80 backdrop-blur-sm transition-colors"
       onClick={onClose}
     >
-      <div 
-        className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+      <div
+        className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 transition-colors">
           <div className="flex items-center gap-3">
             <span className="text-4xl">🤔</span>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Trasferimento o Spesa?</h2>
-              <p className="text-sm text-slate-500 mt-1">Questa transazione potrebbe essere un trasferimento tra i tuoi conti</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 transition-colors">Trasferimento o Spesa?</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">Questa transazione potrebbe essere un trasferimento tra i tuoi conti</p>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={isProcessing}
-            className="text-slate-400 hover:text-slate-600 text-3xl font-light leading-none disabled:opacity-50"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-3xl font-light leading-none disabled:opacity-50 transition-colors"
           >
             ×
           </button>
         </div>
 
         {/* Transaction Info */}
-        <div className="p-6 border-b border-slate-200 bg-slate-50">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 transition-colors">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <div className="text-sm text-slate-500 mb-1">Da</div>
-              <div className="text-lg font-semibold text-slate-900">{transaction.account}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1 transition-colors">Da</div>
+              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100 transition-colors">{transaction.account}</div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-red-600">-€{transaction.amount.toFixed(2)}</div>
-              <div className="text-sm text-slate-500 mt-1">{new Date(transaction.date).toLocaleDateString('it-IT')}</div>
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400 transition-colors">-€{transaction.amount.toFixed(2)}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">{new Date(transaction.date).toLocaleDateString('it-IT')}</div>
             </div>
           </div>
-          
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 transition-colors">
             <div className="flex items-start gap-3">
               <span className="text-2xl">🏦</span>
               <div>
-                <div className="font-semibold text-yellow-900 mb-1">Possibile trasferimento rilevato</div>
-                <div className="text-sm text-yellow-700">Il beneficiario “<span className="font-medium">{transaction.description}</span>” sembra essere un altro tuo conto.</div>
+                <div className="font-semibold text-yellow-900 dark:text-yellow-200 mb-1 transition-colors">Possibile trasferimento rilevato</div>
+                <div className="text-sm text-yellow-700 dark:text-yellow-300 transition-colors">Il beneficiario “<span className="font-medium">{transaction.description}</span>” sembra essere un altro tuo conto.</div>
               </div>
             </div>
           </div>
@@ -123,25 +123,25 @@ const TransferConfirmationModal: React.FC<Props> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Option 1: Transfer */}
-          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl p-5 transition-colors">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">🔄</span>
               <div>
-                <h3 className="text-xl font-bold text-indigo-900">Trasferimento tra conti</h3>
-                <p className="text-sm text-indigo-700">Hai spostato denaro tra i tuoi conti</p>
+                <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-300">Trasferimento tra conti</h3>
+                <p className="text-sm text-indigo-700 dark:text-indigo-400 italic">Hai spostato denaro tra i tuoi conti</p>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 transition-colors">
                   Verso quale conto?
                 </label>
                 <select
                   value={selectedToAccount}
                   onChange={(e) => setSelectedToAccount(e.target.value)}
                   disabled={isProcessing}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {accounts.map(acc => (
                     <option key={acc.id} value={acc.id}>
@@ -151,16 +151,16 @@ const TransferConfirmationModal: React.FC<Props> = ({
                 </select>
               </div>
 
-              <div className="bg-white rounded-lg p-4 border border-indigo-200">
-                <div className="text-sm text-slate-600 mb-2 font-medium">Verrà registrato:</div>
+              <div className="bg-white dark:bg-slate-950/50 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800 transition-colors">
+                <div className="text-sm text-slate-600 dark:text-slate-400 mb-2 font-medium transition-colors">Verrà registrato:</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-700">• Uscita da <span className="font-semibold">{transaction.account}</span></span>
-                    <span className="text-red-600 font-semibold">-€{transaction.amount.toFixed(2)}</span>
+                    <span className="text-slate-700 dark:text-slate-300 transition-colors">• Uscita da <span className="font-semibold">{transaction.account}</span></span>
+                    <span className="text-red-600 dark:text-red-400 font-semibold transition-colors">-€{transaction.amount.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-700">• Entrata su <span className="font-semibold">{accounts.find(a => a.id === selectedToAccount)?.name || 'conto selezionato'}</span></span>
-                    <span className="text-green-600 font-semibold">+€{transaction.amount.toFixed(2)}</span>
+                    <span className="text-slate-700 dark:text-slate-300 transition-colors">• Entrata su <span className="font-semibold">{accounts.find(a => a.id === selectedToAccount)?.name || 'conto selezionato'}</span></span>
+                    <span className="text-green-600 dark:text-green-400 font-semibold transition-colors">+€{transaction.amount.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -168,7 +168,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
               <button
                 onClick={handleTransferConfirm}
                 disabled={isProcessing || !selectedToAccount}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-semibold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
+                className="w-full bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-semibold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
               >
                 {isProcessing ? (
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
@@ -183,22 +183,22 @@ const TransferConfirmationModal: React.FC<Props> = ({
           </div>
 
           {/* Option 2: Normal Expense */}
-          <div className="bg-gradient-to-br from-slate-50 to-gray-50 border-2 border-slate-200 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900/40 dark:to-gray-900/40 border-2 border-slate-200 dark:border-slate-800 rounded-xl p-5 transition-colors">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">💸</span>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Spesa normale</h3>
-                <p className="text-sm text-slate-600">Hai pagato un servizio/prodotto</p>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 transition-colors">Spesa normale</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 italic transition-colors">Hai pagato un servizio/prodotto</p>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 border border-slate-200 mb-4">
-              <div className="text-sm text-slate-600 mb-2 font-medium">Verrà registrato:</div>
+            <div className="bg-white dark:bg-slate-950/50 rounded-lg p-4 border border-slate-200 dark:border-slate-800 mb-4 transition-colors">
+              <div className="text-sm text-slate-600 dark:text-slate-400 mb-2 font-medium transition-colors">Verrà registrato:</div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-700">Spesa su <span className="font-semibold">{transaction.account}</span></span>
-                <span className="text-red-600 font-semibold">-€{transaction.amount.toFixed(2)}</span>
+                <span className="text-slate-700 dark:text-slate-300 transition-colors">Spesa su <span className="font-semibold">{transaction.account}</span></span>
+                <span className="text-red-600 dark:text-red-400 font-semibold transition-colors">-€{transaction.amount.toFixed(2)}</span>
               </div>
-              <div className="text-xs text-slate-500 mt-2">
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 transition-colors">
                 Beneficiario: <span className="font-medium">{transaction.description}</span>
               </div>
             </div>
@@ -206,7 +206,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
             <button
               onClick={handleExpenseConfirm}
               disabled={isProcessing}
-              className="w-full bg-slate-600 hover:bg-slate-700 disabled:bg-slate-300 text-white font-semibold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
+              className="w-full bg-slate-600 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-semibold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-lg"
             >
               {isProcessing ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
@@ -221,8 +221,8 @@ const TransferConfirmationModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-200 bg-slate-50">
-          <p className="text-sm text-slate-600 text-center">
+        <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 transition-colors">
+          <p className="text-sm text-slate-600 dark:text-slate-400 text-center transition-colors">
             💡 <span className="font-medium">Suggerimento:</span> I trasferimenti creano due movimenti linkati per mantenere i saldi corretti su entrambi i conti
           </p>
         </div>

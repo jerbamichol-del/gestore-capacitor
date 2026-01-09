@@ -1,0 +1,34 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Users/jerba/.gemini/antigravity/scratch/gestore-capacitor[39m
+
+[90mstdout[2m | src/services/__tests__/notification-transaction-parser.test.ts[2m > [22m[2mNotificationTransactionParser[2m > [22m[2mshould parse UniCredit expense correctly (Amount before c/o)
+[22m[39m­ƒöì Parsing notification from unicredit: UniCredit Title autorizzata op.Internet 60,40 EUR carta *1210 c/o PAYPAL *KICKKICK.IT 12/01/24
+
+[90mstdout[2m | src/services/__tests__/notification-transaction-parser.test.ts[2m > [22m[2mNotificationTransactionParser[2m > [22m[2mshould parse UniCredit basic payment
+[22m[39m­ƒöì Parsing notification from unicredit: Title Pagamento POS 15,00 EUR presso Bar Sport
+
+[90mstdout[2m | src/services/__tests__/notification-transaction-parser.test.ts[2m > [22m[2mNotificationTransactionParser[2m > [22m[2mshould parse Postepay and map to correct account ID
+[22m[39m­ƒöì Parsing notification from postepay: PostePay Pagamento su POS 22.50 EUR presso Ristorante Roma
+
+[90mstdout[2m | src/services/__tests__/notification-transaction-parser.test.ts[2m > [22m[2mNotificationTransactionParser[2m > [22m[2mshould parse Revolut expense
+[22m[39m­ƒöì Parsing notification from revolut: Revolut Hai speso Ôé¼12,99 da Netflix
+
+[90mstdout[2m | src/services/__tests__/notification-transaction-parser.test.ts[2m > [22m[2mNotificationTransactionParser[2m > [22m[2mshould parse PayPal sent money
+[22m[39m­ƒöì Parsing notification from paypal: PayPal Hai inviato 50,00 EUR a Mario Rossi
+
+[90mstdout[2m | src/services/__tests__/notification-transaction-parser.test.ts[2m > [22m[2mNotificationTransactionParser[2m > [22m[2mshould parse Intesa Sanpaolo and map to bank-account
+[22m[39m­ƒöì Parsing notification from intesa: Intesa Addebito carta 100,00 EUR presso Amazon
+
+ [31mÔØ»[39m src/services/__tests__/notification-transaction-parser.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m├ù[31m should parse UniCredit expense correctly (Amount before c/o)[39m[32m 6[2mms[22m[39m
+[31m     [31m├ù[31m should parse UniCredit basic payment[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should parse Postepay and map to correct account ID[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should parse Revolut expense[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should parse PayPal sent money[39m[32m 0[2mms[22m[39m
+[31m     [31m├ù[31m should parse Intesa Sanpaolo and map to bank-account[39m[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[90m (6)[39m
+[2m   Start at [22m 11:17:25
+[2m   Duration [22m 724ms[2m (transform 66ms, setup 0ms, import 86ms, tests 10ms, environment 495ms)[22m
+

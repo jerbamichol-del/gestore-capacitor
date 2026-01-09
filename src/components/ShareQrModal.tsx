@@ -10,13 +10,13 @@ interface ShareQrModalProps {
 const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showNativeQr, setShowNativeQr] = useState(false);
-  
+
   // URL PWA (attuale)
   const pwaUrl = typeof window !== 'undefined' ? window.location.href : '';
-  
+
   // URL APK da GitHub Releases (sempre l'ultima versione)
   const apkUrl = 'https://github.com/jerbamichol-del/gestore-capacitor/releases/latest/download/gestore-spese.apk';
-  
+
   // URL da mostrare nel QR
   const qrUrl = showNativeQr ? apkUrl : pwaUrl;
 
@@ -33,18 +33,18 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-[6000] flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/60 backdrop-blur-sm`}
+      className={`fixed inset-0 z-[6000] flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/60 transition-colors backdrop-blur-sm`}
       onClick={onClose}
       aria-modal="true"
       role="dialog"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} transition-colors`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-6 border-b border-slate-200">
-          <h2 className="text-xl font-bold text-slate-800">Condividi App</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-200">
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800 transition-colors">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 transition-colors">Condividi App</h2>
+          <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
@@ -53,28 +53,26 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
         <div className="px-6 pt-6 flex gap-2">
           <button
             onClick={() => setShowNativeQr(false)}
-            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-              !showNativeQr
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${!showNativeQr
+                ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
           >
             📱 Web App (PWA)
           </button>
           <button
             onClick={() => setShowNativeQr(true)}
-            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-              showNativeQr
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${showNativeQr
+                ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
           >
             🤖 App Nativa (APK)
           </button>
         </div>
 
         <div className="p-8 flex flex-col items-center justify-center space-y-6">
-          <div className="p-4 bg-white border-2 border-slate-100 rounded-xl shadow-sm">
+          <div className="p-4 bg-white border-2 border-slate-100 rounded-xl shadow-sm transition-colors">
             <QRCode
               value={qrUrl}
               size={200}
@@ -82,30 +80,30 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
               viewBox={`0 0 256 256`}
             />
           </div>
-          
+
           {showNativeQr ? (
             <div className="text-center space-y-2">
-              <p className="text-slate-800 font-semibold text-sm">
+              <p className="text-slate-800 dark:text-slate-200 font-semibold text-sm transition-colors">
                 📥 Scarica l'app nativa Android
               </p>
-              <p className="text-slate-600 text-xs leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed transition-colors">
                 Scansiona per scaricare l'APK.<br />
-                <span className="text-slate-500">Abilita "Installa da fonti sconosciute" se richiesto.</span>
+                <span className="text-slate-500 dark:text-slate-500">Abilita "Installa da fonti sconosciute" se richiesto.</span>
               </p>
             </div>
           ) : (
-            <p className="text-center text-slate-600 text-sm">
+            <p className="text-center text-slate-600 dark:text-slate-400 text-sm transition-colors">
               Scansiona questo codice per aprire e installare l'app web su un altro dispositivo.
             </p>
           )}
 
           {/* Link diretto sotto il QR */}
-          <div className="w-full pt-4 border-t border-slate-100">
+          <div className="w-full pt-4 border-t border-slate-100 dark:border-slate-800 transition-colors">
             <a
               href={qrUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 text-center text-sm font-medium rounded-lg transition-colors"
+              className="block w-full py-2.5 px-4 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-center text-sm font-medium rounded-lg transition-colors"
             >
               {showNativeQr ? '📥 Download APK' : '🌐 Apri Link'}
             </a>

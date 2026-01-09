@@ -54,7 +54,7 @@ export default function LoginEmail({ onSubmit }: Props) {
       {/* hidden “vero” per compatibilità con eventuale lettura DOM */}
       <input ref={hiddenRef} type="hidden" name="email" />
 
-      <label htmlFor="ed-email" className="block text-sm font-medium text-slate-700 mb-2">
+      <label htmlFor="ed-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 transition-colors">
         Email
       </label>
 
@@ -81,17 +81,8 @@ export default function LoginEmail({ onSubmit }: Props) {
             (e.currentTarget.closest('form') as HTMLFormElement)?.requestSubmit();
           }
         }}
+        className="block w-full min-h-[44px] text-base px-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors"
         style={{
-          display: 'block',
-          width: '100%',
-          minHeight: 44,
-          fontSize: 16,
-          padding: '10px 12px',
-          border: '1px solid #cbd5e1',
-          borderRadius: 10,
-          outline: 'none',
-          background: '#fff',
-          color: '#0f172a',
           // evita formattazione ricca su mobile webkit
           WebkitUserModify: 'read-write-plaintext-only' as any,
         }}
@@ -109,22 +100,16 @@ export default function LoginEmail({ onSubmit }: Props) {
           content: attr(data-placeholder);
           color: #94a3b8; /* slate-400 */
         }
+        .dark #ed-email:empty:before {
+          color: #64748b; /* slate-500 */
+        }
       `}</style>
 
-      {err && <p style={{ color: '#dc2626', fontSize: 13, marginTop: 8 }}>{err}</p>}
+      {err && <p className="text-red-600 dark:text-red-400 text-sm mt-2 transition-colors">{err}</p>}
 
       <button
         type="submit"
-        style={{
-          marginTop: 16,
-          width: '100%',
-          minHeight: 44,
-          borderRadius: 10,
-          border: '1px solid #4f46e5',
-          background: '#4f46e5',
-          color: '#fff',
-          fontWeight: 600,
-        }}
+        className="mt-4 w-full min-h-[44px] rounded-xl bg-indigo-600 dark:bg-indigo-500 text-white font-bold hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-md"
       >
         Continua
       </button>

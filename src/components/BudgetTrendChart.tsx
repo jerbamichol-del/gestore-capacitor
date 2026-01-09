@@ -52,38 +52,38 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const expensePositive = Math.abs(data.negExpense);
 
         return (
-            <div className="bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-slate-100 text-sm z-50">
-                <p className="text-slate-500 font-medium mb-2 border-b border-slate-100 pb-1">{dateLabel}</p>
+            <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 text-sm z-50 transition-colors">
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">{dateLabel}</p>
 
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-4">
-                        <span className="text-indigo-600 font-bold">Saldo:</span>
-                        <span className="font-bold text-slate-800">{formatCurrency(data.balance)}</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">Saldo:</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-100">{formatCurrency(data.balance)}</span>
                     </div>
 
                     {/* Mostra Rettifica solo se presente */}
                     {data.adjustment !== 0 && (
                         <div className="flex items-center justify-between gap-4">
-                            <span className="text-slate-500 font-medium">Rettifica:</span>
-                            <span className={`font-semibold ${data.adjustment >= 0 ? "text-slate-700" : "text-red-400"}`}>
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Rettifica:</span>
+                            <span className={`font-semibold ${data.adjustment >= 0 ? "text-slate-700 dark:text-slate-300" : "text-rose-600 dark:text-rose-400"}`}>
                                 {data.adjustment > 0 ? '+' : ''}{formatCurrency(data.adjustment)}
                             </span>
                         </div>
                     )}
 
                     <div className="flex items-center justify-between gap-4">
-                        <span className={data.net >= 0 ? "text-emerald-600" : "text-rose-600"}>
+                        <span className={data.net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
                             Flusso Netto:
                         </span>
-                        <span className={`font-semibold ${data.net >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                        <span className={`font-semibold ${data.net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                             {data.net > 0 ? '+' : ''}{formatCurrency(data.net)}
                         </span>
                     </div>
-                    <div className="pt-2 mt-2 border-t border-slate-100 grid grid-cols-2 gap-x-4 text-xs">
-                        <div className="text-emerald-600 font-medium">
+                    <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-4 text-xs">
+                        <div className="text-emerald-600 dark:text-emerald-400 font-medium">
                             Entrate: {formatCurrency(data.income)}
                         </div>
-                        <div className="text-rose-600 font-medium text-right">
+                        <div className="text-rose-600 dark:text-rose-400 font-medium text-right">
                             Uscite: {formatCurrency(expensePositive)}
                         </div>
                     </div>
@@ -274,11 +274,11 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
 
     return (
         // Modified: removed horizontal padding (on mobile) and radius (on mobile)
-        <div className="bg-white p-5 md:rounded-3xl shadow-lg border border-slate-100">
+        <div className="bg-white dark:bg-slate-900 p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800 transition-colors">
             <div className="mb-6 flex justify-between items-end">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800">Andamento Saldo</h3>
-                    <p className="text-xs font-medium text-slate-400 mt-0.5">Saldo cumulativo e flusso giornaliero</p>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Andamento Saldo</h3>
+                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">Saldo cumulativo e flusso giornaliero</p>
                 </div>
             </div>
 
@@ -293,11 +293,12 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             </linearGradient>
                         </defs>
 
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
 
                         <XAxis
                             dataKey="date"
-                            tick={{ fontSize: 10, fill: '#94a3b8' }}
+                            tick={{ fontSize: 10, fill: 'currentColor' }}
+                            className="text-slate-400 dark:text-slate-600"
                             axisLine={false}
                             tickLine={false}
                             tickFormatter={(val) => {
@@ -314,7 +315,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                         />
 
                         <YAxis
-                            tick={{ fontSize: 10, fill: '#94a3b8' }}
+                            tick={{ fontSize: 10, fill: 'currentColor' }}
+                            className="text-slate-400 dark:text-slate-600"
                             axisLine={false}
                             tickLine={false}
                             tickFormatter={(val) => {
@@ -323,9 +325,9 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             }}
                         />
 
-                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'currentColor', strokeWidth: 1, strokeDasharray: '4 4' }} />
 
-                        <ReferenceLine y={0} stroke="#cbd5e1" strokeWidth={1} />
+                        <ReferenceLine y={0} stroke="currentColor" strokeWidth={1} />
 
                         {/* Income Bars (Positive, Green) - Stacked con ID uguale a Expense */}
                         <Bar

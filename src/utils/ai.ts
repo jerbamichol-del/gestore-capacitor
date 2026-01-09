@@ -126,20 +126,18 @@ export async function parseExpenseFromAudio(
 }
 
 // ====== TESTO → 1 SPESA (FALLBACK) ======
+// ====== TESTO → 1 SPESA (OTTIMIZZATO) ======
 export async function parseExpenseFromText(
   text: string
 ): Promise<Partial<Expense> | null> {
-  const { textToImage } = await import('./fileHelper');
+  const result = await callAiEndpoint<ImageResponse>({ // Reuse ImageResponse format for text
+    action: 'parseText',
+    text: text,
+  });
 
-  // 1. Convert text to image (base64 PNG)
-  // This workaround allows us to use the existing image-analysis backend endpoint
-  // without modifying the Google Apps Script code.
-  const base64Image = await textToImage(text);
+  if (!result.ok) {
+    throw new Error(result.error || "Errore analisi testo.");
+  }
 
-  // 2. Call existing image parser
-  // It returns Promise<Partial<Expense>[]>
-  const expenses = await parseExpensesFromImage(base64Image, 'image/png');
-
-  // 3. Return first result or null
-  return expenses && expenses.length > 0 ? expenses[0] : null;
+  return result.expenses && result.expenses.length > 0 ? result.expenses[0] : null;
 }

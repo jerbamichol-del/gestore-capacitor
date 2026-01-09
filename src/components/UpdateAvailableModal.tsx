@@ -189,7 +189,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
       }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white relative">
@@ -209,25 +209,25 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
         <div className="p-6">
           <div className="mb-4">
-            <p className="text-slate-700 mb-2">🔥 <strong>Novità:</strong></p>
+            <p className="text-slate-700 dark:text-slate-300 mb-2">🔥 <strong>Novità:</strong></p>
             {updateInfo.releaseNotes ? (
-              <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600 max-h-40 overflow-y-auto">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400 max-h-40 overflow-y-auto transition-colors">
                 {updateInfo.releaseNotes.split('\n').map((line, i) => (
                   <p key={i} className="mb-1">{line}</p>
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 text-sm italic">Miglioramenti e correzioni bug</p>
+              <p className="text-slate-500 dark:text-slate-500 text-sm italic transition-colors">Miglioramenti e correzioni bug</p>
             )}
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <p className="text-xs text-blue-800">💡 <strong>Nota:</strong> L'installer si aprirà automaticamente a fine download.</p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4 transition-colors">
+            <p className="text-xs text-blue-800 dark:text-blue-300">💡 <strong>Nota:</strong> L'installer si aprirà automaticamente a fine download.</p>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4 transition-colors">
+              <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
             </div>
           )}
 
@@ -235,7 +235,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
             <button
               onClick={handleSkip}
               disabled={isDownloading}
-              className="flex-1 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Più tardi
             </button>
@@ -257,13 +257,13 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
           {isDownloading && (
             <div className="mt-4">
-              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden transition-colors">
                 <div
                   className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full transition-all duration-300"
                   style={{ width: `${Math.max(0, Math.min(100, downloadProgress))}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-500 mt-1 text-center">{downloadProgress}%</p>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 text-center">{downloadProgress}%</p>
             </div>
           )}
 
@@ -271,7 +271,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           {!isDownloading && updateInfo.downloadUrl && (
             <button
               onClick={() => Browser.open({ url: updateInfo.downloadUrl, presentationStyle: 'popover' })}
-              className="mt-4 w-full px-4 py-3 border border-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+              className="mt-4 w-full px-4 py-3 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
               Apri link download (fallback)
             </button>

@@ -1,12 +1,13 @@
 import React from "react";
 
-type Props = {
+interface SmoothPullTabProps {
   width?: string | number;
   height?: string | number;
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-};
+  className?: string;
+}
 
 /**
  * A smooth pull-tab shape with a uniform color and a pronounced drop shadow for a 3D effect.
@@ -17,7 +18,8 @@ export default function SmoothPullTab({
   fill = "currentColor",
   stroke = "none",
   strokeWidth = 0,
-}: Props) {
+  className,
+}: SmoothPullTabProps) {
   const W = Number(width);
   const H = Number(height);
   const dropShadowFilterId = "smooth-pull-tab-shadow-filter";
@@ -43,21 +45,22 @@ export default function SmoothPullTab({
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="Linguetta morbida con effetto rilievo"
+      className={className}
       style={{ overflow: 'visible' }} // Allow shadow to render outside the viewbox
     >
       <defs>
         {/* Filter for a more pronounced and directional drop shadow */}
         <filter id={dropShadowFilterId} x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow 
-                dx="0" 
-                dy="-3" 
-                stdDeviation="2" 
-                floodColor="#475569" // slate-600
-                floodOpacity="0.6" 
-            />
+          <feDropShadow
+            dx="0"
+            dy="-3"
+            stdDeviation="2"
+            floodColor="#475569" // slate-600
+            floodOpacity="0.6"
+          />
         </filter>
       </defs>
-      
+
       {/* Apply the shadow filter to the group */}
       <g filter={`url(#${dropShadowFilterId})`}>
         {/* Single path for a uniform color fill */}

@@ -81,19 +81,19 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
       : 'Reinserisci il nuovo PIN per conferma.';
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">{title}</h1>
-        <p className="text-sm text-slate-500 mb-4">{description}</p>
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex items-center justify-center px-4 transition-colors">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 transition-colors">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 transition-colors">{title}</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 transition-colors">{description}</p>
 
-        <p className="text-xs text-slate-400 mb-6 break-all">
-          Email: <span className="font-mono text-slate-700">{normalizedEmail || '(sconosciuta)'}</span>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-6 break-all transition-colors">
+          Email: <span className="font-mono text-slate-700 dark:text-slate-300">{normalizedEmail || '(sconosciuta)'}</span>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {step === 'new_pin' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">
                 Nuovo PIN (4 cifre)
               </label>
               <input
@@ -104,7 +104,7 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
                 onChange={(e) =>
                   setPin(e.target.value.replace(/\D/g, '').slice(0, 4))
                 }
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center tracking-[0.5em] text-lg"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center tracking-[0.5em] text-lg transition-colors"
                 autoFocus
               />
             </div>
@@ -113,7 +113,7 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
           {step === 'confirm_pin' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">
                   Nuovo PIN (4 cifre)
                 </label>
                 <input
@@ -124,12 +124,12 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
                   onChange={(e) =>
                     setPin(e.target.value.replace(/\D/g, '').slice(0, 4))
                   }
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center tracking-[0.5em] text-lg"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center tracking-[0.5em] text-lg transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 transition-colors">
                   Conferma PIN
                 </label>
                 <input
@@ -142,7 +142,7 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
                       e.target.value.replace(/\D/g, '').slice(0, 4)
                     )
                   }
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center tracking-[0.5em] text-lg"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center tracking-[0.5em] text-lg transition-colors"
                   autoFocus
                 />
               </div>
@@ -150,13 +150,13 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
           )}
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-xl px-3 py-2 transition-colors">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-md px-3 py-2">
+            <div className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/50 rounded-xl px-3 py-2 transition-colors">
               {successMessage}
             </div>
           )}
@@ -164,20 +164,20 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-xl shadow-md text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading
               ? 'Salvataggio...'
               : step === 'new_pin'
-              ? 'Continua'
-              : 'Salva PIN'}
+                ? 'Continua'
+                : 'Salva PIN'}
           </button>
 
           <button
             type="button"
             onClick={onResetSuccess}
             disabled={isLoading}
-            className="w-full text-sm text-slate-500 hover:text-slate-700 mt-2"
+            className="w-full text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 mt-2 transition-colors"
           >
             Annulla e torna al login
           </button>

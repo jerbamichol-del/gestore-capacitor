@@ -27,8 +27,8 @@ const InstallPwaModal: React.FC<InstallPwaModalProps> = ({ isOpen, onClose }) =>
 
   const handleCopy = () => {
     navigator.clipboard.writeText(window.location.href).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     });
   };
 
@@ -39,7 +39,7 @@ const InstallPwaModal: React.FC<InstallPwaModalProps> = ({ isOpen, onClose }) =>
 
   const getInstallInstructions = () => {
     if (isIOS) {
-      return <>Tocca l'icona <strong>Condividi</strong> <img src="https://img.icons8.com/ios-glyphs/30/000000/share--v1.png" alt="Share Icon" className="inline w-5 h-5 mx-1 align-text-bottom"/> e poi seleziona <strong>"Aggiungi alla schermata Home"</strong>.</>;
+      return <>Tocca l'icona <strong>Condividi</strong> <img src="https://img.icons8.com/ios-glyphs/30/000000/share--v1.png" alt="Share Icon" className="inline w-5 h-5 mx-1 align-text-bottom" /> e poi seleziona <strong>"Aggiungi alla schermata Home"</strong>.</>;
     }
     if (isAndroid) {
       return <>Tocca i tre puntini <strong className="text-xl align-middle mx-1">⋮</strong> nel menu del browser e seleziona <strong>"Installa app"</strong> o <strong>"Aggiungi a schermata Home"</strong>.</>;
@@ -55,65 +55,64 @@ const InstallPwaModal: React.FC<InstallPwaModalProps> = ({ isOpen, onClose }) =>
       role="dialog"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} transition-colors`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-6 border-b border-slate-200">
-          <h2 className="text-xl font-bold text-slate-800">Installa l'App</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-200">
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800 transition-colors">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 transition-colors">Installa l'App</h2>
+          <button onClick={onClose} className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
         <div className="p-6 space-y-4">
-            <div className="text-sm text-slate-600 bg-slate-100 p-3 rounded-md flex items-start gap-2">
-                <InformationCircleIcon className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
-                <span>L'ambiente di anteprima può limitare l'installazione diretta. Per un'esperienza ottimale, apri l'app nel tuo browser principale seguendo questi passaggi.</span>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-slate-200">
-                <p className="font-bold text-slate-800 mb-2">1. Copia l'URL dell'App</p>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={window.location.href}
-                        readOnly
-                        className="flex-grow bg-slate-100 text-slate-700 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                    <button
-                        onClick={handleCopy}
-                        className={`w-[110px] flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 ${
-                            copied 
-                                ? 'bg-green-600 text-white' 
-                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                    >
-                        {copied ? <ClipboardDocumentCheckIcon className="w-5 h-5" /> : <ClipboardDocumentIcon className="w-5 h-5" />}
-                        <span>{copied ? 'Copiato!' : 'Copia'}</span>
-                    </button>
-                </div>
-            </div>
-
-             <div className="bg-white p-4 rounded-lg border border-slate-200">
-                <p className="font-bold text-slate-800 mb-2">2. Apri in una nuova scheda</p>
-                <p className="text-sm text-slate-600">
-                  Apri una nuova scheda nel tuo browser e <strong>incolla l'URL</strong>.
-                </p>
-            </div>
-
-             <div className="bg-indigo-100 p-4 rounded-lg border border-indigo-200">
-                <p className="font-bold text-indigo-800 mb-2">3. Aggiungi alla Home</p>
-                <p className="text-sm text-indigo-700">
-                  {getInstallInstructions()}
-                </p>
-            </div>
-        </div>
-        <div className="px-6 py-4 bg-slate-50 flex justify-end">
-            <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-base font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+          <div className="text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 p-3 rounded-md flex items-start gap-2 transition-colors">
+            <InformationCircleIcon className="w-5 h-5 text-slate-500 dark:text-slate-500 flex-shrink-0 mt-0.5" />
+            <span>L'ambiente di anteprima può limitare l'installazione diretta. Per un'esperienza ottimale, apri l'app nel tuo browser principale seguendo questi passaggi.</span>
+          </div>
+          <div className="bg-white dark:bg-slate-800/20 p-4 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors">
+            <p className="font-bold text-slate-800 dark:text-slate-200 mb-2 transition-colors">1. Copia l'URL dell'App</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={window.location.href}
+                readOnly
+                className="flex-grow bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors"
+              />
+              <button
+                onClick={handleCopy}
+                className={`w-[110px] flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 ${copied
+                    ? 'bg-green-600 text-white'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
               >
-                Ho Capito
-            </button>
+                {copied ? <ClipboardDocumentCheckIcon className="w-5 h-5" /> : <ClipboardDocumentIcon className="w-5 h-5" />}
+                <span>{copied ? 'Copiato!' : 'Copia'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800/20 p-4 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors">
+            <p className="font-bold text-slate-800 dark:text-slate-200 mb-2 transition-colors">2. Apri in una nuova scheda</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 transition-colors">
+              Apri una nuova scheda nel tuo browser e <strong>incolla l'URL</strong>.
+            </p>
+          </div>
+
+          <div className="bg-indigo-100 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors">
+            <p className="font-bold text-indigo-800 dark:text-indigo-300 mb-2 transition-colors">3. Aggiungi alla Home</p>
+            <p className="text-sm text-indigo-700 dark:text-indigo-400 transition-colors">
+              {getInstallInstructions()}
+            </p>
+          </div>
+        </div>
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-base font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+          >
+            Ho Capito
+          </button>
         </div>
       </div>
     </div>

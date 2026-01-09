@@ -81,9 +81,8 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
     identifier: 'unicredit',
     accountName: 'bank-account',
     patterns: {
-      // ✅ FIX: Pattern for "autorizzata op.Internet 60,40 EUR carta *1210 c/o PAYPAL *KICKKICK.IT"
-      // Amount comes BEFORE "carta" or "c/o", so we capture it right after the keyword
-      expense: /(?:autorizzata|Addebito|Pagamento|Transazione)\s+(?:op\.?\w*\s+)?(\d+[.,]\d{2})\s*(?:EUR|€).*?(?:c\/o|presso|at)\s+(.+?)(?:\s+\d{6,}|\s+\d{2}\/\d{2}\/\d{2}|Per info|$)/i,
+      // ✅ FIX: Relaxed matched to support "Pagamento POS 15,00" and "c/o" cases
+      expense: /(?:autorizzata|Addebito|Pagamento|Transazione).*?(\d+[.,]\d{2})\s*(?:EUR|€).*?(?:c\/o|presso|at)\s+(.+?)(?:\s+\d{6,}|\s+\d{2}\/\d{2}\/\d{2}|Per info|$)/i,
       income: /(?:Accredito|bonifico).*?€?\s*(\d+[.,]\d{2})\s*(?:EUR)?/i,
       transfer: /Bonifico.*?€?\s*(\d+[.,]\d{2})\s*(?:EUR)?.*?(?:verso|a)\s+(.+)/i
     }
@@ -208,6 +207,11 @@ export class NotificationTransactionParser {
     if (parsed.type !== 'expense') return false;
 
     const merchantLower = (parsed.description || '').toLowerCase();
+
+    // EXCEPTION: "PAYPAL *" is usually a merchant payment via PayPal, not a transfer to self
+    if (merchantLower.includes('paypal *') || merchantLower.includes('paypal*')) {
+      return false;
+    }
 
     // Check se contiene keyword bancaria
     const containsBankKeyword = BANK_KEYWORDS.some(keyword =>
