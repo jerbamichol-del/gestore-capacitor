@@ -1095,16 +1095,16 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           </div>
 
           {/* Pagination Dots */}
-          <div className="flex justify-center items-center pt-1 pb-1 gap-2">
+          <div className="flex justify-center items-center py-2 gap-2.5">
             {[0, 1, 2].map((i) => (
               <button
                 key={i}
                 onClick={() => setActiveViewIndex(i)}
                 type="button"
                 className={
-                  'w-2.5 h-2.5 rounded-full transition-colors ' +
+                  'w-2 h-2 rounded-full transition-all duration-300 ' +
                   (activeViewIndex === i
-                    ? 'bg-indigo-600 dark:bg-indigo-500'
+                    ? 'bg-indigo-600 dark:bg-indigo-500 w-4'
                     : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600')
                 }
                 aria-label={'Vai al filtro ' + (i + 1)}

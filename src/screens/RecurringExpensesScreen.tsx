@@ -85,9 +85,9 @@ const RecurringExpenseItem: React.FC<{
   const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); if (dragState.current.isDragging || dragState.current.wasHorizontal) return; if (isSelectionMode) { onToggleSelection(expense.id); } else if (isOpen) { onOpen(''); } else { onEdit(expense); } };
 
   return (
-    <div className={`relative overflow-hidden transition-colors duration-200 select-none ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50 opacity-75' : 'bg-amber-50 dark:bg-amber-950/20'}`}>
-      <div className="absolute top-0 right-0 h-full flex items-center z-0"><button onClick={() => onDeleteRequest(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-colors focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa programmata"><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button></div>
-      <div ref={itemRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50' : 'bg-amber-50 dark:bg-amber-950/20'} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
+    <div className={`relative overflow-hidden transition-colors duration-200 select-none group ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50 opacity-75' : 'bg-amber-50 dark:bg-amber-950/20'}`}>
+      <div className="absolute top-0 right-0 h-full flex items-center z-10"><button onClick={() => onDeleteRequest(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-colors focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa programmata"><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button></div>
+      <div ref={itemRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50' : 'bg-amber-50 dark:bg-amber-950/20'} z-20 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
         {isSelected ? (<span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 dark:bg-indigo-500 text-white transition-transform duration-200 transform scale-100`}><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>) : (<style.Icon className={`w-10 h-10 flex-shrink-0 transition-transform duration-200 ${isFinished ? 'grayscale opacity-50' : ''}`} />)}
         <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isFinished ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100'}`}>{expense.description || 'Senza descrizione'}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>{getRecurrenceSummary(expense)} • {accountName}</p></div>
         <div className="flex flex-col items-end shrink-0 min-w-[90px]"><p className={`font-bold text-lg text-right whitespace-nowrap ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isFinished ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100'}`}>{formatCurrency(Number(expense.amount) || 0)}</p>{isFinished ? (<div className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">Completata</div>) : nextDueDate && (<div className={`text-sm font-medium mt-1 whitespace-nowrap ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>{formatDate(nextDueDate)}</div>)}</div>
@@ -154,7 +154,15 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ onClo
   useEffect(() => { if (!isAnimatingIn && openItemId) setOpenItemId(null); }, [isAnimatingIn, openItemId]);
   useEffect(() => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); if (openItemId && !isConfirmDeleteModalOpen) autoCloseRef.current = window.setTimeout(() => setOpenItemId(null), 5000); return () => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); }; }, [openItemId, isConfirmDeleteModalOpen]);
 
-  const handleClose = () => { setOpenItemId(null); if (onCloseStart) onCloseStart(); setIsAnimatingIn(false); setTimeout(onClose, 300); }
+  const handleClose = () => {
+    setOpenItemId(null);
+    if (onCloseStart) onCloseStart();
+    setIsAnimatingIn(false);
+    setTimeout(() => {
+      if (onClose) onClose();
+      else navigate(-1);
+    }, 300);
+  }
   const handleDeleteRequest = (id: string) => { setExpenseToDeleteId(id); setIsConfirmDeleteModalOpen(true); };
   const confirmDelete = () => { if (expenseToDeleteId) { onDelete(expenseToDeleteId); setExpenseToDeleteId(null); setIsConfirmDeleteModalOpen(false); setOpenItemId(null); } };
   const cancelDelete = () => { setIsConfirmDeleteModalOpen(false); setExpenseToDeleteId(null); };

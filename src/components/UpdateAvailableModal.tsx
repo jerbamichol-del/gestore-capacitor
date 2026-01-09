@@ -4,6 +4,10 @@ import { Browser } from '@capacitor/browser';
 import { UpdateInfo } from '../hooks/useUpdateChecker';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { XMarkIcon } from './icons/XMarkIcon';
+import { ArrowPathIcon } from './icons/ArrowPathIcon';
+import { ArrowDownTrayIcon } from './icons/ArrowDownTrayIcon';
+import { InformationCircleIcon } from './icons/InformationCircleIcon';
+import { CheckCircleIcon } from './icons/CheckCircleIcon';
 
 interface UpdateAvailableModalProps {
   isOpen: boolean;
@@ -64,7 +68,6 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
     return () => {
       stopPolling();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   if (!isOpen || !updateInfo.available) return null;
@@ -94,7 +97,6 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
       downloadIdRef.current = downloadId;
 
       if (!downloadIdRef.current) {
-        // Can't poll. Rely on DownloadManager notification + auto-installer.
         setTimeout(() => {
           setIsDownloading(false);
           onClose();
@@ -104,7 +106,6 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
       stopPolling();
 
-      // Small delay before first poll to avoid OEM timing quirks.
       setTimeout(() => {
         pollRef.current = window.setInterval(async () => {
           try {
@@ -120,10 +121,8 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
             const status = p?.status;
 
-            // CRITICAL: Close modal ONLY when status is truly 'successful', not just progress >= 100.
             if (status === 'successful') {
               stopPolling();
-              // Installer auto-opens, so close modal immediately
               setTimeout(() => {
                 setIsDownloading(false);
                 onClose();
@@ -143,26 +142,17 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
             if (elapsed > 4 * 60 * 1000) {
               stopPolling();
               setIsDownloading(false);
-              setError('Download in corso troppo a lungo. Controlla la notifica di download o l\'app Download e riprova.');
+              setError('Download in corso troppo a lungo. Controlla la notifica di download.');
             }
           } catch (e: any) {
-            // IMPORTANT: do NOT auto-open browser here; keep update flow native and stable.
             stopPolling();
             setIsDownloading(false);
-
-            const msg = (e?.message || e?.toString?.() || '').toLowerCase();
-            if (msg.includes('invalid download id') || msg.includes('download not found')) {
-              setError('Download avviato ma non tracciabile. Controlla notifiche/Downloads: quando finisce, tocca la notifica per installare.');
-              return;
-            }
-
             setError('Errore durante il download. Riprova.');
           }
         }, 900);
       }, 700);
 
     } catch (err) {
-      // Fallback only if the native plugin fails to start the download.
       try {
         await Browser.open({ url: updateInfo.downloadUrl, presentationStyle: 'popover' });
         setTimeout(() => {
@@ -170,112 +160,172 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           onClose();
         }, 800);
       } catch {
-        console.error('Update download failed:', err);
         setError('Errore durante il download. Riprova.');
         setIsDownloading(false);
       }
     }
   };
 
-  const handleSkip = () => {
-    onSkip();
+  const parseReleaseNotes = (notes: string | undefined) => {
+    if (!notes) return null;
+
+    const lines = notes.split('\n');
+    const categories: { [key: string]: string[] } = {
+      '🚀 Novità': [],
+      '🛠️ Fix': [],
+      '📈 Miglioramenti': [],
+      '✨ Altro': []
+    };
+
+    lines.forEach(line => {
+      const cleanLine = line.trim();
+      if (!cleanLine) return;
+
+      const lowerLine = cleanLine.toLowerCase();
+      if (lowerLine.includes('fix') || lowerLine.includes('bug') || lowerLine.includes('corrett')) {
+        categories['🛠️ Fix'].push(cleanLine.replace(/^[-*]\s*/, ''));
+      } else if (lowerLine.includes('nuov') || lowerLine.includes('aggiunt') || lowerLine.includes('feature')) {
+        categories['🚀 Novità'].push(cleanLine.replace(/^[-*]\s*/, ''));
+      } else if (lowerLine.includes('miglior') || lowerLine.includes('ottimizz')) {
+        categories['📈 Miglioramenti'].push(cleanLine.replace(/^[-*]\s*/, ''));
+      } else {
+        categories['✨ Altro'].push(cleanLine.replace(/^[-*]\s*/, ''));
+      }
+    });
+
+    return categories;
   };
+
+  const changelog = parseReleaseNotes(updateInfo.releaseNotes);
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md transition-all duration-300"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isDownloading) handleSkip();
+        if (e.target === e.currentTarget && !isDownloading) onSkip();
       }}
     >
       <div
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transition-colors"
+        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white relative">
+        {/* Header Section */}
+        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 pb-4 border-b border-slate-100 dark:border-slate-800 transition-colors relative">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none">
+              <ArrowPathIcon className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900 dark:text-white transition-colors">Nuova Versione</h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded text-xs font-mono">{updateInfo.currentVersion || '1.0.0'}</span>
+                <span className="text-slate-400">→</span>
+                <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded text-xs font-bold font-mono">
+                  {updateInfo.latestVersion || 'Nuova'}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {!isDownloading && (
             <button
-              onClick={handleSkip}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
-              aria-label="Chiudi"
+              onClick={onSkip}
+              className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
             >
-              <XMarkIcon className="w-5 h-5" />
+              <XMarkIcon className="w-6 h-6" />
             </button>
           )}
-          <div className="text-5xl mb-2">🎉</div>
-          <h2 className="text-2xl font-bold mb-1">Aggiornamento Disponibile!</h2>
-          <p className="text-indigo-100 text-sm">Versione {updateInfo.latestVersion || 'nuova'}</p>
         </div>
 
         <div className="p-6">
-          <div className="mb-4">
-            <p className="text-slate-700 dark:text-slate-300 mb-2">🔥 <strong>Novità:</strong></p>
-            {updateInfo.releaseNotes ? (
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400 max-h-40 overflow-y-auto transition-colors">
-                {updateInfo.releaseNotes.split('\n').map((line, i) => (
-                  <p key={i} className="mb-1">{line}</p>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500 dark:text-slate-500 text-sm italic transition-colors">Miglioramenti e correzioni bug</p>
-            )}
+          {/* Changelog Section */}
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
+              Cosa c'è di nuovo
+            </h3>
+
+            <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+              {changelog ? (
+                Object.entries(changelog).map(([cat, items]) => items.length > 0 && (
+                  <div key={cat} className="space-y-2">
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">{cat}</p>
+                    <ul className="space-y-1.5">
+                      {items.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 mt-1.5 flex-shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-600 dark:text-slate-400 italic">Miglioramenti generali e ottimizzazioni del sistema.</p>
+              )}
+            </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4 transition-colors">
-            <p className="text-xs text-blue-800 dark:text-blue-300">💡 <strong>Nota:</strong> L'installer si aprirà automaticamente a fine download.</p>
+          {/* Info Note */}
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl p-4 mb-6 flex items-start gap-3 transition-colors border border-indigo-100/50 dark:border-indigo-800/30">
+            <InformationCircleIcon className="w-5 h-5 text-indigo-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed">
+              L'installazione è sicura e non comporterà la perdita dei tuoi dati. L'installer si avvierà automaticamente al termine del download.
+            </p>
           </div>
 
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4 transition-colors">
-              <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-2xl p-4 mb-6 transition-colors">
+              <p className="text-sm text-red-700 dark:text-red-300 font-medium">{error}</p>
             </div>
           )}
 
-          <div className="flex gap-3">
-            <button
-              onClick={handleSkip}
-              disabled={isDownloading}
-              className="flex-1 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Più tardi
-            </button>
+          {/* Progress Bar (Visible during download) */}
+          {isDownloading && (
+            <div className="mb-6 animate-in fade-in slide-in-from-top-2">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">Download in corso...</span>
+                <span className="text-sm font-mono font-bold text-slate-500 dark:text-slate-400">{downloadProgress}%</span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden shadow-inner flex items-center px-0.5">
+                <div
+                  className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-2 rounded-full transition-all duration-300 shadow-md shadow-indigo-200 dark:shadow-none"
+                  style={{ width: `${Math.max(2, downloadProgress)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
             <button
               onClick={handleDownloadAndInstall}
               disabled={isDownloading}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold transition-all shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 disabled:scale-95 flex items-center justify-center gap-3 active:scale-98"
             >
               {isDownloading ? (
                 <>
-                  <SpinnerIcon className="w-5 h-5" />
-                  Download...
+                  <SpinnerIcon className="w-5 h-5 animate-spin" />
+                  Preparazione...
                 </>
               ) : (
-                'Aggiorna Ora'
+                <>
+                  <ArrowDownTrayIcon className="w-5 h-5" />
+                  Aggiorna ora
+                  <span className="text-indigo-300 font-normal">({updateInfo.latestBuild ? `build ${updateInfo.latestBuild}` : 'APK'})</span>
+                </>
               )}
             </button>
+
+            {!isDownloading && (
+              <button
+                onClick={onSkip}
+                className="w-full py-4 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-colors"
+              >
+                Lo farò più tardi
+              </button>
+            )}
           </div>
-
-          {isDownloading && (
-            <div className="mt-4">
-              <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden transition-colors">
-                <div
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full transition-all duration-300"
-                  style={{ width: `${Math.max(0, Math.min(100, downloadProgress))}%` }}
-                />
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 text-center">{downloadProgress}%</p>
-            </div>
-          )}
-
-          {/* Manual fallback */}
-          {!isDownloading && updateInfo.downloadUrl && (
-            <button
-              onClick={() => Browser.open({ url: updateInfo.downloadUrl, presentationStyle: 'popover' })}
-              className="mt-4 w-full px-4 py-3 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-            >
-              Apri link download (fallback)
-            </button>
-          )}
         </div>
       </div>
     </div>

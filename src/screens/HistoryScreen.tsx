@@ -184,11 +184,11 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   };
 
   return (
-    <div className={`relative ${itemBgClass} overflow-hidden transition-colors duration-200 select-none`}>
-      <div className="absolute top-0 right-0 h-full flex items-center z-0">
+    <div className={`relative ${itemBgClass} overflow-hidden transition-colors duration-200 select-none group`}>
+      <div className="absolute top-0 right-0 h-full flex items-center z-10">
         <button onClick={() => onDelete(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa" {...tapBridge}><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button>
       </div>
-      <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
+      <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} z-20 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
         {isRecurringInstance && !isSelectionMode && !isAdjustment && (<span className="absolute top-1.5 right-1.5 w-5 h-5 text-slate-900 dark:text-amber-900 bg-amber-100 dark:bg-amber-400 border border-amber-400 rounded-full flex items-center justify-center z-20" title="Spesa Programmata">P</span>)}
         {renderIcon()}
         <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isAdjustment ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-slate-100'}`}>{isAdjustment ? 'Rettifica Saldo' : isIncomeMode ? accountName : `${expense.subcategory || style.label} • ${accountName}`}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`} title={expense.description}>{expense.description || 'Senza descrizione'}</p></div>

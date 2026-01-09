@@ -12,9 +12,11 @@ interface AppRoutesProps {
     currentEmail: string;
     onLogout: () => void;
     onSync: () => Promise<void> | void;
+    isBalanceVisible: boolean;
+    onToggleBalanceVisibility: () => void;
 }
 
-const AppRoutes: React.FC<AppRoutesProps> = ({ currentEmail, onLogout, onSync }) => {
+const AppRoutes: React.FC<AppRoutesProps> = ({ currentEmail, onLogout, onSync, isBalanceVisible, onToggleBalanceVisibility }) => {
     // Phase 2: Refactor Screens to consume Context incrementally.
     // Dashboard is already Context-aware (mostly).
 
@@ -25,8 +27,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ currentEmail, onLogout, onSync })
                     // Action Props
                     onImportFile={() => { }}
                     onSync={onSync}
-                    isBalanceVisible={true}
-                    onToggleBalanceVisibility={() => { }}
+                    isBalanceVisible={isBalanceVisible}
+                    onToggleBalanceVisibility={onToggleBalanceVisibility}
                 />
             } />
 
@@ -47,7 +49,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ currentEmail, onLogout, onSync })
             } />
 
             <Route path="/recurring" element={
-                <RecurringExpensesScreen />
+                <RecurringExpensesScreen
+                    onClose={() => window.history.back()}
+                />
             } />
 
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -385,22 +385,22 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           </button>
 
           {/* Toggle Type - Updated for 3 options */}
-          <div className={`flex p-1 rounded-full transition-colors duration-300 ${isTransfer ? 'bg-sky-100 dark:bg-sky-900/30' : isIncome ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-rose-100 dark:bg-rose-900/30'}`}>
+          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 transition-all">
             <button
               onClick={() => handleTypeChange('expense')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors duration-200 ${!isIncome && !isTransfer ? 'text-rose-700 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${!isIncome && !isTransfer ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Spesa
             </button>
             <button
               onClick={() => handleTypeChange('income')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors duration-200 ${isIncome ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${isIncome ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Entrata
             </button>
             <button
               onClick={() => handleTypeChange('transfer')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors duration-200 ${isTransfer ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${isTransfer ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Trasferisci
             </button>

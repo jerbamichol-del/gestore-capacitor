@@ -23,7 +23,8 @@ import SuccessIndicator from './components/SuccessIndicator';
 import PinVerifierModal from './components/PinVerifierModal';
 import { PendingTransactionsModal, PendingTransactionsBadge } from './components/PendingTransactionsModal';
 import { NotificationPermissionModal } from './components/NotificationPermissionModal';
-import MultipleExpensesModal from './components/MultipleExpensesModal'; // Restored import
+import MultipleExpensesModal from './components/MultipleExpensesModal';
+import ShareQrModal from './components/ShareQrModal';
 import { MainLayout } from './components/MainLayout';
 import LoadingOverlay from './components/LoadingOverlay';
 
@@ -163,8 +164,9 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     setIsVoiceModalOpen(false);
 
     // Open form
-    window.history.pushState({ modal: 'form' }, '');
+    // Open form
     setIsAddModalOpen(true);
+    window.history.pushState({ modal: 'form' }, '');
 
     showToast({ message: 'Dati vocali rilevati', type: 'success' });
   };
@@ -230,7 +232,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           <CalculatorContainer
             isOpen={isCalculatorContainerOpen}
             onClose={closeModalWithHistory}
-            onSubmit={handleAddExpense}
+            onSubmit={(data) => {
+              handleAddExpense(data);
+              closeModalWithHistory();
+            }}
             accounts={accounts}
             expenses={expenses}
             onEditExpense={(e) => {
@@ -267,8 +272,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             <div className="fixed inset-0 z-[5200] flex justify-center items-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={closeModalWithHistory}>
               <div className="bg-slate-50 rounded-lg shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <ImageSourceCard icon={<CameraIcon className="w-8 h-8" />} title="Scatta Foto" description="Usa la fotocamera." onClick={() => { setIsImageSourceModalOpen(false); handleImagePick('camera'); }} />
-                  <ImageSourceCard icon={<ComputerDesktopIcon className="w-8 h-8" />} title="Galleria" description="Carica da file." onClick={() => { setIsImageSourceModalOpen(false); handleImagePick('gallery'); }} />
+                  <ImageSourceCard icon={<CameraIcon className="w-8 h-8" />} title="Scatta Foto" description="Usa la fotocamera." onClick={() => { closeModalWithHistory(); handleImagePick('camera'); }} />
+                  <ImageSourceCard icon={<ComputerDesktopIcon className="w-8 h-8" />} title="Galleria" description="Carica da file." onClick={() => { closeModalWithHistory(); handleImagePick('gallery'); }} />
                 </div>
               </div>
             </div>
@@ -280,6 +285,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
           {/* --- Overlay Modals (Auto/System) --- */}
           <UpdateAvailableModal isOpen={isUpdateModalOpen} onClose={() => setIsUpdateModalOpen(false)} onSkip={handleSkipUpdate} updateInfo={updateInfo} />
+          <ShareQrModal isOpen={isQrModalOpen} onClose={closeModalWithHistory} userEmail={currentEmail} />
           <PinVerifierModal isOpen={isPinVerifierOpen} onClose={() => setIsPinVerifierOpen(false)} onSuccess={handlePinVerified} email={currentEmail} />
           <PendingTransactionsModal
             isOpen={auto.isPendingTransactionsModalOpen}
@@ -326,6 +332,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         currentEmail={currentEmail}
         onLogout={onLogout}
         onSync={() => handleSyncFromCloud(false)}
+        isBalanceVisible={isBalanceVisible}
+        onToggleBalanceVisibility={handleToggleBalanceVisibility}
       />
       <PendingImages images={pendingImages} onAnalyze={handleAnalyzeImage} onDelete={async (id) => { await deleteImageFromQueue(id); refreshPendingImages(); }} isOnline={isOnline} syncingImageId={syncingImageId} />
 

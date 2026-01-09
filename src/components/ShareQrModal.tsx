@@ -5,9 +5,10 @@ import { XMarkIcon } from './icons/XMarkIcon';
 interface ShareQrModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userEmail?: string;
 }
 
-const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
+const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose, userEmail }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showNativeQr, setShowNativeQr] = useState(false);
 
@@ -54,8 +55,8 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
           <button
             onClick={() => setShowNativeQr(false)}
             className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${!showNativeQr
-                ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
           >
             📱 Web App (PWA)
@@ -63,8 +64,8 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
           <button
             onClick={() => setShowNativeQr(true)}
             className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${showNativeQr
-                ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
           >
             🤖 App Nativa (APK)
