@@ -455,7 +455,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
                 <SmoothPullTab
                   width="148"
                   height="34"
-                  className="fill-indigo-100/90 dark:fill-indigo-900/60 transition-colors shadow-sm"
+                  className="fill-slate-300 dark:fill-slate-600 transition-colors shadow-sm"
                 />
               </div>
             </div>
@@ -464,8 +464,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         </main>
       </div>
 
-      {/* 🔧 FIX: 52vh + SAFE AREA + GAP RIDOTTO */}
-      <div className="flex-shrink-0 flex flex-col" style={{ height: '52vh' }}>
+      {/* 🔧 FIX: RESTORED FLEX LAYOUT */}
+      <div className="flex-shrink-0 flex flex-col flex-1 min-h-[40vh]">
         <div className="flex justify-between items-center my-2 w-full px-4 gap-0" style={{ touchAction: 'pan-y' }}>
 
           {isTransfer ? (

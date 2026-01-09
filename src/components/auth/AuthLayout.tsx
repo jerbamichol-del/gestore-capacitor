@@ -52,7 +52,7 @@ const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const Header: React.FC = () => (
-  <div className="text-center">
+  <div className="text-center relative z-10">
     <div
       className="mx-auto mb-3 w-[120px] h-[120px]"
     >
