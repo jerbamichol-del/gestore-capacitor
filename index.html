@@ -15,6 +15,11 @@
 
     <!-- Tailwind via CDN: Semplice e funzionante -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
 
     <!-- Import map per dipendenze esterne (necessario in questo ambiente) -->
     <script type="importmap">
@@ -50,7 +55,6 @@
         overscroll-behavior-y: contain;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
-        background-color: #f1f5f9;
       }
 
       /* Animations */
@@ -69,7 +73,7 @@
       .recharts-pie-sector:focus { outline: none !important; }
     </style>
   </head>
-  <body class="bg-slate-100">
+  <body class="bg-slate-100 dark:bg-slate-950 transition-colors">
     <div id="root"></div>
     <div id="toast-portal"></div>
 
