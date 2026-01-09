@@ -21,37 +21,37 @@ const categoryHexColors: Record<string, string> = {
 const DEFAULT_COLOR = '#78350f'; // Default to "Altro" color
 
 const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
-    const style = getCategoryStyle(payload.name);
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
+  const style = getCategoryStyle(payload.name);
 
-    return (
-        <g>
-            <text x={cx} y={cy - 12} textAnchor="middle" fill="currentColor" className="text-base font-bold text-slate-900 dark:text-slate-100 transition-colors">
-                {style.label}
-            </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-xl font-extrabold transition-colors">
-                {formatCurrency(payload.value)}
-            </text>
-            <text x={cx} y={cy + 32} textAnchor="middle" fill="currentColor" className="text-sm font-bold text-slate-700 dark:text-slate-400 transition-colors">
-                {`(${(percent * 100).toFixed(2)}%)`}
-            </text>
-
-            <Sector
-                cx={cx}
-                cy={cy}
-                innerRadius={innerRadius}
-                outerRadius={outerRadius + 6}
-                startAngle={startAngle}
-                endAngle={endAngle}
-                fill={fill}
-                stroke="none"
-            />
-        </g>
-    );
+  return (
+    <g>
+      <text x={cx} y={cy - 12} textAnchor="middle" fill="#1e293b" className="text-base font-bold">
+        {style.label}
+      </text>
+      <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-xl font-extrabold">
+        {formatCurrency(payload.value)}
+      </text>
+      <text x={cx} y={cy + 32} textAnchor="middle" fill="#334155" className="text-sm font-bold">
+        {`(${(percent * 100).toFixed(2)}%)`}
+      </text>
+      
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        stroke="none"
+      />
+    </g>
+  );
 };
 
 interface MonthlyTrendScreenProps {
-    expenses: Expense[];
+  expenses: Expense[];
 }
 
 const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => {
@@ -67,20 +67,20 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
             const expenseDate = new Date(e.date);
             return expenseDate >= startOfMonth && expenseDate <= endOfMonth && e.amount != null && !isNaN(Number(e.amount));
         });
-
+        
         const categoryTotals = monthlyExpenses.reduce((acc: Record<string, number>, expense) => {
             const category = expense.category || 'Altro';
             acc[category] = (acc[category] || 0) + Number(expense.amount);
             return acc;
         }, {});
-
+        
         return Object.entries(categoryTotals)
             .map(([name, value]) => ({ name, value: value as number }))
             .sort((a, b) => b.value - a.value);
 
     }, [expenses]);
-
-    useEffect(() => {
+    
+     useEffect(() => {
         if (selectedIndex !== null && selectedIndex >= monthlyData.length) {
             setSelectedIndex(monthlyData.length > 0 ? 0 : null);
         }
@@ -94,75 +94,66 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
 
     return (
         <div className="animate-fade-in-up">
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 transition-colors">Andamento Mensile</h1>
-
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-lg transition-colors">
-                <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2 text-center capitalize transition-colors">
+            <h1 className="text-2xl font-bold text-slate-800 mb-6">Andamento Mensile</h1>
+            
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
+                <h3 className="text-xl font-bold text-slate-700 mb-2 text-center capitalize">
                     Riepilogo di {currentMonthName}
                 </h3>
 
                 {monthlyData.length > 0 ? (
                     <>
-                        <div className="relative">
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie
-                                        {...({ activeIndex: activePieIndex ?? undefined } as any)}
-                                        activeShape={renderActiveShape}
-                                        data={monthlyData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={70}
-                                        outerRadius={100}
-                                        fill="#8884d8"
-                                        dataKey="value"
-                                        onMouseEnter={(_, index) => setHoveredIndex(index)}
-                                        onMouseLeave={() => setHoveredIndex(null)}
-                                        onClick={(_, index) => setSelectedIndex(prev => prev === index ? null : index)}
-                                    >
-                                        {monthlyData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={categoryHexColors[entry.name] || DEFAULT_COLOR} />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                            {activePieIndex === null && (
-                                <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
-                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
-                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
-                                        {formatCurrency(monthlyData.reduce((acc, curr) => acc + curr.value, 0))}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 transition-colors">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    {...({ activeIndex: activePieIndex ?? undefined } as any)}
+                                    activeShape={renderActiveShape}
+                                    data={monthlyData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={70}
+                                    outerRadius={100}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    onMouseEnter={(_, index) => setHoveredIndex(index)}
+                                    onMouseLeave={() => setHoveredIndex(null)}
+                                    onClick={(_, index) => setSelectedIndex(prev => prev === index ? null : index)}
+                                >
+                                    {monthlyData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={categoryHexColors[entry.name] || DEFAULT_COLOR} />
+                                    ))}
+                                </Pie>
+                            </PieChart>
+                        </ResponsiveContainer>
+                        
+                        <div className="mt-4 pt-4 border-t border-slate-200">
                             <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
-                                {monthlyData.map((entry, index) => {
-                                    const style = getCategoryStyle(entry.name);
-                                    const isActive = index === selectedIndex;
-                                    return (
-                                        <button
-                                            key={`item-${index}`}
-                                            onClick={() => setSelectedIndex(isActive ? null : index)}
-                                            onMouseEnter={() => setHoveredIndex(index)}
-                                            onMouseLeave={() => setHoveredIndex(null)}
-                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 transform hover:shadow-md ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/40 ring-2 ring-indigo-300 dark:ring-indigo-700' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                                }`}
-                                        >
-                                            <style.Icon className="w-8 h-8 flex-shrink-0" />
-                                            <div className="min-w-0 pr-2">
-                                                <p className={`font-semibold text-sm truncate transition-colors ${isActive ? 'text-indigo-800 dark:text-indigo-200' : 'text-slate-700 dark:text-slate-300'}`}>{style.label}</p>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
+                            {monthlyData.map((entry, index) => {
+                                const style = getCategoryStyle(entry.name);
+                                const isActive = index === selectedIndex;
+                                return (
+                                <button
+                                    key={`item-${index}`}
+                                    onClick={() => setSelectedIndex(isActive ? null : index)}
+                                    onMouseEnter={() => setHoveredIndex(index)}
+                                    onMouseLeave={() => setHoveredIndex(null)}
+                                    className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 transform hover:shadow-md ${
+                                        isActive ? 'bg-indigo-100 ring-2 ring-indigo-300' : 'bg-slate-100'
+                                    }`}
+                                >
+                                    <style.Icon className="w-8 h-8 flex-shrink-0" />
+                                    <div className="min-w-0 pr-2">
+                                        <p className={`font-semibold text-sm truncate ${isActive ? 'text-indigo-800' : 'text-slate-700'}`}>{style.label}</p>
+                                    </div>
+                                </button>
+                                );
+                            })}
                             </div>
                         </div>
 
                     </>
                 ) : (
-                    <div className="text-center text-slate-500 dark:text-slate-400 py-20 transition-colors">
+                    <div className="text-center text-slate-500 py-20">
                         <p>Nessuna spesa registrata per questo mese.</p>
                         <p className="text-sm mt-2">Aggiungi una nuova spesa per iniziare.</p>
                     </div>

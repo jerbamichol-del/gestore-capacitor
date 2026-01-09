@@ -15,7 +15,7 @@ import {
 } from '../services/biometrics';
 
 const BIO_SNOOZE_KEY = 'bio.snooze';
-const clearBiometricSnooze = () => { try { sessionStorage.removeItem(BIO_SNOOZE_KEY); } catch { } };
+const clearBiometricSnooze = () => { try { sessionStorage.removeItem(BIO_SNOOZE_KEY); } catch {} };
 
 interface SetupScreenProps {
   onSetupSuccess: (token: string, email: string) => void;
@@ -39,7 +39,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
   const [isLoading, setIsLoading] = useState(false);
   const [bioSupported, setBioSupported] = useState<boolean | null>(null);
   const [bioBusy, setBioBusy] = useState(false);
-
+  
   const [hasOpenedTelegram, setHasOpenedTelegram] = useState(false);
   const [showTelegramWarning, setShowTelegramWarning] = useState(false);
 
@@ -59,32 +59,32 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
     setError(null);
 
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Inserisci un indirizzo email valido.');
-      return;
+        setError('Inserisci un indirizzo email valido.');
+        return;
     }
 
     // --- NUOVO CONTROLLO CLOUD ---
     setIsLoading(true);
     try {
-      const userExists = await checkUserInCloud(email.toLowerCase());
-      if (userExists) {
-        setError("Email già registrata. Vai su 'Accedi' per recuperare i dati.");
-        setIsLoading(false);
-        return; // Blocca la registrazione
-      }
+        const userExists = await checkUserInCloud(email.toLowerCase());
+        if (userExists) {
+            setError("Email già registrata. Vai su 'Accedi' per recuperare i dati.");
+            setIsLoading(false);
+            return; // Blocca la registrazione
+        }
     } catch (e) {
-      console.error(e);
-      // Se siamo offline o c'è un errore, potremmo decidere di bloccare o avvisare.
-      // Per sicurezza, lasciamo passare ma con un console.log, 
-      // oppure blocchiamo se è vitale. Qui lasciamo passare.
+        console.error(e);
+        // Se siamo offline o c'è un errore, potremmo decidere di bloccare o avvisare.
+        // Per sicurezza, lasciamo passare ma con un console.log, 
+        // oppure blocchiamo se è vitale. Qui lasciamo passare.
     }
     setIsLoading(false);
     // -----------------------------
 
     if (!hasOpenedTelegram && !showTelegramWarning) {
-      setShowTelegramWarning(true);
+        setShowTelegramWarning(true);
     } else {
-      setStep('pin_setup');
+        setStep('pin_setup');
     }
   };
 
@@ -155,9 +155,9 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
     if (step === 'processing' || isLoading) {
       return (
         <div className="text-center min-h-[300px] flex flex-col justify-center items-center">
-          <SpinnerIcon className="w-12 h-12 text-indigo-600 dark:text-indigo-400 mx-auto" />
-          <p className="mt-4 text-slate-500 dark:text-slate-400 transition-colors">
-            {step === 'processing' ? 'Creazione account...' : 'Verifica email...'}
+          <SpinnerIcon className="w-12 h-12 text-indigo-600 mx-auto" />
+          <p className="mt-4 text-slate-500">
+             {step === 'processing' ? 'Creazione account...' : 'Verifica email...'}
           </p>
         </div>
       );
@@ -167,22 +167,22 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
       case 'email':
         return (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 transition-colors">Crea un Account</h2>
-            <p className={`text-slate-500 dark:text-slate-400 mb-6 h-10 flex items-center justify-center transition-colors ${error ? 'text-red-500 dark:text-red-400 text-sm' : ''}`}>
-              {error || 'Inizia inserendo i tuoi dati.'}
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Crea un Account</h2>
+            <p className={`text-slate-500 mb-6 h-10 flex items-center justify-center ${error ? 'text-red-500 text-sm' : ''}`}>
+                {error || 'Inizia inserendo i tuoi dati.'}
             </p>
-
+            
             {showTelegramWarning && (
-              <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-left animate-fade-in-up relative transition-colors">
+              <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-3 text-left animate-fade-in-up relative">
                 <div className="flex gap-3">
                   <div className="flex-shrink-0">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-amber-500 dark:text-amber-400" />
+                    <ExclamationTriangleIcon className="h-5 w-5 text-amber-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Attenzione</p>
-                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">Senza registrare la mail su Telegram non sarà possibile recuperarla.</p>
+                    <p className="text-sm font-medium text-amber-800">Attenzione</p>
+                    <p className="text-sm text-amber-700 mt-1">Senza registrare la mail su Telegram non sarà possibile recuperarla.</p>
                   </div>
-                  <button onClick={() => setStep('pin_setup')} className="flex-shrink-0 text-amber-400 dark:text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors" title="Ignora e procedi">
+                  <button onClick={() => setStep('pin_setup')} className="flex-shrink-0 text-amber-400 hover:text-amber-600 transition-colors" title="Ignora e procedi">
                     <XMarkIcon className="h-5 w-5" />
                   </button>
                 </div>
@@ -194,14 +194,14 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
                 <label htmlFor="email-register" className="sr-only">Email</label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <EnvelopeIcon className="h-5 w-5 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                    <EnvelopeIcon className="h-5 w-5 text-slate-400" aria-hidden="true" />
                   </div>
                   <input
                     type="email"
                     id="email-register"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-10 pr-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors sm:text-sm"
+                    className={inputStyles}
                     placeholder="La tua email"
                     required
                   />
@@ -210,36 +210,36 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
               <button
                 type="submit"
                 disabled={!email}
-                className="w-full px-4 py-3 text-sm font-semibold text-white bg-indigo-600 dark:bg-indigo-500 rounded-lg shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:bg-indigo-300 dark:disabled:bg-indigo-900/50"
+                className="w-full px-4 py-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:bg-indigo-300"
               >
                 Continua
               </button>
             </form>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-6 transition-colors">
+            <p className="text-sm text-slate-500 mt-6">
               Hai già un account?{' '}
-              <button onClick={onGoToLogin} className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
+              <button onClick={onGoToLogin} className="font-semibold text-indigo-600 hover:text-indigo-500">
                 Accedi
               </button>
             </p>
 
-            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 transition-colors">
-              <a
-                href={getTelegramLink()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (!email) {
-                    e.preventDefault();
-                    setError('Inserisci prima la tua email.');
-                  } else {
-                    setHasOpenedTelegram(true);
-                  }
-                }}
-                className={`inline-flex items-center gap-2 text-sm font-medium transition-colors bg-sky-50 dark:bg-sky-900/20 px-4 py-2 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/30 ${!email ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed' : 'text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300'}`}
-              >
-                <TelegramIcon className="w-5 h-5" />
-                Registra mail su telegram
-              </a>
+            <div className="mt-8 pt-6 border-t border-slate-200">
+                <a 
+                    href={getTelegramLink()}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (!email) {
+                        e.preventDefault();
+                        setError('Inserisci prima la tua email.');
+                      } else {
+                        setHasOpenedTelegram(true);
+                      }
+                    }}
+                    className={`inline-flex items-center gap-2 text-sm font-medium transition-colors bg-sky-50 px-4 py-2 rounded-full hover:bg-sky-100 ${!email ? 'text-slate-400 cursor-not-allowed' : 'text-sky-600 hover:text-sky-700'}`}
+                >
+                    <TelegramIcon className="w-5 h-5" />
+                    Registra mail su telegram
+                </a>
             </div>
           </div>
         );
@@ -249,10 +249,10 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
         const isConfirming = step === 'pin_confirm';
         return (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 transition-colors">
+            <h2 className="text-xl font-bold text-slate-800 mb-2">
               {isConfirming ? 'Conferma il tuo PIN' : 'Crea un PIN di 4 cifre'}
             </h2>
-            <p className={`text-slate-500 dark:text-slate-400 h-10 flex items-center justify-center transition-colors ${error ? 'text-red-500 dark:text-red-400' : ''}`}>
+            <p className={`text-slate-500 h-10 flex items-center justify-center transition-colors ${error ? 'text-red-500' : ''}`}>
               {error || (isConfirming ? 'Inseriscilo di nuovo per conferma.' : 'Servirà per accedere al tuo account.')}
             </p>
             <PinInput pin={isConfirming ? confirmPin : pin} onPinChange={isConfirming ? setConfirmPin : setPin} />
@@ -263,10 +263,10 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
       case 'bio_offer': {
         return (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 transition-colors">Vuoi abilitare l’impronta / FaceID?</h2>
-            <p className="text-slate-500 dark:text-slate-400 h-10 flex items-center justify-center transition-colors">Potrai sbloccare l’app senza inserire il PIN.</p>
-            <div className="mt-4 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-left inline-block transition-colors">
-              <p className="text-sm text-slate-700 dark:text-slate-300">Abilita ora lo sblocco biometrico?</p>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Vuoi abilitare l’impronta / FaceID?</h2>
+            <p className="text-slate-500 h-10 flex items-center justify-center">Potrai sbloccare l’app senza inserire il PIN.</p>
+            <div className="mt-4 p-3 rounded-lg border border-slate-200 bg-slate-50 text-left inline-block">
+              <p className="text-sm text-slate-700">Abilita ora lo sblocco biometrico?</p>
               <div className="flex gap-3 mt-2">
                 <button
                   onClick={async () => {
@@ -274,19 +274,19 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
                     try {
                       setBioBusy(true);
                       await registerBiometric('Profilo locale');
-                      clearBiometricSnooze();
+                      clearBiometricSnooze(); 
                       setBioBusy(false);
                     } catch { setBioBusy(false); } finally { await doRegisterAndLogin(); }
                   }}
                   disabled={bioBusy}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 dark:bg-indigo-500 rounded-lg shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:bg-indigo-300 dark:disabled:bg-indigo-900/50 transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:bg-indigo-300"
                 >
                   {bioBusy ? 'Attivo…' : 'Abilita e continua'}
                 </button>
                 <button
                   onClick={async () => { setBiometricsOptOut(true); await doRegisterAndLogin(); }}
                   disabled={bioBusy}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-100"
                 >
                   Non ora
                 </button>

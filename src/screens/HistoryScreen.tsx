@@ -12,9 +12,7 @@ import { ArrowsUpDownIcon } from '../components/icons/ArrowsUpDownIcon';
 import { parseLocalYYYYMMDD } from '../utils/date';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { useTapBridge } from '../hooks/useTapBridge';
-import { useNavigate } from 'react-router-dom';
-import { useTransactions } from '../context/TransactionsContext';
-import { useUI } from '../context/UIContext';
+
 type DateFilter = 'all' | '7d' | '30d' | '6m' | '1y';
 type PeriodType = 'day' | 'week' | 'month' | 'year';
 type ActiveFilterMode = 'quick' | 'period' | 'custom';
@@ -32,13 +30,12 @@ interface ExpenseItemProps {
   onToggleSelection: (id: string) => void;
   onLongPress: (id: string) => void;
   isIncomeMode: boolean;
-  isBalanceVisible: boolean;
 }
 
 const ACTION_WIDTH = 72;
 
 const ExpenseItem: React.FC<ExpenseItemProps> = ({
-  expense, accounts, onEdit, onDelete, isOpen, onOpen, isSelectionMode, isSelected, onToggleSelection, onLongPress, isIncomeMode, isBalanceVisible
+  expense, accounts, onEdit, onDelete, isOpen, onOpen, isSelectionMode, isSelected, onToggleSelection, onLongPress, isIncomeMode,
 }) => {
   const style = getCategoryStyle(expense.category);
   const account = accounts.find((a) => a.id === expense.accountId);
@@ -49,31 +46,22 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const tapBridge = useTapBridge();
   const isRecurringInstance = !!expense.recurringExpenseId;
   const isAdjustment = expense.type === 'adjustment';
-  const itemBgClass = isSelected
-    ? 'bg-indigo-50 dark:bg-slate-800 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700'
-    : isRecurringInstance
-      ? 'bg-amber-50 dark:bg-amber-900/40' // Use slightly opaque but solid-looking or ensure it covers
-      : isAdjustment
-        ? 'bg-slate-50 dark:bg-slate-900 opacity-90'
-        : 'bg-white dark:bg-slate-950';
-
-  // Specific fix: ensure the background is fully opaque in dark mode to hide the trash icon bleed-through
-  const finalBgClass = `${itemBgClass} transition-colors duration-200`;
+  const itemBgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200' : isRecurringInstance ? 'bg-amber-50' : isAdjustment ? 'bg-slate-50 opacity-90' : 'bg-white';
   const longPressTimer = useRef<number | null>(null);
 
   const handlePointerDownItem = (e: React.PointerEvent) => {
-    if (isSelectionMode) return;
+    if (isSelectionMode) return; 
     longPressTimer.current = window.setTimeout(() => {
-      onLongPress(expense.id);
-      if (navigator.vibrate) navigator.vibrate(50);
+        onLongPress(expense.id);
+        if (navigator.vibrate) navigator.vibrate(50);
     }, 500);
   };
 
   const cancelLongPress = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
+      if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+      }
   };
 
   const dragState = useRef({
@@ -105,11 +93,11 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const handlePointerMove = (e: React.PointerEvent) => {
     const ds = dragState.current;
     if (longPressTimer.current) {
-      const dist = Math.hypot(e.clientX - ds.startX, e.clientY - ds.startY);
-      if (dist > 10) cancelLongPress();
+        const dist = Math.hypot(e.clientX - ds.startX, e.clientY - ds.startY);
+        if (dist > 10) cancelLongPress();
     }
     if (ds.pointerId !== e.pointerId) return;
-    if (isSelectionMode) return;
+    if (isSelectionMode) return; 
     const dx = e.clientX - ds.startX;
     const dy = e.clientY - ds.startY;
     if (!ds.isDragging) {
@@ -175,45 +163,27 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   };
 
   const renderIcon = () => {
-    if (isSelected) return <span className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 dark:bg-indigo-500 text-white transition-transform duration-200 transform scale-100"><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>;
-    if (isAdjustment) return <span className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400"><ArrowsUpDownIcon className="w-6 h-6" /></span>;
-    if (isIncomeMode && AccountIcon) return <AccountIcon className="w-10 h-10 text-green-600 flex-shrink-0 transition-transform duration-200" />;
-    return <style.Icon className="w-10 h-10 flex-shrink-0 transition-transform duration-200" />;
+      if (isSelected) return <span className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 text-white transition-transform duration-200 transform scale-100"><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>;
+      if (isAdjustment) return <span className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-slate-200 text-slate-500"><ArrowsUpDownIcon className="w-6 h-6" /></span>;
+      if (isIncomeMode && AccountIcon) return <AccountIcon className="w-10 h-10 text-green-600 flex-shrink-0 transition-transform duration-200" />;
+      return <style.Icon className="w-10 h-10 flex-shrink-0 transition-transform duration-200" />;
   };
 
   const renderAmount = () => {
-    const amt = Number(expense.amount) || 0;
-    if (isAdjustment) return <span className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>{isBalanceVisible ? formatCurrency(amt) : '******'}</span>;
-    return <p className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-slate-100'}`}>{isIncomeMode ? '+' : ''}{isBalanceVisible ? formatCurrency(amt) : '******'}</p>;
+      const amt = Number(expense.amount) || 0;
+      if (isAdjustment) return <span className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900' : 'text-slate-500'}`}>{formatCurrency(amt)}</span>;
+      return <p className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900' : isIncomeMode ? 'text-green-600' : 'text-slate-900'}`}>{isIncomeMode ? '+' : ''}{formatCurrency(amt)}</p>;
   };
 
   return (
-    <div className={`relative ${itemBgClass} overflow-hidden transition-colors duration-200 select-none group`}>
-      <div className={`absolute top-0 right-0 h-full flex items-center z-10 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
-        <button
-          onClick={() => { if (isOpen) onDelete(expense.id); }}
-          className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white"
-          aria-label="Elimina spesa"
-          {...tapBridge}
-        >
-          <TrashIcon className="w-6 h-6" />
-          <span className="text-xs mt-1">Elimina</span>
-        </button>
+    <div className={`relative ${itemBgClass} overflow-hidden transition-colors duration-200 select-none`}>
+      <div className="absolute top-0 right-0 h-full flex items-center z-0">
+        <button onClick={() => onDelete(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa" {...tapBridge}><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button>
       </div>
-      <div
-        ref={itemRef}
-        data-expense-swipe="1"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-        onClick={handleClick}
-        className={`relative flex items-center gap-4 py-3 px-4 ${finalBgClass} z-20 cursor-pointer select-none`}
-        style={{ touchAction: 'pan-y' }}
-      >
-        {isRecurringInstance && !isSelectionMode && !isAdjustment && (<span className="absolute top-1.5 right-1.5 w-5 h-5 text-slate-900 dark:text-amber-900 bg-amber-100 dark:bg-amber-400 border border-amber-400 rounded-full flex items-center justify-center z-20" title="Spesa Programmata">P</span>)}
+      <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
+        {isRecurringInstance && !isSelectionMode && !isAdjustment && (<span className="absolute top-1.5 right-1.5 w-5 h-5 text-slate-900 bg-amber-100 border border-amber-400 text-[10px] font-bold rounded-full flex items-center justify-center z-20" title="Spesa Programmata">P</span>)}
         {renderIcon()}
-        <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isAdjustment ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-slate-100'}`}>{isAdjustment ? 'Rettifica Saldo' : isIncomeMode ? accountName : `${expense.subcategory || style.label} • ${accountName}`}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`} title={expense.description}>{expense.description || 'Senza descrizione'}</p></div>
+        <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900' : isAdjustment ? 'text-slate-600' : 'text-slate-800'}`}>{isAdjustment ? 'Rettifica Saldo' : isIncomeMode ? accountName : `${expense.subcategory || style.label} • ${accountName}`}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700' : 'text-slate-500'}`} title={expense.description}>{expense.description || 'Senza descrizione'}</p></div>
         {renderAmount()}
       </div>
     </div>
@@ -221,10 +191,18 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
 };
 
 interface HistoryScreenProps {
-  onClose?: () => void;
-  onCloseStart?: () => void;
-  filterType?: 'expense' | 'income';
-  isBalanceVisible: boolean;
+  expenses: Expense[];
+  accounts: Account[];
+  onEditExpense: (expense: Expense) => void;
+  onDeleteExpense: (id: string) => void;
+  onDeleteExpenses: (ids: string[]) => void; 
+  isEditingOrDeleting: boolean;
+  onDateModalStateChange: (isOpen: boolean) => void;
+  onClose: () => void;
+  onCloseStart?: () => void; 
+  onFilterPanelOpenStateChange: (isOpen: boolean) => void;
+  isOverlayed: boolean;
+  filterType?: 'expense' | 'income'; 
 }
 
 interface ExpenseGroup { year: number; week: number; label: string; dateRange: string; expenses: Expense[]; total: number; }
@@ -259,28 +237,7 @@ const getWeekLabel = (y: number, w: number) => {
   return `Settimana ${w}`;
 };
 
-const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, filterType = 'expense', isBalanceVisible }) => {
-  const { expenses, accounts, deleteExpenses: onDeleteExpenses, handleDeleteRequest: onDeleteExpense, isConfirmDeleteModalOpen } = useTransactions();
-  const { setEditingExpense, setIsAddModalOpen, setIsHistoryFilterOpen, isAddModalOpen } = useUI();
-  const navigate = useNavigate();
-
-  const isEditingOrDeleting = isAddModalOpen || isConfirmDeleteModalOpen;
-
-  const onEditExpense = (expense: Expense) => {
-    setEditingExpense(expense);
-    setIsAddModalOpen(true);
-  };
-
-  const onDateModalStateChange = (isOpen: boolean) => {
-    // no-op or internal
-  };
-
-  const onFilterPanelOpenStateChange = (isOpen: boolean) => {
-    setIsHistoryFilterOpen(isOpen);
-  };
-
-  const isOverlayed = false;
-
+const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEditExpense, onDeleteExpense, onDeleteExpenses, isEditingOrDeleting, onDateModalStateChange, onClose, onCloseStart, onFilterPanelOpenStateChange, isOverlayed, filterType = 'expense' }) => {
   const [isAnimatingIn, setIsAnimatingIn] = useState(false);
   const tapBridge = useTapBridge();
   const isIncomeMode = filterType === 'income';
@@ -306,26 +263,18 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, fi
   const isSelectionMode = selectedIds.size > 0;
 
   useEffect(() => { const timer = setTimeout(() => setIsAnimatingIn(true), 10); return () => clearTimeout(timer); }, []);
-  const handleClose = () => {
-    setOpenItemId(null);
-    if (onCloseStart) onCloseStart();
-    setIsAnimatingIn(false);
-    setTimeout(() => {
-      if (onClose) onClose();
-      else navigate(-1);
-    }, 300);
-  };
+  const handleClose = () => { setOpenItemId(null); if (onCloseStart) onCloseStart(); setIsAnimatingIn(false); setTimeout(onClose, 300); };
   const handleDateModalStateChange = useCallback((isOpen: boolean) => { setIsInternalDateModalOpen(isOpen); onDateModalStateChange(isOpen); }, [onDateModalStateChange]);
-
+  
   useEffect(() => { if (prevOpRef.current && !isEditingOrDeleting) { setOpenItemId(null); } prevOpRef.current = isEditingOrDeleting; }, [isEditingOrDeleting]);
   useEffect(() => { if (!isAnimatingIn) { setOpenItemId(null); } }, [isAnimatingIn]);
   useEffect(() => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); if (openItemId && !isEditingOrDeleting) { autoCloseRef.current = window.setTimeout(() => setOpenItemId(null), 5000); } return () => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); }; }, [openItemId, isEditingOrDeleting]);
-
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isSortMenuOpen && sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node) && sortButtonRef.current && !sortButtonRef.current.contains(event.target as Node)) {
-        setIsSortMenuOpen(false);
-      }
+        if (isSortMenuOpen && sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node) && sortButtonRef.current && !sortButtonRef.current.contains(event.target as Node)) {
+            setIsSortMenuOpen(false);
+        }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -333,9 +282,9 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, fi
 
   const filteredExpenses = useMemo(() => {
     let result = (expenses || []).filter(e => {
-      if (filterType === 'income') return e.type === 'income';
-      if (filterType === 'expense') return e.type === 'expense';
-      return true;
+        if (filterType === 'income') return e.type === 'income';
+        if (filterType === 'expense') return e.type === 'expense';
+        return true;
     });
 
     if (activeFilterMode === 'period') {
@@ -375,19 +324,19 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, fi
 
   const groupedExpenses = useMemo(() => {
     const sorted = [...(filteredExpenses || [])].sort((a, b) => {
-      if (sortOption === 'amount-desc') return Math.abs(b.amount) - Math.abs(a.amount);
-      if (sortOption === 'amount-asc') return Math.abs(a.amount) - Math.abs(b.amount);
-      if (sortOption === 'category') return a.category.localeCompare(b.category);
-      const db = parseLocalYYYYMMDD(b.date); const da = parseLocalYYYYMMDD(a.date);
-      if (b.time) { const [h, m] = b.time.split(':').map(Number); if (!isNaN(h) && !isNaN(m)) db.setHours(h, m); }
-      if (a.time) { const [h, m] = a.time.split(':').map(Number); if (!isNaN(h) && !isNaN(m)) da.setHours(h, m); }
-      return db.getTime() - da.getTime();
+        if (sortOption === 'amount-desc') return Math.abs(b.amount) - Math.abs(a.amount);
+        if (sortOption === 'amount-asc') return Math.abs(a.amount) - Math.abs(b.amount);
+        if (sortOption === 'category') return a.category.localeCompare(b.category);
+        const db = parseLocalYYYYMMDD(b.date); const da = parseLocalYYYYMMDD(a.date);
+        if (b.time) { const [h, m] = b.time.split(':').map(Number); if (!isNaN(h) && !isNaN(m)) db.setHours(h, m); }
+        if (a.time) { const [h, m] = a.time.split(':').map(Number); if (!isNaN(h) && !isNaN(m)) da.setHours(h, m); }
+        return db.getTime() - da.getTime();
     });
 
     if (sortOption !== 'date') {
-      const total = sorted.reduce((acc, e) => { if (e.type === 'adjustment') return acc; return acc + (Number(e.amount) || 0); }, 0);
-      let label = 'Tutte le transazioni'; if (sortOption === 'amount-desc') label = 'Per Importo (Decrescente)'; if (sortOption === 'amount-asc') label = 'Per Importo (Crescente)'; if (sortOption === 'category') label = 'Per Categoria';
-      return { 'global': { year: 0, week: 0, label: label, dateRange: `${sorted.length} risultati`, expenses: sorted, total: total } };
+        const total = sorted.reduce((acc, e) => { if (e.type === 'adjustment') return acc; return acc + (Number(e.amount) || 0); }, 0);
+        let label = 'Tutte le transazioni'; if (sortOption === 'amount-desc') label = 'Per Importo (Decrescente)'; if (sortOption === 'amount-asc') label = 'Per Importo (Crescente)'; if (sortOption === 'category') label = 'Per Categoria';
+        return { 'global': { year: 0, week: 0, label: label, dateRange: `${sorted.length} risultati`, expenses: sorted, total: total } };
     }
 
     return sorted.reduce<Record<string, ExpenseGroup>>((acc, e) => {
@@ -412,32 +361,32 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, fi
   const handleSortOptionSelect = (value: 'date' | 'amount' | 'category') => { if (value === 'amount') { setSortOption(prev => prev === 'amount-desc' ? 'amount-asc' : 'amount-desc'); } else { setSortOption(value); } setIsSortMenuOpen(false); };
 
   return (
-    <div className={`fixed inset-0 z-20 bg-slate-100 dark:bg-slate-950 transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
-      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm h-[60px] transition-colors">
+    <div className={`fixed inset-0 z-20 bg-slate-100 transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
+      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 backdrop-blur-sm shadow-sm h-[60px]">
         {isSelectionMode ? (
-          <>
-            <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
-            <h1 className="text-xl font-bold text-indigo-800 dark:text-indigo-400 flex-1">{selectedIds.size} Selezionati</h1>
-            <button onClick={handleBulkDeleteClick} className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors" aria-label="Elimina selezionati"><TrashIcon className="w-6 h-6" /></button>
-          </>
+            <>
+                <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
+                <h1 className="text-xl font-bold text-indigo-800 flex-1">{selectedIds.size} Selezionati</h1>
+                <button onClick={handleBulkDeleteClick} className="p-2 rounded-full hover:bg-red-100 text-red-600 transition-colors" aria-label="Elimina selezionati"><TrashIcon className="w-6 h-6" /></button>
+            </>
         ) : (
-          <>
-            <button onClick={handleClose} className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-300" /></button>
-            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex-1">{isIncomeMode ? 'Storico Entrate' : 'Storico Spese'}</h1>
-            <div className="relative">
-              <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
-              {isSortMenuOpen && (
-                <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden animate-fade-in-up" style={{ animationDuration: '150ms' }} onPointerDown={(e) => e.stopPropagation()}>
-                  <div className="py-1">
-                    <button onClick={() => handleSortOptionSelect('amount')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${(sortOption === 'amount-desc' || sortOption === 'amount-asc') ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' : 'text-slate-700 dark:text-slate-300'}`}><span>Per Importo {sortOption === 'amount-asc' ? '(Crescente)' : '(Decrescente)'}</span>{(sortOption === 'amount-desc' || sortOption === 'amount-asc') && <CheckIcon className="w-4 h-4" />}</button>
-                    <button onClick={() => handleSortOptionSelect('category')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${sortOption === 'category' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' : 'text-slate-700 dark:text-slate-300'}`}><span>Per Categoria</span>{sortOption === 'category' && <CheckIcon className="w-4 h-4" />}</button>
-                    <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-                    <button onClick={() => handleSortOptionSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${sortOption === 'date' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' : 'text-slate-500 dark:text-slate-400'}`}><span>Per Data (Default)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
-                  </div>
+            <>
+                <button onClick={handleClose} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700" /></button>
+                <h1 className="text-xl font-bold text-slate-800 flex-1">{isIncomeMode ? 'Storico Entrate' : 'Storico Spese'}</h1>
+                <div className="relative">
+                    <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-slate-200 text-slate-600'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
+                    {isSortMenuOpen && (
+                        <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-100 z-50 overflow-hidden animate-fade-in-up" style={{ animationDuration: '150ms' }} onPointerDown={(e) => e.stopPropagation()}>
+                            <div className="py-1">
+                                <button onClick={() => handleSortOptionSelect('amount')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${(sortOption === 'amount-desc' || sortOption === 'amount-asc') ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Per Importo {sortOption === 'amount-asc' ? '(Crescente)' : '(Decrescente)'}</span>{(sortOption === 'amount-desc' || sortOption === 'amount-asc') && <CheckIcon className="w-4 h-4" />}</button>
+                                <button onClick={() => handleSortOptionSelect('category')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${sortOption === 'category' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Per Categoria</span>{sortOption === 'category' && <CheckIcon className="w-4 h-4" />}</button>
+                                <div className="border-t border-slate-100 my-1"></div>
+                                <button onClick={() => handleSortOptionSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-500'}`}><span>Per Data (Default)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-              )}
-            </div>
-          </>
+            </>
         )}
       </header>
 
@@ -446,15 +395,15 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose, onCloseStart, fi
           {expenseGroups.length > 0 ? (
             expenseGroups.map((group) => (
               <div key={group.label} className="mb-6 last:mb-0">
-                <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-100 text-lg px-4 py-2 sticky top-0 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-sm z-30 transition-colors">
-                  <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500 dark:text-slate-400">{group.dateRange}</span></h2>
-                  <p className={`font-bold text-xl ${isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{isBalanceVisible ? formatCurrency(group.total) : '******'}</p>
+                <div className="flex items-center justify-between font-bold text-slate-800 text-lg px-4 py-2 sticky top-0 bg-slate-100/80 backdrop-blur-sm z-10">
+                  <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500">{group.dateRange}</span></h2>
+                  <p className={`font-bold text-xl ${isIncomeMode ? 'text-green-600' : 'text-indigo-600'}`}>{formatCurrency(group.total)}</p>
                 </div>
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-md mx-2 overflow-hidden transition-colors">
+                <div className="bg-white rounded-xl shadow-md mx-2 overflow-hidden">
                   {group.expenses.map((expense, index) => (
                     <React.Fragment key={expense.id}>
-                      {index > 0 && <hr className="border-t border-slate-200 dark:border-slate-800 ml-16" />}
-                      <ExpenseItem expense={expense} accounts={accounts} onEdit={onEditExpense} onDelete={onDeleteExpense} isOpen={openItemId === expense.id} onOpen={handleOpenItem} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isIncomeMode={isIncomeMode} isBalanceVisible={isBalanceVisible} />
+                      {index > 0 && <hr className="border-t border-slate-200 ml-16" />}
+                      <ExpenseItem expense={expense} accounts={accounts} onEdit={onEditExpense} onDelete={onDeleteExpense} isOpen={openItemId === expense.id} onOpen={handleOpenItem} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isIncomeMode={isIncomeMode} />
                     </React.Fragment>
                   ))}
                 </div>

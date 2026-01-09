@@ -34,7 +34,7 @@ const hasAutoPromptLock = () => {
 const setAutoPromptLock = () => {
   try {
     sessionStorage.setItem(BIO_AUTOPROMPT_LOCK_KEY, '1');
-  } catch { }
+  } catch {}
 };
 
 // email usata con la biometria (per auto-prompt anche sulla schermata email)
@@ -159,7 +159,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
             if (typeof window !== 'undefined') {
               window.localStorage.setItem(BIOMETRIC_LAST_EMAIL_KEY, normalized);
             }
-          } catch { }
+          } catch {}
 
           // Se eravamo sulla schermata email, settiamo anche l'activeEmail
           if (!activeEmail) {
@@ -194,43 +194,43 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       // 1. Controllo Locale
       const localUsers = getUsers();
       if (localUsers[normalized]) {
-        setActiveEmail(normalized);
-        setError(null);
-        setBiometricEmail(normalized);
-        return;
+          setActiveEmail(normalized);
+          setError(null);
+          setBiometricEmail(normalized);
+          return;
       }
 
       // 2. Se non c'è, cerca nel Cloud (Ripristino)
       setIsLoading(true);
       try {
-        const cloudResult = await loadFromCloud(normalized);
-        if (cloudResult) {
-          // Ripristino dati
-          localStorage.setItem('expenses_v2', JSON.stringify(cloudResult.data.expenses));
-          localStorage.setItem('recurring_expenses_v1', JSON.stringify(cloudResult.data.recurringExpenses));
-          localStorage.setItem('accounts_v1', JSON.stringify(cloudResult.data.accounts));
+          const cloudResult = await loadFromCloud(normalized);
+          if (cloudResult) {
+              // Ripristino dati
+              localStorage.setItem('expenses_v2', JSON.stringify(cloudResult.data.expenses));
+              localStorage.setItem('recurring_expenses_v1', JSON.stringify(cloudResult.data.recurringExpenses));
+              localStorage.setItem('accounts_v1', JSON.stringify(cloudResult.data.accounts));
+              
+              // Ripristino utente (Hash/Salt)
+              const newUser: StoredUser = {
+                  email: normalized,
+                  pinHash: cloudResult.pinHash,
+                  pinSalt: cloudResult.pinSalt,
+                  createdAt: new Date().toISOString()
+              };
+              localUsers[normalized] = newUser;
+              saveUsers(localUsers);
 
-          // Ripristino utente (Hash/Salt)
-          const newUser: StoredUser = {
-            email: normalized,
-            pinHash: cloudResult.pinHash,
-            pinSalt: cloudResult.pinSalt,
-            createdAt: new Date().toISOString()
-          };
-          localUsers[normalized] = newUser;
-          saveUsers(localUsers);
-
-          // Login riuscito (vai al PIN)
-          setActiveEmail(normalized);
-          setError(null);
-          setBiometricEmail(normalized);
-        } else {
-          setError("Nessun account trovato (locale o cloud).");
-        }
+              // Login riuscito (vai al PIN)
+              setActiveEmail(normalized);
+              setError(null);
+              setBiometricEmail(normalized);
+          } else {
+              setError("Nessun account trovato (locale o cloud).");
+          }
       } catch (e) {
-        setError("Errore di connessione cloud.");
+          setError("Errore di connessione cloud.");
       } finally {
-        setIsLoading(false);
+          setIsLoading(false);
       }
     }
   };
@@ -271,7 +271,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
           if (typeof window !== 'undefined') {
             window.localStorage.setItem(BIOMETRIC_LAST_EMAIL_KEY, normalized);
           }
-        } catch { }
+        } catch {}
 
         if (!activeEmail) {
           setActiveEmail(normalized);
@@ -309,7 +309,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(BIOMETRIC_LAST_EMAIL_KEY, normalized);
         }
-      } catch { }
+      } catch {}
 
       if (!activeEmail) {
         setActiveEmail(normalized);
@@ -346,19 +346,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
     if (!activeEmail) {
       return (
         <div className="text-center">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 transition-colors">Bentornato!</h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-6 transition-colors">Inserisci la tua email per continuare.</p>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Bentornato!</h2>
+          <p className="text-slate-500 mb-6">Inserisci la tua email per continuare.</p>
 
           <LoginEmail onSubmit={handleEmailSubmit} />
-
+          
           {isLoading && (
-            <div className="mt-4 flex justify-center">
-              <SpinnerIcon className="w-6 h-6 text-indigo-600" />
-            </div>
+             <div className="mt-4 flex justify-center">
+                <SpinnerIcon className="w-6 h-6 text-indigo-600" />
+             </div>
           )}
-
+          
           {error && (
-            <p className="mt-4 text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded transition-colors">{error}</p>
+             <p className="mt-4 text-sm text-red-500 bg-red-50 p-2 rounded">{error}</p>
           )}
 
           {/* PULSANTE BIOMETRICO NELLA SCHERMATA EMAIL */}
@@ -368,7 +368,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                 type="button"
                 onClick={loginWithBiometrics}
                 disabled={bioBusy}
-                className="flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-all disabled:opacity-50 shadow-sm border border-indigo-100 dark:border-indigo-800"
+                className="flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors disabled:opacity-50 shadow-sm border border-indigo-100"
               >
                 <FingerprintIcon className="w-5 h-5" />
                 {bioBusy ? 'Accesso in corso...' : 'Accedi con impronta'}
@@ -381,15 +381,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               href="https://t.me/mailsendreset_bot?start=recover"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+              className="inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500"
             >
               Email dimenticata?
             </a>
-            <p className="text-sm text-slate-500 dark:text-slate-400 transition-colors">
+            <p className="text-sm text-slate-500">
               Non hai un account?{' '}
               <button
                 onClick={onGoToRegister}
-                className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
               >
                 Registrati
               </button>
@@ -399,40 +399,41 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       );
     }
 
+    // —— SCHERMATA PIN ——
     return (
       <div className="text-center">
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 truncate transition-colors" title={activeEmail}>
+        <p className="text-sm text-slate-600 mb-2 truncate" title={activeEmail}>
           {activeEmail}
         </p>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 transition-colors">Inserisci il PIN di 4 cifre</h2>
-
+        <h2 className="text-xl font-bold text-slate-800 mb-2">Inserisci il PIN di 4 cifre</h2>
+        
         {/* Container for status/error that collapses when empty */}
         <div className={`flex items-center justify-center transition-all duration-200 overflow-hidden ${error || isLoading ? 'h-6 mb-2' : 'h-0'}`}>
-          {isLoading ? (
-            <SpinnerIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          ) : error ? (
-            <p className="text-sm text-red-500 dark:text-red-400 transition-colors">{error}</p>
-          ) : null}
+            {isLoading ? (
+                <SpinnerIcon className="w-4 h-4 text-indigo-600" />
+            ) : error ? (
+                <p className="text-sm text-red-500">{error}</p>
+            ) : null}
         </div>
 
-        <PinInput
-          pin={pin}
-          onPinChange={setPin}
-          showBiometric={showEnableBox}
-          onBiometric={bioEnabled ? loginWithBiometrics : enableBiometricsNow}
+        <PinInput 
+            pin={pin} 
+            onPinChange={setPin}
+            showBiometric={showEnableBox}
+            onBiometric={bioEnabled ? loginWithBiometrics : enableBiometricsNow}
         />
 
         <div className="mt-6 flex flex-col items-center justify-center gap-y-3">
           <div className="flex w-full items-center justify-between px-1">
             <button
               onClick={handleSwitchUser}
-              className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+              className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
             >
               Cambia Utente
             </button>
             <button
               onClick={onGoToForgotPassword}
-              className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+              className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
             >
               PIN Dimenticato?
             </button>

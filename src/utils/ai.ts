@@ -61,16 +61,9 @@ async function callAiEndpoint<T>(payload: any): Promise<T> {
     console.error("AI Call Error:", e);
 
     if (e.name === 'AbortError') {
-      console.warn("[AI] Request aborted (timeout)");
       throw new Error("Tempo scaduto. Il server ci sta mettendo troppo tempo.");
     }
-
-    if (e instanceof TypeError && e.message === 'Failed to fetch') {
-      console.error("[AI] CORS or Network error. Check endpoint connectivity.");
-      throw new Error("Errore di connessione. Verifica che il server sia raggiungibile.");
-    }
-
-    // Rilanciamo l'errore per farlo gestire alla UI
+    // Rilanciamo l'errore per farlo gestire alla UI (VoiceInputModal)
     throw e;
   }
 }
@@ -133,18 +126,20 @@ export async function parseExpenseFromAudio(
 }
 
 // ====== TESTO → 1 SPESA (FALLBACK) ======
-// ====== TESTO → 1 SPESA (OTTIMIZZATO) ======
 export async function parseExpenseFromText(
   text: string
 ): Promise<Partial<Expense> | null> {
-  const result = await callAiEndpoint<ImageResponse>({ // Reuse ImageResponse format for text
-    action: 'parseText',
-    text: text,
-  });
+  const { textToImage } = await import('./fileHelper');
 
-  if (!result.ok) {
-    throw new Error(result.error || "Errore analisi testo.");
-  }
+  // 1. Convert text to image (base64 PNG)
+  // This workaround allows us to use the existing image-analysis backend endpoint
+  // without modifying the Google Apps Script code.
+  const base64Image = await textToImage(text);
 
-  return result.expenses && result.expenses.length > 0 ? result.expenses[0] : null;
+  // 2. Call existing image parser
+  // It returns Promise<Partial<Expense>[]>
+  const expenses = await parseExpensesFromImage(base64Image, 'image/png');
+
+  // 3. Return first result or null
+  return expenses && expenses.length > 0 ? expenses[0] : null;
 }

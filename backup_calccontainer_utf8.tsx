@@ -1,4 +1,4 @@
-// CalculatorContainer.tsx
+﻿// CalculatorContainer.tsx
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Expense, Account } from '../types';
 import CalculatorInputScreen from './CalculatorInputScreen';
@@ -172,13 +172,13 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
     setIsSubmitting(true);
     submittingRef.current = true;
     
-    // ✅ Se stiamo in TransactionDetailPage, chiudi prima quella pagina
+    // Ô£à Se stiamo in TransactionDetailPage, chiudi prima quella pagina
     if (view === 'details') {
       setView('calculator');
       window.history.back();
     }
     
-    // Poi chiama onSubmit che chiuderà anche la calcolatrice
+    // Poi chiama onSubmit che chiuder├á anche la calcolatrice
     onSubmit(data);
   }, [isSubmitting, onSubmit, view]);
 

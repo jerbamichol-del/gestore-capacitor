@@ -1,4 +1,4 @@
-﻿// CalculatorInputScreen.tsx
+// CalculatorInputScreen.tsx
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { Expense, Account, CATEGORIES } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
@@ -118,7 +118,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
   const isIncome = formData.type === 'income';
   const isTransfer = formData.type === 'transfer';
 
-  // ­ƒöº SEMPLIFICATO: Rimosso tap bridge complesso che blocca eventi
+  // 🔧 SEMPLIFICATO: Rimosso tap bridge complesso che blocca eventi
   useEffect(() => {
     onMenuStateChange(activeMenu !== null);
   }, [activeMenu, onMenuStateChange]);
@@ -198,7 +198,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     });
   }, [justCalculated, shouldResetCurrentValue, handleClearAmount]);
 
-  // Long press su Ôî½
+  // Long press su ⌫
   const delTimerRef = useRef<number | null>(null);
   const delDidLongRef = useRef(false);
   const delStartXRef = useRef(0);
@@ -264,8 +264,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     switch (operator) {
       case '+': result = prev + current; break;
       case '-': result = prev - current; break;
-      case '├ù': result = prev * current; break;
-      case '├À': if (current === 0) return 'Error'; result = prev / current; break;
+      case '×': result = prev * current; break;
+      case '÷': if (current === 0) return 'Error'; result = prev / current; break;
       default: return currentValue.replace('.', ',');
     }
     setJustCalculated(true);
@@ -276,7 +276,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
   const handleKeyPress = useCallback((key: string) => {
     typingSinceActivationRef.current = true;
 
-    if (['├À', '├ù', '-', '+'].includes(key)) {
+    if (['÷', '×', '-', '+'].includes(key)) {
       if (operator && previousValue && !shouldResetCurrentValue) {
         const result = calculate(); setPreviousValue(result); setCurrentValue(result);
       } else { setPreviousValue(currentValue); }
@@ -450,10 +450,10 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
                     }`} 
                     style={{ fontSize: isTransfer ? '0.45em' : '0.6em' }}
                 >
-                    {isIncome ? '+' : isTransfer ? 'Ôçä' : '-'}
+                    {isIncome ? '+' : isTransfer ? '⇄' : '-'}
                 </span>
                 {displayValue}
-                <span className="absolute left-full top-1/2 -translate-y-1/2 opacity-75 ml-2" style={{ fontSize: '0.6em' }}>Ôé¼</span>
+                <span className="absolute left-full top-1/2 -translate-y-1/2 opacity-75 ml-2" style={{ fontSize: '0.6em' }}>€</span>
               </div>
             </div>
           </div>
@@ -482,7 +482,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         </main>
       </div>
       
-      {/* ­ƒöº FIX: 52vh + SAFE AREA + GAP RIDOTTO */}
+      {/* 🔧 FIX: 52vh + SAFE AREA + GAP RIDOTTO */}
       <div className="flex-shrink-0 flex flex-col" style={{ height: '52vh' }}>
         <div className="flex justify-between items-center my-2 w-full px-4 gap-0" style={{ touchAction: 'pan-y' }}>
           
@@ -565,7 +565,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           )}
         </div>
 
-        {/* ­ƒöº FIX: GAP 1.5 + SAFE AREA */}
+        {/* 🔧 FIX: GAP 1.5 + SAFE AREA */}
         <div 
           className="flex-1 p-2 flex flex-row gap-1.5 px-4"
           style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
@@ -583,7 +583,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress(',')}>,</KeypadButton>
             <KeypadButton className="text-slate-800" onClick={() => handleKeyPress('0')}>0</KeypadButton>
             <KeypadButton
-              title="Tocca: cancella una cifra ÔÇö Tieni premuto: cancella tutto"
+              title="Tocca: cancella una cifra — Tieni premuto: cancella tutto"
               aria-label="Cancella"
               onPointerDownCapture={onDelPointerDownCapture}
               onPointerMoveCapture={onDelPointerMoveCapture}
@@ -599,8 +599,8 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
             className="h-full w-1/5 flex flex-col gap-1.5 bg-slate-200 rounded-2xl p-1"
             style={{ touchAction: 'pan-y' }}
           >
-            <OperatorButton onClick={() => handleKeyPress('├À')}>├À</OperatorButton>
-            <OperatorButton onClick={() => handleKeyPress('├ù')}>├ù</OperatorButton>
+            <OperatorButton onClick={() => handleKeyPress('÷')}>÷</OperatorButton>
+            <OperatorButton onClick={() => handleKeyPress('×')}>×</OperatorButton>
             <OperatorButton onClick={() => handleKeyPress('-')}>-</OperatorButton>
             <OperatorButton onClick={() => handleKeyPress('+')}>+</OperatorButton>
             <OperatorButton onClick={() => handleKeyPress('=')}>=</OperatorButton>

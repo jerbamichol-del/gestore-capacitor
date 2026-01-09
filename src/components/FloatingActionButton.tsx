@@ -7,10 +7,10 @@ import { PhotoIcon } from './icons/PhotoIcon';
 import { PencilIcon } from './icons/PencilIcon';
 
 interface FloatingActionButtonProps {
-    onAddManually: () => void;
-    onAddFromImage: () => void;
-    onAddFromVoice: () => void;
-    style?: React.CSSProperties;
+  onAddManually: () => void;
+  onAddFromImage: () => void;
+  onAddFromVoice: () => void;
+  style?: React.CSSProperties;
 }
 
 const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onAddManually, onAddFromImage, onAddFromVoice, style }) => {
@@ -63,11 +63,11 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onAddManual
         action();
         setIsOpen(false);
     };
-
+    
     const actions = [
-        { label: 'Aggiungi Manualmente', icon: <PencilIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddManually), bgColor: 'bg-indigo-600 dark:bg-indigo-500', hoverBgColor: 'hover:bg-indigo-700 dark:hover:bg-indigo-600' },
-        { label: 'Aggiungi da Immagine', icon: <PhotoIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddFromImage), bgColor: 'bg-sky-600 dark:bg-sky-500', hoverBgColor: 'hover:bg-sky-700 dark:hover:bg-sky-600' },
-        { label: 'Aggiungi con Voce', icon: <MicrophoneIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddFromVoice), bgColor: 'bg-purple-600 dark:bg-purple-500', hoverBgColor: 'hover:bg-purple-700 dark:hover:bg-purple-600' },
+        { label: 'Aggiungi Manualmente', icon: <PencilIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddManually), bgColor: 'bg-indigo-500', hoverBgColor: 'hover:bg-indigo-600' },
+        { label: 'Aggiungi da Immagine', icon: <PhotoIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddFromImage), bgColor: 'bg-sky-600', hoverBgColor: 'hover:bg-sky-700' },
+        { label: 'Aggiungi con Voce', icon: <MicrophoneIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddFromVoice), bgColor: 'bg-purple-600', hoverBgColor: 'hover:bg-purple-700' },
     ];
 
     const baseStyle: React.CSSProperties = {
@@ -75,21 +75,21 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onAddManual
         right: `calc(1.5rem + env(safe-area-inset-right, 0px))`,
         transition: 'bottom 300ms cubic-bezier(0.22, 0.61, 0.36, 1)',
     };
-
+    
     const finalStyle: React.CSSProperties = { ...baseStyle, ...style };
 
     return (
-        <div
+        <div 
             className="fixed z-[1050] flex flex-col items-center"
             style={finalStyle}
         >
             {/* Action buttons are only in the DOM when they should be visible or animating out */}
             <div className="flex flex-col-reverse items-center gap-4 mb-4">
                 {renderActions && actions.map((action, index) => (
-                    <div
-                        key={action.label}
-                        className={`transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                        style={{ transitionDelay: isOpen ? `${(actions.length - 1 - index) * 50}ms` : '0ms' }}
+                    <div 
+                         key={action.label} 
+                         className={`transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                         style={{ transitionDelay: isOpen ? `${(actions.length - 1 - index) * 50}ms` : '0ms' }}
                     >
                         <button
                             onClick={action.onClick}
@@ -102,15 +102,15 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onAddManual
                     </div>
                 ))}
             </div>
-
+            
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`pointer-events-auto flex justify-center items-center w-16 h-16 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all transform duration-500 ease-in-out focus:outline-none ${isMounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-16 scale-90'}`}
                 aria-expanded={isOpen}
                 aria-label={isOpen ? "Chiudi menu azioni" : "Apri menu azioni"}
             >
-                <div className={`transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-45' : ''}`}>
-                    <PlusIcon className="w-8 h-8" />
+                 <div className={`transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-45' : ''}`}>
+                     <PlusIcon className="w-8 h-8" />
                 </div>
             </button>
         </div>

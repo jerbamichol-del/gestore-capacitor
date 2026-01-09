@@ -28,7 +28,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-
+  
   // Ref per tracciare se l'utente ha annullato l'operazione
   const isCancelledRef = useRef(false);
 
@@ -117,7 +117,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
           return;
         }
 
-        analyserRef.current.getByteTimeDomainData(dataArrayRef.current as any);
+        analyserRef.current.getByteTimeDomainData(dataArrayRef.current);
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) {
           const v = dataArrayRef.current[i];
@@ -240,21 +240,9 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
     }
   };
 
-  const handleClose = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    console.log('[Voice] Closing modal...');
+  const handleClose = () => {
     // Segnaliamo che l'operazione è annullata, così onstop non farà nulla
     isCancelledRef.current = true;
-
-    // Stop recording immediately if active
-    try {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-    } catch (err) {
-      console.warn('[Voice] Error stopping recorder on close:', err);
-    }
-
     cleanUp();
     setStatus('idle');
     setError(null);
@@ -303,7 +291,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
                 <MicrophoneIcon className="w-12 h-12 text-white" />
               </div>
               {/* barra visualizzatore a destra */}
-              <div className="absolute -right-6 h-20 w-3 rounded-full bg-red-200 dark:bg-red-900 overflow-hidden flex items-end transition-colors">
+              <div className="absolute -right-6 h-20 w-3 rounded-full bg-red-200 overflow-hidden flex items-end">
                 <div
                   ref={visualizerBarRef}
                   className="w-full bg-red-600 origin-bottom"
@@ -329,7 +317,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
       case 'error':
         return {
           icon: (
-            <div className="w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center transition-colors">
+            <div className="w-24 h-24 rounded-full bg-red-100 flex items-center justify-center">
               <XMarkIcon className="w-12 h-12 text-red-500" />
             </div>
           ),
@@ -345,23 +333,25 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'
-        } bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-sm transition-colors`}
+      className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${
+        isAnimating ? 'opacity-100' : 'opacity-0'
+      } bg-slate-900/50 backdrop-blur-sm`}
       onClick={handleClose}
       aria-modal="true"
       role="dialog"
     >
       <div
-        className={`bg-slate-50 dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-          } transition-colors`}
+        className={`bg-slate-50 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${
+          isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800 transition-colors">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 transition-colors">Aggiungi con Voce</h2>
+        <div className="flex justify-between items-center p-6 border-b border-slate-200">
+          <h2 className="text-xl font-bold text-slate-800">Aggiungi con Voce</h2>
           <button
             type="button"
             onClick={handleClose}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-full hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Chiudi"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -370,15 +360,15 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
 
         <div className="p-6 flex flex-col items-center justify-center min-h-[300px] text-center">
           {icon}
-          <p className="text-xl font-semibold text-slate-800 dark:text-slate-100 mt-6 transition-colors">{text}</p>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 transition-colors">{subtext}</p>
+          <p className="text-xl font-semibold text-slate-800 mt-6">{text}</p>
+          <p className="text-slate-500 mt-2">{subtext}</p>
 
           {transcript && (
-            <div className="mt-6 p-3 bg-slate-100 dark:bg-slate-800 rounded-md w-full text-left transition-colors">
-              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium transition-colors">
+            <div className="mt-6 p-3 bg-slate-100 rounded-md w-full text-left">
+              <p className="text-sm text-slate-600 font-medium">
                 Descrizione rilevata:
               </p>
-              <p className="text-slate-800 dark:text-slate-200 break-words transition-colors">{transcript}</p>
+              <p className="text-slate-800 break-words">{transcript}</p>
             </div>
           )}
 
@@ -386,7 +376,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
             <button
               type="button"
               onClick={startRecording}
-              className="mt-6 px-4 py-2 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white font-semibold hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors"
+              className="mt-6 px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
             >
               Riprova registrazione
             </button>

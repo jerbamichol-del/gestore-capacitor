@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { OfflineImage, deleteImageFromQueue, addImageToQueue, getQueuedImages } from './utils/db';
 import { Expense } from './types';
 
@@ -59,7 +59,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   useEffect(() => {
     if (updateInfo && updateInfo.available && !isCheckingUpdate) {
-      console.log('­ƒÜÇ Update detected - showing modal', updateInfo);
+      console.log('🚀 Update detected - showing modal', updateInfo);
       setIsUpdateModalOpen(true);
     }
   }, [updateInfo, isCheckingUpdate]);

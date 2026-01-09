@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { Expense, Account } from '../types';
 import { formatCurrency } from './icons/formatters';
@@ -278,7 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         setIsPeriodMenuOpen(false);
     }, [activeViewIndex]);
 
-    // Ô£à Saldo Home = somma dei saldi di tutti i conti (non "budget" del periodo)
+    // ✅ Saldo Home = somma dei saldi di tutti i conti (non "budget" del periodo)
     const totalAccountsBalance = useMemo(() => {
         const safeAccounts = accounts || [];
         const safeExpenses = expenses || [];
@@ -460,9 +460,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <p className="text-sm font-medium text-slate-400 capitalize mb-1">{dateRangeLabel}</p>
                                 <div className="relative flex justify-center items-center text-indigo-600 mt-1">
                                     <div className="relative flex items-baseline">
-                                        <span className="absolute right-full mr-2 text-3xl font-semibold opacity-80 top-1/2 -translate-y-1/2">Ôé¼</span>
+                                        <span className="absolute right-full mr-2 text-3xl font-semibold opacity-80 top-1/2 -translate-y-1/2">€</span>
                                         <span className="text-5xl font-extrabold tracking-tight">
-                                            {formatCurrency(totalExpenses).replace('Ôé¼', '').trim()}
+                                            {formatCurrency(totalExpenses).replace('€', '').trim()}
                                         </span>
                                     </div>
                                     {recurringCountInPeriod > 0 && (
