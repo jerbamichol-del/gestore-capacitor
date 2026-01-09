@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AppLogoIcon } from '../icons/AppLogoIcon';
 
 interface AuthLayoutProps {
@@ -36,7 +36,7 @@ const useIsStudio = () => {
     try {
       inIframe = window.self !== window.top;
     } catch {
-      inIframe = true; // cross-origin → presumiamo iframe
+      inIframe = true; // cross-origin ÔåÆ presumiamo iframe
     }
     setIsStudio(forced || inIframe);
   }, []);
@@ -45,23 +45,35 @@ const useIsStudio = () => {
 
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div
-    className="bg-white dark:bg-slate-900 shadow-xl rounded-2xl p-6 relative overflow-visible transition-colors"
+    style={{
+      background: '#fff',
+      padding: 24,
+      borderRadius: 16,
+      boxShadow: '0 12px 28px rgba(0,0,0,0.12)',
+      position: 'relative',
+      overflow: 'visible', // niente clipping ÔåÆ autofill pu├▓ estendersi
+      opacity: 1,          // niente transform (no translate/scale)
+    }}
   >
     {children}
   </div>
 );
 
 const Header: React.FC = () => (
-  <div className="text-center relative z-10">
+  <div style={{ textAlign: 'center' }}>
     <div
-      className="mx-auto mb-8 w-[120px] h-[120px]"
+      style={{
+        margin: '0 auto 12px',
+        width: 120,
+        height: 120,
+      }}
     >
       <AppLogoIcon
-        style={{ width: '100%', height: '100%' }}
-        aria-label="Logo Gestore Spese"
-      />
+          style={{ width: '100%', height: '100%' }}
+          aria-label="Logo Gestore Spese"
+        />
     </div>
-    <h1 className="text-[28px] font-extrabold text-slate-900 dark:text-slate-100 m-0 transition-colors">
+    <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0f172a', margin: 0 }}>
       Gestore Spese
     </h1>
   </div>
@@ -83,7 +95,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     padding: 16,
     overflow: 'auto', // Allow scrolling on small viewports
   };
-
+  
   if (isStudio) {
     // FIX: Use type assertion as 'position' and 'inset' might not be recognized
     // by the version of TypeScript or React types used in this environment.
@@ -91,10 +103,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     (mainContainerStyle as any).inset = 0;
   }
 
+  // ===== Layout unificato e centrato =====
   return (
     <div
       style={mainContainerStyle}
-      className="bg-slate-100 dark:bg-slate-950 transition-colors"
     >
       <div
         style={{
