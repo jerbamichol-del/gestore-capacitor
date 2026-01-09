@@ -20,7 +20,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
     name: 'Revolut',
     identifier: 'revolut',
-    accountName: 'Revolut',
+    accountName: 'revolut',
     patterns: {
       // ✅ Allow any text/emojis between keyword, amount, and merchant
       expense: /(?:You\s+spent|Hai\s+speso|Payment|Pagamento).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:at|presso|in|to|a|di)\s+(.+)/i,
@@ -31,7 +31,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
     name: 'PayPal',
     identifier: 'paypal',
-    accountName: 'PayPal',
+    accountName: 'paypal',
     patterns: {
       expense: /(?:You\s+sent|Hai\s+inviato|Pagamento).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:to|a)\s+(.+)/i,
       income: /(?:You\s+received|Hai\s+ricevuto).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:from|da)\s+(.+)/i
@@ -40,7 +40,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
     name: 'Postepay',
     identifier: 'postepay',
-    accountName: 'Postepay',
+    accountName: 'poste',
     patterns: {
       expense: /(?:Pagamento|Addebito|Autorizzazione).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|at|c\/o)\s+(.+)/i,
       income: /(?:Accredito|Ricarica).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
@@ -50,7 +50,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
     name: 'BBVA',
     identifier: 'bbva',
-    accountName: 'BBVA',
+    accountName: 'bank-account',
     patterns: {
       expense: /(?:Compra|Pago|Cargo|Acquisto).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:en|c\/o)\s+(.+)/i,
       income: /(?:Ingreso|Abono|Entrata).*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
@@ -60,7 +60,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
     name: 'Intesa Sanpaolo',
     identifier: 'intesa',
-    accountName: 'Intesa Sanpaolo',
+    accountName: 'bank-account',
     patterns: {
       expense: /(?:Addebito|Pagamento|Pos).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|c\/o)\s+(.+)/i,
       income: /Accredito.*?€?\s*([\d.,]+)\s*(?:EUR)?/i,
@@ -70,7 +70,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
     name: 'BNL',
     identifier: 'bnl',
-    accountName: 'BNL',
+    accountName: 'bank-account',
     patterns: {
       expense: /(?:Pagamento|Prelievo|Addebito).*?€?\s*([\d.,]+)\s*(?:EUR)?.*?(?:presso|c\/o)\s+(.+)/i,
       income: /Accredito.*?€?\s*([\d.,]+)\s*(?:EUR)?/i
@@ -79,7 +79,7 @@ const NOTIFICATION_CONFIGS: BankConfig[] = [
   {
     name: 'UniCredit',
     identifier: 'unicredit',
-    accountName: 'UniCredit',
+    accountName: 'bank-account',
     patterns: {
       // ✅ FIX: Pattern for "autorizzata op.Internet 60,40 EUR carta *1210 c/o PAYPAL *KICKKICK.IT"
       // Amount comes BEFORE "carta" or "c/o", so we capture it right after the keyword

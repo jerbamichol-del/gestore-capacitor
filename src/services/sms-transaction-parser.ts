@@ -11,7 +11,7 @@ const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'Revolut',
     identifier: 'REVOLUT',
-    accountName: 'Revolut',
+    accountName: 'revolut',
     patterns: {
       expense: /(?:hai\s+speso|payment\s+of|spent).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:at|presso|da|in)\s+(.+)/i,
       income: /(?:ricevuto|received).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:from|da)\s+(.+)/i,
@@ -21,7 +21,7 @@ const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'PayPal',
     identifier: 'PayPal',
-    accountName: 'PayPal',
+    accountName: 'paypal',
     patterns: {
       expense: /(?:sent|inviato|hai\s+inviato).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:to|a)\s+(.+)/i,
       income: /(?:received|ricevuto|hai\s+ricevuto).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:from|da)\s+(.+)/i
@@ -30,7 +30,7 @@ const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'Postepay',
     identifier: 'POSTEPAY',
-    accountName: 'Postepay',
+    accountName: 'poste',
     patterns: {
       expense: /(?:pagamento|addebito).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:presso|at)\s+(.+)/i,
       income: /(?:accredito|ricarica).*?(\d+(?:[.,]\d+)*)\s*€?/i,
@@ -40,7 +40,7 @@ const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'BBVA',
     identifier: 'BBVA',
-    accountName: 'BBVA',
+    accountName: 'bank-account',
     patterns: {
       expense: /(?:compra|pago|cargo).*?(\d+(?:[.,]\d+)*)\s*€?.*?(?:en|at)\s+(.+)/i,
       income: /(?:ingreso|abono).*?(\d+(?:[.,]\d+)*)\s*€?/i,
@@ -50,7 +50,7 @@ const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'Intesa Sanpaolo',
     identifier: 'INTESA',
-    accountName: 'Intesa Sanpaolo',
+    accountName: 'bank-account',
     patterns: {
       expense: /(?:addebito|pagamento)\s+carta.*?(\d+(?:[.,]\d+)*)\s*€?.*?presso\s+(.+)/i,
       income: /accredito.*?(\d+(?:[.,]\d+)*)\s*€?/i,
@@ -60,7 +60,7 @@ const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'UniCredit',
     identifier: 'UNICREDIT',
-    accountName: 'UniCredit',
+    accountName: 'bank-account',
     patterns: {
       // ✅ FIX: Pattern for "autorizzata op.Internet 60,40 EUR carta *1210 c/o PAYPAL"
       expense: /(?:autorizzata|Addebito|Pagamento|Transazione)\s+(?:op\.?\w*\s+)?(\d+[.,]\d{2})\s*(?:EUR|€).*?(?:c\/o|presso|at)\s+(.+?)(?:\s+\d{6,}|\s+\d{2}\/\d{2}\/\d{2}|Per info|$)/i,
@@ -71,7 +71,7 @@ const BANK_CONFIGS: BankConfig[] = [
   {
     name: 'Mastercard',
     identifier: 'MASTERCARD',
-    accountName: 'Carta Mastercard',
+    accountName: 'credit-card',
     patterns: {
       expense: /(?:Autorizzazione|Spesa|Pagamento).*?€?\s*(\d+(?:[.,]\d+)*)\s*(?:EUR)?.*?(?:presso|at)\s+(.+)/i
     }
