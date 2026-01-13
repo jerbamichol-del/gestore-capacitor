@@ -180,6 +180,7 @@ class SMSListenerService {
 
       console.log('✅ Transaction added to pending queue');
       console.log('📊 Pending transactions:', this.pendingTransactions.length);
+      window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
 
     } catch (error) {
       console.error('❌ Error handling incoming SMS:', error);
@@ -216,6 +217,7 @@ class SMSListenerService {
       await this.savePendingTransactions();
 
       console.log('✅ SMS transaction confirmed and saved');
+      window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
     } catch (error) {
       console.error('❌ Error confirming SMS transaction:', error);
       throw error;
@@ -233,6 +235,7 @@ class SMSListenerService {
     await this.savePendingTransactions();
 
     console.log('✅ SMS transaction ignored');
+    window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
   }
 
   /**

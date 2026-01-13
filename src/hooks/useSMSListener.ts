@@ -23,22 +23,22 @@ export function useSMSListener() {
       console.log('⏭️ SMS permission check already in progress, skipping');
       return;
     }
-    
+
     isCheckingRef.current = true;
     console.log(`🔍 Checking SMS permission status (attempt ${retryCount + 1})...`);
-    
+
     try {
       const enabled = await smsListenerService.isEnabled();
       console.log(`✅ SMS permission check result: ${enabled}`);
       setIsEnabled(enabled);
-      
+
       // Initialize service if enabled
       if (enabled) {
         try {
           console.log('🚀 Initializing SMS listener service...');
           await smsListenerService.initialize();
           console.log('✅ SMS listener service initialized');
-          
+
           // Load pending transactions
           const pending = await smsListenerService.getPendingTransactions();
           setPendingTransactions(pending);
@@ -49,7 +49,7 @@ export function useSMSListener() {
       }
     } catch (error) {
       console.error(`❌ Error checking SMS permission (attempt ${retryCount + 1}):`, error);
-      
+
       // Retry up to 2 times with delays
       if (retryCount < 2) {
         const nextDelay = (retryCount + 1) * 1000; // 1s, 2s
@@ -60,7 +60,7 @@ export function useSMSListener() {
         }, nextDelay);
         return;
       }
-      
+
       // After 2 retries, give up gracefully
       console.warn('⚠️ Failed to check SMS permission after retries, setting safe defaults');
       setIsEnabled(false);
@@ -147,12 +147,12 @@ export function useSMSListener() {
     // SAFE resume listener with 3000ms delay
     const resumeListener = CapApp.addListener('resume', () => {
       console.log('📱 App resumed - scheduling SAFE SMS permission check in 3000ms...');
-      
+
       // Clear any existing timeout
       if (resumeTimeoutRef.current) {
         clearTimeout(resumeTimeoutRef.current);
       }
-      
+
       // Schedule check with 3 second delay (SAFE)
       resumeTimeoutRef.current = setTimeout(async () => {
         console.log('⏰ 3 seconds elapsed - checking SMS permission now (SAFE)');
@@ -162,11 +162,11 @@ export function useSMSListener() {
           console.error('❌ Error in resume SMS permission check:', error);
           // Swallow error - don't crash
         }
-      }, 3000); // 3 SECONDS - enough time for Android to update
+      }, 1000); // 1 SECOND - enough time for Android to update
     });
 
-    console.log('✅ SAFE SMS resume listener registered (3s delay)');
-    
+    console.log('✅ SAFE SMS resume listener registered (1s delay)');
+
     // Cleanup
     return () => {
       console.log('🧹 useSMSListener unmounting');
@@ -179,26 +179,20 @@ export function useSMSListener() {
     };
   }, [isAndroid, checkPermissionStatus]);
 
-  // Poll for new transactions every 30 seconds if enabled
+  // ✅ NEW: Listen for global updates (e.g. from AutoService)
   useEffect(() => {
-    if (!isAndroid || !isEnabled) return;
-
-    console.log('🔍 Starting SMS transaction polling (30s interval)');
-
-    const interval = setInterval(async () => {
+    const handleUpdate = async () => {
+      console.log('🔄 Received SMS auto-transactions-updated event - refreshing list');
       try {
         const pending = await smsListenerService.getPendingTransactions();
         setPendingTransactions(pending);
-      } catch (error) {
-        console.error('❌ Error polling SMS transactions:', error);
-      }
-    }, 30000); // 30 seconds
-
-    return () => {
-      console.log('🛑 Stopping SMS transaction polling');
-      clearInterval(interval);
+      } catch (e) { console.error(e); }
     };
-  }, [isAndroid, isEnabled]);
+
+    window.addEventListener('auto-transactions-updated', handleUpdate);
+    return () => window.removeEventListener('auto-transactions-updated', handleUpdate);
+  }, []);
+
 
   return {
     pendingTransactions,

@@ -142,6 +142,7 @@ export class AutoTransactionService {
   ): Promise<void> {
     await updateAutoTransaction(id, { type: newType });
     console.log(`✅ Transaction ${id} type updated to ${newType}`);
+    window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
   }
 
   /**
@@ -155,6 +156,7 @@ export class AutoTransactionService {
       requiresConfirmation: false
     });
     console.log('✅ Transaction confirmed:', id);
+    window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
   }
 
   /**
@@ -196,6 +198,7 @@ export class AutoTransactionService {
       confirmedAt: Date.now()
     });
     console.log('⏭️ Transaction ignored:', id);
+    window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
   }
 
   /**

@@ -169,10 +169,10 @@ export function useNotificationListener() {
           console.error('❌ Error in resume permission check:', error);
           // Swallow error - don't crash
         }
-      }, 3000); // ✅ 3 SECONDS - enough time for Android to update Settings.Secure
+      }, 1000); // ✅ 1 SECOND - enough time for Android to update Settings.Secure
     });
 
-    console.log('✅ SAFE resume listener registered (3s delay)');
+    console.log('✅ SAFE resume listener registered (1s delay)');
 
     // Cleanup
     return () => {
@@ -200,27 +200,6 @@ export function useNotificationListener() {
     return () => window.removeEventListener('auto-transactions-updated', handleUpdate);
   }, []);
 
-  // Poll for new transactions every 30 seconds if enabled
-  // ✅ Increased to 30 seconds to reduce checks
-  useEffect(() => {
-    if (!isAndroid || !isEnabled) return;
-
-    console.log('🔍 Starting transaction polling (30s interval)');
-
-    const interval = setInterval(async () => {
-      try {
-        const pending = await notificationListenerService.getPendingTransactions();
-        setPendingTransactions(pending);
-      } catch (error) {
-        console.error('❌ Error polling transactions:', error);
-      }
-    }, 30000); // 30 seconds
-
-    return () => {
-      console.log('🛑 Stopping transaction polling');
-      clearInterval(interval);
-    };
-  }, [isAndroid, isEnabled]);
 
   return {
     pendingTransactions,
