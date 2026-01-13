@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BankSyncService, BankSyncCredentials } from '../services/bank-sync-service';
+import { Capacitor } from '@capacitor/core';
 
 interface BankSyncSettingsModalProps {
     isOpen: boolean;
@@ -121,8 +122,12 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const handleLinkBank = async (aspsp: any) => {
         setIsLinking(true);
         try {
-            // Use current URL as redirect, we'll handle the 'code' query param on mount or next load
-            const redirectUrl = window.location.origin + window.location.pathname;
+            // Use custom scheme on native, window.location on web
+            const isNative = Capacitor.isNativePlatform();
+            const redirectUrl = isNative
+                ? 'com.gestore.spese://oauth'
+                : window.location.origin + window.location.pathname;
+
             const authUrl = await BankSyncService.startAuthorization(aspsp, redirectUrl);
             window.location.href = authUrl;
         } catch (error: any) {

@@ -91,7 +91,31 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       if (isActive) handleResume();
     });
 
-    return () => { resumeListener.then(l => l.remove()); };
+    // Handle custom URL scheme (Deep Links)
+    const urlListener = CapApp.addListener('appUrlOpen', ({ url }) => {
+      console.log('🔗 App opened via URL:', url);
+      if (url.includes('code=')) {
+        const code = new URL(url).searchParams.get('code');
+        if (code) {
+          // We could process it here, but it's cleaner to let the component handle it 
+          // if it's already open, or just use BankSyncService directly.
+          // Let's use a custom event or just call the service and show toast.
+          BankSyncService.authorizeSession(code)
+            .then(() => {
+              ui.showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+              handleResume(); // Refresh after authorization
+            })
+            .catch(err => {
+              ui.showToast({ message: `Errore autorizzazione: ${err.message}`, type: 'error' });
+            });
+        }
+      }
+    });
+
+    return () => {
+      resumeListener.then(l => l.remove());
+      urlListener.then(l => l.remove());
+    };
   }, []);
 
   const handleSkipUpdate = () => {
