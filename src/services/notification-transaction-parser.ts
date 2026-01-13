@@ -3,6 +3,7 @@
 import { AutoTransaction } from '../types/transaction';
 import { AutoTransactionService } from './auto-transaction-service';
 import { BankConfig } from '../types/transaction';
+import { BankSyncService } from './bank-sync-service';
 
 // ✅ BANK/FINANCIAL ACCOUNTS KEYWORDS
 // Used to detect transfers between own accounts
@@ -110,6 +111,12 @@ export class NotificationTransactionParser {
 
     if (!config) {
       console.log(`⚠️ No config for app: ${appName}`);
+      return null;
+    }
+
+    // ✅ SUPPRESSION: Se la banca è gestita via API, ignoriamo la notifica per evitare duplicati
+    if (BankSyncService.isBankAPIActive(config.name)) {
+      console.log(`🔇 Suppressing legacy notification for ${config.name} (handled via API)`);
       return null;
     }
 

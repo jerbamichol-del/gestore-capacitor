@@ -5,6 +5,7 @@ import { AutoTransactionService } from './auto-transaction-service';
 import { BankConfig } from '../types/transaction';
 import { Capacitor } from '@capacitor/core';
 import SMSReader from '../plugins/sms-reader';
+import { BankSyncService } from './bank-sync-service';
 
 // Configurazioni banche italiane
 const BANK_CONFIGS: BankConfig[] = [
@@ -230,6 +231,12 @@ export class SMSTransactionParser {
     if (!config) {
       // ✅ LOGGING PER DEBUG: Vediamo chi stiamo ignorando
       console.log(`⚠️ Ignored SMS from non-financial sender: "${sender}"`);
+      return null;
+    }
+
+    // ✅ SUPPRESSION: Se la banca è gestita via API, ignoriamo l'SMS per evitare duplicati
+    if (BankSyncService.isBankAPIActive(config.name)) {
+      console.log(`🔇 Suppressing legacy SMS for ${config.name} (handled via API)`);
       return null;
     }
 

@@ -10,7 +10,26 @@ export interface BankSyncCredentials {
 
 export class BankSyncService {
     private static readonly STORAGE_KEY = 'bank_sync_credentials';
+    private static readonly STORAGE_KEY_ACTIVE_BANKS = 'bank_sync_active_providers';
     private static readonly BASE_URL = 'https://api.enablebanking.com';
+
+    /**
+     * Check if a specific bank is handled by API
+     */
+    static isBankAPIActive(bankName: string): boolean {
+        const active = localStorage.getItem(this.STORAGE_KEY_ACTIVE_BANKS);
+        if (!active) return false;
+        try {
+            const list: string[] = JSON.parse(active);
+            // Match if bankName starts with or contains any of the active providers
+            return list.some(name =>
+                bankName.toLowerCase().includes(name.toLowerCase()) ||
+                name.toLowerCase().includes(bankName.toLowerCase())
+            );
+        } catch {
+            return false;
+        }
+    }
 
     /**
      * Get stored credentials
@@ -166,8 +185,15 @@ export class BankSyncService {
             const accounts = await this.fetchAccounts();
             let totalAdded = 0;
             let adjustmentsCount = 0;
+            const activeProviders = new Set<string>();
 
             for (const acc of accounts) {
+                // Collect provider name for suppression logic
+                if (acc.aspsp_name) activeProviders.add(acc.aspsp_name);
+                if (acc.provider?.name) activeProviders.add(acc.provider.name);
+                // Fallback to display name if it contains bank keywords
+                if (acc.display_name) activeProviders.add(acc.display_name);
+
                 // 1. Sync Transactions
                 const txs = await this.fetchTransactions(acc.uid);
                 for (const tx of txs) {
@@ -192,6 +218,11 @@ export class BankSyncService {
 
             if (totalAdded > 0 || adjustmentsCount > 0) {
                 window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
+            }
+
+            // Save active providers for listener suppression
+            if (activeProviders.size > 0) {
+                localStorage.setItem(this.STORAGE_KEY_ACTIVE_BANKS, JSON.stringify(Array.from(activeProviders)));
             }
 
             return { transactions: totalAdded, adjustments: adjustmentsCount };
