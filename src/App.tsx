@@ -75,9 +75,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     const handleResume = async () => {
       console.log('🔄 App resumed - checking bank sync');
       try {
-        const added = await BankSyncService.syncAll();
-        if (added > 0) {
-          ui.showToast({ message: `${added} nuovi movimenti bancari trovati!`, type: 'success' });
+        const result = await BankSyncService.syncAll();
+        if (result.transactions > 0 || result.adjustments > 0) {
+          let msg = "";
+          if (result.transactions > 0) msg += `${result.transactions} nuovi movimenti. `;
+          if (result.adjustments > 0) msg += `Patrimonio aggiornato.`;
+          ui.showToast({ message: msg.trim(), type: 'success' });
         }
       } catch (e) {
         console.warn('Silent bank sync failed:', e);

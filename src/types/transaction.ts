@@ -1,6 +1,6 @@
 // types/transaction.ts
 
-export type TransactionType = 'expense' | 'income' | 'transfer';
+export type TransactionType = 'expense' | 'income' | 'transfer' | 'adjustment';
 export type TransactionStatus = 'pending' | 'confirmed' | 'ignored';
 export type TransactionSource = 'sms' | 'notification' | 'manual' | 'bank';
 export type ConfirmationType = 'transfer_or_expense' | 'normal';

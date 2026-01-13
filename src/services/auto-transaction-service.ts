@@ -282,4 +282,31 @@ export class AutoTransactionService {
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
     return await deleteOldAutoTransactions(thirtyDaysAgo);
   }
+
+  /**
+   * Crea una rettifica (adjustment) direttamente nelle spese confermate
+   */
+  static async addAdjustment(accountId: string, amount: number, description: string): Promise<void> {
+    const expenses: Expense[] = JSON.parse(localStorage.getItem('expenses_v2') || '[]');
+
+    const adjustment: Expense = {
+      id: crypto.randomUUID(),
+      type: 'adjustment',
+      amount: amount,
+      description: description,
+      date: new Date().toISOString().split('T')[0],
+      accountId: accountId,
+      category: 'Altro',
+      tags: ['auto', 'reconciliation']
+    };
+
+    expenses.unshift(adjustment);
+    localStorage.setItem('expenses_v2', JSON.stringify(expenses));
+
+    console.log('✅ Automatic balance adjustment added:', adjustment);
+
+    // Dispatch both events to refresh pending count and confirmed balance/patrimonio
+    window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
+    window.dispatchEvent(new CustomEvent('expenses-updated'));
+  }
 }

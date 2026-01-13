@@ -108,26 +108,93 @@ export class BankSyncService {
     }
 
     /**
-     * Sync all accounts
+     * Fetch balance for a specific account
      */
-    static async syncAll(): Promise<number> {
+    static async fetchBalance(accountUid: string): Promise<number> {
+        const creds = this.getCredentials();
+        if (!creds) throw new Error('Credentials not set');
+
+        const token = await this.generateJWT(creds);
+
+        const response = await fetch(`${this.BASE_URL}/accounts/${accountUid}/balances`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Failed to fetch balance: ${error}`);
+        }
+
+        const data = await response.json();
+        // Priority: closingBooked, expected, or first available
+        const balance = data.balances?.find((b: any) => b.balance_type === 'closingBooked')
+            || data.balances?.find((b: any) => b.balance_type === 'expected')
+            || data.balances?.[0];
+
+        return balance ? parseFloat(balance.balance_amount.value) : 0;
+    }
+
+    /**
+     * Calculate current local balance from localStorage
+     */
+    static calculateLocalBalance(accountId: string): number {
+        const expenses = JSON.parse(localStorage.getItem('expenses_v2') || '[]');
+        return expenses.reduce((acc: number, e: any) => {
+            if (e.accountId !== accountId && e.toAccountId !== accountId) return acc;
+            const amt = Number(e.amount) || 0;
+            if (e.type === 'expense') {
+                if (e.accountId === accountId) return acc - amt;
+            } else if (e.type === 'income') {
+                if (e.accountId === accountId) return acc + amt;
+            } else if (e.type === 'adjustment') {
+                if (e.accountId === accountId) return acc + amt;
+            } else if (e.type === 'transfer') {
+                if (e.accountId === accountId) acc -= amt;
+                if (e.toAccountId === accountId) acc += amt;
+            }
+            return acc;
+        }, 0);
+    }
+
+    /**
+     * Sync all accounts (Transactions + Balances)
+     */
+    static async syncAll(): Promise<{ transactions: number, adjustments: number }> {
         try {
             const accounts = await this.fetchAccounts();
             let totalAdded = 0;
+            let adjustmentsCount = 0;
 
             for (const acc of accounts) {
+                // 1. Sync Transactions
                 const txs = await this.fetchTransactions(acc.uid);
                 for (const tx of txs) {
                     const added = await AutoTransactionService.addAutoTransaction(tx);
                     if (added) totalAdded++;
                 }
+
+                // 2. Sync Balance & Reconcile
+                const bankBalance = await this.fetchBalance(acc.uid);
+                const localBalance = this.calculateLocalBalance(acc.uid);
+                const diff = bankBalance - localBalance;
+
+                if (Math.abs(diff) > 0.01) {
+                    await AutoTransactionService.addAdjustment(
+                        acc.uid,
+                        diff,
+                        `Riconciliazione Automatica ${acc.account_id?.iban || acc.uid}`
+                    );
+                    adjustmentsCount++;
+                }
             }
 
-            if (totalAdded > 0) {
+            if (totalAdded > 0 || adjustmentsCount > 0) {
                 window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
             }
 
-            return totalAdded;
+            return { transactions: totalAdded, adjustments: adjustmentsCount };
         } catch (error) {
             console.error('Bank sync failed:', error);
             throw error;

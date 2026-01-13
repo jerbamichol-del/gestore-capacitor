@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Expense, Account, CATEGORIES } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 import { DEFAULT_ACCOUNTS } from '../utils/defaults';
@@ -23,6 +23,22 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
     // --- Recurring Generator ---
     // This hook watches expenses/recurringExpenses and adds new ones if needed
     useRecurringExpenseGenerator(expenses, setExpenses, recurringExpenses, setRecurringExpenses);
+
+    // ✅ Listen for external updates (e.g. from BankSyncService Bank reconciliation)
+    useEffect(() => {
+        const handleRefresh = () => {
+            try {
+                const stored = localStorage.getItem('expenses_v2');
+                if (stored) {
+                    setExpenses(JSON.parse(stored));
+                }
+            } catch (e) {
+                console.error('Failed to sync expenses from storage:', e);
+            }
+        };
+        window.addEventListener('expenses-updated', handleRefresh);
+        return () => window.removeEventListener('expenses-updated', handleRefresh);
+    }, [setExpenses]);
 
     // --- Helpers ---
     const sanitizeExpenseData = useCallback((data: any, imageBase64?: string): Partial<Omit<Expense, 'id'>> => {

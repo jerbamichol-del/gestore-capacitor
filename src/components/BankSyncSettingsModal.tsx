@@ -17,6 +17,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         clientId: '',
         privateKey: ''
     });
+    const [accountsWithBalances, setAccountsWithBalances] = useState<any[]>([]);
     const [isTesting, setIsTesting] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -41,9 +42,16 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const handleTestConnection = async () => {
         setIsTesting(true);
         try {
-            // Temporarily save to test
             BankSyncService.saveCredentials(credentials);
             const accounts = await BankSyncService.fetchAccounts();
+
+            // Fetch balance for each for display
+            const withBalances = await Promise.all(accounts.map(async (acc) => ({
+                ...acc,
+                balance: await BankSyncService.fetchBalance(acc.uid).catch(() => null)
+            })));
+
+            setAccountsWithBalances(withBalances);
             showToast({
                 message: `Connessione riuscita! Trovati ${accounts.length} conti.`,
                 type: 'success'
@@ -59,8 +67,13 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const handleSyncNow = async () => {
         setIsSyncing(true);
         try {
-            const added = await BankSyncService.syncAll();
-            showToast({ message: `Sincronizzazione completata: ${added} nuove transazioni.`, type: 'success' });
+            const info = await BankSyncService.syncAll();
+            showToast({
+                message: `Sync completato: ${info.transactions} tx, ${info.adjustments} rettifiche.`,
+                type: 'success'
+            });
+            // Update balances in UI
+            handleTestConnection();
         } catch (error: any) {
             showToast({ message: `Errore sync: ${error.message}`, type: 'error' });
         } finally {
@@ -117,6 +130,27 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             placeholder="-----BEGIN PRIVATE KEY----- ..."
                         />
                     </div>
+
+                    {accountsWithBalances.length > 0 && (
+                        <div className="mb-4">
+                            <label className="text-xs font-bold uppercase opacity-60 block mb-2">Conti Collegati</label>
+                            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                {accountsWithBalances.map((acc, i) => (
+                                    <div key={i} className="flex justify-between items-center p-3 bg-black/20 rounded-xl border border-white/10">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-semibold truncate max-w-[150px]">{acc.account_id?.iban || acc.uid}</span>
+                                            <span className="text-[10px] opacity-60 leading-none">{acc.display_name || 'Conto Bancario'}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-sm font-bold text-emerald-400">
+                                                {acc.balance !== null ? `€${acc.balance?.toFixed(2)}` : '---'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex flex-col gap-2 mt-6">
                         <button
