@@ -171,40 +171,24 @@ export class BankSyncService {
 
     /**
      * Diagnostic test to verify credentials and JWT signing.
-     * Hits /aspsps which only requires a valid JWT.
      */
     static async testConnection(): Promise<boolean> {
-        const creds = this.getCredentials();
-        if (!creds) throw new Error('Credentials not set');
-
-        const token = await this.generateJWT(creds);
-
-        console.log('🧪 Testing connection via /aspsps...');
-        const response = await this.safeFetch(`${this.BASE_URL}/aspsps`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            const error = await response.text();
-            throw new Error(`Errore Connessione (${response.status}): ${error}`);
-        }
-
-        console.log('✅ Connection test successful!');
-        return true;
+        const aspsps = await this.fetchASPSPs();
+        return aspsps.length > 0;
     }
 
     /**
-     * Fetch all authorized accounts
+     * Fetch list of supported banks
      */
-    static async fetchAccounts(): Promise<any[]> {
+    static async fetchASPSPs(country?: string): Promise<any[]> {
         const creds = this.getCredentials();
         if (!creds) throw new Error('Credentials not set');
 
         const token = await this.generateJWT(creds);
+        let url = `${this.BASE_URL}/aspsps`;
+        if (country) url += `?country=${country}`;
 
-        const response = await this.safeFetch(`${this.BASE_URL}/accounts`, {
+        const response = await this.safeFetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -216,7 +200,113 @@ export class BankSyncService {
         }
 
         const data = await response.json();
-        return data.accounts || [];
+        return data.aspsps || [];
+    }
+
+    /**
+     * Start authorization process for a bank
+     */
+    static async startAuthorization(aspspId: string, redirectUrl: string): Promise<string> {
+        const creds = this.getCredentials();
+        if (!creds) throw new Error('Credentials not set');
+
+        const token = await this.generateJWT(creds);
+        const response = await this.safeFetch(`${this.BASE_URL}/auth`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                aspsp: aspspId,
+                redirect_url: redirectUrl,
+                state: Math.random().toString(36).substring(7),
+                access: {
+                    valid_until: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Errore Start Auth (${response.status}): ${error}`);
+        }
+
+        const data = await response.json();
+        return data.url; // Redirect user to this URL
+    }
+
+    /**
+     * Authorize session with code from redirect
+     */
+    static async authorizeSession(code: string): Promise<string> {
+        const creds = this.getCredentials();
+        if (!creds) throw new Error('Credentials not set');
+
+        const token = await this.generateJWT(creds);
+        const response = await this.safeFetch(`${this.BASE_URL}/sessions`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: code
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Errore Auth Session (${response.status}): ${error}`);
+        }
+
+        const data = await response.json();
+
+        // Store session ID in list of sessions
+        const sessions = await this.getSessions();
+        if (!sessions.includes(data.session_id)) {
+            sessions.push(data.session_id);
+            localStorage.setItem('bank_sync_sessions', JSON.stringify(sessions));
+        }
+
+        return data.session_id;
+    }
+
+    private static async getSessions(): Promise<string[]> {
+        const stored = localStorage.getItem('bank_sync_sessions');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    /**
+     * Fetch all authorized accounts
+     */
+    static async fetchAccounts(): Promise<any[]> {
+        const creds = this.getCredentials();
+        if (!creds) throw new Error('Credentials not set');
+
+        const token = await this.generateJWT(creds);
+        const sessions = await this.getSessions();
+        let allAccounts: any[] = [];
+
+        for (const sessionId of sessions) {
+            try {
+                const response = await this.safeFetch(`${this.BASE_URL}/sessions/${sessionId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.accounts_data) {
+                        allAccounts = [...allAccounts, ...data.accounts_data];
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to fetch session ${sessionId}:`, e);
+            }
+        }
+
+        return allAccounts;
     }
 
     /**

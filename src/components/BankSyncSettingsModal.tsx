@@ -20,6 +20,11 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const [accountsWithBalances, setAccountsWithBalances] = useState<any[]>([]);
     const [isTesting, setIsTesting] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [aspsps, setAspsps] = useState<any[]>([]);
+    const [filteredAspsps, setFilteredAspsps] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isLoadingBanks, setIsLoadingBanks] = useState(false);
+    const [isLinking, setIsLinking] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -90,6 +95,62 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         }
     };
 
+    const handleSearchBanks = async () => {
+        setIsLoadingBanks(true);
+        try {
+            const list = await BankSyncService.fetchASPSPs('IT');
+            setAspsps(list);
+            setFilteredAspsps(list);
+        } catch (error: any) {
+            showToast({ message: `Errore caricamento banche: ${error.message}`, type: 'error' });
+        } finally {
+            setIsLoadingBanks(false);
+        }
+    };
+
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setFilteredAspsps(aspsps);
+        } else {
+            setFilteredAspsps(aspsps.filter(b =>
+                b.name.toLowerCase().includes(searchQuery.toLowerCase())
+            ));
+        }
+    }, [searchQuery, aspsps]);
+
+    const handleLinkBank = async (aspsp: any) => {
+        setIsLinking(true);
+        try {
+            // Use current URL as redirect, we'll handle the 'code' query param on mount or next load
+            const redirectUrl = window.location.origin + window.location.pathname;
+            const authUrl = await BankSyncService.startAuthorization(aspsp.name, redirectUrl);
+            window.location.href = authUrl;
+        } catch (error: any) {
+            showToast({ message: `Errore autorizzazione: ${error.message}`, type: 'error' });
+            setIsLinking(false);
+        }
+    };
+
+    // Check for authorization code in URL on mount
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code) {
+            const finalize = async () => {
+                try {
+                    await BankSyncService.authorizeSession(code);
+                    showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    handleTestConnection();
+                } catch (e: any) {
+                    showToast({ message: `Errore sincronizzazione sessione: ${e.message}`, type: 'error' });
+                }
+            };
+            finalize();
+        }
+    }, []);
+
     if (!isOpen) return null;
 
     return (
@@ -140,26 +201,87 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         />
                     </div>
 
+                    <div className="flex gap-2 mb-6">
+                        <button className="glass-btn flex-1 py-3" onClick={handleSave}>Salva</button>
+                        <button
+                            className="glass-btn flex-1 py-3 bg-blue-500/20"
+                            onClick={handleTestConnection}
+                            disabled={isTesting}
+                        >
+                            {isTesting ? 'Verifica...' : 'Test Connessione'}
+                        </button>
+                    </div>
+
+                    <hr className="border-white/10 mb-6" />
+
                     {accountsWithBalances.length > 0 && (
-                        <div className="mb-4">
-                            <label className="text-xs font-bold uppercase opacity-60 block mb-2">Conti Collegati</label>
+                        <div className="mb-6">
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-xs font-bold uppercase opacity-60">Conti Collegati</label>
+                                <button
+                                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                    onClick={handleSyncNow}
+                                    disabled={isSyncing}
+                                >
+                                    {isSyncing ? 'Sincronizzazione...' : '🔄 Sincronizza Ora'}
+                                </button>
+                            </div>
                             <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                 {accountsWithBalances.map((acc, i) => (
                                     <div key={i} className="flex justify-between items-center p-3 bg-black/20 rounded-xl border border-white/10">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-semibold truncate max-w-[150px]">{acc.account_id?.iban || acc.uid}</span>
-                                            <span className="text-[10px] opacity-60 leading-none">{acc.display_name || 'Conto Bancario'}</span>
+                                            <span className="text-sm font-medium">{acc.name || 'Conto'}</span>
+                                            <span className="text-xs opacity-50">{acc.iban || acc.uid}</span>
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-sm font-bold text-emerald-400">
-                                                {acc.balance !== null ? `€${acc.balance?.toFixed(2)}` : '---'}
-                                            </span>
+                                            <div className="text-sm font-bold">
+                                                {acc.balance !== null ? `${acc.balance.toFixed(2)}€` : '---'}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
+
+                    <div className="mb-4">
+                        <label className="text-xs font-bold uppercase opacity-60 block mb-2">Collega Nuova Banca</label>
+                        <div className="flex gap-2 mb-2">
+                            <input
+                                type="text"
+                                className="glass-input flex-1"
+                                placeholder="Cerca banca (es. Revolut, Intesa...)"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                onFocus={() => { if (aspsps.length === 0) handleSearchBanks(); }}
+                            />
+                        </div>
+
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-black/10 rounded-xl p-2 border border-white/5">
+                            {isLoadingBanks ? (
+                                <div className="p-4 text-center opacity-50 text-sm">Caricamento banche...</div>
+                            ) : filteredAspsps.length === 0 ? (
+                                <div className="p-4 text-center opacity-50 text-sm">Nessuna banca trovata.</div>
+                            ) : (
+                                filteredAspsps.map((b, i) => (
+                                    <button
+                                        key={i}
+                                        className="w-full flex items-center justify-between p-3 hover:bg-white/5 rounded-lg transition-colors group"
+                                        onClick={() => handleLinkBank(b)}
+                                        disabled={isLinking}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md" />}
+                                            <span className="text-sm">{b.name}</span>
+                                        </div>
+                                        <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {isLinking ? '...' : 'Collega →'}
+                                        </span>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
 
                     <div className="flex flex-col gap-2 mt-6">
                         <button
