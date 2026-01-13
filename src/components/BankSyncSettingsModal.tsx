@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BankSyncService, BankSyncCredentials } from '../services/bank-sync-service';
 import { Capacitor } from '@capacitor/core';
+import { InAppBrowser } from '@awesome-cordova-plugins/in-app-browser';
 
 interface BankSyncSettingsModalProps {
     isOpen: boolean;
@@ -122,14 +123,48 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const handleLinkBank = async (aspsp: any) => {
         setIsLinking(true);
         try {
-            // Use custom scheme on native, window.location on web
-            const isNative = Capacitor.isNativePlatform();
-            const redirectUrl = isNative
-                ? 'com.gestore.spese://oauth'
-                : window.location.origin + window.location.pathname;
+            // Use localhost as redirect, we'll intercept it with InAppBrowser on native
+            const redirectUrl = 'https://localhost/';
 
             const authUrl = await BankSyncService.startAuthorization(aspsp, redirectUrl);
-            window.location.href = authUrl;
+
+            if (Capacitor.isNativePlatform()) {
+                const browser = InAppBrowser.create(authUrl, '_blank', {
+                    location: 'yes',
+                    clearcache: 'yes',
+                    clearsessioncache: 'yes',
+                    hidenavigationbuttons: 'yes',
+                    hideurlbar: 'yes',
+                    closebuttoncaption: 'Annulla'
+                });
+
+                browser.on('loadstart').subscribe(async (event) => {
+                    console.log('🌐 InAppBrowser loadstart:', event.url);
+                    if (event.url.includes('code=')) {
+                        const code = new URL(event.url).searchParams.get('code');
+                        if (code) {
+                            try {
+                                await BankSyncService.authorizeSession(code);
+                                showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                                handleTestConnection();
+                            } catch (e: any) {
+                                showToast({ message: `Errore: ${e.message}`, type: 'error' });
+                            } finally {
+                                browser.close();
+                            }
+                        }
+                    } else if (event.url.includes('error=')) {
+                        showToast({ message: "Autorizzazione negata o errore.", type: 'error' });
+                        browser.close();
+                    }
+                });
+
+                browser.on('exit').subscribe(() => {
+                    setIsLinking(false);
+                });
+            } else {
+                window.location.href = authUrl;
+            }
         } catch (error: any) {
             showToast({ message: `Errore autorizzazione: ${error.message}`, type: 'error' });
             setIsLinking(false);
