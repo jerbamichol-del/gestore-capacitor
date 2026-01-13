@@ -170,6 +170,32 @@ export class BankSyncService {
     }
 
     /**
+     * Diagnostic test to verify credentials and JWT signing.
+     * Hits /aspsps which only requires a valid JWT.
+     */
+    static async testConnection(): Promise<boolean> {
+        const creds = this.getCredentials();
+        if (!creds) throw new Error('Credentials not set');
+
+        const token = await this.generateJWT(creds);
+
+        console.log('🧪 Testing connection via /aspsps...');
+        const response = await this.safeFetch(`${this.BASE_URL}/aspsps`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Errore Connessione (${response.status}): ${error}`);
+        }
+
+        console.log('✅ Connection test successful!');
+        return true;
+    }
+
+    /**
      * Fetch all authorized accounts
      */
     static async fetchAccounts(): Promise<any[]> {
@@ -178,7 +204,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await this.safeFetch(`${this.BASE_URL}/v1/accounts`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/accounts`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -202,7 +228,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await this.safeFetch(`${this.BASE_URL}/v1/accounts/${accountUid}/transactions`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -228,7 +254,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await this.safeFetch(`${this.BASE_URL}/v1/accounts/${accountUid}/balances`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/balances`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }

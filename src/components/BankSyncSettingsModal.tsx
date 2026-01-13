@@ -43,19 +43,28 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         setIsTesting(true);
         try {
             BankSyncService.saveCredentials(credentials);
-            const accounts = await BankSyncService.fetchAccounts();
+            // First hit /aspsps to verify absolute connectivity
+            await BankSyncService.testConnection();
 
-            // Fetch balance for each for display
-            const withBalances = await Promise.all(accounts.map(async (acc) => ({
-                ...acc,
-                balance: await BankSyncService.fetchBalance(acc.uid).catch(() => null)
-            })));
-
-            setAccountsWithBalances(withBalances);
-            showToast({
-                message: `Connessione riuscita! Trovati ${accounts.length} conti.`,
-                type: 'success'
-            });
+            // If successful, try to fetch accounts (might be empty/404 if no session, but /aspsps success is enough)
+            try {
+                const accounts = await BankSyncService.fetchAccounts();
+                const withBalances = await Promise.all(accounts.map(async (acc) => ({
+                    ...acc,
+                    balance: await BankSyncService.fetchBalance(acc.uid).catch(() => null)
+                })));
+                setAccountsWithBalances(withBalances);
+                showToast({
+                    message: "Credenziali valide! Connessione stabilita con Enable Banking.",
+                    type: 'success'
+                });
+            } catch (err: any) {
+                // If /aspsps worked but /accounts failed (e.g. no session), it's still a success of credentials
+                showToast({
+                    message: "Credenziali valide, ma nessun conto autorizzato trovato. Verifica i permessi sul portale.",
+                    type: 'success'
+                });
+            }
         } catch (error: any) {
             console.error(error);
             showToast({ message: `Errore: ${error.message}`, type: 'error' });
