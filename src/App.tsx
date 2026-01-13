@@ -24,6 +24,7 @@ import { NotificationPermissionModal } from './components/NotificationPermission
 import MultipleExpensesModal from './components/MultipleExpensesModal'; // Restored import
 import { MainLayout } from './components/MainLayout';
 import LoadingOverlay from './components/LoadingOverlay';
+import ShareQrModal from './components/ShareQrModal';
 
 // Screens
 import HistoryScreen from './screens/HistoryScreen';
@@ -370,6 +371,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
       {/* Global Loading Overlay for Image Analysis */}
       <LoadingOverlay isVisible={ui.isParsingImage} message="Analisi scontrino in corso..." />
+
+      {/* QR Share Modal */}
+      <ShareQrModal
+        isOpen={ui.nav.isQrModalOpen}
+        onClose={() => ui.nav.setIsQrModalOpen(false)}
+      />
 
     </MainLayout>
   );

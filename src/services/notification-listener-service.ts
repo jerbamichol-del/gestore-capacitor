@@ -7,10 +7,20 @@ import type { AutoTransaction } from '../types/transaction';
 // Re-export type for consumers
 export type PendingTransaction = AutoTransaction;
 
+import { md5 } from '../utils/hash';
+
+// Key for storage
+const PROCESSED_CACHE_KEY = 'processed_raw_notifications';
+const MAX_CACHE_SIZE = 100;
+
 export class NotificationListenerService {
   private static isListening = false;
   private static listenerHandle: { remove: () => void } | null = null;
   private static initialized = false;
+
+  // Cache for raw notification hashes (appName + title + text)
+  // Used to prevent re-processing the same notification from the native queue
+  private static processedCache: string[] = [];
 
   /**
    * Initialize the service
@@ -31,6 +41,9 @@ export class NotificationListenerService {
     }
 
     if (this.initialized) return true;
+
+    // Load cache
+    this.loadProcessedCache();
 
     try {
       // Check if already enabled
@@ -109,10 +122,55 @@ export class NotificationListenerService {
   }
 
   /**
+   * Load processed cache from storage
+   */
+  private static loadProcessedCache() {
+    try {
+      const stored = localStorage.getItem(PROCESSED_CACHE_KEY);
+      if (stored) {
+        this.processedCache = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error('Failed to load processed cache', e);
+      this.processedCache = [];
+    }
+  }
+
+  /**
+   * Add hash to processed cache and save
+   */
+  private static markAsProcessed(hash: string) {
+    if (this.processedCache.includes(hash)) return;
+
+    this.processedCache.push(hash);
+
+    // Trim cache
+    if (this.processedCache.length > MAX_CACHE_SIZE) {
+      this.processedCache = this.processedCache.slice(-MAX_CACHE_SIZE);
+    }
+
+    try {
+      localStorage.setItem(PROCESSED_CACHE_KEY, JSON.stringify(this.processedCache));
+    } catch (e) {
+      console.error('Failed to save processed cache', e);
+    }
+  }
+
+  /**
    * Handle incoming notification
    */
   private static async handleNotification(notification: BankNotification): Promise<void> {
     console.log('🔔 Bank notification received:', notification.appName);
+
+    // ✅ CRITICAL FIX: Robust De-duplication using Raw Hash
+    // This ignores timestamp variations and ensures we only process unique TEXT content once.
+    const rawData = `${notification.appName}|${notification.title}|${notification.text}`;
+    const rawHash = md5(rawData);
+
+    if (this.processedCache.includes(rawHash)) {
+      console.log(`⏭️ Notification already processed (Raw Match): ${rawHash.substring(0, 8)}`);
+      return;
+    }
 
     try {
       // Parser handles logic: parsing -> checking transfer -> saving to DB -> dispatching events
@@ -122,6 +180,10 @@ export class NotificationListenerService {
         notification.text,
         notification.timestamp
       );
+
+      // Always mark as processed if we attempted to parse it (to avoid endless retry loops on same content)
+      // Even if it returned null (no regex match), we don't want to retry it endlessly.
+      this.markAsProcessed(rawHash);
 
       if (transaction) {
         console.log('✅ Transaction processed:', transaction.id);
