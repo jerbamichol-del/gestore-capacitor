@@ -17,7 +17,7 @@ const GITHUB_REPO_OWNER = 'jerbamichol-del';
 const GITHUB_REPO_NAME = 'gestore-capacitor';
 
 // Re-check often enough to catch new releases quickly, but not on every foreground event.
-const CHECK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const CHECK_INTERVAL_MS = 1 * 60 * 1000; // 1 minute (reduced from 15m for testing)
 
 const STORAGE_KEY_LAST_CHECK = 'last_update_check';
 const STORAGE_KEY_CACHED_UPDATE = 'cached_update_info';
@@ -170,7 +170,10 @@ export const useUpdateChecker = () => {
       const tagName: string = release.tag_name || '';
       console.log(`🏷️ Latest release: ${tagName}`);
 
-      const buildMatch = tagName.match(/build(\d+)/i);
+      // ✅ IMPROVED REGEX: Matches 'build123', 'v1.0.5-123', or just '123' at the end
+      // Standard matching for build numbers
+      const buildMatch = tagName.match(/build(\d+)/i) || tagName.match(/[-.](\d+)$/) || tagName.match(/(\d+)$/);
+
       if (!buildMatch) {
         console.log(`⚠️ Could not extract build number from tag: ${tagName}`);
         const info: UpdateInfo = {
