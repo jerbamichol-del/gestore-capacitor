@@ -52,13 +52,74 @@ export class BankSyncService {
     }
 
     /**
+     * Ensure the private key is in PKCS#8 format.
+     * If it's PKCS#1 (starts with BEGIN RSA PRIVATE KEY), it wraps it in PKCS#8.
+     */
+    private static ensurePKCS8(privateKey: string): string {
+        const trimmed = privateKey.trim();
+        if (trimmed.includes('BEGIN RSA PRIVATE KEY')) {
+            console.log('🔄 Converting PKCS#1 RSA Private Key to PKCS#8...');
+
+            // Extract the base64 part
+            const base64 = trimmed
+                .replace('-----BEGIN RSA PRIVATE KEY-----', '')
+                .replace('-----END RSA PRIVATE KEY-----', '')
+                .replace(/\s/g, '');
+
+            try {
+                // PKCS#8 wrapper for RSA (Algorithm OID 1.2.840.113549.1.1.1)
+                // This is a simplified ASN.1 encoding for unencrypted RSA private keys
+                const der = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+                // PKCS#8 preamble for RSA:
+                // SEQUENCE (30)
+                //   version (02 01 00)
+                //   algorithmIdentifier (30 0d 06 09 2a 86 48 86 f7 0d 01 01 01 05 00)
+                //   privateKey (04 [len] [PKCS#1 data])
+
+                const preamble = [
+                    0x30, 0x82, 0x00, 0x00, // Sequence + temporary total length
+                    0x02, 0x01, 0x00,       // version 0
+                    0x30, 0x0d,             // algorithmIdentifier sequence
+                    0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, // RSA OID
+                    0x05, 0x00,             // null parameters
+                    0x04, 0x82, 0x00, 0x00  // privateKey octet string + temporary inner length
+                ];
+
+                const innerLen = der.length;
+                const totalLen = preamble.length - 4 + innerLen;
+
+                // Update lengths in preamble (Big Endian 16-bit)
+                preamble[2] = (totalLen >> 8) & 0xff;
+                preamble[3] = totalLen & 0xff;
+                preamble[20] = (innerLen >> 8) & 0xff;
+                preamble[21] = innerLen & 0xff;
+
+                const wrapped = new Uint8Array(preamble.length + der.length);
+                wrapped.set(preamble);
+                wrapped.set(der, preamble.length);
+
+                const wrappedBase64 = btoa(String.fromCharCode(...wrapped));
+                return `-----BEGIN PRIVATE KEY-----\n${wrappedBase64.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----`;
+            } catch (e) {
+                console.error('Failed to convert PKCS#1 to PKCS#8:', e);
+                return privateKey; // Fallback to original
+            }
+        }
+        return privateKey;
+    }
+
+    /**
      * Generate signed JWT for Enable Banking
      */
     private static async generateJWT(creds: BankSyncCredentials): Promise<string> {
         const { appId, clientId, privateKey } = creds;
 
+        // Ensure PKCS#8 format for jose
+        const pkcs8Key = this.ensurePKCS8(privateKey);
+
         // Convert PEM to PrivateKey object
-        const rsaPrivateKey = await jose.importPKCS8(privateKey, 'RS256');
+        const rsaPrivateKey = await jose.importPKCS8(pkcs8Key, 'RS256');
 
         const jwt = await new jose.SignJWT({})
             .setProtectedHeader({
