@@ -181,14 +181,38 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             </div>
 
             <style>{`
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s ease-in-out;
+          padding: 16px;
+        }
+        .modal-overlay.active {
+          opacity: 1;
+          visibility: visible;
+        }
         .glass-modal {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(30, 41, 59, 0.95);
           backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 24px;
           color: white;
-          max-width: 90%;
-          width: 500px;
+          width: 100%;
+          max-width: 500px;
+          transform: scale(0.95);
+          transition: all 0.2s ease-in-out;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .modal-overlay.active .glass-modal {
+          transform: scale(1);
         }
         .glass-input {
           background: rgba(0, 0, 0, 0.2);

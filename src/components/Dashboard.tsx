@@ -739,7 +739,13 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         </div>
                                         <span className="font-semibold text-slate-700 text-lg">Esporta (Excel/JSON)</span>
                                     </button>
-                                    <button onClick={onOpenBankSyncSettings} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
+                                    <button
+                                        onClick={() => {
+                                            setIsImportExportMenuOpen(false);
+                                            onOpenBankSyncSettings();
+                                        }}
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group"
+                                    >
                                         <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
                                             <span className="text-2xl">🏦</span>
                                         </div>
