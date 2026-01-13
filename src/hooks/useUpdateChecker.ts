@@ -17,7 +17,7 @@ const GITHUB_REPO_OWNER = 'jerbamichol-del';
 const GITHUB_REPO_NAME = 'gestore-capacitor';
 
 // Re-check often enough to catch new releases quickly, but not on every foreground event.
-const CHECK_INTERVAL_MS = 1 * 60 * 1000; // 1 minute (reduced from 15m for testing)
+const CHECK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes (restored per user request)
 
 const STORAGE_KEY_LAST_CHECK = 'last_update_check';
 const STORAGE_KEY_CACHED_UPDATE = 'cached_update_info';
