@@ -2,7 +2,7 @@
 
 export type TransactionType = 'expense' | 'income' | 'transfer';
 export type TransactionStatus = 'pending' | 'confirmed' | 'ignored';
-export type TransactionSource = 'sms' | 'notification' | 'manual';
+export type TransactionSource = 'sms' | 'notification' | 'manual' | 'bank';
 export type ConfirmationType = 'transfer_or_expense' | 'normal';
 
 export interface AutoTransaction {
@@ -13,21 +13,21 @@ export interface AutoTransaction {
   date: string; // YYYY-MM-DD
   account: string;
   category?: string;
-  
+
   // Transfer specifico
   toAccount?: string; // Se type='transfer', conto destinazione
-  
+
   // ✅ NEW: Confirmation required for ambiguous transactions
   requiresConfirmation?: boolean;
   confirmationType?: ConfirmationType;
   linkedTransactionId?: string; // Link to paired transfer transaction
-  
+
   // Tracking duplicati
   sourceType: TransactionSource;
   sourceApp?: string; // 'revolut', 'paypal', etc.
   sourceHash: string; // Hash MD5 per detect duplicati
   rawText: string; // Testo originale SMS/notifica per debug
-  
+
   // Stato
   status: TransactionStatus;
   createdAt: number;

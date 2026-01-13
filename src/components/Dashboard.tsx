@@ -84,6 +84,7 @@ interface DashboardProps {
     onImportFile: (file: File) => void;
     onReceiveSharedFile?: (file: File) => void | Promise<void>;
     onSync: () => Promise<void> | void;
+    onOpenBankSyncSettings: () => void;
     isBalanceVisible: boolean;
     onToggleBalanceVisibility: () => void;
     showToast: (msg: { message: string; type: 'success' | 'info' | 'error' }) => void;
@@ -123,6 +124,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     onNavigateToAccounts,
     onImportFile,
     onSync,
+    onOpenBankSyncSettings,
     isBalanceVisible,
     onToggleBalanceVisibility,
     showToast
@@ -736,6 +738,15 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             <ArrowUpTrayIcon className="w-6 h-6" />
                                         </div>
                                         <span className="font-semibold text-slate-700 text-lg">Esporta (Excel/JSON)</span>
+                                    </button>
+                                    <button onClick={onOpenBankSyncSettings} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
+                                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                                            <span className="text-2xl">🏦</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold text-slate-700 text-lg">Configura Banche</span>
+                                            <span className="text-xs text-slate-500">Collega Revolut e conti ITA</span>
+                                        </div>
                                     </button>
                                 </>
                             ) : (

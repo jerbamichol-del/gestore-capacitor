@@ -25,6 +25,8 @@ import MultipleExpensesModal from './components/MultipleExpensesModal'; // Resto
 import { MainLayout } from './components/MainLayout';
 import LoadingOverlay from './components/LoadingOverlay';
 import ShareQrModal from './components/ShareQrModal';
+import { BankSyncSettingsModal } from './components/BankSyncSettingsModal';
+import { BankSyncService } from './services/bank-sync-service';
 
 // Screens
 import HistoryScreen from './screens/HistoryScreen';
@@ -58,12 +60,36 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const { updateInfo, isChecking: isCheckingUpdate, skipVersion } = useUpdateChecker();
 
+  // 5. Bank Sync State
+  const [isBankSyncModalOpen, setIsBankSyncModalOpen] = useState(false);
+
   useEffect(() => {
     if (updateInfo && updateInfo.available && !isCheckingUpdate) {
       console.log('🚀 Update detected - showing modal', updateInfo);
       setIsUpdateModalOpen(true);
     }
   }, [updateInfo, isCheckingUpdate]);
+
+  // Handle bank sync on resume
+  useEffect(() => {
+    const handleResume = async () => {
+      console.log('🔄 App resumed - checking bank sync');
+      try {
+        const added = await BankSyncService.syncAll();
+        if (added > 0) {
+          ui.showToast({ message: `${added} nuovi movimenti bancari trovati!`, type: 'success' });
+        }
+      } catch (e) {
+        console.warn('Silent bank sync failed:', e);
+      }
+    };
+
+    const resumeListener = CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) handleResume();
+    });
+
+    return () => { resumeListener.then(l => l.remove()); };
+  }, []);
 
   const handleSkipUpdate = () => {
     skipVersion();
@@ -363,6 +389,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           reader.readAsText(file);
         }}
         onSync={() => handleSyncFromCloud(false)}
+        onOpenBankSyncSettings={() => setIsBankSyncModalOpen(true)}
         isBalanceVisible={isBalanceVisible}
         onToggleBalanceVisibility={handleToggleBalanceVisibility}
         showToast={ui.showToast}
@@ -376,6 +403,13 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       <ShareQrModal
         isOpen={ui.nav.isQrModalOpen}
         onClose={() => ui.nav.setIsQrModalOpen(false)}
+      />
+
+      {/* Bank Sync Settings */}
+      <BankSyncSettingsModal
+        isOpen={isBankSyncModalOpen}
+        onClose={() => setIsBankSyncModalOpen(false)}
+        showToast={ui.showToast}
       />
 
     </MainLayout>
