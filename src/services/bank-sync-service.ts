@@ -140,7 +140,7 @@ export class BankSyncService {
             .setIssuedAt()
             .setIssuer(clientId)
             .setSubject(clientId)
-            .setAudience(this.BASE_URL)
+            .setAudience('api.enablebanking.com')
             .setExpirationTime('1h')
             .sign(rsaPrivateKey);
 
