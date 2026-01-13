@@ -16,6 +16,9 @@ const config: CapacitorConfig = {
     },
     NativeBiometric: {
       useFallback: true
+    },
+    CapacitorHttp: {
+      enabled: true
     }
   }
 };

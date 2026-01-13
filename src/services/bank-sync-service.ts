@@ -138,6 +138,21 @@ export class BankSyncService {
     }
 
     /**
+     * Helper to perform fetch with better error reporting for CORS/Network issues
+     */
+    private static async safeFetch(url: string, options: RequestInit): Promise<Response> {
+        try {
+            return await fetch(url, options);
+        } catch (error: any) {
+            console.error('Fetch error:', error);
+            if (error.message === 'Failed to fetch') {
+                throw new Error('Errore di rete o blocco CORS. Se sei su browser, questa API richiede l\'app nativa (APK) per funzionare correttamente.');
+            }
+            throw error;
+        }
+    }
+
+    /**
      * Fetch all authorized accounts
      */
     static async fetchAccounts(): Promise<any[]> {
@@ -146,7 +161,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await fetch(`${this.BASE_URL}/accounts`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/accounts`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -154,7 +169,7 @@ export class BankSyncService {
 
         if (!response.ok) {
             const error = await response.text();
-            throw new Error(`Failed to fetch accounts: ${error}`);
+            throw new Error(`Errore API (${response.status}): ${error}`);
         }
 
         const data = await response.json();
@@ -170,7 +185,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await fetch(`${this.BASE_URL}/accounts/${accountUid}/transactions`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -196,7 +211,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await fetch(`${this.BASE_URL}/accounts/${accountUid}/balances`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/balances`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
