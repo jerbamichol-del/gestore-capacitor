@@ -56,7 +56,9 @@ export class BankSyncService {
      * If it's PKCS#1 (starts with BEGIN RSA PRIVATE KEY), it wraps it in PKCS#8.
      */
     private static ensurePKCS8(privateKey: string): string {
-        const trimmed = privateKey.trim();
+        let trimmed = privateKey.trim();
+
+        // If it starts with BEGIN RSA PRIVATE KEY, it's PKCS#1 and needs wrapping
         if (trimmed.includes('BEGIN RSA PRIVATE KEY')) {
             console.log('🔄 Converting PKCS#1 RSA Private Key to PKCS#8...');
 
@@ -106,7 +108,15 @@ export class BankSyncService {
                 return privateKey; // Fallback to original
             }
         }
-        return privateKey;
+
+        // If it has no headers at all, assume it's PKCS#8 base64 and add headers
+        if (!trimmed.includes('-----BEGIN')) {
+            console.log('🔧 Adding missing PEM headers to private key...');
+            const cleanBase64 = trimmed.replace(/\s/g, '');
+            return `-----BEGIN PRIVATE KEY-----\n${cleanBase64.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----`;
+        }
+
+        return trimmed;
     }
 
     /**
@@ -142,11 +152,18 @@ export class BankSyncService {
      */
     private static async safeFetch(url: string, options: RequestInit): Promise<Response> {
         try {
-            return await fetch(url, options);
+            console.log(`🌐 Fetching: ${url}`);
+            const response = await fetch(url, options);
+            console.log(`📡 Response status: ${response.status}`);
+            return response;
         } catch (error: any) {
-            console.error('Fetch error:', error);
+            console.error('❌ Fetch error detailed:', {
+                message: error.message,
+                stack: error.stack,
+                url: url
+            });
             if (error.message === 'Failed to fetch') {
-                throw new Error('Errore di rete o blocco CORS. Se sei su browser, questa API richiede l\'app nativa (APK) per funzionare correttamente.');
+                throw new Error('Errore di rete o blocco di sicurezza (CORS). Se hai appena aggiornato l\'app, assicurati di aver installato il NUOVO APK con i fix nativi.');
             }
             throw error;
         }
