@@ -206,7 +206,7 @@ export class BankSyncService {
     /**
      * Start authorization process for a bank
      */
-    static async startAuthorization(aspspId: string, redirectUrl: string): Promise<string> {
+    static async startAuthorization(aspsp: { name: string, country: string }, redirectUrl: string): Promise<string> {
         const creds = this.getCredentials();
         if (!creds) throw new Error('Credentials not set');
 
@@ -218,11 +218,16 @@ export class BankSyncService {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                aspsp: aspspId,
+                aspsp: {
+                    name: aspsp.name,
+                    country: aspsp.country
+                },
                 redirect_url: redirectUrl,
                 state: Math.random().toString(36).substring(7),
                 access: {
-                    valid_until: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+                    valid_until: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                    balances: true,
+                    transactions: true
                 }
             })
         });

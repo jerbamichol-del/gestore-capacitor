@@ -123,7 +123,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         try {
             // Use current URL as redirect, we'll handle the 'code' query param on mount or next load
             const redirectUrl = window.location.origin + window.location.pathname;
-            const authUrl = await BankSyncService.startAuthorization(aspsp.name, redirectUrl);
+            const authUrl = await BankSyncService.startAuthorization(aspsp, redirectUrl);
             window.location.href = authUrl;
         } catch (error: any) {
             showToast({ message: `Errore autorizzazione: ${error.message}`, type: 'error' });
@@ -318,13 +318,14 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
           background: rgba(15, 23, 42, 0.6);
           backdrop-filter: blur(4px);
           display: flex;
-          align-items: center;
+          align-items: flex-start; /* Permette lo scroll dall'alto */
           justify-content: center;
           z-index: 9999;
           opacity: 0;
           visibility: hidden;
           transition: all 0.2s ease-in-out;
           padding: 16px;
+          overflow-y: auto; /* Permette lo scroll dell'intero overlay se necessario */
         }
         .modal-overlay.active {
           opacity: 1;
@@ -338,12 +339,32 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
           color: white;
           width: 100%;
           max-width: 500px;
+          margin-top: 20px;
+          margin-bottom: 20px;
           transform: scale(0.95);
           transition: all 0.2s ease-in-out;
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          display: flex;
+          flex-direction: column;
+          max-height: calc(100vh - 40px); /* Evita che esca dallo schermo */
         }
         .modal-overlay.active .glass-modal {
           transform: scale(1);
+        }
+        .modal-body {
+          flex: 1;
+          overflow-y: auto; /* Scroll interno al corpo del modale */
+          padding-right: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 10px;
         }
         .glass-input {
           background: rgba(0, 0, 0, 0.2);
