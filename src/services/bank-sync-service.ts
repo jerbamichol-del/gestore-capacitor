@@ -366,7 +366,7 @@ export class BankSyncService {
             || data.balances?.find((b: any) => b.balance_type === 'expected')
             || data.balances?.[0];
 
-        return balance ? parseFloat(balance.balance_amount.value) : 0;
+        return balance?.balance_amount?.value ? parseFloat(balance.balance_amount.value) : 0;
     }
 
     /**
@@ -451,7 +451,7 @@ export class BankSyncService {
      */
     private static mapToAutoTransaction(tx: any, accountUid: string): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> {
         // Determine type
-        const amount = parseFloat(tx.amount.value);
+        const amount = parseFloat(tx.amount?.value ?? tx.amount ?? 0);
         const type = amount < 0 ? 'expense' : 'income';
 
         return {
