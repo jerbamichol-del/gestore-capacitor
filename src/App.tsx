@@ -192,7 +192,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           <CalculatorContainer
             isOpen={ui.nav.isCalculatorContainerOpen}
             onClose={ui.nav.closeModalWithHistory}
-            onSubmit={data.handleAddExpense}
+            onSubmit={(d) => {
+              data.handleAddExpense(d);
+              ui.nav.closeModalWithHistory();
+            }}
             accounts={data.accounts}
             expenses={data.expenses}
             onEditExpense={(e) => {

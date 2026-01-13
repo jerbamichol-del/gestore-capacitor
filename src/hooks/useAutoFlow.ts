@@ -280,21 +280,45 @@ export function useAutoFlow(
         }, 3000);
     }, [isSMSReaderEnabled, requestSMSPermission, manualCheckSMSPermission]);
 
-    // Auto-open modal on new pending
+    // Transfer Confirmation Handling
+    const currentConfirmationId = currentConfirmationTransaction?.id;
+
+    // ✅ CRITICAL FIX: Filter out the transaction being confirmed in the Transfer Modal
+    // This prevents PendingTransactionsModal from showing the same transaction (overlap/duplication).
+    // If it's the only transaction, PendingTransactionsModal effectively won't render/open for it.
+    const effectivePendingTransactions = pendingTransactions.filter(
+        t => t.id !== currentConfirmationId
+    );
+    const effectivePendingCount = effectivePendingTransactions.length;
+
+    // Auto-open modal on new pending (using filtered count)
     useEffect(() => {
-        if (pendingCount > 0 && !isPendingTransactionsModalOpen) {
-            const lastCount = parseInt(localStorage.getItem('last_pending_count') || '0');
-            if (pendingCount > lastCount) {
+        // Always reopen if there are pending transactions and we are on a relevant screen
+        // We only check effectivePendingCount > 0.
+        // This ensures if the ONLY pending item is a Transfer (which opens its own modal),
+        // we do NOT open PendingTransactionsModal (as effective count is 0).
+
+        if (effectivePendingCount > 0 && !isPendingTransactionsModalOpen) {
+            console.log('📬 Pending transactions detected (filtered), opening modal.');
+            setIsPendingTransactionsModalOpen(true);
+        }
+    }, [effectivePendingCount]); // Check ONLY when filtered count changes
+
+    // Also listen for resume/update events specifically to force check
+    useEffect(() => {
+        const handleForceCheck = () => {
+            if (effectivePendingCount > 0 && !isPendingTransactionsModalOpen) {
                 setIsPendingTransactionsModalOpen(true);
             }
-            localStorage.setItem('last_pending_count', pendingCount.toString());
-        }
-    }, [pendingCount, isPendingTransactionsModalOpen]);
+        };
+        window.addEventListener('auto-transactions-updated', handleForceCheck);
+        return () => window.removeEventListener('auto-transactions-updated', handleForceCheck);
+    }, [effectivePendingCount, isPendingTransactionsModalOpen]);
 
     return {
         // State
-        pendingTransactions,
-        pendingCount,
+        pendingTransactions: effectivePendingTransactions, // Return FILTERED transactions to UI
+        pendingCount: effectivePendingCount,
         isPendingTransactionsModalOpen,
         setIsPendingTransactionsModalOpen,
         isNotificationPermissionModalOpen,
