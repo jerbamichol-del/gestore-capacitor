@@ -178,7 +178,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await this.safeFetch(`${this.BASE_URL}/accounts`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/v1/accounts`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -202,7 +202,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/v1/accounts/${accountUid}/transactions`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -228,7 +228,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/balances`, {
+        const response = await this.safeFetch(`${this.BASE_URL}/v1/accounts/${accountUid}/balances`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
