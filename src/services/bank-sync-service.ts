@@ -335,7 +335,9 @@ export class BankSyncService {
         }
 
         const data = await response.json();
+        console.log('Transactions API response:', JSON.stringify(data, null, 2));
         const transactions = data.transactions || [];
+        console.log(`Found ${transactions.length} transactions for account ${accountUid}`);
 
         return transactions.map((tx: any) => this.mapToAutoTransaction(tx, accountUid));
     }
@@ -361,12 +363,29 @@ export class BankSyncService {
         }
 
         const data = await response.json();
-        // Priority: closingBooked, expected, or first available
-        const balance = data.balances?.find((b: any) => b.balance_type === 'closingBooked')
-            || data.balances?.find((b: any) => b.balance_type === 'expected')
+        console.log('Balance API response:', JSON.stringify(data, null, 2));
+        
+        // Enable Banking API uses balanceType (camelCase) and amount.amount structure
+        const balance = data.balances?.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
+            || data.balances?.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
+            || data.balances?.find((b: any) => b.balanceType === 'AVAILABLE' || b.balanceType === 'BOOKED')
             || data.balances?.[0];
 
-        return balance?.balance_amount?.value ? parseFloat(balance.balance_amount.value) : 0;
+        if (!balance) {
+            console.warn('No balance found in response');
+            return 0;
+        }
+        
+        // Handle multiple possible formats: amount.amount, balance_amount.amount, balance_amount.value
+        const balanceValue = balance.amount?.amount 
+            ?? balance.balance_amount?.amount 
+            ?? balance.balance_amount?.value 
+            ?? balance.amount?.value
+            ?? balance.amount
+            ?? 0;
+        
+        console.log('Parsed balance value:', balanceValue);
+        return parseFloat(String(balanceValue)) || 0;
     }
 
     /**
@@ -397,19 +416,25 @@ export class BankSyncService {
     static async syncAll(): Promise<{ transactions: number, adjustments: number }> {
         try {
             const accounts = await this.fetchAccounts();
+            console.log('Fetched accounts:', JSON.stringify(accounts, null, 2));
             let totalAdded = 0;
             let adjustmentsCount = 0;
             const activeProviders = new Set<string>();
 
             for (const acc of accounts) {
+                console.log('Processing account:', acc.uid, acc);
+                
                 // Collect provider name for suppression logic
                 if (acc.aspsp_name) activeProviders.add(acc.aspsp_name);
                 if (acc.provider?.name) activeProviders.add(acc.provider.name);
+                if (acc.aspspName) activeProviders.add(acc.aspspName);
                 // Fallback to display name if it contains bank keywords
                 if (acc.display_name) activeProviders.add(acc.display_name);
+                if (acc.displayName) activeProviders.add(acc.displayName);
 
                 // 1. Sync Transactions
                 const txs = await this.fetchTransactions(acc.uid);
+                console.log(`Account ${acc.uid}: ${txs.length} transactions mapped`);
                 for (const tx of txs) {
                     const added = await AutoTransactionService.addAutoTransaction(tx);
                     if (added) totalAdded++;
@@ -417,14 +442,17 @@ export class BankSyncService {
 
                 // 2. Sync Balance & Reconcile
                 const bankBalance = await this.fetchBalance(acc.uid);
+                console.log(`Account ${acc.uid}: Bank balance = ${bankBalance}`);
                 const localBalance = this.calculateLocalBalance(acc.uid);
+                console.log(`Account ${acc.uid}: Local balance = ${localBalance}`);
                 const diff = bankBalance - localBalance;
+                console.log(`Account ${acc.uid}: Difference = ${diff}`);
 
                 if (Math.abs(diff) > 0.01) {
                     await AutoTransactionService.addAdjustment(
                         acc.uid,
                         diff,
-                        `Riconciliazione Automatica ${acc.account_id?.iban || acc.uid}`
+                        `Riconciliazione Automatica ${acc.account_id?.iban || acc.accountId?.iban || acc.uid}`
                     );
                     adjustmentsCount++;
                 }
@@ -450,16 +478,49 @@ export class BankSyncService {
      * Map Enable Banking transaction to our AutoTransaction format
      */
     private static mapToAutoTransaction(tx: any, accountUid: string): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> {
-        // Determine type
-        const amount = parseFloat(tx.amount?.value ?? tx.amount ?? 0);
-        const type = amount < 0 ? 'expense' : 'income';
+        console.log('Mapping transaction:', JSON.stringify(tx, null, 2));
+        
+        // Handle multiple possible amount formats from Enable Banking API
+        // Format 1: { amount: { amount: "150.50", currency: "EUR" } }
+        // Format 2: { amount: { value: "150.50" } }
+        // Format 3: { amount: "150.50" } or { amount: 150.50 }
+        let rawAmount: string | number = 0;
+        if (tx.amount && typeof tx.amount === 'object') {
+            rawAmount = tx.amount.amount ?? tx.amount.value ?? 0;
+        } else if (tx.amount !== undefined) {
+            rawAmount = tx.amount;
+        } else if (tx.transactionAmount && typeof tx.transactionAmount === 'object') {
+            rawAmount = tx.transactionAmount.amount ?? tx.transactionAmount.value ?? 0;
+        }
+        
+        const amount = parseFloat(String(rawAmount)) || 0;
+        console.log('Parsed transaction amount:', amount, 'from raw:', rawAmount);
+        
+        // Determine type based on transaction type field or amount sign
+        let type: 'expense' | 'income' = amount < 0 ? 'expense' : 'income';
+        if (tx.transactionType === 'DEBIT' || tx.creditDebitIndicator === 'DBIT') {
+            type = 'expense';
+        } else if (tx.transactionType === 'CREDIT' || tx.creditDebitIndicator === 'CRDT') {
+            type = 'income';
+        }
+
+        // Handle multiple date formats (camelCase and snake_case)
+        const date = tx.bookingDate || tx.booking_date 
+            || tx.transactionDate || tx.transaction_date 
+            || tx.valueDate || tx.value_date 
+            || new Date().toISOString().split('T')[0];
+
+        // Get description from multiple possible fields
+        const description = tx.description || tx.remittanceInformationUnstructured 
+            || tx.creditorName || tx.debtorName 
+            || 'Transazione Bancaria';
 
         return {
             type,
             amount: Math.abs(amount),
-            description: tx.description || 'Transazione Bancaria',
-            date: tx.booking_date || tx.value_date || new Date().toISOString().split('T')[0],
-            account: tx.account_id?.iban || accountUid,
+            description,
+            date,
+            account: tx.account_id?.iban || tx.accountId?.iban || accountUid,
             sourceType: 'bank',
             sourceApp: 'enable_banking',
             rawText: JSON.stringify(tx)
