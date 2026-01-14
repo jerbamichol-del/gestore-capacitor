@@ -91,7 +91,15 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             // Update balances in UI
             handleTestConnection();
         } catch (error: any) {
-            showToast({ message: `Errore sync: ${error.message}`, type: 'error' });
+            // Check for session expired error
+            if (error.message?.includes('SESSION_EXPIRED')) {
+                showToast({ 
+                    message: 'Sessione bancaria scaduta. Ricollega la banca cliccando "Cerca Banche".', 
+                    type: 'error' 
+                });
+            } else {
+                showToast({ message: `Errore sync: ${error.message}`, type: 'error' });
+            }
         } finally {
             setIsSyncing(false);
         }

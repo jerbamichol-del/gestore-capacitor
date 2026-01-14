@@ -282,8 +282,21 @@ export class BankSyncService {
         return stored ? JSON.parse(stored) : [];
     }
 
+    private static async removeSession(sessionId: string): Promise<void> {
+        const sessions = await this.getSessions();
+        const filtered = sessions.filter(s => s !== sessionId);
+        localStorage.setItem('bank_sync_sessions', JSON.stringify(filtered));
+        console.log(`Removed expired session: ${sessionId}`);
+    }
+
+    static async clearAllSessions(): Promise<void> {
+        localStorage.removeItem('bank_sync_sessions');
+        localStorage.removeItem(this.STORAGE_KEY_ACTIVE_BANKS);
+        console.log('Cleared all bank sync sessions');
+    }
+
     /**
-     * Fetch all authorized accounts
+     * Fetch all authorized accounts, removing expired sessions
      */
     static async fetchAccounts(): Promise<any[]> {
         const creds = this.getCredentials();
@@ -292,6 +305,8 @@ export class BankSyncService {
         const token = await this.generateJWT(creds);
         const sessions = await this.getSessions();
         let allAccounts: any[] = [];
+        let expiredSessions: string[] = [];
+        let validSessionCount = 0;
 
         for (const sessionId of sessions) {
             try {
@@ -300,15 +315,41 @@ export class BankSyncService {
                         'Authorization': `Bearer ${token}`
                     }
                 });
+                
                 if (response.ok) {
                     const data = await response.json();
                     if (data.accounts_data) {
-                        allAccounts = [...allAccounts, ...data.accounts_data];
+                        // Add session info to each account for tracking
+                        const accountsWithSession = data.accounts_data.map((acc: any) => ({
+                            ...acc,
+                            _sessionId: sessionId
+                        }));
+                        allAccounts = [...allAccounts, ...accountsWithSession];
                     }
+                    validSessionCount++;
+                } else if (response.status === 401) {
+                    // Session expired
+                    const errorText = await response.text();
+                    console.warn(`Session ${sessionId} expired:`, errorText);
+                    expiredSessions.push(sessionId);
                 }
             } catch (e) {
                 console.error(`Failed to fetch session ${sessionId}:`, e);
             }
+        }
+
+        // Remove expired sessions
+        for (const expiredId of expiredSessions) {
+            await this.removeSession(expiredId);
+        }
+
+        // If all sessions expired, throw specific error
+        if (expiredSessions.length > 0 && validSessionCount === 0) {
+            throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute. Ricollega la banca dalle impostazioni.');
+        }
+
+        if (expiredSessions.length > 0 && validSessionCount > 0) {
+            console.warn(`${expiredSessions.length} sessioni scadute rimosse, ${validSessionCount} ancora valide`);
         }
 
         return allAccounts;
@@ -331,6 +372,11 @@ export class BankSyncService {
 
         if (!response.ok) {
             const error = await response.text();
+            // Check if session expired
+            if (response.status === 401) {
+                console.warn(`Session expired for account ${accountUid}`);
+                return []; // Return empty instead of throwing
+            }
             throw new Error(`Failed to fetch transactions: ${error}`);
         }
 
@@ -359,6 +405,11 @@ export class BankSyncService {
 
         if (!response.ok) {
             const error = await response.text();
+            // Check if session expired
+            if (response.status === 401) {
+                console.warn(`Session expired for account ${accountUid}`);
+                return 0; // Return 0 instead of throwing
+            }
             throw new Error(`Failed to fetch balance: ${error}`);
         }
 
