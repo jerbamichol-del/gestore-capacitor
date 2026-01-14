@@ -532,26 +532,30 @@ export class BankSyncService {
         console.log('Mapping transaction:', JSON.stringify(tx, null, 2));
         
         // Handle multiple possible amount formats from Enable Banking API
-        // Format 1: { amount: { amount: "150.50", currency: "EUR" } }
-        // Format 2: { amount: { value: "150.50" } }
-        // Format 3: { amount: "150.50" } or { amount: 150.50 }
+        // Format 1: { transaction_amount: { amount: "150.50", currency: "EUR" } } - Enable Banking snake_case
+        // Format 2: { transactionAmount: { amount: "150.50" } } - camelCase variant
+        // Format 3: { amount: { amount: "150.50" } } - legacy format
+        // Format 4: { amount: "150.50" } or { amount: 150.50 } - direct value
         let rawAmount: string | number = 0;
-        if (tx.amount && typeof tx.amount === 'object') {
+        if (tx.transaction_amount && typeof tx.transaction_amount === 'object') {
+            rawAmount = tx.transaction_amount.amount ?? tx.transaction_amount.value ?? 0;
+        } else if (tx.transactionAmount && typeof tx.transactionAmount === 'object') {
+            rawAmount = tx.transactionAmount.amount ?? tx.transactionAmount.value ?? 0;
+        } else if (tx.amount && typeof tx.amount === 'object') {
             rawAmount = tx.amount.amount ?? tx.amount.value ?? 0;
         } else if (tx.amount !== undefined) {
             rawAmount = tx.amount;
-        } else if (tx.transactionAmount && typeof tx.transactionAmount === 'object') {
-            rawAmount = tx.transactionAmount.amount ?? tx.transactionAmount.value ?? 0;
         }
         
         const amount = parseFloat(String(rawAmount)) || 0;
         console.log('Parsed transaction amount:', amount, 'from raw:', rawAmount);
         
         // Determine type based on transaction type field or amount sign
+        // Support both camelCase and snake_case formats
         let type: 'expense' | 'income' = amount < 0 ? 'expense' : 'income';
-        if (tx.transactionType === 'DEBIT' || tx.creditDebitIndicator === 'DBIT') {
+        if (tx.transactionType === 'DEBIT' || tx.creditDebitIndicator === 'DBIT' || tx.credit_debit_indicator === 'DBIT') {
             type = 'expense';
-        } else if (tx.transactionType === 'CREDIT' || tx.creditDebitIndicator === 'CRDT') {
+        } else if (tx.transactionType === 'CREDIT' || tx.creditDebitIndicator === 'CRDT' || tx.credit_debit_indicator === 'CRDT') {
             type = 'income';
         }
 
@@ -562,8 +566,15 @@ export class BankSyncService {
             || new Date().toISOString().split('T')[0];
 
         // Get description from multiple possible fields
-        const description = tx.description || tx.remittanceInformationUnstructured 
-            || tx.creditorName || tx.debtorName 
+        // remittance_information can be an array, so handle that case
+        let remittanceInfo = tx.remittance_information || tx.remittanceInformation;
+        if (Array.isArray(remittanceInfo)) {
+            remittanceInfo = remittanceInfo.join(' ');
+        }
+        const description = tx.description || remittanceInfo
+            || tx.remittanceInformationUnstructured 
+            || tx.creditorName || tx.creditor_name
+            || tx.debtorName || tx.debtor_name
             || 'Transazione Bancaria';
 
         return {
