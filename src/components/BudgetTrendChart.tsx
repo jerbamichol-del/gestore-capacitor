@@ -15,7 +15,7 @@ import { formatCurrency } from './icons/formatters';
 
 interface BudgetTrendChartProps {
     expenses: Expense[];
-    accounts: Account[]; // ✅ NEW: Required to calculate real patrimonio
+    accounts: Account[];
     periodType: 'day' | 'week' | 'month' | 'year';
     periodDate: Date;
     activeViewIndex: number; // 0: Quick, 1: Period, 2: Custom
@@ -35,7 +35,7 @@ const toYYYYMMDD = (date: Date) => {
     return `${y}-${m}-${d}`;
 };
 
-// Custom Tooltip Component
+// Tooltip
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
@@ -48,7 +48,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             return label;
         })();
 
-        // Il valore nel grafico è negativo, lo mostriamo positivo nel tooltip
         const expensePositive = Math.abs(data.negExpense);
 
         return (
@@ -61,7 +60,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                         <span className="font-bold text-slate-800">{formatCurrency(data.balance)}</span>
                     </div>
 
-                    {/* Mostra Rettifica solo se presente */}
+                    {/* Se vuoi nascondere “Rettifica” anche nel tooltip, elimina questo blocco */}
                     {data.adjustment !== 0 && (
                         <div className="flex items-center justify-between gap-4">
                             <span className="text-slate-500 font-medium">Rettifica:</span>
@@ -79,6 +78,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                             {data.net > 0 ? '+' : ''}{formatCurrency(data.net)}
                         </span>
                     </div>
+
                     <div className="pt-2 mt-2 border-t border-slate-100 grid grid-cols-2 gap-x-4 text-xs">
                         <div className="text-emerald-600 font-medium">
                             Entrate: {formatCurrency(data.income)}
@@ -94,6 +94,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
+type ChartPoint = {
+    date: string;
+    income: number;
+    expense: number;
+    adjustment: number;
+    net: number;
+    balance: number;
+    negExpense: number;
+};
+
 export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     expenses,
     accounts,
@@ -103,9 +113,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     quickFilter,
     customRange
 }) => {
-
-    const chartData = useMemo(() => {
-        // 1. Determine Date Range
+    const chartData = useMemo<ChartPoint[]>(() => {
+        // 1) Determine date range (stessa logica attuale)
         const now = new Date();
         let start = new Date();
         let end = new Date();
@@ -129,6 +138,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
         } else { // Period
             start = new Date(periodDate);
             end = new Date(periodDate);
+
             if (periodType === 'day') {
                 const day = start.getDay();
                 const diff = start.getDate() - day + (day === 0 ? -6 : 1);
@@ -145,135 +155,175 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                 start.setDate(1);
                 end.setMonth(end.getMonth() + 1);
                 end.setDate(0);
-            } else { // Year
+            } else { // year
                 start.setMonth(0, 1);
                 end.setFullYear(end.getFullYear() + 1);
                 end.setMonth(0, 0);
             }
         }
 
-        // Normalize times
         start.setHours(0, 0, 0, 0);
         end.setHours(23, 59, 59, 999);
 
-        // CLIP FUTURE DATES: Ensure chart never goes beyond today
+        // Clip future
         const todayEndOfDay = new Date();
         todayEndOfDay.setHours(23, 59, 59, 999);
+        if (end > todayEndOfDay) end = todayEndOfDay;
 
-        if (end > todayEndOfDay) {
-            end = todayEndOfDay;
-        }
-
-        // Safety check: if start is after today (e.g. looking at next month), show nothing or just today
+        // Safety: if start is after today (e.g. next month)
         if (start > end) {
             start = new Date(end);
             start.setHours(0, 0, 0, 0);
         }
 
-        // 2. Generate Buckets
+        // 2) Bucket selection
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        const dataMap = new Map<string, { date: string; income: number; expense: number; adjustment: number; net: number; balance: number }>();
-        // Group by month only if range is huge AND we aren't zoomed into specific days near today
         const isYearly = diffDays > 60;
 
+        const bucketKeys: string[] = [];
+        const bucketRanges = new Map<string, { bucketStart: Date; bucketEnd: Date }>();
+
         if (isYearly) {
-            let curr = new Date(start);
+            const curr = new Date(start);
             curr.setDate(1);
+            curr.setHours(0, 0, 0, 0);
+
             while (curr <= end) {
-                const key = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}`;
-                const sortKey = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-01`;
-                if (!dataMap.has(sortKey)) {
-                    dataMap.set(sortKey, { date: sortKey, income: 0, expense: 0, adjustment: 0, net: 0, balance: 0 });
-                }
+                const key = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-01`;
+
+                const bucketStart = new Date(curr);
+                bucketStart.setHours(0, 0, 0, 0);
+
+                const bucketEnd = new Date(curr.getFullYear(), curr.getMonth() + 1, 0);
+                bucketEnd.setHours(23, 59, 59, 999);
+
+                // clip end (per l’ultimo mese)
+                const clippedEnd = bucketEnd > end ? new Date(end) : bucketEnd;
+
+                bucketKeys.push(key);
+                bucketRanges.set(key, { bucketStart, bucketEnd: clippedEnd });
+
                 curr.setMonth(curr.getMonth() + 1);
             }
         } else {
-            let curr = new Date(start);
+            const curr = new Date(start);
+            curr.setHours(0, 0, 0, 0);
             while (curr <= end) {
                 const key = toYYYYMMDD(curr);
-                dataMap.set(key, { date: key, income: 0, expense: 0, adjustment: 0, net: 0, balance: 0 });
+
+                const bucketStart = new Date(curr);
+                bucketStart.setHours(0, 0, 0, 0);
+
+                const bucketEnd = new Date(curr);
+                bucketEnd.setHours(23, 59, 59, 999);
+
+                bucketKeys.push(key);
+                bucketRanges.set(key, { bucketStart, bucketEnd });
+
                 curr.setDate(curr.getDate() + 1);
             }
         }
 
-        // 3. Populate Data
-        expenses.forEach(e => {
-            const d = parseLocalYYYYMMDD(e.date);
-            if (d >= start && d <= end) {
-                let key = toYYYYMMDD(d);
-                if (isYearly) {
-                    key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-                }
+        if (bucketKeys.length === 0) return [];
 
-                if (dataMap.has(key)) {
-                    const entry = dataMap.get(key)!;
-                    const rawAmt = Number(e.amount) || 0;
-                    const absAmt = Math.abs(rawAmt);
+        // 3) Setup balances (identico concetto Home: per-account, poi somma)
+        const balances: Record<string, number> = {};
+        (accounts || []).forEach(acc => { balances[acc.id] = 0; });
 
-                    if (e.type === 'income') {
-                        entry.income += absAmt;
-                    } else if (e.type === 'expense') {
-                        entry.expense += absAmt;
-                    } else if (e.type === 'adjustment') {
-                        // Adjustments don't count as income/expense bars, but they do affect the balance
-                        // We keep the raw signed amount for adjustment
-                        entry.adjustment += rawAmt;
+        const applyToBalances = (e: Expense) => {
+            const amt = Number(e.amount) || 0;
+
+            if (e.type === 'expense') {
+                if (balances[e.accountId] !== undefined) balances[e.accountId] -= amt;
+            } else if (e.type === 'income') {
+                if (balances[e.accountId] !== undefined) balances[e.accountId] += amt;
+            } else if (e.type === 'transfer') {
+                if (balances[e.accountId] !== undefined) balances[e.accountId] -= amt;
+                if (e.toAccountId && balances[e.toAccountId] !== undefined) balances[e.toAccountId] += amt;
+            } else if (e.type === 'adjustment') {
+                if (balances[e.accountId] !== undefined) balances[e.accountId] += amt;
+            }
+        };
+
+        const sumBalances = () =>
+            (Object.values(balances) as number[]).reduce((acc, v) => acc + v, 0);
+
+        // 4) Sort transactions by date to replay deterministically
+        const sortedTx = (expenses || [])
+            .filter(e => !!e.date)
+            .slice()
+            .sort((a, b) => parseLocalYYYYMMDD(a.date).getTime() - parseLocalYYYYMMDD(b.date).getTime());
+
+        // Pointer: applica tutte le tx < start per inizializzare il patrimonio
+        let txIdx = 0;
+        while (txIdx < sortedTx.length) {
+            const d = parseLocalYYYYMMDD(sortedTx[txIdx].date);
+            if (d < start) {
+                applyToBalances(sortedTx[txIdx]);
+                txIdx++;
+            } else {
+                break;
+            }
+        }
+
+        // 5) Build chart points
+        const out: ChartPoint[] = [];
+
+        for (const key of bucketKeys) {
+            const range = bucketRanges.get(key);
+            if (!range) continue;
+
+            const { bucketStart, bucketEnd } = range;
+
+            let income = 0;
+            let expense = 0;
+            let adjustment = 0;
+
+            // consuma tutte le transazioni dentro il bucket
+            while (txIdx < sortedTx.length) {
+                const tx = sortedTx[txIdx];
+                const d = parseLocalYYYYMMDD(tx.date);
+
+                if (d > bucketEnd) break;
+
+                if (d >= bucketStart) {
+                    const amt = Number(tx.amount) || 0;
+
+                    if (tx.type === 'income') {
+                        income += Math.abs(amt); // solo per barra
+                    } else if (tx.type === 'expense') {
+                        expense += Math.abs(amt); // solo per barra
+                    } else if (tx.type === 'adjustment') {
+                        adjustment += amt; // “rettifica” come dato informativo
                     }
-
-                    // Net is strictly Income - Expense (for the bars/daily flow context)
-                    entry.net = entry.income - entry.expense;
                 }
+
+                // sempre applicata al saldo (come Home), inclusi adjustment e transfer
+                applyToBalances(tx);
+                txIdx++;
             }
-        });
 
-        // 4. Calculate Starting Patrimonio (all transactions BEFORE chart start date)
-        // ✅ FIX: Start from real patrimonio, not 0
-        let startingPatrimonio = 0;
+            const net = income - expense;
+            const balance = sumBalances();
 
-        // Calculate balance from all transactions before the chart period
-        expenses.forEach(e => {
-            const d = parseLocalYYYYMMDD(e.date);
-            if (d < start) { // Only transactions BEFORE chart start
-                const rawAmt = Number(e.amount) || 0;
-                if (e.type === 'income') {
-                    startingPatrimonio += Math.abs(rawAmt);
-                } else if (e.type === 'expense') {
-                    startingPatrimonio -= Math.abs(rawAmt);
-                } else if (e.type === 'adjustment') {
-                    startingPatrimonio += rawAmt; // Adjustments can be +/-
-                } else if (e.type === 'transfer') {
-                    // Transfers don't affect total patrimonio (internal movement)
-                }
-            }
-        });
+            out.push({
+                date: key,
+                income,
+                expense,
+                adjustment,
+                net,
+                balance,
+                negExpense: -expense
+            });
+        }
 
-        let runningBalance = startingPatrimonio;
-
-        // Sort keys to ensure chronological order
-        const sortedKeys = Array.from(dataMap.keys()).sort();
-
-        const result = sortedKeys.map(key => {
-            const item = dataMap.get(key)!;
-            // Balance = previous + (Income - Expense + Adjustments)
-            runningBalance += (item.income - item.expense + item.adjustment);
-            return {
-                ...item,
-                balance: runningBalance,
-                // CRITICO: Convertiamo le spese in negativo per il grafico
-                negExpense: -item.expense
-            };
-        });
-
-        return result;
-
+        return out;
     }, [expenses, accounts, periodType, periodDate, activeViewIndex, quickFilter, customRange]);
 
     if (chartData.length === 0) return null;
 
     return (
-        // Modified: removed horizontal padding (on mobile) and radius (on mobile)
         <div className="bg-white p-5 md:rounded-3xl shadow-lg border border-slate-100">
             <div className="mb-6 flex justify-between items-end">
                 <div>
@@ -284,7 +334,6 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
 
             <div style={{ width: '100%', height: 220 }}>
                 <ResponsiveContainer>
-                    {/* stackOffset="sign" è FONDAMENTALE: separa positivi (su) e negativi (giù) dallo zero */}
                     <ComposedChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }} stackOffset="sign">
                         <defs>
                             <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
@@ -309,7 +358,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                                 }
                                 return '';
                             }}
-                            minTickGap={5} // RIDOTTO: Permette di mostrare più giorni (es. 10)
+                            minTickGap={5}
                             dy={10}
                         />
 
@@ -324,10 +373,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                         />
 
                         <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
-
                         <ReferenceLine y={0} stroke="#cbd5e1" strokeWidth={1} />
 
-                        {/* Income Bars (Positive, Green) - Stacked con ID uguale a Expense */}
                         <Bar
                             dataKey="income"
                             stackId="stack"
@@ -337,7 +384,6 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             radius={[0, 0, 0, 0]}
                         />
 
-                        {/* Expense Bars (Negative, Red) - Stacked con ID uguale a Income */}
                         <Bar
                             dataKey="negExpense"
                             stackId="stack"
@@ -347,7 +393,6 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             radius={[0, 0, 0, 0]}
                         />
 
-                        {/* Cumulative Trend Area */}
                         <Area
                             type="monotone"
                             dataKey="balance"
