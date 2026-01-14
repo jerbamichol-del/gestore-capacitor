@@ -24,8 +24,8 @@ interface SavedRule {
 interface PendingTransactionsModalProps {
   isOpen: boolean;
   transactions: PendingTransaction[];
-  accounts: Account[]; // NEW: account list
-  expenses: Expense[]; // NEW: existing expenses for duplicate check
+  accounts: Account[];
+  expenses: Expense[];
   onClose: () => void;
   onConfirm: (
     id: string,
@@ -42,6 +42,7 @@ interface PendingTransactionsModalProps {
     }
   ) => void;
   onIgnore: (id: string) => void;
+  onIgnoreAll?: () => void;
 }
 
 const RULES_STORAGE_KEY = 'transaction_type_rules';
@@ -125,6 +126,7 @@ export function PendingTransactionsModal({
   onClose,
   onConfirm,
   onIgnore,
+  onIgnoreAll,
 }: PendingTransactionsModalProps) {
   const [savedRules, setSavedRules] = useState<SavedRule[]>([]);
 
@@ -803,9 +805,19 @@ export function PendingTransactionsModal({
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-3 z-10">
-          <button onClick={onClose} className="w-full text-gray-600 text-sm font-medium py-2">
-            Chiudi
-          </button>
+          <div className="flex gap-2">
+            {onIgnoreAll && transactions.length > 1 && (
+              <button 
+                onClick={onIgnoreAll} 
+                className="flex-1 text-red-600 bg-red-50 hover:bg-red-100 text-sm font-medium py-2 rounded-lg transition-colors"
+              >
+                Ignora Tutte ({transactions.length})
+              </button>
+            )}
+            <button onClick={onClose} className="flex-1 text-gray-600 text-sm font-medium py-2">
+              Chiudi
+            </button>
+          </div>
         </div>
       </div>
     </div >

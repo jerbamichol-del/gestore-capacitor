@@ -282,10 +282,11 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             isOpen={auto.isPendingTransactionsModalOpen}
             onClose={() => auto.setIsPendingTransactionsModalOpen(false)}
             transactions={auto.pendingTransactions}
-            expenses={data.expenses} // Pass existing expenses for duplicate check
+            expenses={data.expenses}
             accounts={data.accounts}
             onConfirm={auto.handleConfirmTransaction}
             onIgnore={auto.handleIgnoreTransaction}
+            onIgnoreAll={auto.handleIgnoreAllTransactions}
           />
           <TransferConfirmationModal
             isOpen={auto.isTransferConfirmationModalOpen}

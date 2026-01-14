@@ -57,7 +57,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-4">
-                        <span className="text-indigo-600 font-bold">Saldo:</span>
+                        <span className="text-indigo-600 font-bold">Patrimonio:</span>
                         <span className="font-bold text-slate-800">{formatCurrency(data.balance)}</span>
                     </div>
 
@@ -277,8 +277,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
         <div className="bg-white p-5 md:rounded-3xl shadow-lg border border-slate-100">
             <div className="mb-6 flex justify-between items-end">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800">Andamento Saldo</h3>
-                    <p className="text-xs font-medium text-slate-400 mt-0.5">Saldo cumulativo e flusso giornaliero</p>
+                    <h3 className="text-lg font-bold text-slate-800">Andamento Patrimonio</h3>
+                    <p className="text-xs font-medium text-slate-400 mt-0.5">Patrimonio (linea), Entrate (verde), Uscite (rosso)</p>
                 </div>
             </div>
 

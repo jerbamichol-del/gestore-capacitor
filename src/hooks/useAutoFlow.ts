@@ -228,6 +228,20 @@ export function useAutoFlow(
         }
     }, [ignoreTransaction, showToast]);
 
+    const handleIgnoreAllTransactions = useCallback(async () => {
+        try {
+            const count = pendingTransactions.length;
+            for (const tx of pendingTransactions) {
+                await ignoreTransaction(tx.id);
+            }
+            showToast({ message: `${count} transazioni ignorate.`, type: 'info' });
+            setIsPendingTransactionsModalOpen(false);
+        } catch (error) {
+            console.error('Error ignoring all transactions:', error);
+            showToast({ message: 'Errore durante l\'ignora.', type: 'error' });
+        }
+    }, [pendingTransactions, ignoreTransaction, showToast]);
+
     // --- Effects ---
 
     // Listen for confirmation needed events
@@ -338,6 +352,7 @@ export function useAutoFlow(
         handleConfirmTransaction,
         handleConfirmAsTransfer,
         handleConfirmAsExpense,
-        handleIgnoreTransaction
+        handleIgnoreTransaction,
+        handleIgnoreAllTransactions
     };
 }
