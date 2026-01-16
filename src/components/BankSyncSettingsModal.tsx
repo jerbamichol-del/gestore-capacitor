@@ -204,8 +204,12 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         return;
                     }
 
-                    // Check for authorization code
-                    if (event.url.includes('code=')) {
+                    // Check for authorization code - ONLY if we are on the callback domains
+                    // We must ignore codes on the bank's own domains (revolut.com, paypal.com) 
+                    // because they are internal session codes, not the final OAuth code.
+                    const isCallbackDomain = event.url.includes('localhost') || event.url.includes('enablebanking.com');
+
+                    if (event.url.includes('code=') && isCallbackDomain) {
                         authorizationCompleted = true; // Set flag immediately to prevent duplicates
 
                         try {
