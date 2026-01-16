@@ -223,11 +223,29 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 }
                             }
 
+                            // Create dynamic redirect URL from the actual event URL
+                            // This defines the 'redirect_uri' sent to /sessions, which must match the one used in the callback
+                            let dynamicRedirectUrl = redirectUrl; // Default to the one we requested
+                            try {
+                                const callbackUrl = new URL(event.url);
+                                // Construct base URL (origin + path)
+                                dynamicRedirectUrl = callbackUrl.origin + callbackUrl.pathname;
+
+                                // FIX: enablebanking.com usually expects NO trailing slash for their default redirect
+                                if (dynamicRedirectUrl.includes('enablebanking.com') && dynamicRedirectUrl.endsWith('/')) {
+                                    dynamicRedirectUrl = dynamicRedirectUrl.slice(0, -1);
+                                }
+
+                                console.log('📍 Detected actual redirect URL:', dynamicRedirectUrl);
+                            } catch (e) {
+                                console.warn('⚠️ Could not derive dynamic redirect URL, using default:', redirectUrl);
+                            }
+
                             console.log('🔑 Extracted authorization code:', code ? `${code.substring(0, 10)}...` : 'null');
 
                             if (code) {
-                                console.log('🔄 Calling authorizeSession with redirectUrl:', redirectUrl);
-                                await BankSyncService.authorizeSession(code, redirectUrl);
+                                console.log('🔄 Calling authorizeSession with redirectUrl:', dynamicRedirectUrl);
+                                await BankSyncService.authorizeSession(code, dynamicRedirectUrl);
                                 showToast({ message: "Conto autorizzato con successo!", type: 'success' });
                                 handleTestConnection();
                             } else {
