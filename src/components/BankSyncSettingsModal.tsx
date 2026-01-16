@@ -237,8 +237,20 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 console.log('   Callback Pathname:', callbackUrl.pathname);
                                 console.log('   Initial Dynamic URL:', dynamicRedirectUrl);
 
+                                // INTELLIGENT DETECTION: Check if the URL contains a nested 'redirect_uri' 
+                                // This happens when banks redirect back to Enable Banking (tilisy) proxy
+                                const redirectUriMatch = event.url.match(/redirect_uri=([^&]+)/);
+                                if (redirectUriMatch) {
+                                    const extractedUri = decodeURIComponent(redirectUriMatch[1]);
+                                    if (extractedUri.includes('enablebanking.com')) {
+                                        dynamicRedirectUrl = extractedUri;
+                                        console.log('   🎯 Found nested redirect_uri for Enable Banking:', dynamicRedirectUrl);
+                                    }
+                                }
+
                                 // FIX: enablebanking.com usually expects NO trailing slash for their default redirect
-                                if (dynamicRedirectUrl.includes('enablebanking.com') && dynamicRedirectUrl.endsWith('/')) {
+                                // Only apply this if we HAVEN'T found a nested URI (which should be correct as-is)
+                                else if (dynamicRedirectUrl.includes('enablebanking.com') && dynamicRedirectUrl.endsWith('/')) {
                                     dynamicRedirectUrl = dynamicRedirectUrl.slice(0, -1);
                                     console.log('   Trailing slash removed. New Dynamic URL:', dynamicRedirectUrl);
                                 }
