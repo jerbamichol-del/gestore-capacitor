@@ -256,6 +256,11 @@ export class BankSyncService {
             body.redirect_url = redirectUrl;
         }
 
+        console.log('📤 POST /sessions request:', {
+            code: code.substring(0, 10) + '...',
+            redirect_url: redirectUrl
+        });
+
         const response = await this.safeFetch(`${this.BASE_URL}/sessions`, {
             method: 'POST',
             headers: {
@@ -266,11 +271,21 @@ export class BankSyncService {
         });
 
         if (!response.ok) {
-            const error = await response.text();
-            throw new Error(`Errore Auth Session (${response.status}): ${error}`);
+            const errorText = await response.text();
+            console.error('❌ POST /sessions failed:', response.status, errorText);
+
+            // Try to parse JSON error for better message
+            try {
+                const errorJson = JSON.parse(errorText);
+                const message = errorJson.message || errorJson.error || errorJson.detail || errorText;
+                throw new Error(`Auth Session (${response.status}): ${message}`);
+            } catch (parseError) {
+                throw new Error(`Errore Auth Session (${response.status}): ${errorText}`);
+            }
         }
 
         const data = await response.json();
+        console.log('✅ Session authorized:', data.session_id);
 
         // Store session ID in list of sessions
         const sessions = await this.getSessions();

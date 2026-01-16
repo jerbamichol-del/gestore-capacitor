@@ -172,6 +172,8 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             const authUrl = await BankSyncService.startAuthorization(aspsp, redirectUrl);
 
             if (Capacitor.isNativePlatform()) {
+                let authorizationCompleted = false; // Flag to prevent duplicate authorization attempts
+
                 const browser = InAppBrowser.create(authUrl, '_blank', {
                     location: 'yes',
                     clearcache: 'yes',
@@ -183,22 +185,60 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
                 browser.on('loadstart').subscribe(async (event) => {
                     console.log('🌐 InAppBrowser loadstart:', event.url);
+
+                    // Prevent duplicate authorization attempts
+                    if (authorizationCompleted) {
+                        console.log('⚠️ Authorization already completed, skipping...');
+                        return;
+                    }
+
+                    // Check for error first
+                    if (event.url.includes('error=')) {
+                        authorizationCompleted = true;
+                        const errorUrl = new URL(event.url);
+                        const error = errorUrl.searchParams.get('error');
+                        const errorDescription = errorUrl.searchParams.get('error_description');
+                        console.error('❌ OAuth Error:', error, errorDescription);
+                        showToast({ message: errorDescription || "Autorizzazione negata o errore.", type: 'error' });
+                        browser.close();
+                        return;
+                    }
+
+                    // Check for authorization code
                     if (event.url.includes('code=')) {
-                        const code = new URL(event.url).searchParams.get('code');
-                        if (code) {
+                        authorizationCompleted = true; // Set flag immediately to prevent duplicates
+
+                        try {
+                            // Parse code from URL - handle both proper URL format and edge cases
+                            let code: string | null = null;
                             try {
+                                const callbackUrl = new URL(event.url);
+                                code = callbackUrl.searchParams.get('code');
+                            } catch (urlError) {
+                                // Fallback: extract code manually using regex
+                                console.log('⚠️ URL parsing failed, using regex fallback...');
+                                const match = event.url.match(/[?&]code=([^&]+)/);
+                                if (match) {
+                                    code = decodeURIComponent(match[1]);
+                                }
+                            }
+
+                            console.log('🔑 Extracted authorization code:', code ? `${code.substring(0, 10)}...` : 'null');
+
+                            if (code) {
+                                console.log('🔄 Calling authorizeSession with redirectUrl:', redirectUrl);
                                 await BankSyncService.authorizeSession(code, redirectUrl);
                                 showToast({ message: "Conto autorizzato con successo!", type: 'success' });
                                 handleTestConnection();
-                            } catch (e: any) {
-                                showToast({ message: `Errore: ${e.message}`, type: 'error' });
-                            } finally {
-                                browser.close();
+                            } else {
+                                showToast({ message: "Errore: codice di autorizzazione non trovato", type: 'error' });
                             }
+                        } catch (e: any) {
+                            console.error('❌ Authorization failed:', e);
+                            showToast({ message: `Errore: ${e.message}`, type: 'error' });
+                        } finally {
+                            browser.close();
                         }
-                    } else if (event.url.includes('error=')) {
-                        showToast({ message: "Autorizzazione negata o errore.", type: 'error' });
-                        browser.close();
                     }
                 });
 
