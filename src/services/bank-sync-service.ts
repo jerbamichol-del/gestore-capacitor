@@ -576,11 +576,16 @@ export class BankSyncService {
         if (Array.isArray(remittanceInfo)) {
             remittanceInfo = remittanceInfo.join(' ');
         }
-        const description = tx.description || remittanceInfo
+        let description = tx.description || remittanceInfo
             || tx.remittanceInformationUnstructured
             || tx.creditorName || tx.creditor_name
             || tx.debtorName || tx.debtor_name
             || 'Transazione Bancaria';
+
+        // Truncate description to prevent UI overflow
+        if (description && description.length > 80) {
+            description = description.substring(0, 77) + '...';
+        }
 
         return {
             type,

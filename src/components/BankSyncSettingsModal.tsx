@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BankSyncService, BankSyncCredentials } from '../services/bank-sync-service';
 import { Capacitor } from '@capacitor/core';
 import { InAppBrowser } from '@awesome-cordova-plugins/in-app-browser';
+import { App } from '@capacitor/app';
 
 interface BankSyncSettingsModalProps {
     isOpen: boolean;
@@ -28,14 +29,46 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const [isLoadingBanks, setIsLoadingBanks] = useState(false);
     const [isLinking, setIsLinking] = useState(false);
 
+    // State for credential visibility
+    const [isCredentialsLocked, setIsCredentialsLocked] = useState(false);
+    const [editingField, setEditingField] = useState<'appId' | 'clientId' | 'privateKey' | null>(null);
+
     useEffect(() => {
         if (isOpen) {
             const stored = BankSyncService.getCredentials();
             if (stored) {
                 setCredentials(stored);
+                // Lock credentials if they are already saved
+                setIsCredentialsLocked(!!stored.appId && !!stored.clientId && !!stored.privateKey);
+            } else {
+                setIsCredentialsLocked(false);
             }
+            setEditingField(null);
         }
     }, [isOpen]);
+
+    // Native back button support
+    useEffect(() => {
+        if (!isOpen) return;
+
+        let backButtonListener: { remove: () => void } | null = null;
+
+        const setupBackButton = async () => {
+            backButtonListener = await App.addListener('backButton', () => {
+                onClose();
+            });
+        };
+
+        if (Capacitor.isNativePlatform()) {
+            setupBackButton();
+        }
+
+        return () => {
+            if (backButtonListener) {
+                backButtonListener.remove();
+            }
+        };
+    }, [isOpen, onClose]);
 
     const handleSave = () => {
         if (!credentials.appId || !credentials.clientId || !credentials.privateKey) {
@@ -43,6 +76,8 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             return;
         }
         BankSyncService.saveCredentials(credentials);
+        setIsCredentialsLocked(true);
+        setEditingField(null);
         showToast({ message: 'Credenziali salvate!', type: 'success' });
     };
 
@@ -186,14 +221,6 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         if (code) {
             const finalize = async () => {
                 try {
-                    // StartAuthorization was likely called with https://localhost/ or similar
-                    // Ideally we should store the used redirectUrl in localStorage before redirecting
-                    // For now, retry with standard one or make it optional in service if not strictly known here
-                    // But since this useEffect handles the redirect BACK to the app (if we used a custom scheme),
-                    // we might need to know which one was used.
-                    // HOWEVER: The current implementation uses InAppBrowser for native, so this useEffect
-                    // is mostly for Web/PWA flow where window.location.href was used.
-                    // Let's assume the same default for now.
                     await BankSyncService.authorizeSession(code, 'https://localhost/');
                     showToast({ message: "Conto autorizzato con successo!", type: 'success' });
                     // Clean URL
@@ -207,11 +234,78 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         }
     }, []);
 
+    const maskValue = (value: string) => {
+        if (!value) return '(non impostato)';
+        if (value.length <= 8) return '••••••••';
+        return value.substring(0, 4) + '••••••••' + value.substring(value.length - 4);
+    };
+
+    const renderCredentialField = (
+        field: 'appId' | 'clientId' | 'privateKey',
+        label: string,
+        placeholder: string,
+        isTextarea = false
+    ) => {
+        const isEditing = editingField === field || !isCredentialsLocked;
+        const value = credentials[field];
+
+        if (isEditing) {
+            return (
+                <div className="form-group mb-4">
+                    <label className="text-xs font-bold uppercase opacity-60">{label}</label>
+                    {isTextarea ? (
+                        <textarea
+                            className="glass-input w-full h-32 font-mono text-xs"
+                            value={value}
+                            onChange={e => setCredentials({ ...credentials, [field]: e.target.value })}
+                            placeholder={placeholder}
+                            autoFocus={editingField === field}
+                        />
+                    ) : (
+                        <input
+                            type="text"
+                            className="glass-input w-full"
+                            value={value}
+                            onChange={e => setCredentials({ ...credentials, [field]: e.target.value })}
+                            placeholder={placeholder}
+                            autoFocus={editingField === field}
+                        />
+                    )}
+                    {isCredentialsLocked && (
+                        <button
+                            className="text-xs text-gray-400 hover:text-white mt-1"
+                            onClick={() => setEditingField(null)}
+                        >
+                            Annulla
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="form-group mb-4">
+                <label className="text-xs font-bold uppercase opacity-60">{label}</label>
+                <div className="flex items-center gap-2">
+                    <div className="glass-input flex-1 text-sm opacity-70 font-mono truncate">
+                        {maskValue(value)}
+                    </div>
+                    <button
+                        className="glass-btn px-3 py-2 text-xs"
+                        onClick={() => setEditingField(field)}
+                    >
+                        ✏️ Modifica
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay active" onClick={onClose}>
-            <div className="modal-content glass-modal active" onClick={e => e.stopPropagation()}>
+        <div className="bank-sync-modal-overlay" onClick={onClose}>
+            <div className="bank-sync-modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>
                         <span className="icon">🏦</span>
@@ -225,46 +319,18 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         Inserisci i dati ottenuti dal portale Enable Banking per scaricare i movimenti in tempo reale.
                     </p>
 
-                    <div className="form-group mb-4">
-                        <label className="text-xs font-bold uppercase opacity-60">Application ID</label>
-                        <input
-                            type="text"
-                            className="glass-input w-full"
-                            value={credentials.appId}
-                            onChange={e => setCredentials({ ...credentials, appId: e.target.value })}
-                            placeholder="es. d033182f-..."
-                        />
-                    </div>
-
-                    <div className="form-group mb-4">
-                        <label className="text-xs font-bold uppercase opacity-60">Client ID</label>
-                        <input
-                            type="text"
-                            className="glass-input w-full"
-                            value={credentials.clientId}
-                            onChange={e => setCredentials({ ...credentials, clientId: e.target.value })}
-                            placeholder="es. client_id_..."
-                        />
-                    </div>
-
-                    <div className="form-group mb-4">
-                        <label className="text-xs font-bold uppercase opacity-60">RSA Private Key (PEM format)</label>
-                        <textarea
-                            className="glass-input w-full h-32 font-mono text-xs"
-                            value={credentials.privateKey}
-                            onChange={e => setCredentials({ ...credentials, privateKey: e.target.value })}
-                            placeholder="-----BEGIN PRIVATE KEY----- ..."
-                        />
-                    </div>
+                    {renderCredentialField('appId', 'Application ID', 'es. d033182f-...')}
+                    {renderCredentialField('clientId', 'Client ID', 'es. client_id_...')}
+                    {renderCredentialField('privateKey', 'RSA Private Key (PEM format)', '-----BEGIN PRIVATE KEY----- ...', true)}
 
                     <div className="flex gap-2 mb-6">
-                        <button className="glass-btn flex-1 py-3" onClick={handleSave}>Salva</button>
+                        <button className="glass-btn flex-1 py-3" onClick={handleSave}>💾 Salva</button>
                         <button
                             className="glass-btn flex-1 py-3 bg-blue-500/20"
                             onClick={handleTestConnection}
                             disabled={isTesting}
                         >
-                            {isTesting ? 'Verifica...' : 'Test Connessione'}
+                            {isTesting ? 'Verifica...' : '🧪 Test'}
                         </button>
                     </div>
 
@@ -285,11 +351,11 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                 {accountsWithBalances.map((acc, i) => (
                                     <div key={i} className="flex justify-between items-center p-3 bg-black/20 rounded-xl border border-white/10">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-medium">{acc.name || 'Conto'}</span>
-                                            <span className="text-xs opacity-50">{acc.iban || acc.uid}</span>
+                                        <div className="flex flex-col min-w-0 flex-1 mr-2">
+                                            <span className="text-sm font-medium truncate">{acc.name || 'Conto'}</span>
+                                            <span className="text-xs opacity-50 truncate">{acc.iban || acc.uid}</span>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-right flex-shrink-0">
                                             <div className="text-sm font-bold">
                                                 {acc.balance !== null ? `${acc.balance.toFixed(2)}€` : '---'}
                                             </div>
@@ -326,11 +392,11 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                         onClick={() => handleLinkBank(b)}
                                         disabled={isLinking}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md" />}
-                                            <span className="text-sm">{b.name}</span>
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md flex-shrink-0" />}
+                                            <span className="text-sm truncate">{b.name}</span>
                                         </div>
-                                        <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
                                             {isLinking ? '...' : 'Collega →'}
                                         </span>
                                     </button>
@@ -341,76 +407,81 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
                     <div className="flex flex-col gap-2 mt-6">
                         <button
-                            className="btn-primary w-full py-3 flex items-center justify-center gap-2"
-                            onClick={handleTestConnection}
-                            disabled={isTesting}
+                            className="btn-accent w-full py-3 font-bold flex items-center justify-center gap-2"
+                            onClick={handleSyncNow}
+                            disabled={isSyncing}
                         >
-                            {isTesting ? 'In corso...' : '🧪 Test Connessione'}
+                            {isSyncing ? 'Sincronizzazione...' : '🔄 Sincronizza Ora'}
                         </button>
-
-                        <div className="flex gap-2">
-                            <button
-                                className="btn-secondary flex-1 py-3"
-                                onClick={handleSave}
-                            >
-                                💾 Salva
-                            </button>
-                            <button
-                                className="btn-accent flex-1 py-3 font-bold"
-                                onClick={handleSyncNow}
-                                disabled={isSyncing}
-                            >
-                                {isSyncing ? 'Sincronizzazione...' : '🔄 Sincronizza Ora'}
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
 
             <style>{`
-        .modal-overlay {
+        .bank-sync-modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(15, 23, 42, 0.6);
-          backdrop-filter: blur(4px);
+          background: rgba(15, 23, 42, 0.95);
           display: flex;
-          align-items: flex-start; /* Permette lo scroll dall'alto */
+          align-items: stretch;
           justify-content: center;
           z-index: 9999;
           opacity: 0;
           visibility: hidden;
-          transition: all 0.2s ease-in-out;
-          padding: 16px;
-          overflow-y: auto; /* Permette lo scroll dell'intero overlay se necessario */
+          transition: opacity 0.2s ease-in-out;
+          animation: fadeIn 0.2s ease-in-out forwards;
         }
-        .modal-overlay.active {
-          opacity: 1;
-          visibility: visible;
+        @keyframes fadeIn {
+          to {
+            opacity: 1;
+            visibility: visible;
+          }
         }
-        .glass-modal {
-          background: rgba(30, 41, 59, 0.95);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 24px;
+        .bank-sync-modal-content {
+          background: rgba(30, 41, 59, 1);
           color: white;
           width: 100%;
-          max-width: 500px;
-          margin-top: 20px;
-          margin-bottom: 20px;
-          transform: scale(0.95);
-          transition: all 0.2s ease-in-out;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          height: 100%;
           display: flex;
           flex-direction: column;
-          max-height: calc(100vh - 40px); /* Evita che esca dallo schermo */
+          overflow: hidden;
         }
-        .modal-overlay.active .glass-modal {
-          transform: scale(1);
+        .bank-sync-modal-content .modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(30, 41, 59, 1);
+          flex-shrink: 0;
         }
-        .modal-body {
+        .bank-sync-modal-content .modal-header h3 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .bank-sync-modal-content .modal-header .icon {
+          font-size: 1.5rem;
+        }
+        .bank-sync-modal-content .modal-header .close-btn {
+          font-size: 2rem;
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.6);
+          cursor: pointer;
+          line-height: 1;
+          padding: 0;
+        }
+        .bank-sync-modal-content .modal-header .close-btn:hover {
+          color: white;
+        }
+        .bank-sync-modal-content .modal-body {
           flex: 1;
-          overflow-y: auto; /* Scroll interno al corpo del modale */
-          padding-right: 8px;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
         }
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
@@ -430,24 +501,28 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
           color: white;
           outline: none;
         }
-        .btn-primary {
-          background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-          border-radius: 12px;
-          color: white;
-          border: none;
-          cursor: pointer;
+        .glass-input:focus {
+          border-color: rgba(99, 102, 241, 0.5);
         }
-        .btn-secondary {
+        .glass-btn {
           background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 12px;
           color: white;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .glass-btn:hover {
+          background: rgba(255, 255, 255, 0.15);
         }
         .btn-accent {
           background: #10b981;
           border-radius: 12px;
           color: white;
           border: none;
+        }
+        .btn-accent:hover {
+          background: #059669;
         }
         button:disabled {
           opacity: 0.5;

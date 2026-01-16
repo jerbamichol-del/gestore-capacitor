@@ -492,12 +492,16 @@ export function PendingTransactionsModal({
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             {/* Transaction Info */}
             <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-medium text-gray-500 uppercase">{currentTransaction.sourceApp || 'APP'}</span>
                   <span className="text-xs text-gray-400">{formatDate(currentTransaction.createdAt)}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed">{currentTransaction.description}</p>
+                <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
+                  {currentTransaction.description && currentTransaction.description.length > 100
+                    ? currentTransaction.description.substring(0, 97) + '...'
+                    : currentTransaction.description}
+                </p>
                 <p className={`text-lg font-bold ${selectedType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                   {formatAmount(currentTransaction.amount, '€')}
                 </p>
@@ -807,8 +811,8 @@ export function PendingTransactionsModal({
         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-3 z-10">
           <div className="flex gap-2">
             {onIgnoreAll && transactions.length > 1 && (
-              <button 
-                onClick={onIgnoreAll} 
+              <button
+                onClick={onIgnoreAll}
                 className="flex-1 text-red-600 bg-red-50 hover:bg-red-100 text-sm font-medium py-2 rounded-lg transition-colors"
               >
                 Ignora Tutte ({transactions.length})
