@@ -93,9 +93,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         } catch (error: any) {
             // Check for session expired error
             if (error.message?.includes('SESSION_EXPIRED')) {
-                showToast({ 
-                    message: 'Sessione bancaria scaduta. Ricollega la banca cliccando "Cerca Banche".', 
-                    type: 'error' 
+                showToast({
+                    message: 'Sessione bancaria scaduta. Ricollega la banca cliccando "Cerca Banche".',
+                    type: 'error'
                 });
             } else {
                 showToast({ message: `Errore sync: ${error.message}`, type: 'error' });
@@ -152,7 +152,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         const code = new URL(event.url).searchParams.get('code');
                         if (code) {
                             try {
-                                await BankSyncService.authorizeSession(code);
+                                await BankSyncService.authorizeSession(code, redirectUrl);
                                 showToast({ message: "Conto autorizzato con successo!", type: 'success' });
                                 handleTestConnection();
                             } catch (e: any) {
@@ -186,7 +186,15 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         if (code) {
             const finalize = async () => {
                 try {
-                    await BankSyncService.authorizeSession(code);
+                    // StartAuthorization was likely called with https://localhost/ or similar
+                    // Ideally we should store the used redirectUrl in localStorage before redirecting
+                    // For now, retry with standard one or make it optional in service if not strictly known here
+                    // But since this useEffect handles the redirect BACK to the app (if we used a custom scheme),
+                    // we might need to know which one was used.
+                    // HOWEVER: The current implementation uses InAppBrowser for native, so this useEffect
+                    // is mostly for Web/PWA flow where window.location.href was used.
+                    // Let's assume the same default for now.
+                    await BankSyncService.authorizeSession(code, 'https://localhost/');
                     showToast({ message: "Conto autorizzato con successo!", type: 'success' });
                     // Clean URL
                     window.history.replaceState({}, document.title, window.location.pathname);

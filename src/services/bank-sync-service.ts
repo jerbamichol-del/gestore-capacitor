@@ -244,20 +244,25 @@ export class BankSyncService {
     /**
      * Authorize session with code from redirect
      */
-    static async authorizeSession(code: string): Promise<string> {
+    static async authorizeSession(code: string, redirectUrl?: string): Promise<string> {
         const creds = this.getCredentials();
         if (!creds) throw new Error('Credentials not set');
 
         const token = await this.generateJWT(creds);
+
+        const body: any = { code };
+        // Some banks (Revolut) require redirect_url to be present + match the one used in /auth
+        if (redirectUrl) {
+            body.redirect_url = redirectUrl;
+        }
+
         const response = await this.safeFetch(`${this.BASE_URL}/sessions`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                code: code
-            })
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
@@ -315,7 +320,7 @@ export class BankSyncService {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     if (data.accounts_data) {
@@ -415,7 +420,7 @@ export class BankSyncService {
 
         const data = await response.json();
         console.log('Balance API response:', JSON.stringify(data, null, 2));
-        
+
         // Enable Banking API uses balanceType (camelCase) and amount.amount structure
         const balance = data.balances?.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
             || data.balances?.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
@@ -426,15 +431,15 @@ export class BankSyncService {
             console.warn('No balance found in response');
             return 0;
         }
-        
+
         // Handle multiple possible formats: amount.amount, balance_amount.amount, balance_amount.value
-        const balanceValue = balance.amount?.amount 
-            ?? balance.balance_amount?.amount 
-            ?? balance.balance_amount?.value 
+        const balanceValue = balance.amount?.amount
+            ?? balance.balance_amount?.amount
+            ?? balance.balance_amount?.value
             ?? balance.amount?.value
             ?? balance.amount
             ?? 0;
-        
+
         console.log('Parsed balance value:', balanceValue);
         return parseFloat(String(balanceValue)) || 0;
     }
@@ -474,7 +479,7 @@ export class BankSyncService {
 
             for (const acc of accounts) {
                 console.log('Processing account:', acc.uid, acc);
-                
+
                 // Collect provider name for suppression logic
                 if (acc.aspsp_name) activeProviders.add(acc.aspsp_name);
                 if (acc.provider?.name) activeProviders.add(acc.provider.name);
@@ -530,7 +535,7 @@ export class BankSyncService {
      */
     private static mapToAutoTransaction(tx: any, accountUid: string): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> {
         console.log('Mapping transaction:', JSON.stringify(tx, null, 2));
-        
+
         // Handle multiple possible amount formats from Enable Banking API
         // Format 1: { transaction_amount: { amount: "150.50", currency: "EUR" } } - Enable Banking snake_case
         // Format 2: { transactionAmount: { amount: "150.50" } } - camelCase variant
@@ -546,10 +551,10 @@ export class BankSyncService {
         } else if (tx.amount !== undefined) {
             rawAmount = tx.amount;
         }
-        
+
         const amount = parseFloat(String(rawAmount)) || 0;
         console.log('Parsed transaction amount:', amount, 'from raw:', rawAmount);
-        
+
         // Determine type based on transaction type field or amount sign
         // Support both camelCase and snake_case formats
         let type: 'expense' | 'income' = amount < 0 ? 'expense' : 'income';
@@ -560,9 +565,9 @@ export class BankSyncService {
         }
 
         // Handle multiple date formats (camelCase and snake_case)
-        const date = tx.bookingDate || tx.booking_date 
-            || tx.transactionDate || tx.transaction_date 
-            || tx.valueDate || tx.value_date 
+        const date = tx.bookingDate || tx.booking_date
+            || tx.transactionDate || tx.transaction_date
+            || tx.valueDate || tx.value_date
             || new Date().toISOString().split('T')[0];
 
         // Get description from multiple possible fields
@@ -572,7 +577,7 @@ export class BankSyncService {
             remittanceInfo = remittanceInfo.join(' ');
         }
         const description = tx.description || remittanceInfo
-            || tx.remittanceInformationUnstructured 
+            || tx.remittanceInformationUnstructured
             || tx.creditorName || tx.creditor_name
             || tx.debtorName || tx.debtor_name
             || 'Transazione Bancaria';
