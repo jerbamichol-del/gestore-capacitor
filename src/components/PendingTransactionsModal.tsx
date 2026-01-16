@@ -3,6 +3,17 @@ import { PendingTransaction } from '../services/notification-listener-service';
 import { Account, CATEGORIES, Expense } from '../types';
 import { pickImage, processImageFile } from '../utils/fileHelper';
 
+// Type for pending transaction types (excludes 'adjustment' which is system-only)
+type PendingTransactionType = 'expense' | 'income' | 'transfer';
+
+// Helper to safely get transaction type for UI (defaults to 'expense' if 'adjustment')
+const getUITransactionType = (type: string): PendingTransactionType => {
+  if (type === 'expense' || type === 'income' || type === 'transfer') {
+    return type;
+  }
+  return 'expense'; // Default for 'adjustment' or any other unexpected type
+};
+
 // Helper for YYYY-MM-DD
 const toYYYYMMDD = (date: Date) => {
   const year = date.getFullYear();
@@ -239,9 +250,9 @@ export function PendingTransactionsModal({
           return;
         }
 
-        // Default to detected type
+        // Default to detected type (safely cast to UI type)
         if (!next[transaction.id]) {
-          next[transaction.id] = transaction.type;
+          next[transaction.id] = getUITransactionType(transaction.type);
         }
       });
       return next;
@@ -342,7 +353,7 @@ export function PendingTransactionsModal({
   };
 
   const handleConfirm = async (transaction: PendingTransaction) => {
-    const selectedType = selectedTypes[transaction.id] || transaction.type;
+    const selectedType = selectedTypes[transaction.id] || getUITransactionType(transaction.type);
     const saveRule = saveRuleFlags[transaction.id] || false;
 
     const transferAccountSelection = transferAccounts[transaction.id];
@@ -369,7 +380,7 @@ export function PendingTransactionsModal({
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           appName: transaction.sourceApp || 'Sconosciuto',
           destinatario: destinatario.toLowerCase().trim(),
-          type: selectedType,
+          type: getUITransactionType(selectedType),
           createdAt: Date.now(),
         };
 
@@ -422,7 +433,7 @@ export function PendingTransactionsModal({
     const transaction = transactions.find((t) => t.id === transactionId);
     if (transaction) {
       setLockedTypes((prev) => ({ ...prev, [transactionId]: false }));
-      setSelectedTypes((prev) => ({ ...prev, [transactionId]: transaction.type }));
+      setSelectedTypes((prev) => ({ ...prev, [transactionId]: getUITransactionType(transaction.type) }));
     }
 
     // Clear matched rule
@@ -431,7 +442,7 @@ export function PendingTransactionsModal({
     console.log('🗑️ Deleted rule:', match.rule.id);
   };
 
-  const selectedType = selectedTypes[currentTransaction.id] || currentTransaction.type;
+  const selectedType = selectedTypes[currentTransaction.id] || getUITransactionType(currentTransaction.type);
   const saveRule = saveRuleFlags[currentTransaction.id] || false;
   const match = matchedRules[currentTransaction.id];
   const transferAccountSelection = transferAccounts[currentTransaction.id];
