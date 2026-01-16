@@ -232,22 +232,23 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             // 2. Determine the correct redirect_uri for /sessions
                             let dynamicRedirectUrl = redirectUrl; // Default to localhost/
 
-                            console.log('🕵️ OAuth Debug - Capture Context:');
-                            console.log('   Current Domain:', currentHostname);
-                            console.log('   Final Code Detected:', code ? `${code.substring(0, 10)}...` : 'null');
-
                             try {
-                                // Scrutinize the URL for nested redirect_uri if we are on a proxy
-                                const fullyDecodedUrl = decodeURIComponent(decodeURIComponent(event.url));
+                                // STRATEGY: Find the exact redirect_uri parameter as it was passed to the bank.
+                                // We decode twice to find the encoded redirect_uri parameter inside the URL
+                                const rawUrl = event.url;
+                                const fullyDecodedUrl = decodeURIComponent(decodeURIComponent(rawUrl));
                                 const nestedMatch = fullyDecodedUrl.match(/redirect_uri=([^& ]+)/i);
+
                                 if (nestedMatch && nestedMatch[1].startsWith('http')) {
                                     dynamicRedirectUrl = nestedMatch[1];
                                 } else if (currentHostname.endsWith('enablebanking.com')) {
-                                    dynamicRedirectUrl = 'https://tilisy.enablebanking.com/';
+                                    // Fallback to the origin if we are on tilisy but can't find the nested URI
+                                    dynamicRedirectUrl = new URL(event.url).origin + '/';
                                 }
                             } catch (e) { }
 
                             console.log('📍 FINAL Detected actual redirect URL:', dynamicRedirectUrl);
+                            console.log('🕵️ Context - Domain:', currentHostname);
                             console.log('🔑 Extracted authorization code:', code ? `${code.substring(0, 10)}...` : 'null');
 
                             if (code) {
