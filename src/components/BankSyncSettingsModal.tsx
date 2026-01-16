@@ -204,79 +204,50 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         return;
                     }
 
-                    // Check for authorization code - ONLY if we are on the callback domains
-                    // We must ignore codes on the bank's own domains (revolut.com, paypal.com) 
-                    // because they are internal session codes, not the final OAuth code.
-                    const isCallbackDomain = event.url.includes('localhost') || event.url.includes('enablebanking.com');
+                    // 1. Strict Hostname Checking
+                    // We must capture the code ONLY when we are truly on the callback domains.
+                    let currentHostname = '';
+                    try {
+                        currentHostname = new URL(event.url).hostname;
+                    } catch (e) { }
+
+                    const isCallbackDomain = currentHostname === 'localhost' ||
+                        currentHostname === '127.0.0.1' ||
+                        currentHostname.endsWith('enablebanking.com');
 
                     if (event.url.includes('code=') && isCallbackDomain) {
                         authorizationCompleted = true; // Set flag immediately to prevent duplicates
 
                         try {
-                            // Parse code from URL - handle both proper URL format and edge cases
+                            // Parse code from URL
                             let code: string | null = null;
-                            try {
-                                const callbackUrl = new URL(event.url);
-                                code = callbackUrl.searchParams.get('code');
-                            } catch (urlError) {
-                                // Fallback: extract code manually using regex
-                                console.log('⚠️ URL parsing failed, using regex fallback...');
+                            const callbackUrl = new URL(event.url);
+                            code = callbackUrl.searchParams.get('code');
+
+                            if (!code) {
                                 const match = event.url.match(/[?&]code=([^&]+)/);
-                                if (match) {
-                                    code = decodeURIComponent(match[1]);
-                                }
+                                if (match) code = decodeURIComponent(match[1]);
                             }
 
-                            // Create dynamic redirect URL from the actual event URL
-                            // This defines the 'redirect_uri' sent to /sessions, which must match the one used in the callback
-                            let dynamicRedirectUrl = redirectUrl; // Default to the one we requested
+                            // 2. Determine the correct redirect_uri for /sessions
+                            let dynamicRedirectUrl = redirectUrl; // Default to localhost/
+
+                            console.log('🕵️ OAuth Debug - Capture Context:');
+                            console.log('   Current Domain:', currentHostname);
+                            console.log('   Final Code Detected:', code ? `${code.substring(0, 10)}...` : 'null');
+
                             try {
-                                const callbackUrl = new URL(event.url);
-                                // Construct base URL (origin + path)
-                                dynamicRedirectUrl = callbackUrl.origin + callbackUrl.pathname;
-
-                                console.log('🕵️ OAuth Debug - Dynamic URL Detection:');
-                                console.log('   Original Event URL:', event.url);
-                                console.log('   Callback Origin:', callbackUrl.origin);
-                                console.log('   Callback Pathname:', callbackUrl.pathname);
-                                console.log('   Initial Dynamic URL:', dynamicRedirectUrl);
-
-                                // INTELLIGENT DETECTION: Check if the URL contains a nested 'redirect_uri' 
-                                // We pre-decode the whole URL twice to handle deep encoding like Revolut's proxy
-                                let fullyDecodedUrl = event.url;
-                                try {
-                                    fullyDecodedUrl = decodeURIComponent(decodeURIComponent(event.url));
-                                } catch (e) {
-                                    try {
-                                        fullyDecodedUrl = decodeURIComponent(event.url);
-                                    } catch (e2) { }
-                                }
-
-                                // Search for redirect_uri in the safely decoded string
+                                // Scrutinize the URL for nested redirect_uri if we are on a proxy
+                                const fullyDecodedUrl = decodeURIComponent(decodeURIComponent(event.url));
                                 const nestedMatch = fullyDecodedUrl.match(/redirect_uri=([^& ]+)/i);
-
-                                if (nestedMatch) {
-                                    const extracted = nestedMatch[1];
-                                    if (extracted.startsWith('http') && extracted.includes('enablebanking.com')) {
-                                        dynamicRedirectUrl = extracted;
-                                        console.log('   🎯 Successfully extracted decoded URI:', dynamicRedirectUrl);
-                                    }
+                                if (nestedMatch && nestedMatch[1].startsWith('http')) {
+                                    dynamicRedirectUrl = nestedMatch[1];
+                                } else if (currentHostname.endsWith('enablebanking.com')) {
+                                    dynamicRedirectUrl = 'https://tilisy.enablebanking.com/';
                                 }
+                            } catch (e) { }
 
-                                // Fallback: If we detect we are on a tilisy page but extraction failed
-                                if (dynamicRedirectUrl === (callbackUrl.origin + callbackUrl.pathname)) {
-                                    if (event.url.includes('tilisy.enablebanking.com')) {
-                                        dynamicRedirectUrl = 'https://tilisy.enablebanking.com/';
-                                        console.log('   🏠 Fallback to known tilisy proxy root');
-                                    }
-                                }
-
-                                console.log('📍 FINAL Detected actual redirect URL:', dynamicRedirectUrl);
-                            } catch (e) {
-                                console.warn('⚠️ Could not derive dynamic redirect URL, using default:', redirectUrl);
-                                console.error(e);
-                            }
-
+                            console.log('📍 FINAL Detected actual redirect URL:', dynamicRedirectUrl);
                             console.log('🔑 Extracted authorization code:', code ? `${code.substring(0, 10)}...` : 'null');
 
                             if (code) {
