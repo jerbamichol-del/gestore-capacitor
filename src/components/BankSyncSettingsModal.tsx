@@ -229,12 +229,11 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 if (match) code = decodeURIComponent(match[1]);
                             }
 
-                            // 2. Determine the correct redirect_uri for /sessions
-                            let dynamicRedirectUrl = redirectUrl; // Default to localhost/
+                            // 2. Determine potential redirect_uris for redemption
+                            const originalRedirectUrl = redirectUrl; // 'https://localhost/'
+                            let dynamicRedirectUrl = redirectUrl;
 
                             try {
-                                // STRATEGY: Find the exact redirect_uri parameter as it was passed to the bank.
-                                // We decode twice to find the encoded redirect_uri parameter inside the URL
                                 const rawUrl = event.url;
                                 const fullyDecodedUrl = decodeURIComponent(decodeURIComponent(rawUrl));
                                 const nestedMatch = fullyDecodedUrl.match(/redirect_uri=([^& ]+)/i);
@@ -242,54 +241,54 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 if (nestedMatch && nestedMatch[1].startsWith('http')) {
                                     dynamicRedirectUrl = nestedMatch[1];
                                 } else if (currentHostname.endsWith('enablebanking.com')) {
-                                    // Fallback to the origin if we are on tilisy but can't find the nested URI
                                     dynamicRedirectUrl = new URL(event.url).origin + '/';
                                 }
                             } catch (e) { }
 
-                            console.log('📍 FINAL Detected actual redirect URL:', dynamicRedirectUrl);
-                            console.log('🕵️ Context - Domain:', currentHostname);
-                            console.log('🔑 Extracted authorization code:', code ? `${code.substring(0, 10)}...` : 'null');
+                            console.log('🕵️ OAuth Debug - Redemption Strategy:');
+                            console.log('   Original URL:', originalRedirectUrl);
+                            console.log('   Dynamic URL:', dynamicRedirectUrl);
+                            console.log('   Final Code:', code ? `${code.substring(0, 10)}...` : 'null');
 
                             if (code) {
-                                console.log('🔄 Strategy 1: Attempting authorizeSession with dynamic redirectUrl:', dynamicRedirectUrl);
+                                // Strategy 1: The original URL sent to /auth
+                                console.log('🔄 Strategy 1: Attempting ORIGINAL URL:', originalRedirectUrl);
                                 try {
-                                    await BankSyncService.authorizeSession(code, dynamicRedirectUrl);
-                                    showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                                    await BankSyncService.authorizeSession(code, originalRedirectUrl);
+                                    showToast({ message: "Conto autorizzato!", type: 'success' });
                                     handleTestConnection();
                                 } catch (authError: any) {
                                     console.warn('⚠️ Strategy 1 failed:', authError.message);
 
-                                    // Strategy 2: Try original redirectUrl (localhost) if it was different
-                                    if (dynamicRedirectUrl !== redirectUrl) {
-                                        console.log('🔄 Strategy 2: Attempting with original redirectUrl:', redirectUrl);
+                                    // Strategy 2: The dynamic proxy URL (if different)
+                                    if (dynamicRedirectUrl !== originalRedirectUrl) {
+                                        console.log('🔄 Strategy 2: Attempting DYNAMIC URL:', dynamicRedirectUrl);
                                         try {
-                                            await BankSyncService.authorizeSession(code, redirectUrl);
-                                            showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                                            await BankSyncService.authorizeSession(code, dynamicRedirectUrl);
+                                            showToast({ message: "Conto autorizzato!", type: 'success' });
                                             handleTestConnection();
-                                            return;
+                                            return; // Success
                                         } catch (e2: any) {
                                             console.warn('⚠️ Strategy 2 failed:', e2.message);
                                         }
                                     }
 
-                                    // Strategy 3: Try WITHOUT redirectURL (some proxy flows prefer this)
-                                    console.log('🔄 Strategy 3: Attempting WITHOUT redirect_url');
+                                    // Strategy 3: No redirect URL
+                                    console.log('🔄 Strategy 3: Attempting WITHOUT URL');
                                     try {
                                         await BankSyncService.authorizeSession(code);
-                                        showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                                        showToast({ message: "Conto autorizzato!", type: 'success' });
                                         handleTestConnection();
                                     } catch (e3: any) {
                                         console.error('❌ Strategy 3 failed:', e3.message);
-                                        throw authError; // Re-throw the original error if all strategies fail
+                                        showToast({ message: `Errore: ${authError.message}`, type: 'error' });
                                     }
                                 }
                             } else {
-                                showToast({ message: "Errore: codice di autorizzazione non trovato", type: 'error' });
+                                showToast({ message: "Codice non trovato.", type: 'error' });
                             }
-                        } catch (e: any) {
-                            console.error('❌ Authorization failed:', e);
-                            showToast({ message: `Errore: ${e.message}`, type: 'error' });
+                        } catch (err: any) {
+                            console.error('❌ Authorization error:', err);
                         } finally {
                             browser.close();
                         }
