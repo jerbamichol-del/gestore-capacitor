@@ -231,14 +231,22 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 // Construct base URL (origin + path)
                                 dynamicRedirectUrl = callbackUrl.origin + callbackUrl.pathname;
 
+                                console.log('🕵️ OAuth Debug - Dynamic URL Detection:');
+                                console.log('   Original Event URL:', event.url);
+                                console.log('   Callback Origin:', callbackUrl.origin);
+                                console.log('   Callback Pathname:', callbackUrl.pathname);
+                                console.log('   Initial Dynamic URL:', dynamicRedirectUrl);
+
                                 // FIX: enablebanking.com usually expects NO trailing slash for their default redirect
                                 if (dynamicRedirectUrl.includes('enablebanking.com') && dynamicRedirectUrl.endsWith('/')) {
                                     dynamicRedirectUrl = dynamicRedirectUrl.slice(0, -1);
+                                    console.log('   Trailing slash removed. New Dynamic URL:', dynamicRedirectUrl);
                                 }
 
-                                console.log('📍 Detected actual redirect URL:', dynamicRedirectUrl);
+                                console.log('📍 FINAL Detected actual redirect URL:', dynamicRedirectUrl);
                             } catch (e) {
                                 console.warn('⚠️ Could not derive dynamic redirect URL, using default:', redirectUrl);
+                                console.error(e);
                             }
 
                             console.log('🔑 Extracted authorization code:', code ? `${code.substring(0, 10)}...` : 'null');
