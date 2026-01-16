@@ -485,31 +485,75 @@ export class BankSyncService {
      * Resolve the local account ID from an Enable Banking account object.
      * Tries to find matching local storage accounts to avoid using cryptic UIDs in the UI.
      */
+    /**
+     * Resolve the local account ID from an Enable Banking account object.
+     * Tries to find matching local storage accounts to avoid using cryptic UIDs in the UI.
+     */
     private static resolveLocalAccountId(acc: any): string {
         try {
             const accounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
-            const bankName = (acc.aspsp_name || acc.display_name || acc.name || '').toLowerCase();
 
-            // 1. Try exact ID match
-            if (accounts.some((la: any) => la.id === acc.uid)) return acc.uid;
+            // Extract all possible names from the bank account object
+            const aspspName = (acc.aspsp_name || acc.aspspName || '').toLowerCase().trim();
+            const displayName = (acc.display_name || acc.displayName || '').toLowerCase().trim();
+            const officialName = (acc.name || '').toLowerCase().trim();
+            const iban = (acc.account_id?.iban || acc.accountId?.iban || '').toLowerCase().trim();
 
-            // 2. Try to find local account with similar name
+            const bankNames = Array.from(new Set([aspspName, displayName, officialName])).filter(n => n.length > 0);
+            console.log(`Resolving local account for: ASPSP=${aspspName}, Display=${displayName}, Official=${officialName}, IBAN=${iban}`);
+
+            // 1. Hardcoded Brand Matching (High Confidence)
+            const combinedInfo = [...bankNames, iban].join(' ');
+            if (combinedInfo.includes('revolut')) {
+                const found = accounts.find((a: any) => a.id === 'revolut' || a.name.toLowerCase().includes('revolut'));
+                if (found) return found.id;
+            }
+            if (combinedInfo.includes('paypal')) {
+                const found = accounts.find((a: any) => a.id === 'paypal' || a.name.toLowerCase().includes('paypal'));
+                if (found) return found.id;
+            }
+            if (combinedInfo.includes('poste')) {
+                const found = accounts.find((a: any) => a.id === 'poste' || a.name.toLowerCase().includes('poste'));
+                if (found) return found.id;
+            }
+
+            // 2. Exact Name Match (Solid Confidence)
             for (const la of accounts) {
-                const localName = la.name.toLowerCase();
-                if (localName === bankName) return la.id;
-                // Avoid matching generic names like "Conto" unless bankName is specifically that
-                if (localName.length > 3 && (bankName.includes(localName) || localName.includes(bankName))) {
+                const localName = la.name.toLowerCase().trim();
+                if (bankNames.some(bn => bn === localName)) {
+                    console.log(`Exact name match found: ${la.id} (${la.name})`);
                     return la.id;
                 }
             }
 
-            // 3. Special case mappings for common providers
-            if (bankName.includes('revolut')) return 'revolut';
-            if (bankName.includes('paypal')) return 'paypal';
-            if (bankName.includes('poste')) return 'poste';
-            if (bankName.includes('intesa')) return 'bank-account';
+            // 3. ID match (If internal UID matches local ID)
+            if (accounts.some((la: any) => la.id === acc.uid)) return acc.uid;
 
-        } catch (e) { }
+            // 4. Fuzzy Match (Last resort, very strict)
+            // We want to avoid matching generic bank words with specific local accounts like "Contanti"
+            for (const la of accounts) {
+                const localName = la.name.toLowerCase().trim();
+
+                // Never fuzzy-match to "Contanti" (cash is almost always manual)
+                if (la.id === 'cash' || localName.includes('contanti')) continue;
+
+                // Ignore very generic or short local names for fuzzy matching to avoid noise
+                if (localName.length < 5 || localName === 'conto' || localName === 'bank') continue;
+
+                for (const bn of bankNames) {
+                    if (bn.length < 4) continue; // Skip too short bank-provided names
+                    if (bn.includes(localName) || localName.includes(bn)) {
+                        console.log(`Fuzzy match found: ${la.id} matches bank information "${bn}"`);
+                        return la.id;
+                    }
+                }
+            }
+
+        } catch (e) {
+            console.error('Error in resolveLocalAccountId:', e);
+        }
+
+        console.warn(`Could not resolve local account for ${acc.uid}, using UID as is.`);
         return acc.uid; // Fallback to provided UID
     }
 
