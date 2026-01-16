@@ -238,33 +238,33 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 console.log('   Initial Dynamic URL:', dynamicRedirectUrl);
 
                                 // INTELLIGENT DETECTION: Check if the URL contains a nested 'redirect_uri' 
-                                // This happens when banks redirect back to Enable Banking (tilisy) proxy
-                                // We look for redirect_uri followed by =, %3D or %253D
-                                const nestedMatch = event.url.match(/redirect_uri(?:=|%3D|%253D)([^&% ]+)/i);
+                                // We pre-decode the whole URL twice to handle deep encoding like Revolut's proxy
+                                let fullyDecodedUrl = event.url;
+                                try {
+                                    fullyDecodedUrl = decodeURIComponent(decodeURIComponent(event.url));
+                                } catch (e) {
+                                    try {
+                                        fullyDecodedUrl = decodeURIComponent(event.url);
+                                    } catch (e2) { }
+                                }
+
+                                // Search for redirect_uri in the safely decoded string
+                                const nestedMatch = fullyDecodedUrl.match(/redirect_uri=([^& ]+)/i);
 
                                 if (nestedMatch) {
-                                    let extracted = nestedMatch[1];
-                                    console.log('   🔍 Found potential nested redirect_uri:', extracted);
-
-                                    // Deep decode (handle multiple levels of encoding like Revolut's %253D)
-                                    let decoded = extracted;
-                                    let previous;
-                                    let iterations = 0;
-                                    do {
-                                        previous = decoded;
-                                        decoded = decodeURIComponent(decoded);
-                                        iterations++;
-                                    } while (decoded !== previous && iterations < 5);
-
-                                    if (decoded.startsWith('http') && decoded.includes('enablebanking.com')) {
-                                        dynamicRedirectUrl = decoded;
-                                        console.log('   🎯 Successfully extracted and decoded:', dynamicRedirectUrl);
+                                    const extracted = nestedMatch[1];
+                                    if (extracted.startsWith('http') && extracted.includes('enablebanking.com')) {
+                                        dynamicRedirectUrl = extracted;
+                                        console.log('   🎯 Successfully extracted decoded URI:', dynamicRedirectUrl);
                                     }
                                 }
 
-                                // CLEANUP: If we didn't find a nested URI, and we are using origin+pathname from the proxy
+                                // Fallback: If we detect we are on a tilisy page but extraction failed
                                 if (dynamicRedirectUrl === (callbackUrl.origin + callbackUrl.pathname)) {
-                                    // (Legacy logic for simple proxy redirects like PayPal)
+                                    if (event.url.includes('tilisy.enablebanking.com')) {
+                                        dynamicRedirectUrl = 'https://tilisy.enablebanking.com/';
+                                        console.log('   🏠 Fallback to known tilisy proxy root');
+                                    }
                                 }
 
                                 console.log('📍 FINAL Detected actual redirect URL:', dynamicRedirectUrl);
