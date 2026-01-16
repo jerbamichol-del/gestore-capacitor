@@ -524,8 +524,11 @@ export class BankSyncService {
             let adjustmentsCount = 0;
             const activeProviders = new Set<string>();
 
+            const syncedLocalIds = new Set<string>();
+
             for (const acc of accounts) {
                 const localAccountId = this.resolveLocalAccountId(acc);
+                syncedLocalIds.add(localAccountId);
                 console.log(`Mapping API account ${acc.uid} to local ID: ${localAccountId}`);
 
                 // Collect provider name for suppression logic
@@ -574,6 +577,9 @@ export class BankSyncService {
             if (activeProviders.size > 0) {
                 localStorage.setItem(this.STORAGE_KEY_ACTIVE_BANKS, JSON.stringify(Array.from(activeProviders)));
             }
+
+            // Save specifically which LOCAL IDEs are synced to disable manual edits
+            localStorage.setItem('bank_sync_synced_local_ids', JSON.stringify(Array.from(syncedLocalIds)));
 
             return { transactions: totalAdded, adjustments: adjustmentsCount };
         } catch (error) {
