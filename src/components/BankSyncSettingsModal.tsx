@@ -205,15 +205,17 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     }
 
                     // 1. Strict Hostname Checking
-                    // We must capture the code ONLY when we are truly on the callback domains.
+                    // We must capture the code ONLY when we are truly back on our redirect_uri (localhost).
+                    // Intercepting on enablebanking.com/tilisy is too early and causes 422 errors 
+                    // because the provider hasn't processed the bank's callback yet.
                     let currentHostname = '';
                     try {
                         currentHostname = new URL(event.url).hostname;
                     } catch (e) { }
 
                     const isCallbackDomain = currentHostname === 'localhost' ||
-                        currentHostname === '127.0.0.1' ||
-                        currentHostname.endsWith('enablebanking.com');
+                        currentHostname === '127.0.0.1';
+                    // Removed enablebanking.com to avoid premature capture
 
                     if (event.url.includes('code=') && isCallbackDomain) {
                         authorizationCompleted = true; // Set flag immediately to prevent duplicates
