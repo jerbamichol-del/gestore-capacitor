@@ -482,6 +482,38 @@ export class BankSyncService {
     }
 
     /**
+     * Resolve the local account ID from an Enable Banking account object.
+     * Tries to find matching local storage accounts to avoid using cryptic UIDs in the UI.
+     */
+    private static resolveLocalAccountId(acc: any): string {
+        try {
+            const accounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+            const bankName = (acc.aspsp_name || acc.display_name || acc.name || '').toLowerCase();
+
+            // 1. Try exact ID match
+            if (accounts.some((la: any) => la.id === acc.uid)) return acc.uid;
+
+            // 2. Try to find local account with similar name
+            for (const la of accounts) {
+                const localName = la.name.toLowerCase();
+                if (localName === bankName) return la.id;
+                // Avoid matching generic names like "Conto" unless bankName is specifically that
+                if (localName.length > 3 && (bankName.includes(localName) || localName.includes(bankName))) {
+                    return la.id;
+                }
+            }
+
+            // 3. Special case mappings for common providers
+            if (bankName.includes('revolut')) return 'revolut';
+            if (bankName.includes('paypal')) return 'paypal';
+            if (bankName.includes('poste')) return 'poste';
+            if (bankName.includes('intesa')) return 'bank-account';
+
+        } catch (e) { }
+        return acc.uid; // Fallback to provided UID
+    }
+
+    /**
      * Sync all accounts (Transactions + Balances)
      */
     static async syncAll(): Promise<{ transactions: number, adjustments: number }> {
@@ -493,37 +525,41 @@ export class BankSyncService {
             const activeProviders = new Set<string>();
 
             for (const acc of accounts) {
-                console.log('Processing account:', acc.uid, acc);
+                const localAccountId = this.resolveLocalAccountId(acc);
+                console.log(`Mapping API account ${acc.uid} to local ID: ${localAccountId}`);
 
                 // Collect provider name for suppression logic
                 if (acc.aspsp_name) activeProviders.add(acc.aspsp_name);
                 if (acc.provider?.name) activeProviders.add(acc.provider.name);
                 if (acc.aspspName) activeProviders.add(acc.aspspName);
-                // Fallback to display name if it contains bank keywords
                 if (acc.display_name) activeProviders.add(acc.display_name);
                 if (acc.displayName) activeProviders.add(acc.displayName);
 
                 // 1. Sync Transactions
                 const txs = await this.fetchTransactions(acc.uid);
-                console.log(`Account ${acc.uid}: ${txs.length} transactions mapped`);
+                console.log(`Account ${acc.uid}: ${txs.length} transactions fetched`);
                 for (const tx of txs) {
-                    const added = await AutoTransactionService.addAutoTransaction(tx);
+                    // Inject the resolved local account ID into the mapped transaction
+                    const mappedTx = this.mapToAutoTransaction(tx, localAccountId);
+                    const added = await AutoTransactionService.addAutoTransaction(mappedTx);
                     if (added) totalAdded++;
                 }
 
                 // 2. Sync Balance & Reconcile
                 const bankBalance = await this.fetchBalance(acc.uid);
-                console.log(`Account ${acc.uid}: Bank balance = ${bankBalance}`);
-                const localBalance = this.calculateLocalBalance(acc.uid);
-                console.log(`Account ${acc.uid}: Local balance = ${localBalance}`);
+                console.log(`Account ${localAccountId}: Bank balance = ${bankBalance}`);
+
+                const localBalance = this.calculateLocalBalance(localAccountId);
+                console.log(`Account ${localAccountId}: Local balance = ${localBalance}`);
+
                 const diff = bankBalance - localBalance;
-                console.log(`Account ${acc.uid}: Difference = ${diff}`);
+                console.log(`Account ${localAccountId}: Difference = ${diff}`);
 
                 if (Math.abs(diff) > 0.01) {
                     await AutoTransactionService.addAdjustment(
-                        acc.uid,
+                        localAccountId,
                         diff,
-                        `Riconciliazione Automatica ${acc.account_id?.iban || acc.accountId?.iban || acc.uid}`
+                        `Riconciliazione Automatica ${acc.account_id?.iban || acc.accountId?.iban || acc.name || localAccountId}`
                     );
                     adjustmentsCount++;
                 }
@@ -531,6 +567,7 @@ export class BankSyncService {
 
             if (totalAdded > 0 || adjustmentsCount > 0) {
                 window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
+                window.dispatchEvent(new CustomEvent('expenses-updated')); // Ensure screens like AccountsScreen refresh
             }
 
             // Save active providers for listener suppression
@@ -552,10 +589,6 @@ export class BankSyncService {
         console.log('Mapping transaction:', JSON.stringify(tx, null, 2));
 
         // Handle multiple possible amount formats from Enable Banking API
-        // Format 1: { transaction_amount: { amount: "150.50", currency: "EUR" } } - Enable Banking snake_case
-        // Format 2: { transactionAmount: { amount: "150.50" } } - camelCase variant
-        // Format 3: { amount: { amount: "150.50" } } - legacy format
-        // Format 4: { amount: "150.50" } or { amount: 150.50 } - direct value
         let rawAmount: string | number = 0;
         if (tx.transaction_amount && typeof tx.transaction_amount === 'object') {
             rawAmount = tx.transaction_amount.amount ?? tx.transaction_amount.value ?? 0;
@@ -571,7 +604,6 @@ export class BankSyncService {
         console.log('Parsed transaction amount:', amount, 'from raw:', rawAmount);
 
         // Determine type based on transaction type field or amount sign
-        // Support both camelCase and snake_case formats
         let type: 'expense' | 'income' = amount < 0 ? 'expense' : 'income';
         if (tx.transactionType === 'DEBIT' || tx.creditDebitIndicator === 'DBIT' || tx.credit_debit_indicator === 'DBIT') {
             type = 'expense';
@@ -579,14 +611,13 @@ export class BankSyncService {
             type = 'income';
         }
 
-        // Handle multiple date formats (camelCase and snake_case)
+        // Handle multiple date formats
         const date = tx.bookingDate || tx.booking_date
             || tx.transactionDate || tx.transaction_date
             || tx.valueDate || tx.value_date
             || new Date().toISOString().split('T')[0];
 
         // Get description from multiple possible fields
-        // remittance_information can be an array, so handle that case
         let remittanceInfo = tx.remittance_information || tx.remittanceInformation;
         if (Array.isArray(remittanceInfo)) {
             remittanceInfo = remittanceInfo.join(' ');
@@ -607,7 +638,7 @@ export class BankSyncService {
             amount: Math.abs(amount),
             description,
             date,
-            account: tx.account_id?.iban || tx.accountId?.iban || accountUid,
+            account: accountUid, // Using the resolved localAccountId passed here
             sourceType: 'bank',
             sourceApp: 'enable_banking',
             rawText: JSON.stringify(tx)
