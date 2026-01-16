@@ -28,12 +28,12 @@ const TransferConfirmationModal: React.FC<Props> = ({
   // Auto-detect possible destination account from merchant name
   useEffect(() => {
     if (!transaction) return;
-    
+
     const merchantLower = (transaction.description || '').toLowerCase();
-    const matchingAccount = accounts.find(acc => 
+    const matchingAccount = accounts.find(acc =>
       merchantLower.includes(acc.name.toLowerCase())
     );
-    
+
     if (matchingAccount) {
       setSelectedToAccount(matchingAccount.id);
     } else if (accounts.length > 0) {
@@ -50,7 +50,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
       alert('Seleziona un conto di destinazione');
       return;
     }
-    
+
     setIsProcessing(true);
     try {
       const toAccountName = accounts.find(a => a.id === selectedToAccount)?.name || selectedToAccount;
@@ -70,11 +70,11 @@ const TransferConfirmationModal: React.FC<Props> = ({
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/70 backdrop-blur-sm"
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-slate-900/70 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -108,7 +108,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
               <div className="text-sm text-slate-500 mt-1">{new Date(transaction.date).toLocaleDateString('it-IT')}</div>
             </div>
           </div>
-          
+
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <span className="text-2xl">🏦</span>
@@ -131,7 +131,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
                 <p className="text-sm text-indigo-700">Hai spostato denaro tra i tuoi conti</p>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">

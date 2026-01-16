@@ -128,7 +128,8 @@ export class NotificationTransactionParser {
     // Prova tutti i pattern
     let parsed = this.tryParseTransaction(config, fullText, timestamp);
 
-    // ✅ AI FALLBACK: Se la regex fallisce, prova Gemini
+    // ✅ AI FALLBACK: Se la regex fallisce, prova Gemini - DISABLED BY USER REQUEST
+    /*
     if (!parsed) {
       console.log(`❌ No regex match for ${appName}. Trying AI Fallback...`);
       try {
@@ -153,6 +154,7 @@ export class NotificationTransactionParser {
         console.error('⚠️ AI Fallback failed:', e);
       }
     }
+    */
 
     if (!parsed) {
       console.log(`❌ No match found (Regex + AI) for ${appName} notification`);

@@ -301,7 +301,8 @@ export class SMSTransactionParser {
       parsed = null;
     }
 
-    // ✅ AI FALLBACK
+    // ✅ AI FALLBACK - DISABLED BY USER REQUEST (Too many duplicates/modals)
+    /*
     if (!parsed) {
       console.log(`❌ No regex match for SMS from ${sender}. Trying AI Fallback...`);
       try {
@@ -325,6 +326,7 @@ export class SMSTransactionParser {
         console.error('AI Fallback failed for SMS:', e);
       }
     }
+    */
 
     return parsed;
   }
