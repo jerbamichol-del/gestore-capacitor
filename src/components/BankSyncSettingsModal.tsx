@@ -276,10 +276,38 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             console.log('🔑 Extracted authorization code:', code ? `${code.substring(0, 10)}...` : 'null');
 
                             if (code) {
-                                console.log('🔄 Calling authorizeSession with redirectUrl:', dynamicRedirectUrl);
-                                await BankSyncService.authorizeSession(code, dynamicRedirectUrl);
-                                showToast({ message: "Conto autorizzato con successo!", type: 'success' });
-                                handleTestConnection();
+                                console.log('🔄 Strategy 1: Attempting authorizeSession with dynamic redirectUrl:', dynamicRedirectUrl);
+                                try {
+                                    await BankSyncService.authorizeSession(code, dynamicRedirectUrl);
+                                    showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                                    handleTestConnection();
+                                } catch (authError: any) {
+                                    console.warn('⚠️ Strategy 1 failed:', authError.message);
+
+                                    // Strategy 2: Try original redirectUrl (localhost) if it was different
+                                    if (dynamicRedirectUrl !== redirectUrl) {
+                                        console.log('🔄 Strategy 2: Attempting with original redirectUrl:', redirectUrl);
+                                        try {
+                                            await BankSyncService.authorizeSession(code, redirectUrl);
+                                            showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                                            handleTestConnection();
+                                            return;
+                                        } catch (e2: any) {
+                                            console.warn('⚠️ Strategy 2 failed:', e2.message);
+                                        }
+                                    }
+
+                                    // Strategy 3: Try WITHOUT redirectURL (some proxy flows prefer this)
+                                    console.log('🔄 Strategy 3: Attempting WITHOUT redirect_url');
+                                    try {
+                                        await BankSyncService.authorizeSession(code);
+                                        showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                                        handleTestConnection();
+                                    } catch (e3: any) {
+                                        console.error('❌ Strategy 3 failed:', e3.message);
+                                        throw authError; // Re-throw the original error if all strategies fail
+                                    }
+                                }
                             } else {
                                 showToast({ message: "Errore: codice di autorizzazione non trovato", type: 'error' });
                             }
