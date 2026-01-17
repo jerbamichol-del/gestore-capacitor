@@ -29,7 +29,7 @@ if ('serviceWorker' in navigator) {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
         if (registrations.length > 0) {
-          const unregisterResults = await Promise.all(
+          await Promise.all(
             registrations.map(async (reg) => {
               const success = await reg.unregister();
               console.log(`🗑️ SW unregister: ${success ? '✅ Success' : '❌ Failed'} (${reg.scope})`);
