@@ -14,12 +14,12 @@ interface ConfirmationModalProps {
   cancelButtonText?: string;
 }
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
-  message, 
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
   variant = 'danger',
   confirmButtonText = 'Conferma',
   cancelButtonText = 'Annulla'
@@ -38,18 +38,18 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   if (!isOpen) return null;
 
   const config = {
-      danger: {
-          icon: ExclamationTriangleIcon,
-          iconColor: 'text-red-600',
-          bgColor: 'bg-red-100',
-          confirmButtonClasses: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-      },
-      info: {
-          icon: InformationCircleIcon,
-          iconColor: 'text-indigo-600',
-          bgColor: 'bg-indigo-100',
-          confirmButtonClasses: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500',
-      }
+    danger: {
+      icon: ExclamationTriangleIcon,
+      iconColor: 'text-red-600',
+      bgColor: 'bg-red-100',
+      confirmButtonClasses: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+    },
+    info: {
+      icon: InformationCircleIcon,
+      iconColor: 'text-indigo-600',
+      bgColor: 'bg-indigo-100',
+      confirmButtonClasses: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500',
+    }
   }
   const { icon: Icon, iconColor, bgColor, confirmButtonClasses } = config[variant];
 
@@ -62,7 +62,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       aria-labelledby="modal-title"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all duration-75 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md transform transition-all duration-75 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -71,22 +71,22 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden="true" />
             </div>
             <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-              <h3 className="text-lg font-semibold leading-6 text-slate-900" id="modal-title">
+              <h3 className="text-lg font-semibold leading-6 text-slate-900 dark:text-white" id="modal-title">
                 {title}
               </h3>
               <div className="mt-2">
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {message}
                 </p>
               </div>
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 bg-slate-50 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
           >
             {cancelButtonText}
           </button>

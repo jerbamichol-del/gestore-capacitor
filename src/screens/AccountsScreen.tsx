@@ -196,10 +196,9 @@ const SwipableTransferRow: React.FC<{
         }
     };
 
-    const bgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200' : 'bg-slate-50';
-
+    const bgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200 dark:bg-indigo-900/30 dark:ring-indigo-700' : 'bg-slate-50 dark:bg-slate-800/50';
     return (
-        <div className={`relative rounded-lg overflow-hidden border border-slate-100 mb-2 transition-colors duration-200 ${bgClass}`}>
+        <div className={`relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 mb-2 transition-colors duration-200 ${bgClass}`}>
             <div className="absolute top-0 right-0 h-full flex items-center z-0">
                 <button
                     onClick={() => onDelete(transfer.id)}
@@ -231,15 +230,15 @@ const SwipableTransferRow: React.FC<{
                         </div>
                     )}
                     <div>
-                        <p className={`text-sm font-semibold ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
+                        <p className={`text-sm font-semibold ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-800 dark:text-white'}`}>
                             {isIncoming ? `Da: ${otherAccountName}` : `A: ${otherAccountName}`}
                         </p>
-                        <p className={`text-xs ${isSelected ? 'text-indigo-700' : 'text-slate-500'}`}>
+                        <p className={`text-xs ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>
                             {formatDate(parseLocalYYYYMMDD(transfer.date))}
                         </p>
                     </div>
                 </div>
-                <span className={`font-bold ${isSelected ? 'text-indigo-900' : isIncoming ? 'text-green-600' : 'text-slate-700'}`}>
+                <span className={`font-bold ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isIncoming ? 'text-green-600 dark:text-green-400' : 'text-slate-700 dark:text-slate-300'}`}>
                     {isIncoming ? '+' : '-'}{formatCurrency(transfer.amount)}
                 </span>
             </div>
@@ -501,8 +500,8 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
     const isFilterActive = sortOption !== 'date' || filterOption !== 'all';
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-100 flex flex-col animate-fade-in-up">
-            <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 backdrop-blur-sm shadow-sm h-[60px]">
+        <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 flex flex-col animate-fade-in-up transition-colors duration-300">
+            <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm border-b border-transparent dark:border-slate-800 h-[60px] transition-colors duration-300">
                 {isSelectionMode && !editingAccountId ? (
                     <>
                         <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
@@ -513,12 +512,12 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                     <>
                         <button
                             onClick={onClose}
-                            className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors"
+                            className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
                             aria-label="Indietro"
                         >
-                            <ArrowLeftIcon className="w-6 h-6 text-slate-700" />
+                            <ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-200" />
                         </button>
-                        <h1 className="text-xl font-bold text-slate-800">I Miei Conti</h1>
+                        <h1 className="text-xl font-bold text-slate-800 dark:text-white">I Miei Conti</h1>
                     </>
                 )}
             </header>
@@ -580,7 +579,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             <div
                                 key={acc.id}
                                 onClick={() => !isSelectionMode && handleAccountClick(acc.id)}
-                                className={`bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
+                                className={`bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
                             >
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="relative">
@@ -592,11 +591,11 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                         )}
                                     </div>
                                     <div className="flex flex-col min-w-0">
-                                        <span className="font-semibold text-slate-800 text-lg truncate">{acc.name}</span>
+                                        <span className="font-semibold text-slate-800 dark:text-white text-lg truncate">{acc.name}</span>
                                         {isSynced && <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tighter leading-none">Automatico</span>}
                                     </div>
                                 </div>
-                                <span className={`font-bold text-lg flex-shrink-0 ml-2 ${balance >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+                                <span className={`font-bold text-lg flex-shrink-0 ml-2 ${balance >= 0 ? 'text-slate-800 dark:text-white' : 'text-red-600 dark:text-red-400'}`}>
                                     {formatCurrency(balance)}
                                 </span>
                             </div>
@@ -611,10 +610,10 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
             {/* MODAL EDIT SALDO FULL SCREEN */}
             {editingAccountId && (
                 <div
-                    className={`fixed inset-0 z-[60] bg-white flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                    className={`fixed inset-0 z-[60] bg-white dark:bg-slate-900 flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                     onClick={(e) => { e.stopPropagation(); if (openTransferId) setOpenTransferId(null); }}
                 >
-                    <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-white sticky top-0 z-40">
+                    <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
                         {isSelectionMode ? (
                             <>
                                 <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
@@ -627,10 +626,10 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             </>
                         ) : (
                             <>
-                                <button onClick={handleModalClose} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-500">
+                                <button onClick={handleModalClose} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400">
                                     <XMarkIcon className="w-6 h-6" />
                                 </button>
-                                <h3 className="font-bold text-lg text-slate-800 flex-1 ml-4 text-left flex items-center gap-2">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex-1 ml-4 text-left flex items-center gap-2">
                                     {editingAccount?.name}
                                     {isEditingAccountSynced && <span>🔗</span>}
                                 </h3>
@@ -638,25 +637,25 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                     <button
                                         ref={sortButtonRef}
                                         onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }}
-                                        className={`p-2 rounded-full transition-colors ${isFilterActive ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-slate-100 text-slate-600'}`}
+                                        className={`p-2 rounded-full transition-colors ${isFilterActive ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
                                         aria-label="Ordina e Filtra"
                                     >
                                         <ArrowsUpDownIcon className="w-6 h-6" />
                                     </button>
                                     {isSortMenuOpen && (
-                                        <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-100 z-50 overflow-hidden animate-fade-in-up" onPointerDown={(e) => e.stopPropagation()}>
+                                        <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-52 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-up" onPointerDown={(e) => e.stopPropagation()}>
                                             <div className="py-2">
                                                 <p className="px-4 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Ordina per</p>
-                                                <button onClick={() => handleSortSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Data (Predefinito)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleSortSelect('amount-desc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${sortOption === 'amount-desc' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Importo (Decrescente)</span>{sortOption === 'amount-desc' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleSortSelect('amount-asc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${sortOption === 'amount-asc' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Importo (Crescente)</span>{sortOption === 'amount-asc' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Data (Predefinito)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('amount-desc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'amount-desc' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Decrescente)</span>{sortOption === 'amount-desc' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('amount-asc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'amount-asc' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Crescente)</span>{sortOption === 'amount-asc' && <CheckIcon className="w-4 h-4" />}</button>
 
-                                                <div className="border-t border-slate-100 my-2"></div>
+                                                <div className="border-t border-slate-100 dark:border-slate-700 my-2"></div>
 
                                                 <p className="px-4 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Filtra per</p>
-                                                <button onClick={() => handleFilterSelect('all')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${filterOption === 'all' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Tutti</span>{filterOption === 'all' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleFilterSelect('incoming')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${filterOption === 'incoming' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Solo Entrate</span>{filterOption === 'incoming' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleFilterSelect('outgoing')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 ${filterOption === 'outgoing' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span>Solo Uscite</span>{filterOption === 'outgoing' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('all')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${filterOption === 'all' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Tutti</span>{filterOption === 'all' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('incoming')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${filterOption === 'incoming' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Entrate</span>{filterOption === 'incoming' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('outgoing')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${filterOption === 'outgoing' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Uscite</span>{filterOption === 'outgoing' && <CheckIcon className="w-4 h-4" />}</button>
                                             </div>
                                         </div>
                                     )}
@@ -667,13 +666,13 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
 
                     <div className="flex-1 overflow-y-auto p-6" onClick={() => setOpenTransferId(null)}>
                         <div className="space-y-6">
-                            <div className="bg-slate-50 p-4 rounded-2xl text-center border border-slate-200">
-                                <p className="text-xs text-slate-500 uppercase font-bold tracking-wide mb-1">Saldo Attuale</p>
-                                <p className="text-3xl font-bold text-slate-800">{formatCurrency(accountBalances[editingAccountId] || 0)}</p>
+                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-center border border-slate-200 dark:border-slate-700 transition-colors duration-200">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wide mb-1">Saldo Attuale</p>
+                                <p className="text-3xl font-bold text-slate-800 dark:text-white">{formatCurrency(accountBalances[editingAccountId] || 0)}</p>
                             </div>
 
                             <div className={(isSelectionMode || isEditingAccountSynced) ? 'opacity-50 pointer-events-none' : ''}>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Nuovo Saldo</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nuovo Saldo</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <CurrencyEuroIcon className="h-6 w-6 text-slate-400" />
@@ -687,7 +686,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                         onChange={(e) => setNewBalanceValue(e.target.value)}
                                         placeholder={isEditingAccountSynced ? 'Sincronizzato API' : '0.00'}
                                         disabled={isEditingAccountSynced}
-                                        className="block w-full pl-12 pr-14 py-4 border border-slate-300 rounded-2xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-2xl font-semibold text-slate-900 shadow-sm"
+                                        className="block w-full pl-12 pr-14 py-4 border border-slate-300 dark:border-slate-700 rounded-2xl leading-5 bg-white dark:bg-slate-800 placeholder-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-2xl font-semibold text-slate-900 dark:text-white shadow-sm transition-colors"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleSaveBalance();
                                         }}
@@ -713,7 +712,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                 <div className={`flex gap-3 pt-2 ${isSelectionMode ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <button
                                         onClick={handleModalClose}
-                                        className="flex-1 py-3 text-slate-700 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                                        className="flex-1 py-3 text-slate-700 dark:text-slate-300 font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
                                     >
                                         Annulla
                                     </button>
@@ -727,7 +726,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             )}
 
                             {/* Storico Trasferimenti */}
-                            <div className="pt-6 border-t border-slate-100">
+                            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
                                 <div className="flex items-center justify-between mb-4">
                                     <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wide">Storico Trasferimenti</h4>
                                     {isFilterActive && (

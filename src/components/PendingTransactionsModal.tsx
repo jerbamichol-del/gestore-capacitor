@@ -474,11 +474,11 @@ export function PendingTransactionsModal({
       />
 
       {/* Modal - Full screen on mobile, centered on desktop */}
-      <div className="relative w-full sm:max-w-lg bg-white sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative w-full sm:max-w-lg bg-white dark:bg-slate-900 sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
+        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Transazioni Rilevate</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Transazioni Rilevate</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -489,10 +489,10 @@ export function PendingTransactionsModal({
             </button>
           </div>
           <div className="flex items-center justify-between mt-1">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {transactions.length} {transactions.length === 1 ? 'transazione' : 'transazioni'} da confermare
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {currentIndex + 1}/{transactions.length}
             </p>
           </div>
@@ -500,74 +500,73 @@ export function PendingTransactionsModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4 border border-gray-200 dark:border-slate-700">
             {/* Transaction Info */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-500 uppercase">{currentTransaction.sourceApp || 'APP'}</span>
-                  <span className="text-xs text-gray-400">{formatDate(currentTransaction.createdAt)}</span>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{currentTransaction.sourceApp || 'APP'}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(currentTransaction.createdAt)}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-900 mb-1 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
+                <p className="text-sm font-medium text-gray-900 dark:text-white mb-1 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
                   {currentTransaction.description && currentTransaction.description.length > 100
                     ? currentTransaction.description.substring(0, 97) + '...'
                     : currentTransaction.description}
                 </p>
-                <p className={`text-lg font-bold ${selectedType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-lg font-bold ${selectedType === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {formatAmount(currentTransaction.amount, '€')}
                 </p>
               </div>
             </div>
 
             {/* Rule Match Info */}
-            {/* Rule Match Info */}
             {match && match.rule && match.confidence === 100 && (
-              <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs font-medium text-green-700">
+              <div className="mb-3 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-xs font-medium text-green-700 dark:text-green-400">
                   ✅ Regola riconosciuta: {match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}
                 </p>
-                <p className="text-xs text-green-600 mt-0.5">"{match.rule.destinatario}"</p>
+                <p className="text-xs text-green-600 dark:text-green-300 mt-0.5">"{match.rule.destinatario}"</p>
               </div>
             )}
             {match && match.rule && match.confidence === 75 && (
-              <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs font-medium text-yellow-700">⚠️ Possibile corrispondenza</p>
-                <p className="text-xs text-yellow-600 mt-0.5">Simile a "{match.rule.destinatario}"</p>
+              <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400">⚠️ Possibile corrispondenza</p>
+                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5">Simile a "{match.rule.destinatario}"</p>
               </div>
             )}
 
             {/* Duplicate Warning */}
             {duplicateCandidate && (
-              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-xs font-bold text-red-700 flex items-center gap-1">
+              <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-1">
                   ⚠️ Possibile Duplicato!
                 </p>
-                <p className="text-xs text-red-600 mt-1">
+                <p className="text-xs text-red-600 dark:text-red-300 mt-1">
                   Esiste già una spesa di <b>{formatAmount(duplicateCandidate.amount, '€')}</b> del {duplicateCandidate.date} ({duplicateCandidate.description}).
                 </p>
               </div>
             )}
 
             {/* Raw Info (Time & Text) */}
-            <div className="mb-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
-              <p className="text-xs text-slate-500 mb-1">Dettagli originali:</p>
-              <p className="text-xs text-slate-700 font-mono bg-white p-1 rounded border border-slate-100">
+            <div className="mb-3 p-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Dettagli originali:</p>
+              <p className="text-xs text-slate-700 dark:text-slate-300 font-mono bg-white dark:bg-slate-900/50 p-1 rounded border border-slate-100 dark:border-slate-700">
                 {(currentTransaction as any).rawText || getTextForRules(currentTransaction)}
               </p>
-              <p className="text-xs text-slate-400 mt-1 text-right">
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 text-right">
                 Rilevato alle: {new Date(currentTransaction.createdAt).toLocaleTimeString()}
               </p>
             </div>
 
             {/* Type Selection */}
             <div className="mb-3">
-              <p className="text-xs font-medium text-gray-700 mb-2">Seleziona tipo:</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-slate-300 mb-2">Seleziona tipo:</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'expense')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'expense'
                     ? 'bg-red-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
                     }`}
                 >
                   💸 Spesa
@@ -576,7 +575,7 @@ export function PendingTransactionsModal({
                   onClick={() => handleTypeChange(currentTransaction.id, 'income')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'income'
                     ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
                     }`}
                 >
                   💰 Entrata
@@ -585,7 +584,7 @@ export function PendingTransactionsModal({
                   onClick={() => handleTypeChange(currentTransaction.id, 'transfer')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'transfer'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
                     }`}
                 >
                   🔄 Trasferimento
@@ -596,15 +595,15 @@ export function PendingTransactionsModal({
             {/* Account selection for expense/income */}
             {selectedType !== 'transfer' && (
               <div className="mb-3">
-                <p className="text-xs font-medium text-gray-700 mb-2">Seleziona conto:</p>
+                <p className="text-xs font-medium text-gray-700 dark:text-slate-300 mb-2">Seleziona conto:</p>
                 <select
                   value={currentAccountId}
                   onChange={(e) => handleAccountChange(currentTransaction.id, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 >
-                  <option value="">-- Seleziona conto --</option>
+                  <option value="" className="dark:bg-slate-800">-- Seleziona conto --</option>
                   {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
+                    <option key={account.id} value={account.id} className="dark:bg-slate-800">
                       {account.name}
                     </option>
                   ))}
@@ -614,21 +613,21 @@ export function PendingTransactionsModal({
 
             {/* Transfer Account Selection */}
             {selectedType === 'transfer' && (
-              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs font-medium text-blue-900 mb-2">Seleziona conti:</p>
+              <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg">
+                <p className="text-xs font-medium text-blue-900 dark:text-blue-300 mb-2">Seleziona conti:</p>
                 <div className="space-y-2">
                   <div>
-                    <label className="text-xs text-blue-700 font-medium block mb-1">Da (origine):</label>
+                    <label className="text-xs text-blue-700 dark:text-blue-300 font-medium block mb-1">Da (origine):</label>
                     <select
                       value={transferAccountSelection?.from || ''}
                       onChange={(e) =>
                         handleTransferAccountChange(currentTransaction.id, 'from', e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
-                      <option value="">-- Seleziona conto --</option>
+                      <option value="" className="dark:bg-slate-800">-- Seleziona conto --</option>
                       {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
+                        <option key={account.id} value={account.id} className="dark:bg-slate-800">
                           {account.name}
                         </option>
                       ))}
@@ -636,17 +635,17 @@ export function PendingTransactionsModal({
                   </div>
 
                   <div>
-                    <label className="text-xs text-blue-700 font-medium block mb-1">Verso (destinazione):</label>
+                    <label className="text-xs text-blue-700 dark:text-blue-300 font-medium block mb-1">Verso (destinazione):</label>
                     <select
                       value={transferAccountSelection?.to || ''}
                       onChange={(e) =>
                         handleTransferAccountChange(currentTransaction.id, 'to', e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
-                      <option value="">-- Seleziona conto --</option>
+                      <option value="" className="dark:bg-slate-800">-- Seleziona conto --</option>
                       {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
+                        <option key={account.id} value={account.id} className="dark:bg-slate-800">
                           {account.name}
                         </option>
                       ))}
@@ -662,20 +661,20 @@ export function PendingTransactionsModal({
 
             {/* Expense-only fields */}
             {selectedType === 'expense' && (
-              <div className="mb-3 p-3 bg-white border border-gray-200 rounded-lg">
-                <p className="text-xs font-medium text-gray-900 mb-2">Dettagli spesa:</p>
+              <div className="mb-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg">
+                <p className="text-xs font-medium text-gray-900 dark:text-white mb-2">Dettagli spesa:</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs text-gray-700 font-medium block mb-1">Categoria (opzionale)</label>
+                    <label className="text-xs text-gray-700 dark:text-slate-300 font-medium block mb-1">Categoria (opzionale)</label>
                     <select
                       value={expenseMeta.category || ''}
                       onChange={(e) => handleExpenseCategoryChange(currentTransaction.id, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
-                      <option value="">-- Seleziona categoria --</option>
+                      <option value="" className="dark:bg-slate-800">-- Seleziona categoria --</option>
                       {categoryOptions.map((cat) => (
-                        <option key={cat} value={cat}>
+                        <option key={cat} value={cat} className="dark:bg-slate-800">
                           {cat}
                         </option>
                       ))}
@@ -683,19 +682,19 @@ export function PendingTransactionsModal({
                   </div>
 
                   <div>
-                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-gray-400' : 'text-gray-700'}`}>
+                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-gray-400 dark:text-slate-600' : 'text-gray-700 dark:text-slate-300'}`}>
                       Sottocategoria (opzionale)
                     </label>
                     <select
                       value={expenseMeta.subcategory || ''}
                       disabled={isSubcategoryDisabled}
                       onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-gray-200 bg-gray-100 text-gray-400' : 'border-gray-300 bg-white'
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-600' : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white'
                         }`}
                     >
-                      <option value="">-- Seleziona sottocategoria --</option>
+                      <option value="" className="dark:bg-slate-800">-- Seleziona sottocategoria --</option>
                       {subcategoryOptions.map((sub) => (
-                        <option key={sub} value={sub}>
+                        <option key={sub} value={sub} className="dark:bg-slate-800">
                           {sub}
                         </option>
                       ))}
@@ -704,14 +703,14 @@ export function PendingTransactionsModal({
                 </div>
 
                 <div className="mt-3">
-                  <p className="text-xs font-medium text-gray-700 mb-2">Ricevute</p>
+                  <p className="text-xs font-medium text-gray-700 dark:text-slate-300 mb-2">Ricevute</p>
 
                   {expenseMeta.receipts?.length > 0 && (
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       {expenseMeta.receipts.map((receipt, index) => (
                         <div
                           key={index}
-                          className="relative rounded-lg overflow-hidden border border-gray-200 shadow-sm aspect-video bg-gray-50"
+                          className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm aspect-video bg-gray-50 dark:bg-slate-700"
                         >
                           <img
                             src={`data:image/png;base64,${receipt}`}
@@ -737,14 +736,14 @@ export function PendingTransactionsModal({
                     <button
                       type="button"
                       onClick={() => handlePickReceipt(currentTransaction.id, 'camera')}
-                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50"
                     >
                       Fotocamera
                     </button>
                     <button
                       type="button"
                       onClick={() => handlePickReceipt(currentTransaction.id, 'gallery')}
-                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50"
                     >
                       Galleria
                     </button>
@@ -761,9 +760,9 @@ export function PendingTransactionsModal({
                     type="checkbox"
                     checked={saveRule}
                     onChange={(e) => handleSaveRuleChange(currentTransaction.id, e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500 bg-white dark:bg-slate-700"
                   />
-                  <span className="text-sm text-gray-700">Ricorda per il futuro</span>
+                  <span className="text-sm text-gray-700 dark:text-slate-300">Ricorda per il futuro</span>
                 </label>
               </div>
             )}
@@ -775,7 +774,7 @@ export function PendingTransactionsModal({
                 disabled={!isTransferValid || processingId === currentTransaction.id}
                 className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${isTransferValid && processingId !== currentTransaction.id
                   ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-300 dark:bg-slate-700 text-gray-500 dark:text-slate-500 cursor-not-allowed'
                   }`}
               >
                 ✓ Conferma
@@ -783,14 +782,14 @@ export function PendingTransactionsModal({
               <button
                 onClick={() => handleIgnore(currentTransaction.id)}
                 disabled={processingId === currentTransaction.id}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
               >
                 ✕ Ignora
               </button>
               {match?.rule && (
                 <button
                   onClick={() => handleDeleteRule(currentTransaction.id)}
-                  className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 font-medium rounded-lg transition-colors"
                   title="Elimina regola salvata"
                 >
                   🗑️

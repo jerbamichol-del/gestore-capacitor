@@ -456,14 +456,14 @@ const Dashboard: React.FC<DashboardProps> = ({
             <div className="md:p-6 pb-32 md:pb-32 space-y-6" {...tapBridgeHandlers}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 flex flex-col gap-4">
-                        <div className="bg-white p-6 md:rounded-2xl shadow-lg flex flex-col justify-between relative">
+                        <div className="bg-white/80 backdrop-blur-md border border-white/50 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none dark:backdrop-blur-none p-6 md:rounded-2xl shadow-xl flex flex-col justify-between relative transition-all duration-300">
                             <div className="text-center mb-2 relative z-10">
-                                <h3 className="text-lg font-bold text-black leading-tight uppercase tracking-wide">{periodLabel}</h3>
-                                <p className="text-sm font-medium text-slate-400 capitalize mb-1">{dateRangeLabel}</p>
+                                <h3 className="text-lg font-bold text-black dark:text-white leading-tight uppercase tracking-wide">{periodLabel}</h3>
+                                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 capitalize mb-1">{dateRangeLabel}</p>
                                 <div className="relative flex justify-center items-center text-indigo-600 mt-1">
                                     <div className="relative flex items-baseline">
                                         <span className="absolute right-full mr-2 text-3xl font-semibold opacity-80 top-1/2 -translate-y-1/2">€</span>
-                                        <span className="text-5xl font-extrabold tracking-tight">
+                                        <span className="text-5xl font-extrabold tracking-tight dark:text-white">
                                             {formatCurrency(totalExpenses).replace('€', '').trim()}
                                         </span>
                                     </div>
@@ -530,10 +530,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                             <div className="mt-4 pt-4 border-t border-slate-200 relative z-10">
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1">
-                                        <h4 className="text-sm font-medium text-slate-500">Spesa Oggi</h4>
-                                        <p className="text-xl font-bold text-slate-800">{formatCurrency(dailyTotal)}</p>
+                                        <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400">Spesa Oggi</h4>
+                                        <p className="text-xl font-bold text-slate-800 dark:text-white">{formatCurrency(dailyTotal)}</p>
                                     </div>
-                                    <div className="w-px h-12 bg-slate-200" />
+                                    <div className="w-px h-12 bg-slate-200 dark:bg-slate-700" />
                                     <div className="flex-1 flex flex-col">
                                         <div className="flex justify-between items-center mb-1">
                                             <button
@@ -543,9 +543,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             >
                                                 {isBalanceVisible ? <EyeSlashIcon className="w-6 h-6" /> : <EyeIcon className="w-6 h-6" />}
                                             </button>
-                                            <h4 className="text-sm font-medium text-slate-400 cursor-default select-none">Patrimonio</h4>
+                                            <h4 className="text-sm font-medium text-slate-400 dark:text-slate-500 cursor-default select-none">Patrimonio</h4>
                                         </div>
-                                        <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800' : totalAccountsBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800 dark:text-white' : totalAccountsBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                             {isBalanceVisible ? (
                                                 <>
                                                     {totalAccountsBalance >= 0 ? '+' : ''}{formatCurrency(totalAccountsBalance)}
@@ -590,9 +590,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     <div className="lg:col-span-2 flex flex-col gap-6">
-                        <div className="bg-white p-6 md:rounded-2xl shadow-lg flex flex-col">
+                        <div className="bg-white/80 backdrop-blur-md border border-white/50 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none dark:backdrop-blur-none p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
                             <div className="mb-4">
-                                <h3 className="text-xl font-bold text-slate-700">Riepilogo Categorie</h3>
+                                <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
                                 <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
                             </div>
 
@@ -606,10 +606,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                 <style.Icon className="w-10 h-10 flex-shrink-0" />
                                                 <div className="flex-grow">
                                                     <div className="flex justify-between items-center mb-1">
-                                                        <span className="font-semibold text-slate-700">{style.label}</span>
-                                                        <span className="font-bold text-slate-800">{formatCurrency(cat.value)}</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300">{style.label}</span>
+                                                        <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
                                                     </div>
-                                                    <div className="w-full bg-slate-200 rounded-full h-2.5">
+                                                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
                                                         <div className="bg-indigo-500 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
                                                     </div>
                                                 </div>
@@ -617,14 +617,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         )
                                     })}
                                 </div>
-                            ) : <p className="text-center text-slate-500 flex-grow flex items-center justify-center">Nessuna spesa registrata in questo periodo.</p>}
+                            ) : <p className="text-center text-slate-500 dark:text-slate-400 flex-grow flex items-center justify-center">Nessuna spesa registrata in questo periodo.</p>}
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 md:rounded-2xl shadow-lg">
+                <div className="bg-white/80 backdrop-blur-md border border-white/50 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none dark:backdrop-blur-none p-6 md:rounded-2xl shadow-xl transition-all duration-300">
                     <div className="mb-2 text-center">
-                        <h3 className="text-xl font-bold text-slate-700">Spese per Categoria</h3>
+                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
                         <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
                     </div>
 

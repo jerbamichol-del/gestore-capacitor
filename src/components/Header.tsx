@@ -4,6 +4,32 @@ import { ArrowDownOnSquareIcon } from './icons/ArrowDownOnSquareIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
 import { QrCodeIcon } from './icons/QrCodeIcon';
 import { NotificationSettingsButton } from './NotificationSettingsButton';
+import { useTheme } from '../hooks/useTheme';
+
+const ThemeToggle = () => {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800"
+      aria-label="Cambia Tema"
+      title={theme === 'dark' ? 'Passa a Chiaro' : 'Passa a Scuro'}
+    >
+      {theme === 'dark' ? (
+        // Sun Icon
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+        </svg>
+      ) : (
+        // Moon Icon
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+        </svg>
+      )}
+    </button>
+  );
+};
 
 interface HeaderProps {
   pendingSyncs: number;
@@ -27,10 +53,10 @@ const Header: React.FC<HeaderProps> = ({
   requestNotificationPermission = () => { }
 }) => {
   return (
-    <header className="bg-white shadow-md sticky top-0 z-20">
+    <header className="bg-white dark:bg-slate-900 shadow-md sticky top-0 z-20 transition-colors duration-300">
       <div className="mx-auto">
         <div className="py-2 flex items-center justify-between gap-3 px-4 md:px-8 h-[58px]">
-          <h1 className="text-xl font-bold text-slate-800">Gestore Spese</h1>
+          <h1 className="text-xl font-bold text-slate-800 dark:text-white transition-colors">Gestore Spese</h1>
           <div className="flex items-center gap-2 sm:gap-4">
             {!isOnline && (
               <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 bg-amber-100 px-3 py-1.5 rounded-full">
@@ -66,9 +92,11 @@ const Header: React.FC<HeaderProps> = ({
               requestPermission={requestNotificationPermission}
             />
 
+            <ThemeToggle />
+
             <button
               onClick={onShowQr}
-              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors"
+              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800"
               aria-label="Mostra QR Code"
               title="Condividi via QR"
             >
@@ -77,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onLogout}
-              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors"
+              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800"
               aria-label="Logout"
               title="Logout"
             >
