@@ -13,7 +13,8 @@
 
   <!-- Tailwind via CDN: Semplice e funzionante -->
   <script>
-    tailwind.config = {
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
       darkMode: 'class',
     }
   </script>
