@@ -440,19 +440,22 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
         </header>
 
         <main className="flex-1 flex flex-col overflow-hidden relative" style={{ touchAction: 'pan-y' }}>
-          <div className="flex-1 flex flex-col justify-center items-center p-4 pt-0">
-            <div className="w-full px-10 text-center">
-              <span className="text-slate-500 text-2xl font-light h-8 block">{smallDisplayValue}</span>
-              <div className={`relative inline-block text-slate-800 font-light tracking-tighter whitespace-nowrap transition-all leading-none ${fontSizeClass}`}>
+          <div className="flex-1 flex flex-col justify-center items-center p-4 pt-0 overflow-hidden">
+            <div className="w-full px-8 flex flex-col items-center">
+              <span className="text-slate-500 text-2xl font-light h-8 block whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
+                {smallDisplayValue}
+              </span>
+              <div className={`flex items-baseline justify-center gap-2 text-slate-800 font-light tracking-tighter transition-all leading-none max-w-full ${fontSizeClass}`}>
                 <span
-                  className={`absolute right-full top-1/2 -translate-y-1/2 mr-2 ${isIncome ? 'text-green-500' : isTransfer ? 'text-blue-600' : 'text-red-500'
-                    }`}
-                  style={{ fontSize: isTransfer ? '0.45em' : '0.6em' }}
+                  className={`shrink-0 ${isIncome ? 'text-green-500' : isTransfer ? 'text-blue-600' : 'text-red-500'}`}
+                  style={{ fontSize: '0.6em' }}
                 >
                   {isIncome ? '+' : isTransfer ? '⇄' : '-'}
                 </span>
-                {displayValue}
-                <span className="absolute left-full top-1/2 -translate-y-1/2 opacity-75 ml-2" style={{ fontSize: '0.6em' }}>€</span>
+
+                <span className="truncate">{displayValue}</span>
+
+                <span className="shrink-0 opacity-75" style={{ fontSize: '0.6em' }}>€</span>
               </div>
             </div>
           </div>
