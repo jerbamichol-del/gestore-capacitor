@@ -117,7 +117,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
           return;
         }
 
-        analyserRef.current.getByteTimeDomainData(dataArrayRef.current);
+        analyserRef.current.getByteTimeDomainData(dataArrayRef.current as any);
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) {
           const v = dataArrayRef.current[i];
