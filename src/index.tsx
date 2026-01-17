@@ -33,7 +33,6 @@ if ('serviceWorker' in navigator) {
             registrations.map(async (reg) => {
               const success = await reg.unregister();
               console.log(`🗑️ SW unregister: ${success ? '✅ Success' : '❌ Failed'} (${reg.scope})`);
-              return success;
             })
           );
         }
@@ -45,7 +44,6 @@ if ('serviceWorker' in navigator) {
               names.map(async (name) => {
                 const success = await caches.delete(name);
                 console.log(`🧹 Cache delete: ${success ? '✅ Success' : '❌ Failed'} (${name})`);
-                return success;
               })
             );
           }
