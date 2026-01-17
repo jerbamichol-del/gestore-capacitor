@@ -103,7 +103,16 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const { installPromptEvent, isInstallModalOpen, setIsInstallModalOpen, handleInstallClick } = useInstallPrompt();
 
   // 6. Privacy Gate
-  const { isBalanceVisible, isPinVerifierOpen, setIsPinVerifierOpen, handleToggleBalanceVisibility, handlePinVerified } = usePrivacyGate();
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const { isBalanceVisible, isPinVerifierOpen, setIsPinVerifierOpen, handleToggleBalanceVisibility, handlePinVerified: coreHandlePinVerified } = usePrivacyGate();
+
+  const handlePinVerified = () => {
+    coreHandlePinVerified();
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
 
   // 7. Cloud Sync
   const { handleSyncFromCloud } = useCloudSync(
@@ -275,7 +284,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
           {/* --- Overlay Modals (Auto/System) --- */}
           <UpdateAvailableModal isOpen={isUpdateModalOpen} onClose={() => setIsUpdateModalOpen(false)} onSkip={handleSkipUpdate} updateInfo={updateInfo} />
-          <PinVerifierModal isOpen={isPinVerifierOpen} onClose={() => setIsPinVerifierOpen(false)} onSuccess={handlePinVerified} email={currentEmail} />
+          <PinVerifierModal isOpen={isPinVerifierOpen} onClose={() => { setIsPinVerifierOpen(false); setPendingAction(null); }} onSuccess={handlePinVerified} email={currentEmail} />
           <PendingTransactionsModal
             isOpen={auto.isPendingTransactionsModalOpen}
             onClose={() => auto.setIsPendingTransactionsModalOpen(false)}
@@ -374,16 +383,28 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         onNavigateToRecurring={() => { window.history.pushState({ modal: 'recurring' }, ''); ui.nav.setIsRecurringScreenOpen(true); }}
         onNavigateToHistory={() => { window.history.pushState({ modal: 'history' }, ''); ui.nav.setIsHistoryClosing(false); ui.nav.setIsHistoryScreenOpen(true); }}
         onNavigateToIncomes={() => {
-          if (!isBalanceVisible) { setIsPinVerifierOpen(true); } else {
+          const action = () => {
             window.history.pushState({ modal: 'income_history' }, '');
             ui.nav.setIsIncomeHistoryClosing(false);
             ui.nav.setIsIncomeHistoryOpen(true);
+          };
+          if (!isBalanceVisible) {
+            setPendingAction(() => action);
+            setIsPinVerifierOpen(true);
+          } else {
+            action();
           }
         }}
         onNavigateToAccounts={() => {
-          if (!isBalanceVisible) { setIsPinVerifierOpen(true); } else {
+          const action = () => {
             window.history.pushState({ modal: 'accounts' }, '');
             ui.nav.setIsAccountsScreenOpen(true);
+          };
+          if (!isBalanceVisible) {
+            setPendingAction(() => action);
+            setIsPinVerifierOpen(true);
+          } else {
+            action();
           }
         }}
         onReceiveSharedFile={ui.handleSharedFile}
