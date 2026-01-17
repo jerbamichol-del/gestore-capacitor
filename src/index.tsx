@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AuthGate from './AuthGate';
+import { ThemeProvider } from './hooks/useTheme';
 // NESSUN import './index.css' qui se usi il CDN in HTML
 
 const rootElement = document.getElementById('root');
@@ -12,7 +13,9 @@ const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <AuthGate />
+    <ThemeProvider>
+      <AuthGate />
+    </ThemeProvider>
   </React.StrictMode>
 );
 
@@ -22,10 +25,10 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
       .then((registration) => {
         console.log('✅ SW Registrato con successo:', registration.scope);
-        
+
         // Se c'è un aggiornamento in attesa, forza l'update
         if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
       })
       .catch((error) => {
@@ -33,8 +36,8 @@ if ('serviceWorker' in navigator) {
       });
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-       // Ricarica la pagina quando il nuovo SW prende il controllo
-       window.location.reload();
+      // Ricarica la pagina quando il nuovo SW prende il controllo
+      window.location.reload();
     });
   });
 }

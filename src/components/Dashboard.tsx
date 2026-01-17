@@ -49,13 +49,13 @@ const renderActiveShape = (props: any) => {
 
     return (
         <g>
-            <text x={cx} y={cy - 12} textAnchor="middle" fill="#1e293b" className="text-base font-bold">
+            <text x={cx} y={cy - 12} textAnchor="middle" className="text-base font-bold" style={{ fill: 'var(--pie-text-primary, #1e293b)' }}>
                 {payload.name}
             </text>
             <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-lg font-extrabold">
                 {formatCurrency(payload.value)}
             </text>
-            <text x={cx} y={cy + 32} textAnchor="middle" fill="#334155" className="text-sm font-bold">
+            <text x={cx} y={cy + 32} textAnchor="middle" className="text-sm font-bold" style={{ fill: 'var(--pie-text-secondary, #334155)' }}>
                 {`(${(percent * 100).toFixed(2)}%)`}
             </text>
 
@@ -453,7 +453,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     return (
         <>
-            <div className="md:p-6 pb-32 md:pb-32 space-y-6" {...tapBridgeHandlers}>
+            <div className="md:p-6 pb-32 md:pb-32 space-y-6 bg-slate-100 dark:bg-slate-900" {...tapBridgeHandlers}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 flex flex-col gap-4">
                         <div className="bg-white/80 backdrop-blur-md border border-white/50 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none dark:backdrop-blur-none p-6 md:rounded-2xl shadow-xl flex flex-col justify-between relative transition-all duration-300">
@@ -585,6 +585,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 
                         <input type="file" ref={fileInputRef} className="hidden" accept=".csv, .xlsx, .xls, .json" onChange={handleFileChange} />
                         <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-bold rounded-2xl border border-indigo-100 dark:border-indigo-800 shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                            <ArrowsUpDownIcon className="w-5 h-5" />
+                            <span>Imp/Exp</span>
                         </button>
                     </div>
 
