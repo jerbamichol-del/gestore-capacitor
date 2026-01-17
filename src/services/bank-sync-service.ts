@@ -343,7 +343,7 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
         const sessions = await this.getSessions();
-        let allAccounts: any[] = [];
+        let allAccounts = new Map<string, any>();
         let expiredSessions: string[] = [];
         let validSessionCount = 0;
 
@@ -358,12 +358,17 @@ export class BankSyncService {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.accounts_data) {
-                        // Add session info to each account for tracking
-                        const accountsWithSession = data.accounts_data.map((acc: any) => ({
-                            ...acc,
-                            _sessionId: sessionId
-                        }));
-                        allAccounts = [...allAccounts, ...accountsWithSession];
+                        // De-duplicate accounts by UID
+                        for (const acc of data.accounts_data) {
+                            if (!allAccounts.has(acc.uid)) {
+                                allAccounts.set(acc.uid, {
+                                    ...acc,
+                                    _sessionId: sessionId
+                                });
+                            } else {
+                                console.log(`Skipping duplicate account ${acc.uid} from session ${sessionId}`);
+                            }
+                        }
                     }
                     validSessionCount++;
                 } else if (response.status === 401) {
@@ -391,7 +396,7 @@ export class BankSyncService {
             console.warn(`${expiredSessions.length} sessioni scadute rimosse, ${validSessionCount} ancora valide`);
         }
 
-        return allAccounts;
+        return Array.from(allAccounts.values());
     }
 
     /**

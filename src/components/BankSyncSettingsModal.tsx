@@ -189,6 +189,17 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     }, [searchQuery, aspsps]);
 
     const handleLinkBank = async (aspsp: any) => {
+        // Check if bank is already linked
+        const isAlreadyLinked = accountsWithBalances.some(acc => {
+            const bankName = (acc.aspsp_name || acc.aspspName || '').toLowerCase();
+            return bankName === aspsp.name.toLowerCase() || aspsp.name.toLowerCase().includes(bankName);
+        });
+
+        if (isAlreadyLinked) {
+            const confirm = window.confirm(`La banca ${aspsp.name} sembra essere già collegata. Vuoi collegarla di nuovo? (Questo creerà una nuova sessione ma non duplicherà i conti in lista)`);
+            if (!confirm) return;
+        }
+
         setIsLinking(true);
         try {
             // Use localhost as redirect, we'll intercept it with InAppBrowser on native
@@ -528,22 +539,32 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             ) : filteredAspsps.length === 0 ? (
                                 <div className="p-4 text-center opacity-50 text-sm">Nessuna banca trovata.</div>
                             ) : (
-                                filteredAspsps.map((b, i) => (
-                                    <button
-                                        key={i}
-                                        className="w-full flex items-center justify-between p-3 hover:bg-white/5 rounded-lg transition-colors group"
-                                        onClick={() => handleLinkBank(b)}
-                                        disabled={isLinking}
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                                            {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md flex-shrink-0" />}
-                                            <span className="text-sm truncate">{b.name}</span>
-                                        </div>
-                                        <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
-                                            {isLinking ? '...' : 'Collega →'}
-                                        </span>
-                                    </button>
-                                ))
+                                filteredAspsps.map((b, i) => {
+                                    const isAlreadyLinked = accountsWithBalances.some(acc => {
+                                        const bankName = (acc.aspsp_name || acc.aspspName || '').toLowerCase();
+                                        return bankName === b.name.toLowerCase() || b.name.toLowerCase().includes(bankName);
+                                    });
+
+                                    return (
+                                        <button
+                                            key={i}
+                                            className="w-full flex items-center justify-between p-3 hover:bg-white/5 rounded-lg transition-colors group"
+                                            onClick={() => handleLinkBank(b)}
+                                            disabled={isLinking}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md flex-shrink-0" />}
+                                                <div className="flex flex-col items-start min-w-0">
+                                                    <span className="text-sm truncate">{b.name}</span>
+                                                    {isAlreadyLinked && <span className="text-[10px] text-emerald-400 font-bold">✓ GIÀ COLLEGATA</span>}
+                                                </div>
+                                            </div>
+                                            <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
+                                                {isLinking ? '...' : (isAlreadyLinked ? 'Ricollega' : 'Collega →')}
+                                            </span>
+                                        </button>
+                                    );
+                                })
                             )}
                         </div>
                     </div>
