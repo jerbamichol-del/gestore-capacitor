@@ -51,39 +51,39 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const expensePositive = Math.abs(data.negExpense);
 
         return (
-            <div className="bg-white/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-slate-100 text-sm z-50">
-                <p className="text-slate-500 font-medium mb-2 border-b border-slate-100 pb-1">{dateLabel}</p>
+            <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 text-sm z-50">
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-2 border-b border-slate-100 dark:border-slate-700 pb-1">{dateLabel}</p>
 
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-4">
-                        <span className="text-indigo-600 font-bold">Patrimonio:</span>
-                        <span className="font-bold text-slate-800">{formatCurrency(data.balance)}</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">Patrimonio:</span>
+                        <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(data.balance)}</span>
                     </div>
 
                     {/* Se vuoi nascondere “Rettifica” anche nel tooltip, elimina questo blocco */}
                     {data.adjustment !== 0 && (
                         <div className="flex items-center justify-between gap-4">
-                            <span className="text-slate-500 font-medium">Rettifica:</span>
-                            <span className={`font-semibold ${data.adjustment >= 0 ? "text-slate-700" : "text-red-400"}`}>
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">Rettifica:</span>
+                            <span className={`font-semibold ${data.adjustment >= 0 ? "text-slate-700 dark:text-slate-200" : "text-red-400"}`}>
                                 {data.adjustment > 0 ? '+' : ''}{formatCurrency(data.adjustment)}
                             </span>
                         </div>
                     )}
 
                     <div className="flex items-center justify-between gap-4">
-                        <span className={data.net >= 0 ? "text-emerald-600" : "text-rose-600"}>
+                        <span className={data.net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
                             Flusso Netto:
                         </span>
-                        <span className={`font-semibold ${data.net >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                        <span className={`font-semibold ${data.net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                             {data.net > 0 ? '+' : ''}{formatCurrency(data.net)}
                         </span>
                     </div>
 
-                    <div className="pt-2 mt-2 border-t border-slate-100 grid grid-cols-2 gap-x-4 text-xs">
-                        <div className="text-emerald-600 font-medium">
+                    <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-700 grid grid-cols-2 gap-x-4 text-xs">
+                        <div className="text-emerald-600 dark:text-emerald-400 font-medium">
                             Entrate: {formatCurrency(data.income)}
                         </div>
-                        <div className="text-rose-600 font-medium text-right">
+                        <div className="text-rose-600 dark:text-rose-400 font-medium text-right">
                             Uscite: {formatCurrency(expensePositive)}
                         </div>
                     </div>
@@ -104,6 +104,18 @@ type ChartPoint = {
     negExpense: number;
 };
 
+const useIsDarkMode = () => {
+    const [isDark, setIsDark] = React.useState(false);
+    React.useEffect(() => {
+        const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+        check();
+        const observer = new MutationObserver(check);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
+    return isDark;
+};
+
 export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     expenses,
     accounts,
@@ -113,6 +125,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     quickFilter,
     customRange
 }) => {
+    const isDark = useIsDarkMode();
+
     const chartData = useMemo<ChartPoint[]>(() => {
         // 1) Determine date range (stessa logica attuale)
         const now = new Date();
@@ -323,12 +337,18 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
 
     if (chartData.length === 0) return null;
 
+    // Theme colors
+    const axisColor = isDark ? '#94a3b8' : '#64748b'; // slate-400 : slate-500
+    const gridColor = isDark ? '#334155' : '#e2e8f0'; // slate-700 : slate-200
+    const cursorColor = isDark ? '#475569' : '#cbd5e1'; // slate-600 : slate-300
+    const refLineColor = isDark ? '#475569' : '#cbd5e1';
+
     return (
-        <div className="bg-white p-5 md:rounded-3xl shadow-lg border border-slate-100">
+        <div className="bg-white dark:bg-slate-800 p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
             <div className="mb-6 flex justify-between items-end">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800">Andamento Patrimonio</h3>
-                    <p className="text-xs font-medium text-slate-400 mt-0.5">Patrimonio (linea), Entrate (verde), Uscite (rosso)</p>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Andamento Patrimonio</h3>
+                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">Patrimonio (linea), Entrate (verde), Uscite (rosso)</p>
                 </div>
             </div>
 
@@ -342,11 +362,11 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             </linearGradient>
                         </defs>
 
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} strokeOpacity={isDark ? 0.3 : 1} />
 
                         <XAxis
                             dataKey="date"
-                            tick={{ fontSize: 10, fill: '#94a3b8' }}
+                            tick={{ fontSize: 10, fill: axisColor }}
                             axisLine={false}
                             tickLine={false}
                             tickFormatter={(val) => {
@@ -363,7 +383,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                         />
 
                         <YAxis
-                            tick={{ fontSize: 10, fill: '#94a3b8' }}
+                            tick={{ fontSize: 10, fill: axisColor }}
                             axisLine={false}
                             tickLine={false}
                             tickFormatter={(val) => {
@@ -372,8 +392,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             }}
                         />
 
-                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                        <ReferenceLine y={0} stroke="#cbd5e1" strokeWidth={1} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: cursorColor, strokeWidth: 1, strokeDasharray: '4 4' }} />
+                        <ReferenceLine y={0} stroke={refLineColor} strokeWidth={1} />
 
                         <Bar
                             dataKey="income"

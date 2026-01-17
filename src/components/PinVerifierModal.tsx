@@ -99,29 +99,28 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
 
       {/* Modale Centrato e Compatto */}
       <div
-        className="relative w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-xs bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header compatto */}
         <div className="flex justify-between items-center p-4 pb-0">
           <div className="w-8"></div>
-          <h2 className="text-lg font-bold text-slate-800">Inserisci PIN</h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 rounded-full">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white">Inserisci PIN</h2>
+          <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-4 flex flex-col items-center flex-grow">
-          <p className="text-slate-500 text-xs mb-6 text-center">Per visualizzare i dati sensibili</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mb-6 text-center">Per visualizzare i dati sensibili</p>
 
           {/* Pallini PIN (Ora sono 4) */}
           <div className="flex gap-3 mb-6">
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  i < pin.length ? (error ? 'bg-red-500 scale-110' : 'bg-indigo-600 scale-110') : 'bg-slate-200'
-                }`}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${i < pin.length ? (error ? 'bg-red-500 scale-110' : 'bg-indigo-600 dark:bg-indigo-500 scale-110') : 'bg-slate-200 dark:bg-slate-600'
+                  }`}
               />
             ))}
           </div>
@@ -134,7 +133,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
               <button
                 key={num}
                 onClick={() => handleDigitClick(num)}
-                className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 transition-colors flex items-center justify-center shadow-sm border border-slate-100"
+                className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 dark:text-white bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 transition-colors flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-700"
               >
                 {num}
               </button>
@@ -145,7 +144,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
               {isBioAvailable && (
                 <button
                   onClick={handleBiometricScan}
-                  className="w-14 h-14 rounded-full flex items-center justify-center text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  className="w-14 h-14 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                   aria-label="Usa Biometria"
                 >
                   <FingerprintIcon className="w-7 h-7" />
@@ -155,7 +154,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
 
             <button
               onClick={() => handleDigitClick(0)}
-              className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 transition-colors flex items-center justify-center shadow-sm border border-slate-100"
+              className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 dark:text-white bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 transition-colors flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-700"
             >
               0
             </button>
@@ -164,7 +163,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
             <div className="flex items-center justify-center">
               <button
                 onClick={handleDelete}
-                className="w-14 h-14 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                className="w-14 h-14 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 <BackspaceIcon className="w-6 h-6" />
               </button>

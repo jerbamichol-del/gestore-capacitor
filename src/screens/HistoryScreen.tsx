@@ -410,7 +410,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
               </div>
             ))
           ) : (
-            <div className="text-center text-slate-500 pt-20 px-6">
+            <div className="text-center text-slate-500 dark:text-slate-400 pt-20 px-6">
               <p className="text-lg font-semibold">{isIncomeMode ? 'Nessuna entrata trovata' : 'Nessuna spesa trovata'}</p>
               <p className="mt-2">Prova a modificare i filtri o aggiungi una nuova {isIncomeMode ? 'entrata' : 'spesa'} dalla schermata Home.</p>
             </div>

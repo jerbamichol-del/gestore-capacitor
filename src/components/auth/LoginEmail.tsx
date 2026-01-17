@@ -39,7 +39,7 @@ export default function LoginEmail({ onSubmit }: Props) {
       autoComplete="off"
       data-lpignore="true"
       data-form-type="other"
-      style={{ overflow: 'visible' }}
+      className="overflow-visible"
     >
       {/* decoy: assorbe eventuali heuristics di autofill */}
       <input
@@ -54,7 +54,7 @@ export default function LoginEmail({ onSubmit }: Props) {
       {/* hidden “vero” per compatibilità con eventuale lettura DOM */}
       <input ref={hiddenRef} type="hidden" name="email" />
 
-      <label htmlFor="ed-email" className="block text-sm font-medium text-slate-700 mb-2">
+      <label htmlFor="ed-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
         Email
       </label>
 
@@ -81,17 +81,8 @@ export default function LoginEmail({ onSubmit }: Props) {
             (e.currentTarget.closest('form') as HTMLFormElement)?.requestSubmit();
           }
         }}
+        className="block w-full min-h-[44px] text-base px-3 py-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
         style={{
-          display: 'block',
-          width: '100%',
-          minHeight: 44,
-          fontSize: 16,
-          padding: '10px 12px',
-          border: '1px solid #cbd5e1',
-          borderRadius: 10,
-          outline: 'none',
-          background: '#fff',
-          color: '#0f172a',
           // evita formattazione ricca su mobile webkit
           WebkitUserModify: 'read-write-plaintext-only' as any,
         }}
@@ -109,22 +100,16 @@ export default function LoginEmail({ onSubmit }: Props) {
           content: attr(data-placeholder);
           color: #94a3b8; /* slate-400 */
         }
+        .dark #ed-email:empty:before {
+            color: #64748b; /* slate-500 */
+        }
       `}</style>
 
-      {err && <p style={{ color: '#dc2626', fontSize: 13, marginTop: 8 }}>{err}</p>}
+      {err && <p className="text-red-600 text-sm mt-2">{err}</p>}
 
       <button
         type="submit"
-        style={{
-          marginTop: 16,
-          width: '100%',
-          minHeight: 44,
-          borderRadius: 10,
-          border: '1px solid #4f46e5',
-          background: '#4f46e5',
-          color: '#fff',
-          fontWeight: 600,
-        }}
+        className="mt-4 w-full min-h-[44px] rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
       >
         Continua
       </button>

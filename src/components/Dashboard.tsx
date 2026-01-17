@@ -584,8 +584,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
 
                         <input type="file" ref={fileInputRef} className="hidden" accept=".csv, .xlsx, .xls, .json" onChange={handleFileChange} />
-                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 text-indigo-700 font-bold rounded-2xl border border-indigo-100 shadow-sm hover:bg-indigo-100 transition-colors">
-                            <ArrowsUpDownIcon className="w-6 h-6" /> Imp/Exp (CSV/Excel/JSON)
+                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-bold rounded-2xl border border-indigo-100 dark:border-indigo-800 shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
                         </button>
                     </div>
 
@@ -699,59 +698,59 @@ const Dashboard: React.FC<DashboardProps> = ({
             {isImportExportMenuOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
                     <div
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in-up"
+                        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">
                             {showExportOptions && (
-                                <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-500" aria-label="Indietro">
+                                <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" aria-label="Indietro">
                                     <ArrowLeftIcon className="w-5 h-5" />
                                 </button>
                             )}
-                            <h3 className={`text-lg font-bold text-slate-800 flex-1 text-center ${showExportOptions ? '' : 'pl-8'}`}>
+                            <h3 className={`text-lg font-bold text-slate-800 dark:text-white flex-1 text-center ${showExportOptions ? '' : 'pl-8'}`}>
                                 {showExportOptions ? "Scegli Formato" : "Gestione Dati"}
                             </h3>
-                            <button onClick={handleCloseNavigation} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors">
+                            <button onClick={handleCloseNavigation} className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                 <XMarkIcon className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="p-4 space-y-3">
                             {!showExportOptions ? (
                                 <>
-                                    <button onClick={handleSyncClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
+                                    <button onClick={handleSyncClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left group">
+                                        <div className="w-12 h-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform">
                                             <ArrowPathIcon className="w-6 h-6" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 text-lg">Sincronizza Cloud</span>
-                                            <span className="text-xs text-slate-500">Scarica ultimi dati dal cloud</span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Sincronizza Cloud</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Scarica ultimi dati dal cloud</span>
                                         </div>
                                     </button>
-                                    <button onClick={handleImportClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform">
+                                    <button onClick={handleImportClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left group">
+                                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
                                             <ArrowDownTrayIcon className="w-6 h-6" />
                                         </div>
-                                        <span className="font-semibold text-slate-700 text-lg">Importa (CSV/Excel/JSON)</span>
+                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Importa (CSV/Excel/JSON)</span>
                                     </button>
-                                    <button onClick={openExportOptions} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                    <button onClick={openExportOptions} className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left group">
+                                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                                             <ArrowUpTrayIcon className="w-6 h-6" />
                                         </div>
-                                        <span className="font-semibold text-slate-700 text-lg">Esporta (Excel/JSON)</span>
+                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Esporta (Excel/JSON)</span>
                                     </button>
                                     <button
                                         onClick={() => {
                                             window.history.back();
                                             setTimeout(onOpenBankSyncSettings, 50);
                                         }}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group"
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left group"
                                     >
-                                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                                        <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
                                             <span className="text-2xl">🏦</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 text-lg">Configura Banche</span>
-                                            <span className="text-xs text-slate-500">Collega Revolut e conti ITA</span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Configura Banche</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Collega Revolut e conti ITA</span>
                                         </div>
                                     </button>
                                 </>
@@ -760,27 +759,27 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <button
                                         onClick={() => handleExportClick('excel')}
                                         disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
                                             <span className="font-bold text-sm">XLSX</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 text-lg">Excel (.xlsx)</span>
-                                            <span className="text-xs text-slate-500">Le ricevute non verranno salvate</span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Excel (.xlsx)</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Le ricevute non verranno salvate</span>
                                         </div>
                                     </button>
                                     <button
                                         onClick={() => handleExportClick('json')}
                                         disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 group-hover:scale-110 transition-transform">
+                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400 group-hover:scale-110 transition-transform">
                                             <span className="font-bold text-sm">JSON</span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 text-lg">JSON (.json)</span>
-                                            <span className="text-xs text-slate-500">Backup completo dell'app</span>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">JSON (.json)</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Backup completo dell'app</span>
                                         </div>
                                     </button>
                                 </>
