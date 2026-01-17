@@ -24,22 +24,36 @@ root.render(
 // --- GESTIONE SERVICE WORKER ---
 if ('serviceWorker' in navigator) {
   if (Capacitor.isNativePlatform()) {
-    // Se siamo su piattaforma nativa, disinstalliamo eventuali SW rimasti incastrati
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (const registration of registrations) {
-        registration.unregister();
-        console.log('🗑️ SW rimosso su piattaforma nativa');
-      }
-    });
-
-    // Pulizia cache per sicurezza (opzionale ma consigliata)
-    if (window.caches) {
-      caches.keys().then((names) => {
-        for (const name of names) {
-          caches.delete(name);
+    // Se siamo su piattaforma nativa, pulizia approfondita e loggata
+    (async () => {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        if (registrations.length > 0) {
+          const unregisterResults = await Promise.all(
+            registrations.map(async (reg) => {
+              const success = await reg.unregister();
+              console.log(`🗑️ SW unregister: ${success ? '✅ Success' : '❌ Failed'} (${reg.scope})`);
+              return success;
+            })
+          );
         }
-      });
-    }
+
+        if (window.caches) {
+          const names = await caches.keys();
+          if (names.length > 0) {
+            await Promise.all(
+              names.map(async (name) => {
+                const success = await caches.delete(name);
+                console.log(`🧹 Cache delete: ${success ? '✅ Success' : '❌ Failed'} (${name})`);
+                return success;
+              })
+            );
+          }
+        }
+      } catch (err) {
+        console.error('❌ Errore durante cleanup SW/Cache native:', err);
+      }
+    })();
   } else {
     // Solo su Web registriamo il SW
     window.addEventListener('load', () => {
