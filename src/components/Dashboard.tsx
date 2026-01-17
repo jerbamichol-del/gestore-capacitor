@@ -741,8 +741,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     </button>
                                     <button
                                         onClick={() => {
-                                            setIsImportExportMenuOpen(false);
-                                            onOpenBankSyncSettings();
+                                            window.history.back();
+                                            setTimeout(onOpenBankSyncSettings, 50);
                                         }}
                                         className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-left group"
                                     >

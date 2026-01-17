@@ -1,5 +1,5 @@
 
-export type ModalType = 
+export type ModalType =
   | 'home'
   | 'form'
   | 'voice'
@@ -14,4 +14,5 @@ export type ModalType =
   | 'accounts'
   | 'exit_guard'
   | 'import_export_main'
-  | 'import_export_format';
+  | 'import_export_format'
+  | 'bank_sync';

@@ -15,6 +15,7 @@ export const useBackNavigation = (
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isMultipleExpensesModalOpen, setIsMultipleExpensesModalOpen] = useState(false);
+  const [isBankSyncModalOpen, setIsBankSyncModalOpen] = useState(false);
 
   const [isRecurringScreenOpen, setIsRecurringScreenOpen] = useState(false);
   const [isRecurringClosing, setIsRecurringClosing] = useState(false);
@@ -37,6 +38,7 @@ export const useBackNavigation = (
     setIsVoiceModalOpen(false); setIsMultipleExpensesModalOpen(false); setIsQrModalOpen(false);
     setIsHistoryScreenOpen(false); setIsHistoryFilterOpen(false); setIsRecurringScreenOpen(false);
     setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); setIsAccountsScreenOpen(false);
+    setIsBankSyncModalOpen(false);
     setAnalysisImage(null);
   };
 
@@ -50,6 +52,7 @@ export const useBackNavigation = (
     if (window.history.state?.modal === 'income_history') { setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); }
     if (window.history.state?.modal === 'recurring') { setIsRecurringScreenOpen(false); setIsRecurringClosing(false); }
     if (window.history.state?.modal === 'accounts') { setIsAccountsScreenOpen(false); }
+    if (window.history.state?.modal === 'bank_sync') { setIsBankSyncModalOpen(false); }
 
     if (window.history.state?.modal && window.history.state.modal !== 'home' && window.history.state.modal !== 'exit_guard') window.history.back();
     else forceNavigateHome();
@@ -114,6 +117,7 @@ export const useBackNavigation = (
       if (modal !== 'source') setIsImageSourceModalOpen(false);
       if (modal !== 'multiple') setIsMultipleExpensesModalOpen(false);
       if (modal !== 'qr') setIsQrModalOpen(false);
+      if (modal !== 'bank_sync') setIsBankSyncModalOpen(false);
       if (modal !== 'calculator' && modal !== 'calculator_details') setIsCalculatorContainerOpen(false);
 
       // Handle Screen Navigation
@@ -151,6 +155,11 @@ export const useBackNavigation = (
         setIsHistoryScreenOpen(false);
         setIsIncomeHistoryOpen(false);
         setIsRecurringScreenOpen(false);
+      } else if (modal === 'bank_sync') {
+        setIsBankSyncModalOpen(true);
+        setIsHistoryScreenOpen(false);
+        setIsIncomeHistoryOpen(false);
+        setIsRecurringScreenOpen(false);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -175,6 +184,8 @@ export const useBackNavigation = (
     setIsUpdateModalOpen,
     isMultipleExpensesModalOpen,
     setIsMultipleExpensesModalOpen,
+    isBankSyncModalOpen,
+    setIsBankSyncModalOpen,
     isHistoryFilterOpen, setIsHistoryFilterOpen,
     closeModalWithHistory,
     forceNavigateHome,

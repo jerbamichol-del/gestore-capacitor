@@ -61,28 +61,6 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         }
     }, [isOpen]);
 
-    // Native back button support
-    useEffect(() => {
-        if (!isOpen) return;
-
-        let backButtonListener: { remove: () => void } | null = null;
-
-        const setupBackButton = async () => {
-            backButtonListener = await App.addListener('backButton', () => {
-                onClose();
-            });
-        };
-
-        if (Capacitor.isNativePlatform()) {
-            setupBackButton();
-        }
-
-        return () => {
-            if (backButtonListener) {
-                backButtonListener.remove();
-            }
-        };
-    }, [isOpen, onClose]);
 
     const handleSave = () => {
         if (!credentials.appId || !credentials.clientId || !credentials.privateKey) {

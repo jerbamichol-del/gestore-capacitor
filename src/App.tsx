@@ -60,8 +60,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const { updateInfo, isChecking: isCheckingUpdate, skipVersion } = useUpdateChecker();
 
-  // 5. Bank Sync State
-  const [isBankSyncModalOpen, setIsBankSyncModalOpen] = useState(false);
 
   useEffect(() => {
     if (updateInfo && updateInfo.available && !isCheckingUpdate) {
@@ -395,7 +393,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           reader.readAsText(file);
         }}
         onSync={() => handleSyncFromCloud(false)}
-        onOpenBankSyncSettings={() => setIsBankSyncModalOpen(true)}
+        onOpenBankSyncSettings={() => {
+          window.history.pushState({ modal: 'bank_sync' }, '');
+          ui.nav.setIsBankSyncModalOpen(true);
+        }}
         isBalanceVisible={isBalanceVisible}
         onToggleBalanceVisibility={handleToggleBalanceVisibility}
         showToast={ui.showToast}
@@ -413,8 +414,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
       {/* Bank Sync Settings */}
       <BankSyncSettingsModal
-        isOpen={isBankSyncModalOpen}
-        onClose={() => setIsBankSyncModalOpen(false)}
+        isOpen={ui.nav.isBankSyncModalOpen}
+        onClose={() => ui.nav.closeModalWithHistory()}
         showToast={ui.showToast}
       />
 
