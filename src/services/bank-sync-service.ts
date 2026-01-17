@@ -358,15 +358,17 @@ export class BankSyncService {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.accounts_data) {
+                        console.log(`Session ${sessionId} returned ${data.accounts_data.length} accounts`);
                         // De-duplicate accounts by UID
                         for (const acc of data.accounts_data) {
-                            if (!allAccounts.has(acc.uid)) {
-                                allAccounts.set(acc.uid, {
+                            const uid = String(acc.uid).toLowerCase();
+                            if (!allAccounts.has(uid)) {
+                                allAccounts.set(uid, {
                                     ...acc,
                                     _sessionId: sessionId
                                 });
                             } else {
-                                console.log(`Skipping duplicate account ${acc.uid} from session ${sessionId}`);
+                                console.log(`Skipping duplicate account ${acc.uid} (normalized: ${uid}) already seen`);
                             }
                         }
                     }

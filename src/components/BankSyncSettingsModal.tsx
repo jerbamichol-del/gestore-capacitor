@@ -191,12 +191,13 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const handleLinkBank = async (aspsp: any) => {
         // Check if bank is already linked
         const isAlreadyLinked = accountsWithBalances.some(acc => {
-            const bankName = (acc.aspsp_name || acc.aspspName || '').toLowerCase();
-            return bankName === aspsp.name.toLowerCase() || aspsp.name.toLowerCase().includes(bankName);
+            const accAspspName = (acc.aspsp_name || acc.aspspName || '').toLowerCase().trim();
+            const searchAspspName = (aspsp.name || '').toLowerCase().trim();
+            return accAspspName === searchAspspName && accAspspName.length > 0;
         });
 
         if (isAlreadyLinked) {
-            const confirm = window.confirm(`La banca ${aspsp.name} sembra essere già collegata. Vuoi collegarla di nuovo? (Questo creerà una nuova sessione ma non duplicherà i conti in lista)`);
+            const confirm = window.confirm(`La banca ${aspsp.name} sembra essere già collegata. Vuoi aggiungere un'altra sessione per questo istituto?`);
             if (!confirm) return;
         }
 
@@ -541,8 +542,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             ) : (
                                 filteredAspsps.map((b, i) => {
                                     const isAlreadyLinked = accountsWithBalances.some(acc => {
-                                        const bankName = (acc.aspsp_name || acc.aspspName || '').toLowerCase();
-                                        return bankName === b.name.toLowerCase() || b.name.toLowerCase().includes(bankName);
+                                        const accAspspName = (acc.aspsp_name || acc.aspspName || '').toLowerCase().trim();
+                                        const bName = (b.name || '').toLowerCase().trim();
+                                        return accAspspName === bName && accAspspName.length > 0;
                                     });
 
                                     return (
@@ -576,6 +578,20 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             disabled={isSyncing}
                         >
                             {isSyncing ? 'Sincronizzazione...' : '🔄 Sincronizza Ora'}
+                        </button>
+
+                        <button
+                            className="text-xs text-red-400 opacity-60 hover:opacity-100 transition-opacity mt-4 py-2"
+                            onClick={async () => {
+                                if (window.confirm('Vuoi davvero scollegare TUTTE le banche e resettare le configurazioni?')) {
+                                    await BankSyncService.clearAllSessions();
+                                    setAccountsWithBalances([]);
+                                    setAccountMappings({});
+                                    showToast({ message: 'Tutte le banche scollegate.', type: 'info' });
+                                }
+                            }}
+                        >
+                            ⚠️ Scollega tutto e resetta
                         </button>
                     </div>
                 </div>
