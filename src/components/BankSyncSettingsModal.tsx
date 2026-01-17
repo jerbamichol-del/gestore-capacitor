@@ -28,6 +28,8 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoadingBanks, setIsLoadingBanks] = useState(false);
     const [isLinking, setIsLinking] = useState(false);
+    const [localAccounts, setLocalAccounts] = useState<any[]>([]);
+    const [accountMappings, setAccountMappings] = useState<Record<string, string>>({});
 
     // State for credential visibility
     const [isCredentialsLocked, setIsCredentialsLocked] = useState(false);
@@ -44,6 +46,18 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                 setIsCredentialsLocked(false);
             }
             setEditingField(null);
+
+            // Fetch accounts if credentials exist
+            if (stored && stored.appId) {
+                handleTestConnection(true);
+            }
+
+            // Load local accounts for mapping
+            const storedAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+            setLocalAccounts(storedAccounts);
+
+            // Load current mappings
+            setAccountMappings(BankSyncService.getAccountMappings());
         }
     }, [isOpen]);
 
@@ -81,14 +95,19 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         showToast({ message: 'Credenziali salvate!', type: 'success' });
     };
 
-    const handleTestConnection = async () => {
-        setIsTesting(true);
+    const handleTestConnection = async (silent = false) => {
+        if (!silent) setIsTesting(true);
         try {
-            BankSyncService.saveCredentials(credentials);
+            const currentCreds = BankSyncService.getCredentials();
+            if (!currentCreds) return;
+
+            // If we are testing manually, we might want to use what's in the state if it's different
+            // But usually we save before testing.
+
             // First hit /aspsps to verify absolute connectivity
             await BankSyncService.testConnection();
 
-            // If successful, try to fetch accounts (might be empty/404 if no session, but /aspsps success is enough)
+            // If successful, try to fetch accounts
             try {
                 const accounts = await BankSyncService.fetchAccounts();
                 const withBalances = await Promise.all(accounts.map(async (acc) => ({
@@ -96,22 +115,28 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     balance: await BankSyncService.fetchBalance(acc.uid).catch(() => null)
                 })));
                 setAccountsWithBalances(withBalances);
-                showToast({
-                    message: "Credenziali valide! Connessione stabilita con Enable Banking.",
-                    type: 'success'
-                });
+                if (!silent) {
+                    showToast({
+                        message: "Credenziali valide! Connessione stabilita con Enable Banking.",
+                        type: 'success'
+                    });
+                }
             } catch (err: any) {
                 // If /aspsps worked but /accounts failed (e.g. no session), it's still a success of credentials
-                showToast({
-                    message: "Credenziali valide, ma nessun conto autorizzato trovato. Verifica i permessi sul portale.",
-                    type: 'success'
-                });
+                if (!silent) {
+                    showToast({
+                        message: "Credenziali valide, ma nessun conto autorizzato trovato. Verifica i permessi sul portale.",
+                        type: 'success'
+                    });
+                }
             }
         } catch (error: any) {
             console.error(error);
-            showToast({ message: `Errore: ${error.message}`, type: 'error' });
+            if (!silent) {
+                showToast({ message: `Errore: ${error.message}`, type: 'error' });
+            }
         } finally {
-            setIsTesting(false);
+            if (!silent) setIsTesting(false);
         }
     };
 
@@ -124,7 +149,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                 type: 'success'
             });
             // Update balances in UI
-            handleTestConnection();
+            handleTestConnection(true);
         } catch (error: any) {
             // Check for session expired error
             if (error.message?.includes('SESSION_EXPIRED')) {
@@ -422,7 +447,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         <button className="glass-btn flex-1 py-3" onClick={handleSave}>💾 Salva</button>
                         <button
                             className="glass-btn flex-1 py-3 bg-blue-500/20"
-                            onClick={handleTestConnection}
+                            onClick={() => handleTestConnection()}
                             disabled={isTesting}
                         >
                             {isTesting ? 'Verifica...' : '🧪 Test'}
@@ -443,17 +468,40 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                     {isSyncing ? 'Sincronizzazione...' : '🔄 Sincronizza Ora'}
                                 </button>
                             </div>
-                            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                                 {accountsWithBalances.map((acc, i) => (
-                                    <div key={i} className="flex justify-between items-center p-3 bg-black/20 rounded-xl border border-white/10">
-                                        <div className="flex flex-col min-w-0 flex-1 mr-2">
-                                            <span className="text-sm font-medium truncate">{acc.name || 'Conto'}</span>
-                                            <span className="text-xs opacity-50 truncate">{acc.iban || acc.uid}</span>
-                                        </div>
-                                        <div className="text-right flex-shrink-0">
-                                            <div className="text-sm font-bold">
-                                                {acc.balance !== null ? `${acc.balance.toFixed(2)}€` : '---'}
+                                    <div key={i} className="flex flex-col p-4 bg-black/20 rounded-2xl border border-white/10 gap-3">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex flex-col min-w-0 flex-1 mr-2">
+                                                <span className="text-sm font-bold truncate text-white">{acc.name || 'Conto'}</span>
+                                                <span className="text-[10px] opacity-40 truncate font-mono">{acc.iban || acc.uid}</span>
                                             </div>
+                                            <div className="text-right flex-shrink-0">
+                                                <div className="text-sm font-black text-emerald-400">
+                                                    {acc.balance !== null ? `${acc.balance.toFixed(2)}€` : '---'}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[10px] font-bold uppercase opacity-40 ml-1">Collega a Conto Locale:</label>
+                                            <select
+                                                className="glass-input py-2 text-xs w-full bg-white/5 border-white/10"
+                                                value={accountMappings[acc.uid] || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setAccountMappings(prev => ({ ...prev, [acc.uid]: val }));
+                                                    BankSyncService.setAccountMapping(acc.uid, val);
+                                                    showToast({ message: 'Mapping aggiornato!', type: 'success' });
+                                                }}
+                                            >
+                                                <option value="" className="bg-slate-800">Seleziona conto...</option>
+                                                {localAccounts.map(la => (
+                                                    <option key={la.id} value={la.id} className="bg-slate-800">
+                                                        {la.name} ({la.id})
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
                                 ))}

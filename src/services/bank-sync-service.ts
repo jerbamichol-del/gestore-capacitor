@@ -11,6 +11,7 @@ export interface BankSyncCredentials {
 export class BankSyncService {
     private static readonly STORAGE_KEY = 'bank_sync_credentials';
     private static readonly STORAGE_KEY_ACTIVE_BANKS = 'bank_sync_active_providers';
+    private static readonly STORAGE_KEY_MAPPINGS = 'bank_sync_account_mappings';
     private static readonly BASE_URL = 'https://api.enablebanking.com';
 
     /**
@@ -312,7 +313,25 @@ export class BankSyncService {
     static async clearAllSessions(): Promise<void> {
         localStorage.removeItem('bank_sync_sessions');
         localStorage.removeItem(this.STORAGE_KEY_ACTIVE_BANKS);
-        console.log('Cleared all bank sync sessions');
+        localStorage.removeItem(this.STORAGE_KEY_MAPPINGS);
+        console.log('Cleared all bank sync sessions and mappings');
+    }
+
+    /**
+     * Get manual mappings for accounts
+     */
+    static getAccountMappings(): Record<string, string> {
+        const stored = localStorage.getItem(this.STORAGE_KEY_MAPPINGS);
+        return stored ? JSON.parse(stored) : {};
+    }
+
+    /**
+     * Save a manual mapping for a bank account
+     */
+    static setAccountMapping(bankUid: string, localId: string): void {
+        const mappings = this.getAccountMappings();
+        mappings[bankUid] = localId;
+        localStorage.setItem(this.STORAGE_KEY_MAPPINGS, JSON.stringify(mappings));
     }
 
     /**
@@ -491,6 +510,12 @@ export class BankSyncService {
      */
     private static resolveLocalAccountId(acc: any): string {
         try {
+            const mappings = this.getAccountMappings();
+            if (mappings[acc.uid]) {
+                console.log(`Explicit mapping found for ${acc.uid} -> ${mappings[acc.uid]}`);
+                return mappings[acc.uid];
+            }
+
             const accounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
 
             // Extract all possible names from the bank account object
@@ -520,6 +545,10 @@ export class BankSyncService {
             // 2. Exact Name Match (Solid Confidence)
             for (const la of accounts) {
                 const localName = la.name.toLowerCase().trim();
+
+                // Never match to "Contanti" or "Cash" automatically unless it's a very specific intentional match
+                if (la.id === 'cash' || localName.includes('contanti')) continue;
+
                 if (bankNames.some(bn => bn === localName)) {
                     console.log(`Exact name match found: ${la.id} (${la.name})`);
                     return la.id;
