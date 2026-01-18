@@ -641,7 +641,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   {formData.receipts.map((receipt, index) => (
                     <div
                       key={index}
-                      className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-electric-violet/30 shadow-sm aspect-video bg-slate-50 dark:bg-midnight-card/50 cursor-pointer hover:border-indigo-300 dark:hover:border-electric-violet transition-colors"
+                      className="relative rounded-lg overflow-hidden border border-sunset-coral/20 dark:border-electric-violet/30 shadow-sm aspect-video bg-sunset-cream/40 dark:bg-midnight-card/50 cursor-pointer hover:border-sunset-coral/50 dark:hover:border-electric-violet transition-colors"
                       onClick={() => setViewingImage(receipt)}
                     >
                       <img
@@ -681,7 +681,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           )}
 
           {!isIncome && !isTransfer && !isAdjustment && (
-            <div className="midnight-card p-4 rounded-lg border border-slate-200 dark:border-electric-violet/20 space-y-4">
+            <div className="midnight-card p-4 rounded-lg border border-sunset-coral/20 dark:border-electric-violet/20 space-y-4">
               <div>
                 <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Frequenza</label>
                 <button
@@ -729,7 +729,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 ? 'bg-sky-600 hover:bg-sky-700 focus:ring-sky-500 disabled:bg-sky-300'
                 : isAdjustment
                   ? 'bg-slate-600 hover:bg-slate-700 focus:ring-slate-500 dark:bg-midnight-card dark:border-electric-violet/30 dark:hover:bg-midnight-card/80'
-                  : 'bg-indigo-600 dark:btn-electric hover:bg-indigo-700 focus:ring-indigo-500 disabled:bg-indigo-300'
+                  : 'btn-electric text-white shadow-lg shadow-indigo-500/30'
               }`}
           >
             {isTransfer ? 'Conferma Trasferimento' : isIncome ? 'Aggiungi Entrata' : isAdjustment ? 'Salva Rettifica' : 'Aggiungi Spesa'}

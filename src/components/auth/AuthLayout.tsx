@@ -81,7 +81,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
     <div
       style={containerStyle}
-      className="dark:bg-midnight font-sans flex flex-col p-4 overflow-auto overflow-x-hidden touch-manipulation transition-colors duration-300"
+      className="bg-[#FFF8F0] dark:bg-midnight font-sans flex flex-col p-4 overflow-auto overflow-x-hidden touch-manipulation transition-colors duration-300"
     >
       <div className="flex flex-1 items-center justify-center relative overflow-visible">
         <div className="w-full max-w-[480px]">
