@@ -40,8 +40,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const config = {
     danger: {
       icon: ExclamationTriangleIcon,
-      iconColor: 'text-red-600',
-      bgColor: 'bg-red-100',
+      iconColor: 'text-red-600 dark:text-rose-400',
+      bgColor: 'bg-red-100 dark:bg-rose-900/40',
       confirmButtonClasses: 'bg-red-600 dark:bg-rose-600 dark:hover:bg-rose-700 focus:ring-red-500',
     },
     info: {
@@ -55,7 +55,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[5100] flex justify-center items-center p-4 transition-opacity duration-75 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/80 backdrop-blur-md`}
+      className={`fixed inset-0 z-[5100] flex justify-center items-center p-4 transition-opacity duration-75 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-midnight/80 backdrop-blur-md`}
       onClick={onClose}
       aria-modal="true"
       role="dialog"

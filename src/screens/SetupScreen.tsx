@@ -155,7 +155,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
     if (step === 'processing' || isLoading) {
       return (
         <div className="text-center min-h-[300px] flex flex-col justify-center items-center">
-          <SpinnerIcon className="w-12 h-12 text-indigo-600 mx-auto" />
+          <SpinnerIcon className="w-12 h-12 text-indigo-600 dark:text-electric-violet mx-auto" />
           <p className="mt-4 text-slate-500">
             {step === 'processing' ? 'Creazione account...' : 'Verifica email...'}
           </p>
@@ -217,12 +217,12 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
             </form>
             <p className="text-sm text-slate-500 mt-6">
               Hai già un account?{' '}
-              <button onClick={onGoToLogin} className="font-semibold text-indigo-600 hover:text-indigo-500">
+              <button onClick={onGoToLogin} className="font-semibold text-indigo-600 dark:text-electric-violet hover:text-indigo-500 dark:hover:text-electric-violet/80">
                 Accedi
               </button>
             </p>
 
-            <div className="mt-8 pt-6 border-t border-slate-200">
+            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-electric-violet/20">
               <a
                 href={getTelegramLink()}
                 target="_blank"
@@ -235,7 +235,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
                     setHasOpenedTelegram(true);
                   }
                 }}
-                className={`inline-flex items-center gap-2 text-sm font-medium transition-colors bg-sky-50 px-4 py-2 rounded-full hover:bg-sky-100 ${!email ? 'text-slate-400 cursor-not-allowed' : 'text-sky-600 hover:text-sky-700'}`}
+                className={`inline-flex items-center gap-2 text-sm font-medium transition-colors bg-sky-50 dark:bg-sky-900/20 px-4 py-2 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/40 ${!email ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed' : 'text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300'}`}
               >
                 <TelegramIcon className="w-5 h-5" />
                 Registra mail su telegram
@@ -249,10 +249,10 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
         const isConfirming = step === 'pin_confirm';
         return (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
               {isConfirming ? 'Conferma il tuo PIN' : 'Crea un PIN di 4 cifre'}
             </h2>
-            <p className={`text-slate-500 h-10 flex items-center justify-center transition-colors ${error ? 'text-red-500' : ''}`}>
+            <p className={`text-slate-500 dark:text-slate-400 h-10 flex items-center justify-center transition-colors ${error ? 'text-red-500 dark:text-rose-400' : ''}`}>
               {error || (isConfirming ? 'Inseriscilo di nuovo per conferma.' : 'Servirà per accedere al tuo account.')}
             </p>
             <PinInput pin={isConfirming ? confirmPin : pin} onPinChange={isConfirming ? setConfirmPin : setPin} />
@@ -265,8 +265,8 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
           <div className="text-center">
             <h2 className="text-xl font-bold text-sunset-text dark:text-white mb-2">Vuoi abilitare l’impronta / FaceID?</h2>
             <p className="text-sunset-text/70 dark:text-slate-500 h-10 flex items-center justify-center">Potrai sbloccare l’app senza inserire il PIN.</p>
-            <div className="mt-4 p-3 rounded-lg border border-slate-200 bg-slate-50 text-left inline-block">
-              <p className="text-sm text-slate-700">Abilita ora lo sblocco biometrico?</p>
+            <div className="mt-4 p-3 rounded-lg border border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight-card/40 text-left inline-block">
+              <p className="text-sm text-slate-700 dark:text-slate-200">Abilita ora lo sblocco biometrico?</p>
               <div className="flex gap-3 mt-2">
                 <button
                   onClick={async () => {

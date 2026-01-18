@@ -610,7 +610,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                         <span className="font-semibold text-slate-700 dark:text-slate-300">{style.label}</span>
                                                         <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
                                                     </div>
-                                                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                                                    <div className="w-full bg-sunset-cream/90 dark:bg-slate-700 rounded-full h-2.5">
                                                         <div className="bg-indigo-500 dark:bg-electric-violet h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
                                                     </div>
                                                 </div>
@@ -654,8 +654,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                             </ResponsiveContainer>
                             {activeIndex === null && (
                                 <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
-                                    <span className="text-slate-800 text-base font-bold">Totale</span>
-                                    <span className="text-2xl font-extrabold text-slate-800 mt-1">
+                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
+                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-white mt-1">
                                         {formatCurrency(totalExpenses)}
                                     </span>
                                 </div>
@@ -672,7 +672,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <button
                                             key={`item-${index}`}
                                             onClick={(e) => handleLegendItemClick(index, e)}
-                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-slate-100 hover:bg-slate-200`}
+                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-sunset-cream/60 dark:bg-midnight-card hover:bg-sunset-peach/50 dark:hover:bg-midnight-card/80`}
                                         >
                                             <style.Icon className="w-8 h-8 flex-shrink-0" />
                                             <div className="min-w-0 pr-2">
@@ -698,7 +698,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {isImportExportMenuOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-midnight/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
                     <div
                         className="midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
                         onClick={e => e.stopPropagation()}

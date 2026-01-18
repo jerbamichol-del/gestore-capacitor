@@ -154,7 +154,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
 
             <button
               onClick={() => handleDigitClick(0)}
-              className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 dark:text-white bg-slate-50 dark:bg-midnight-card/50 hover:bg-slate-100 dark:hover:bg-midnight-card active:bg-slate-200 dark:active:bg-electric-violet/20 transition-colors flex items-center justify-center shadow-sm border border-slate-100 dark:border-electric-violet/20"
+              className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 dark:text-white bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card active:bg-sunset-peach dark:active:bg-electric-violet/20 transition-colors flex items-center justify-center shadow-sm border border-sunset-coral/20 dark:border-electric-violet/20"
             >
               0
             </button>
@@ -163,7 +163,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
             <div className="flex items-center justify-center">
               <button
                 onClick={handleDelete}
-                className="w-14 h-14 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-electric-violet hover:bg-slate-50 dark:hover:bg-electric-violet/10 transition-colors"
+                className="w-14 h-14 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-electric-violet hover:bg-sunset-peach/30 dark:hover:bg-electric-violet/10 transition-colors"
               >
                 <BackspaceIcon className="w-6 h-6" />
               </button>

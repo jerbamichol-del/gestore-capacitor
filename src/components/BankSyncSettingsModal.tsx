@@ -453,7 +453,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-bold uppercase opacity-60 text-slate-500 dark:text-slate-400">Conti Collegati</label>
                                 <button
-                                    className="text-xs font-bold text-blue-600 dark:text-electric-pink hover:text-blue-500 dark:hover:text-electric-pink/80 transition-colors uppercase"
+                                    className="text-xs font-bold text-sunset-coral dark:text-electric-pink hover:text-sunset-pink dark:hover:text-electric-pink/80 transition-colors uppercase"
                                     onClick={handleSyncNow}
                                     disabled={isSyncing}
                                 >
@@ -487,7 +487,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                                     showToast({ message: 'Mapping aggiornato!', type: 'success' });
                                                 }}
                                             >
-                                                <option value="" className="text-slate-500">Seleziona conto...</option>
+                                                <option value="" className="text-slate-500 dark:text-slate-400">Seleziona conto...</option>
                                                 {localAccounts.map(la => (
                                                     <option key={la.id} value={la.id}>
                                                         {la.name} ({la.id})
@@ -535,13 +535,13 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                             disabled={isLinking}
                                         >
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md flex-shrink-0 bg-white p-0.5 object-contain" />}
+                                                {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md flex-shrink-0 bg-white dark:bg-slate-200 p-0.5 object-contain" />}
                                                 <div className="flex flex-col items-start min-w-0">
                                                     <span className="text-sm font-medium truncate text-slate-800 dark:text-white">{b.name}</span>
                                                     {isAlreadyLinked && <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">✓ GIÀ COLLEGATA</span>}
                                                 </div>
                                             </div>
-                                            <span className="text-xs text-blue-600 dark:text-electric-pink opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2 font-semibold">
+                                            <span className="text-xs text-sunset-coral dark:text-electric-pink opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2 font-semibold">
                                                 {isLinking ? '...' : (isAlreadyLinked ? 'Ricollega' : 'Collega →')}
                                             </span>
                                         </button>

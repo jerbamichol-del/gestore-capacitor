@@ -317,7 +317,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
       case 'error':
         return {
           icon: (
-            <div className="w-24 h-24 rounded-full bg-red-100 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <XMarkIcon className="w-12 h-12 text-red-500" />
             </div>
           ),
@@ -349,7 +349,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
           <button
             type="button"
             onClick={handleClose}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-electric-violet transition-colors p-1 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-electric-violet transition-colors p-1 rounded-full hover:bg-sunset-peach/30 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Chiudi"
           >
             <XMarkIcon className="w-6 h-6" />

@@ -803,14 +803,14 @@ export function PendingTransactionsModal({
             <button
               onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
               disabled={currentIndex === 0}
-              className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              className="flex-1 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
             >
               ← Precedente
             </button>
             <button
               onClick={() => setCurrentIndex((i) => Math.min(transactions.length - 1, i + 1))}
               disabled={currentIndex >= transactions.length - 1}
-              className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              className="flex-1 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
             >
               Successiva →
             </button>
@@ -818,17 +818,17 @@ export function PendingTransactionsModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-sunset-cream border-t border-sunset-coral/20 px-6 py-3 z-10">
+        <div className="sticky bottom-0 bg-sunset-cream dark:bg-midnight border-t border-sunset-coral/20 dark:border-electric-violet/20 px-6 py-3 z-10">
           <div className="flex gap-2">
             {onIgnoreAll && transactions.length > 1 && (
               <button
                 onClick={onIgnoreAll}
-                className="flex-1 text-red-600 bg-red-50 hover:bg-red-100 text-sm font-medium py-2 rounded-lg transition-colors"
+                className="flex-1 text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-900/10 hover:bg-red-100 dark:hover:bg-rose-900/20 text-sm font-medium py-2 rounded-lg transition-colors"
               >
                 Ignora Tutte ({transactions.length})
               </button>
             )}
-            <button onClick={onClose} className="flex-1 text-gray-600 text-sm font-medium py-2">
+            <button onClick={onClose} className="flex-1 text-slate-500 dark:text-slate-400 text-sm font-medium py-2">
               Chiudi
             </button>
           </div>
