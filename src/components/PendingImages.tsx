@@ -23,7 +23,7 @@ const PendingImages: React.FC<PendingImagesProps> = ({ images, onAnalyze, onDele
   const isAnalyzing = !!syncingImageId;
 
   return (
-    <div className="bg-white midnight-card rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/20">
+    <div className="midnight-card rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/20">
       <button
         className="w-full flex items-center justify-between p-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 rounded-2xl"
         onClick={() => setIsOpen(!isOpen)}

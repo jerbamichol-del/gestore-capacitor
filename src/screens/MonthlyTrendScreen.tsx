@@ -96,7 +96,7 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
         <div className="animate-fade-in-up">
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Andamento Mensile</h1>
 
-            <div className="bg-white midnight-card p-6 rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/20">
+            <div className="midnight-card p-6 rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/20">
                 <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2 text-center capitalize">
                     Riepilogo di {currentMonthName}
                 </h3>

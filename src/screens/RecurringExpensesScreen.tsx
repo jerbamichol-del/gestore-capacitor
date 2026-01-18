@@ -168,7 +168,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
       </header>
       <main className="overflow-y-auto h-[calc(100%-60px)] p-2" style={{ touchAction: 'pan-y' }}>
         {sortedExpenses.length > 0 ? (
-          <div className="bg-white midnight-card rounded-xl shadow-md overflow-hidden my-4 border border-slate-200 dark:border-electric-violet/20">
+          <div className="midnight-card rounded-xl shadow-md overflow-hidden my-4 border border-slate-200 dark:border-electric-violet/20">
             {sortedExpenses.map((expense, index) => (
               <React.Fragment key={expense.id}>
                 {index > 0 && <hr className="border-t border-slate-200 dark:border-electric-violet/10 ml-16" />}

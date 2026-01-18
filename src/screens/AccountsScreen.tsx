@@ -579,7 +579,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             <div
                                 key={acc.id}
                                 onClick={() => !isSelectionMode && handleAccountClick(acc.id)}
-                                className={`bg-white midnight-card p-4 rounded-xl shadow-sm border border-slate-200 dark:border-electric-violet/20 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
+                                className={`midnight-card p-4 rounded-xl shadow-sm border border-slate-200 dark:border-electric-violet/20 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
                             >
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="relative">

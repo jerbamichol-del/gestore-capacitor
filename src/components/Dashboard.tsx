@@ -700,7 +700,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             {isImportExportMenuOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
                     <div
-                        className="bg-white midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
+                        className="midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">

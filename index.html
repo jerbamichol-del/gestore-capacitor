@@ -27,6 +27,13 @@
             electric: {
               violet: '#A855F7',
               pink: '#EC4899',
+            },
+            sunset: {
+              cream: '#FFF5E1',
+              peach: '#FFDEE9',
+              coral: '#FF9966',
+              pink: '#FF5E62',
+              text: '#4A403A',
             }
           }
         }
@@ -69,21 +76,40 @@
       overscroll-behavior-y: contain;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      background-color: #f1f5f9;
+      /* Sunset Serenity Background Gradient */
+      background: linear-gradient(135deg, #FFF5E1 0%, #FFEEEF 100%);
+      background-attachment: fixed;
     }
 
     body.dark {
-      background-color: #0F172A;
+      background: #0F172A;
+      /* Solid Midnight Blue */
     }
 
-    /* Midnight Electric Card Effect */
+    /* Sunset Serenity Card Effect (Light Mode Default) */
+    .midnight-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 153, 102, 0.2);
+      /* Soft Coral */
+      box-shadow: 0 8px 32px 0 rgba(255, 153, 102, 0.12);
+      /* Warm Shadow */
+      transition: all 0.3s ease;
+    }
+
+    .midnight-card:hover {
+      border-color: rgba(255, 153, 102, 0.4);
+      box-shadow: 0 10px 32px 0 rgba(255, 153, 102, 0.2);
+    }
+
+    /* Midnight Electric Card Effect (Dark Mode Override) */
     .dark .midnight-card {
       background: rgba(30, 41, 59, 0.7);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(168, 85, 247, 0.2);
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      transition: all 0.3s ease;
     }
 
     .dark .midnight-card:hover {
@@ -91,16 +117,25 @@
       box-shadow: 0 8px 32px 0 rgba(168, 85, 247, 0.1);
     }
 
-    /* Primary Gradient Button */
-    .dark .btn-electric {
-      background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+    /* Button Styles */
+
+    /* Sunset Gradient (Light Mode) */
+    .btn-electric {
+      background: linear-gradient(135deg, #FF9966 0%, #FF5E62 100%);
       color: white;
-      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+      box-shadow: 0 4px 15px rgba(255, 94, 98, 0.3);
+      transition: all 0.2s ease;
     }
 
-    .dark .btn-electric:active {
+    .btn-electric:active {
       transform: scale(0.95);
       opacity: 0.9;
+    }
+
+    /* Electric Gradient (Dark Mode) */
+    .dark .btn-electric {
+      background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
     }
 
     /* Animations */
@@ -142,8 +177,9 @@
 
     /* Pie chart text colors */
     :root {
-      --pie-text-primary: #1e293b;
-      --pie-text-secondary: #334155;
+      --pie-text-primary: #4A403A;
+      /* Sunset Text */
+      --pie-text-secondary: #706560;
     }
 
     .dark {

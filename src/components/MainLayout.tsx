@@ -10,7 +10,7 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ header, children, fab, modals, badges }) => {
     return (
-        <div className="h-full w-full bg-slate-100 dark:bg-midnight flex flex-col font-sans" style={{ touchAction: 'pan-y' }}>
+        <div className="h-full w-full dark:bg-midnight flex flex-col font-sans" style={{ touchAction: 'pan-y' }}>
             <div className="flex-shrink-0 z-20">
                 {header}
             </div>
@@ -21,7 +21,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ header, children, fab, m
                 </div>
             )}
 
-            <main className="flex-grow bg-slate-100 dark:bg-midnight">
+            <main className="flex-grow">
                 <div className="w-full h-full overflow-y-auto space-y-6" style={{ touchAction: 'pan-y' }}>
                     {children}
                 </div>

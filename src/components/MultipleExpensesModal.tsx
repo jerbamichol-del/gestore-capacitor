@@ -202,7 +202,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
       role="dialog"
     >
       <div
-        className={`bg-white midnight-card rounded-lg shadow-xl w-full max-w-3xl transform transition-all duration-75 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} border border-transparent dark:border-electric-violet/30`}
+        className={`midnight-card rounded-lg shadow-xl w-full max-w-3xl transform transition-all duration-75 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} border border-transparent dark:border-electric-violet/30`}
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
       >
@@ -246,7 +246,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
               return (
                 <div
                   key={index}
-                  className={`bg-white midnight-card rounded-lg shadow-sm border ${isSelected ? 'border-indigo-400 dark:border-electric-violet' : 'border-slate-200 dark:border-electric-violet/20'} transition-all duration-300 animate-fade-in-up`}
+                  className={`midnight-card rounded-lg shadow-sm border ${isSelected ? 'border-indigo-400 dark:border-electric-violet' : 'border-slate-200 dark:border-electric-violet/20'} transition-all duration-300 animate-fade-in-up`}
                   style={{ animationDelay: `${index * 50}ms`, zIndex: isExpanded ? 10 : 1 }}
                 >
                   <div className="p-3 flex items-center gap-3">

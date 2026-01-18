@@ -331,7 +331,7 @@ export const PeriodNavigator: React.FC<{
       <div
         ref={wrapperRef}
         className={
-          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg bg-white midnight-card border-indigo-600 dark:border-electric-violet/50`
+          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg midnight-card border-indigo-600 dark:border-electric-violet/50`
         }
       >
         <button
@@ -369,7 +369,7 @@ export const PeriodNavigator: React.FC<{
 
         {isMenuOpen && (
           <div
-            className={`absolute left-0 right-0 mx-auto w-40 bg-white midnight-card border border-slate-200 dark:border-electric-violet/30 shadow-lg rounded-lg z-[1000] p-2 space-y-1 ${isPanelOpen ? 'top-full mt-1' : 'bottom-full mb-10'
+            className={`absolute left-0 right-0 mx-auto w-40 midnight-card border border-slate-200 dark:border-electric-violet/30 shadow-lg rounded-lg z-[1000] p-2 space-y-1 ${isPanelOpen ? 'top-full mt-1' : 'bottom-full mb-10'
               }`}
           >
             {(['day', 'week', 'month', 'year'] as PeriodType[]).map((v) => (

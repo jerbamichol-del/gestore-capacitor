@@ -376,7 +376,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
             <div className="relative">
               <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-slate-200 dark:hover:bg-midnight-card text-slate-600 dark:text-slate-400'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
               {isSortMenuOpen && (
-                <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-48 bg-white midnight-card rounded-lg shadow-xl border border-slate-100 dark:border-electric-violet/30 z-50 overflow-hidden animate-fade-in-up" style={{ animationDuration: '150ms' }} onPointerDown={(e) => e.stopPropagation()}>
+                <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-48 midnight-card rounded-lg shadow-xl border border-slate-100 dark:border-electric-violet/30 z-50 overflow-hidden animate-fade-in-up" style={{ animationDuration: '150ms' }} onPointerDown={(e) => e.stopPropagation()}>
                   <div className="py-1">
                     <button onClick={() => handleSortOptionSelect('amount')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${(sortOption === 'amount-desc' || sortOption === 'amount-asc') ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Importo {sortOption === 'amount-asc' ? '(Crescente)' : '(Decrescente)'}</span>{(sortOption === 'amount-desc' || sortOption === 'amount-asc') && <CheckIcon className="w-4 h-4" />}</button>
                     <button onClick={() => handleSortOptionSelect('category')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'category' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Categoria</span>{sortOption === 'category' && <CheckIcon className="w-4 h-4" />}</button>
@@ -399,7 +399,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
                   <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500 dark:text-slate-400">{group.dateRange}</span></h2>
                   <p className={`font-bold text-xl ${isIncomeMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-electric-violet'}`}>{formatCurrency(group.total)}</p>
                 </div>
-                <div className="bg-white midnight-card dark:border dark:border-electric-violet/20 rounded-xl shadow-md mx-2 overflow-hidden transition-colors duration-300">
+                <div className="midnight-card dark:border dark:border-electric-violet/20 rounded-xl shadow-md mx-2 overflow-hidden transition-colors duration-300">
                   {group.expenses.map((expense, index) => (
                     <React.Fragment key={expense.id}>
                       {index > 0 && <hr className="border-t border-slate-200 dark:border-electric-violet/10 ml-16" />}
