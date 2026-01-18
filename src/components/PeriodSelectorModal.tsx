@@ -112,23 +112,23 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
         className={`midnight-card rounded-2xl shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Seleziona Periodo</h2>
-          <button onClick={handleClose} className="p-1 rounded-full hover:bg-slate-100 text-slate-500">
+        <div className="flex justify-between items-center p-4 border-b border-sunset-coral/20 dark:border-electric-violet/20">
+          <h2 className="text-lg font-bold text-sunset-text dark:text-white">Seleziona Periodo</h2>
+          <button onClick={handleClose} className="p-1 rounded-full hover:bg-sunset-peach/50 dark:hover:bg-midnight-card text-slate-500 dark:text-slate-400">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         <div className="p-4">
           {/* Tabs */}
-          <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+          <div className="flex bg-sunset-cream/60 dark:bg-midnight-card/50 p-1 rounded-xl mb-6">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === tab.id
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                  ? 'midnight-card text-sunset-coral dark:text-electric-violet shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
                   }`}
               >
                 {tab.label}
@@ -170,7 +170,7 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
                   type="month"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="block w-full rounded-xl border-slate-300 bg-slate-50 border p-3 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+                  className="block w-full rounded-xl border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 border p-3 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:border-indigo-500 dark:focus:border-electric-violet focus:outline-none"
                 />
               </div>
             )}
@@ -231,7 +231,7 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
         <div className="p-4 border-t border-slate-100 flex justify-end">
           <button
             onClick={handleApply}
-            className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-colors w-full sm:w-auto"
+            className="px-6 py-2.5 btn-electric text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all w-full sm:w-auto"
           >
             Applica Filtro
           </button>

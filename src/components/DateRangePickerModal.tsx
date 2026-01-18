@@ -47,12 +47,12 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({ isOp
       role="dialog"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`midnight-card rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <header className="flex justify-between items-center p-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800">Seleziona Periodo</h2>
+          <h2 className="text-lg font-bold text-sunset-text dark:text-white">Seleziona Periodo</h2>
           <button
             type="button"
             onClick={handleBackdropClick}
@@ -76,7 +76,7 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({ isOp
                 id="start-date"
                 value={start}
                 onChange={(e) => setStart(e.target.value)}
-                className="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
               />
             </div>
           </div>
@@ -92,18 +92,18 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({ isOp
                 id="end-date"
                 value={end}
                 onChange={(e) => setEnd(e.target.value)}
-                className="block w-full rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <footer className="p-4 bg-slate-100 border-t border-slate-200 flex justify-end gap-3 rounded-b-lg">
+        <footer className="p-4 bg-[#FFF8F0] dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end gap-3 rounded-b-lg">
           <button
             type="button"
             onClick={handleBackdropClick}
-            className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 midnight-card border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-sunset-peach/30 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
           >
             Annulla
           </button>

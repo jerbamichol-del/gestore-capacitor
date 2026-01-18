@@ -362,7 +362,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
           <p className="text-slate-500 dark:text-slate-400 mt-2">{subtext}</p>
 
           {transcript && (
-            <div className="mt-6 p-3 bg-slate-100 dark:bg-midnight-card/50 rounded-md w-full text-left border border-transparent dark:border-electric-violet/20">
+            <div className="mt-6 p-3 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-md w-full text-left border border-sunset-coral/20 dark:border-electric-violet/20">
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
                 Descrizione rilevata:
               </p>

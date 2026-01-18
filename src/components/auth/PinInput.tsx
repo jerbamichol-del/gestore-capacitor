@@ -28,7 +28,7 @@ const PinInput: React.FC<PinInputProps> = ({ pin, onPinChange, pinLength = 4, on
       {Array.from({ length: pinLength }).map((_, index) => (
         <div
           key={index}
-          className={`w-4 h-4 rounded-full border-2 transition-colors duration-200 ${index < pin.length ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500' : 'bg-white border-slate-300 dark:bg-slate-700 dark:border-slate-600'
+          className={`w-4 h-4 rounded-full border-2 transition-colors duration-200 ${index < pin.length ? 'bg-sunset-coral border-sunset-coral dark:bg-electric-violet dark:border-electric-violet' : 'bg-sunset-cream border-slate-300 dark:bg-midnight-card dark:border-electric-violet/30'
             }`}
         />
       ))}

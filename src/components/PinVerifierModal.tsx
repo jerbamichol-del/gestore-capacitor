@@ -133,7 +133,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
               <button
                 key={num}
                 onClick={() => handleDigitClick(num)}
-                className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 dark:text-white bg-slate-50 dark:bg-midnight-card/50 hover:bg-slate-100 dark:hover:bg-midnight-card active:bg-slate-200 dark:active:bg-electric-violet/20 transition-colors flex items-center justify-center shadow-sm border border-slate-100 dark:border-electric-violet/20"
+                className="w-14 h-14 rounded-full text-xl font-semibold text-slate-700 dark:text-white bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card active:bg-sunset-peach dark:active:bg-electric-violet/20 transition-colors flex items-center justify-center shadow-sm border border-sunset-coral/20 dark:border-electric-violet/20"
               >
                 {num}
               </button>

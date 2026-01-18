@@ -97,7 +97,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
         </div>
 
         {/* Transaction Info */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+        <div className="p-6 border-b border-slate-200 dark:border-electric-violet/20 bg-[#FFF8F0] dark:bg-midnight-card/50">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Da</div>
@@ -141,7 +141,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
                   value={selectedToAccount}
                   onChange={(e) => setSelectedToAccount(e.target.value)}
                   disabled={isProcessing}
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 dark:text-white"
+                  className="w-full px-4 py-3 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 dark:text-white"
                 >
                   {accounts.map(acc => (
                     <option key={acc.id} value={acc.id}>
@@ -151,7 +151,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
                 </select>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800/50">
+              <div className="midnight-card rounded-lg p-4 border border-indigo-200 dark:border-electric-violet/30">
                 <div className="text-sm text-slate-600 dark:text-slate-400 mb-2 font-medium">Verrà registrato:</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
@@ -192,7 +192,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700 mb-4">
+            <div className="midnight-card rounded-lg p-4 border border-slate-200 dark:border-electric-violet/20 mb-4">
               <div className="text-sm text-slate-600 dark:text-slate-400 mb-2 font-medium">Verrà registrato:</div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-700 dark:text-slate-300">Spesa su <span className="font-semibold">{transaction.account}</span></span>
@@ -221,7 +221,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
+        <div className="p-6 border-t border-slate-200 dark:border-electric-violet/20 bg-[#FFF8F0] dark:bg-midnight-card/50 rounded-b-2xl">
           <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
             💡 <span className="font-medium">Suggerimento:</span> I trasferimenti creano due movimenti linkati per mantenere i saldi corretti su entrambi i conti
           </p>

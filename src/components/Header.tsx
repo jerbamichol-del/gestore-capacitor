@@ -12,7 +12,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
+      className="p-2 text-slate-500 hover:text-sunset-coral hover:bg-sunset-peach/50 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
       aria-label="Cambia Tema"
       title={isDark ? 'Passa a Chiaro' : 'Passa a Scuro'}
     >
@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({
   requestNotificationPermission = () => { }
 }) => {
   return (
-    <header className="bg-white dark:bg-midnight shadow-md sticky top-0 z-20 transition-colors duration-300">
+    <header className="bg-[#FFF8F0] dark:bg-midnight shadow-md sticky top-0 z-20 transition-colors duration-300">
       <div className="mx-auto">
         <div className="py-2 flex items-center justify-between gap-3 px-4 md:px-8 h-[58px]">
           <h1 className="text-xl font-bold text-slate-800 dark:text-white transition-colors">Gestore Spese</h1>
@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             )}
             {pendingSyncs > 0 && isOnline && (
-              <div className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-2 text-sm font-semibold text-sunset-coral dark:text-electric-violet bg-sunset-peach/50 dark:bg-electric-violet/20 px-3 py-1.5 rounded-full">
                 <PhotoIcon className="w-5 h-5" />
                 <span>{pendingSyncs}</span>
                 <span className="hidden sm:inline md:inline">in sync</span>
@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
             {installPromptEvent && (
               <button
                 onClick={onInstallClick}
-                className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 px-3 py-1.5 rounded-full hover:bg-indigo-200 transition-colors"
+                className="flex items-center gap-2 text-sm font-semibold text-sunset-coral dark:text-electric-violet bg-sunset-peach/50 dark:bg-electric-violet/20 px-3 py-1.5 rounded-full hover:bg-sunset-peach dark:hover:bg-electric-violet/30 transition-colors"
                 aria-label="Installa App"
                 title="Installa App"
               >

@@ -210,9 +210,9 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
         <div className="p-6">
           <div className="mb-4">
-            <p className="text-slate-700 mb-2">🔥 <strong>Novità:</strong></p>
+            <p className="text-slate-700 dark:text-slate-300 mb-2">🔥 <strong>Novità:</strong></p>
             {updateInfo.releaseNotes ? (
-              <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600 max-h-40 overflow-y-auto">
+              <div className="bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400 max-h-40 overflow-y-auto">
                 {updateInfo.releaseNotes.split('\n').map((line, i) => (
                   <p key={i} className="mb-1">{line}</p>
                 ))}
@@ -236,7 +236,7 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
             <button
               onClick={handleSkip}
               disabled={isDownloading}
-              className="flex-1 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Più tardi
             </button>

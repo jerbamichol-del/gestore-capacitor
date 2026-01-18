@@ -222,7 +222,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
         </div>
 
         <div className="p-6 overflow-y-auto flex-1">
-          <div className="flex items-center bg-slate-100 dark:bg-midnight-card/50 p-2 rounded-md mb-4 border border-slate-200 dark:border-electric-violet/20">
+          <div className="flex items-center bg-sunset-cream/60 dark:bg-midnight-card/50 p-2 rounded-md mb-4 border border-sunset-coral/20 dark:border-electric-violet/20">
             <CustomCheckbox
               id="select-all"
               checked={areAllSelected}
@@ -261,7 +261,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
                       value={expense.date || ''}
                       onChange={(e) => handleFieldChange(index, 'date', e.target.value)}
                       max={today}
-                      className="text-sm rounded-md border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 py-1.5 px-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
+                      className="text-sm rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-1.5 px-2 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
                     />
                     <div className="flex-grow" />
                     <p className="text-lg font-bold text-indigo-600 dark:text-electric-violet shrink-0">
@@ -273,7 +273,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
                   </div>
 
                   {isExpanded && (
-                    <div className="p-4 border-t border-slate-200 dark:border-electric-violet/20 bg-slate-50/70 dark:bg-midnight/40 space-y-4">
+                    <div className="p-4 border-t border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight/40 space-y-4">
                       <div>
                         <label htmlFor={`description-${index}`} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrizione</label>
                         <div className="relative">
@@ -285,7 +285,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
                             id={`description-${index}`}
                             value={expense.description || ''}
                             onChange={(e) => handleFieldChange(index, 'description', e.target.value)}
-                            className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 py-2 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet sm:text-sm"
+                            className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet sm:text-sm"
                             placeholder="Es. Spesa al supermercato"
                           />
                         </div>
@@ -325,11 +325,11 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-slate-100 dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end gap-3 sticky bottom-0 rounded-b-lg flex-shrink-0">
+        <div className="px-6 py-4 bg-[#FFF8F0] dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end gap-3 sticky bottom-0 rounded-b-lg flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-midnight-card border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-slate-100 dark:hover:bg-midnight-card/80 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 midnight-card border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
           >
             Annulla
           </button>
