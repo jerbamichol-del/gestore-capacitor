@@ -206,7 +206,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
       >
-        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-electric-violet/20 sticky top-0 bg-white/80 dark:bg-midnight/80 backdrop-blur-md rounded-t-lg z-20 flex-shrink-0">
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-electric-violet/20 sticky top-0 bg-[#FFF8F0] dark:bg-midnight backdrop-blur-md rounded-t-lg z-20 flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-800 dark:text-white">Spese Rilevate</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">Abbiamo trovato {expenses.length} spese. Seleziona e modifica i dettagli prima di aggiungerle.</p>

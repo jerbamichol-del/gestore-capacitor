@@ -973,7 +973,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           </div>
         </main>
 
-        <footer className="p-4 bg-sunset-cream/30 border-t border-slate-200 flex justify-end">
+        <footer className="p-4 bg-[#FFF8F0] dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end">
           <button
             type="button"
             onClick={handleApplyRecurrence}

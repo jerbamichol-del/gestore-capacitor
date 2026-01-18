@@ -31,7 +31,7 @@ const PendingImages: React.FC<PendingImagesProps> = ({ images, onAnalyze, onDele
       >
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-slate-700 dark:text-slate-200">Immagini in Attesa</h2>
-          <span className="flex items-center justify-center min-w-[24px] h-6 px-2 text-sm font-semibold text-white bg-indigo-500 dark:bg-electric-violet rounded-full">
+          <span className="flex items-center justify-center min-w-[24px] h-6 px-2 text-sm font-semibold text-white bg-sunset-coral dark:bg-electric-violet rounded-full">
             {images.length}
           </span>
         </div>
@@ -50,20 +50,20 @@ const PendingImages: React.FC<PendingImagesProps> = ({ images, onAnalyze, onDele
                   <img
                     src={`data:${image.mimeType};base64,${image.base64Image}`}
                     alt="Anteprima spesa offline"
-                    className="w-full h-24 object-cover bg-slate-100 rounded-t-lg"
+                    className="w-full h-24 object-cover bg-sunset-cream/60 dark:bg-midnight-card rounded-t-lg"
                   />
                   {syncingImageId === image.id && (
-                    <div className="absolute inset-0 bg-white/80 dark:bg-midnight/80 backdrop-blur-sm flex items-center justify-center rounded-t-lg">
+                    <div className="absolute inset-0 bg-sunset-cream/80 dark:bg-midnight/80 backdrop-blur-sm flex items-center justify-center rounded-t-lg">
                       <SpinnerIcon className="w-8 h-8 text-indigo-600 dark:text-electric-violet" />
                       <span className="sr-only">Analisi in corso...</span>
                     </div>
                   )}
                 </div>
-                <div className="p-2 mt-auto flex items-center justify-center gap-2 bg-slate-50 dark:bg-midnight-card/50 rounded-b-lg">
+                <div className="p-2 mt-auto flex items-center justify-center gap-2 bg-sunset-cream/40 dark:bg-midnight-card/50 rounded-b-lg">
                   <button
                     onClick={() => onAnalyze(image)}
                     disabled={!isOnline || isAnalyzing}
-                    className="flex-1 px-2 py-1.5 text-xs font-semibold text-white bg-indigo-600 dark:btn-electric rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-2 py-1.5 text-xs font-bold text-white btn-electric rounded-md shadow-sm transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     title={!isOnline ? "Connettiti a internet per analizzare" : "Analizza immagine"}
                   >
                     Analizza

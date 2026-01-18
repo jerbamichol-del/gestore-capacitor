@@ -500,7 +500,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
     const isFilterActive = sortOption !== 'date' || filterOption !== 'all';
 
     return (
-        <div className="fixed inset-0 z-50 bg-white/50 backdrop-blur-strong dark:bg-midnight flex flex-col animate-fade-in-up transition-colors duration-300">
+        <div className="fixed inset-0 z-50 bg-[#FFF8F0] dark:bg-midnight flex flex-col animate-fade-in-up transition-colors duration-300 overscroll-contain">
             <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
                 {isSelectionMode && !editingAccountId ? (
                     <>

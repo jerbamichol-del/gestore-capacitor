@@ -93,7 +93,7 @@ const OperatorButton: React.FC<{ children: React.ReactNode; onClick: () => void 
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); blurSelf(e.currentTarget); } }}
       onPointerUp={(e) => blurSelf(e.currentTarget)}
       onMouseDown={(e) => e.preventDefault()}
-      className="flex-1 w-full text-5xl text-indigo-600 dark:text-electric-violet font-light active:bg-slate-300/80 dark:active:bg-electric-violet/20 transition-colors duration-150 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 dark:focus-visible:ring-electric-violet select-none cursor-pointer active:scale-95"
+      className="flex-1 w-full text-5xl text-sunset-coral dark:text-electric-violet font-light active:bg-sunset-peach/40 dark:active:bg-electric-violet/20 transition-colors duration-150 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400 dark:focus-visible:ring-electric-violet select-none cursor-pointer active:scale-95"
       style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' } as React.CSSProperties}
     >
       <span className="pointer-events-none">{children}</span>
@@ -371,7 +371,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     <div
       ref={ref}
       tabIndex={-1}
-      className="bg-slate-100 dark:bg-midnight w-full h-full flex flex-col focus:outline-none overflow-hidden transition-colors duration-300"
+      className="bg-[#FFF8F0] dark:bg-midnight w-full h-full flex flex-col focus:outline-none overflow-hidden transition-colors duration-300"
       style={{ touchAction: 'pan-y' }}
     >
       <div className="flex-1 flex flex-col">
@@ -599,7 +599,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           </div>
 
           <div
-            className="h-full w-1/5 flex flex-col gap-1.5 bg-slate-200 dark:bg-midnight-card/50 rounded-2xl p-1"
+            className="h-full w-1/5 flex flex-col gap-1.5 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-2xl p-1"
             style={{ touchAction: 'pan-y' }}
           >
             <OperatorButton onClick={() => handleKeyPress('÷')}>÷</OperatorButton>
