@@ -53,7 +53,7 @@ const PinInput: React.FC<PinInputProps> = ({ pin, onPinChange, pinLength = 4, on
                   key={index}
                   type="button"
                   onClick={onBiometric}
-                  className="w-16 h-16 mx-auto rounded-full text-white bg-indigo-600 active:bg-indigo-700 transition-colors flex justify-center items-center shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="w-16 h-16 mx-auto rounded-full text-white btn-electric active:opacity-90 transition-all flex justify-center items-center shadow-lg focus:outline-none focus:ring-2 focus:ring-sunset-coral focus:ring-offset-2"
                   aria-label="Usa impronta digitale"
                 >
                   <FingerprintIcon className="w-8 h-8" />
@@ -69,7 +69,7 @@ const PinInput: React.FC<PinInputProps> = ({ pin, onPinChange, pinLength = 4, on
                 key={index}
                 type="button"
                 onClick={handleBackspace}
-                className="w-16 h-16 mx-auto rounded-full text-slate-700 dark:text-white active:bg-slate-200 dark:active:bg-slate-600 transition-colors flex justify-center items-center text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 border-2 border-slate-200 dark:border-slate-700"
+                className="w-16 h-16 mx-auto rounded-full text-sunset-text dark:text-white bg-sunset-cream/50 dark:bg-midnight-card hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80 transition-colors flex justify-center items-center text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-sunset-coral border-2 border-sunset-coral/20 dark:border-electric-violet/30"
                 aria-label="Cancella"
               >
                 <BackspaceIcon className="w-7 h-7" />
@@ -81,7 +81,7 @@ const PinInput: React.FC<PinInputProps> = ({ pin, onPinChange, pinLength = 4, on
               key={index}
               type="button"
               onClick={() => handleNumberClick(btn)}
-              className="w-16 h-16 mx-auto rounded-full text-slate-700 dark:text-white active:bg-slate-200 dark:active:bg-slate-600 transition-colors text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 border-2 border-slate-200 dark:border-slate-700"
+              className="w-16 h-16 mx-auto rounded-full text-sunset-text dark:text-white bg-sunset-cream/50 dark:bg-midnight-card hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80 transition-colors text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-sunset-coral border-2 border-sunset-coral/20 dark:border-electric-violet/30"
             >
               {btn}
             </button>

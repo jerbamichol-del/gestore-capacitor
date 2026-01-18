@@ -196,7 +196,7 @@ const SwipableTransferRow: React.FC<{
         }
     };
 
-    const bgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : 'bg-white/60 dark:bg-midnight-card/40';
+    const bgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : 'bg-sunset-cream/60 dark:bg-midnight-card/40';
     return (
         <div className={`relative rounded-lg overflow-hidden border border-slate-100 dark:border-electric-violet/20 mb-2 transition-colors duration-200 ${bgClass}`}>
             <div className="absolute top-0 right-0 h-full flex items-center z-0">
@@ -504,7 +504,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
             <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
                 {isSelectionMode && !editingAccountId ? (
                     <>
-                        <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
+                        <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/30 transition-colors text-slate-600 dark:text-slate-300" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
                         <h1 className="text-xl font-bold text-indigo-800 flex-1">{selectedTransferIds.size} Selezionati</h1>
                         <button onClick={handleBulkDeleteClick} className="p-2 rounded-full hover:bg-red-100 text-red-600 transition-colors" aria-label="Elimina selezionati"><TrashIcon className="w-6 h-6" /></button>
                     </>
@@ -512,7 +512,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                     <>
                         <button
                             onClick={onClose}
-                            className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                            className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/30 dark:hover:bg-midnight-card transition-colors"
                             aria-label="Indietro"
                         >
                             <ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-200" />
@@ -666,7 +666,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
 
                     <div className="flex-1 overflow-y-auto p-6" onClick={() => setOpenTransferId(null)}>
                         <div className="space-y-6">
-                            <div className="bg-slate-50 dark:bg-midnight-card/50 p-4 rounded-2xl text-center border border-slate-200 dark:border-electric-violet/20 transition-colors duration-200 shadow-sm">
+                            <div className="bg-sunset-cream/60 dark:bg-midnight-card/50 p-4 rounded-2xl text-center border border-sunset-coral/20 dark:border-electric-violet/20 transition-colors duration-200 shadow-sm">
                                 <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wide mb-1">Saldo Attuale</p>
                                 <p className="text-3xl font-bold text-slate-800 dark:text-white">{formatCurrency(accountBalances[editingAccountId] || 0)}</p>
                             </div>
@@ -686,7 +686,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                         onChange={(e) => setNewBalanceValue(e.target.value)}
                                         placeholder={isEditingAccountSynced ? 'Sincronizzato API' : '0.00'}
                                         disabled={isEditingAccountSynced}
-                                        className="block w-full pl-12 pr-14 py-4 border border-slate-300 dark:border-electric-violet/30 rounded-2xl leading-5 bg-white dark:bg-midnight-card placeholder-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:border-indigo-500 dark:focus:border-electric-violet text-2xl font-semibold text-slate-900 dark:text-white shadow-sm transition-colors"
+                                        className="block w-full pl-12 pr-14 py-4 border border-slate-300 dark:border-electric-violet/30 rounded-2xl leading-5 bg-sunset-cream/60 dark:bg-midnight-card placeholder-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:border-indigo-500 dark:focus:border-electric-violet text-2xl font-semibold text-slate-900 dark:text-white shadow-sm transition-colors"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleSaveBalance();
                                         }}
@@ -712,7 +712,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                 <div className={`flex gap-3 pt-2 ${isSelectionMode ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <button
                                         onClick={handleModalClose}
-                                        className="flex-1 py-3 text-slate-700 dark:text-slate-300 font-bold bg-slate-100 dark:bg-midnight-card border dark:border-electric-violet/20 hover:bg-slate-200 dark:hover:bg-midnight-card/80 rounded-xl transition-colors"
+                                        className="flex-1 py-3 text-slate-700 dark:text-slate-300 font-bold bg-sunset-cream/60 dark:bg-midnight-card border dark:border-electric-violet/20 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80 rounded-xl transition-colors"
                                     >
                                         Annulla
                                     </button>

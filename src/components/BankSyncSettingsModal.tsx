@@ -365,7 +365,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     <label className="text-xs font-bold uppercase opacity-60 text-slate-500 dark:text-slate-400">{label}</label>
                     {isTextarea ? (
                         <textarea
-                            className="w-full h-32 font-mono text-xs rounded-xl border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:outline-none transition-colors"
+                            className="w-full h-32 font-mono text-xs rounded-xl border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:outline-none transition-colors"
                             value={value}
                             onChange={e => setCredentials({ ...credentials, [field]: e.target.value })}
                             placeholder={placeholder}
@@ -374,7 +374,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     ) : (
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:outline-none transition-colors"
+                            className="w-full rounded-xl border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:outline-none transition-colors"
                             value={value}
                             onChange={e => setCredentials({ ...credentials, [field]: e.target.value })}
                             placeholder={placeholder}
@@ -397,11 +397,11 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             <div className="form-group mb-4">
                 <label className="text-xs font-bold uppercase opacity-60 text-slate-500 dark:text-slate-400">{label}</label>
                 <div className="flex items-center gap-2">
-                    <div className="flex-1 text-sm opacity-70 font-mono truncate p-3 bg-slate-100 dark:bg-midnight-card/50 rounded-xl text-slate-700 dark:text-slate-300">
+                    <div className="flex-1 text-sm opacity-70 font-mono truncate p-3 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-xl text-slate-700 dark:text-slate-300">
                         {maskValue(value)}
                     </div>
                     <button
-                        className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-200 dark:bg-midnight-card text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-midnight-card/80 transition-colors border border-transparent dark:border-electric-violet/30"
+                        className="px-3 py-2 text-xs font-semibold rounded-xl bg-sunset-peach/30 dark:bg-midnight-card text-slate-700 dark:text-slate-200 hover:bg-sunset-peach/50 dark:hover:bg-midnight-card/80 transition-colors border border-transparent dark:border-electric-violet/30"
                         onClick={() => setEditingField(field)}
                     >
                         ✏️ Modifica
@@ -462,7 +462,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             </div>
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                                 {accountsWithBalances.map((acc, i) => (
-                                    <div key={i} className="flex flex-col p-4 bg-slate-50 dark:bg-midnight-card/50 rounded-2xl border border-slate-200 dark:border-electric-violet/20 gap-3">
+                                    <div key={i} className="flex flex-col p-4 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-2xl border border-sunset-coral/20 dark:border-electric-violet/20 gap-3">
                                         <div className="flex justify-between items-center">
                                             <div className="flex flex-col min-w-0 flex-1 mr-2">
                                                 <span className="text-sm font-bold truncate text-sunset-text dark:text-white">{acc.name || 'Conto'}</span>
@@ -506,7 +506,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         <div className="flex gap-2 mb-2">
                             <input
                                 type="text"
-                                className="flex-1 w-full rounded-xl border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:outline-none transition-colors"
+                                className="flex-1 w-full rounded-xl border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:outline-none transition-colors"
                                 placeholder="Cerca banca (es. Revolut, Intesa...)"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
@@ -514,7 +514,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             />
                         </div>
 
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-slate-50 dark:bg-midnight-card/30 rounded-xl p-2 border border-slate-200 dark:border-electric-violet/10">
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-sunset-cream/40 dark:bg-midnight-card/30 rounded-xl p-2 border border-sunset-coral/20 dark:border-electric-violet/10">
                             {isLoadingBanks ? (
                                 <div className="p-4 text-center opacity-50 text-sm italic text-slate-500">Caricamento banche...</div>
                             ) : filteredAspsps.length === 0 ? (
@@ -530,7 +530,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                     return (
                                         <button
                                             key={i}
-                                            className="w-full flex items-center justify-between p-3 hover:bg-slate-100 dark:hover:bg-midnight-card/50 rounded-lg transition-colors group bg-white dark:bg-midnight-card border border-transparent hover:border-slate-300 dark:hover:border-electric-violet/30"
+                                            className="w-full flex items-center justify-between p-3 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 rounded-lg transition-colors group bg-sunset-cream/60 dark:bg-midnight-card border border-transparent hover:border-sunset-coral/30 dark:hover:border-electric-violet/30"
                                             onClick={() => handleLinkBank(b)}
                                             disabled={isLinking}
                                         >

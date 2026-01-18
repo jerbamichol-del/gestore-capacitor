@@ -46,7 +46,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const tapBridge = useTapBridge();
   const isRecurringInstance = !!expense.recurringExpenseId;
   const isAdjustment = expense.type === 'adjustment';
-  const itemBgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-sunset-cream/60 dark:bg-amber-900/10' : isAdjustment ? 'bg-slate-50/80 opacity-90 dark:bg-slate-800' : 'bg-white/70 dark:bg-slate-800/60';
+  const itemBgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-sunset-cream/60 dark:bg-amber-900/10' : isAdjustment ? 'bg-sunset-cream/80 opacity-90 dark:bg-slate-800' : 'bg-sunset-cream/60 dark:bg-slate-800/60';
   const longPressTimer = useRef<number | null>(null);
 
   const handlePointerDownItem = (e: React.PointerEvent) => {
@@ -164,7 +164,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
 
   const renderIcon = () => {
     if (isSelected) return <span className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 dark:bg-electric-violet text-white transition-transform duration-200 transform scale-100"><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>;
-    if (isAdjustment) return <span className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"><ArrowsUpDownIcon className="w-6 h-6" /></span>;
+    if (isAdjustment) return <span className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-sunset-cream/90 dark:bg-slate-700 text-slate-500 dark:text-slate-400"><ArrowsUpDownIcon className="w-6 h-6" /></span>;
     if (isIncomeMode && AccountIcon) return <AccountIcon className="w-10 h-10 text-emerald-600 dark:text-emerald-400 flex-shrink-0 transition-transform duration-200" />;
     return <style.Icon className="w-10 h-10 flex-shrink-0 transition-transform duration-200" />;
   };
@@ -365,23 +365,23 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
       <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
         {isSelectionMode ? (
           <>
-            <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
+            <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/30 transition-colors text-slate-600 dark:text-slate-300" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
             <h1 className="text-xl font-bold text-indigo-800 flex-1">{selectedIds.size} Selezionati</h1>
             <button onClick={handleBulkDeleteClick} className="p-2 rounded-full hover:bg-red-100 text-red-600 transition-colors" aria-label="Elimina selezionati"><TrashIcon className="w-6 h-6" /></button>
           </>
         ) : (
           <>
-            <button onClick={handleClose} className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-200" /></button>
+            <button onClick={handleClose} className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/30 dark:hover:bg-midnight-card transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-200" /></button>
             <h1 className="text-xl font-bold text-slate-800 dark:text-white flex-1">{isIncomeMode ? 'Storico Entrate' : 'Storico Spese'}</h1>
             <div className="relative">
-              <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-slate-200 dark:hover:bg-midnight-card text-slate-600 dark:text-slate-400'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
+              <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-slate-600 dark:text-slate-400'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
               {isSortMenuOpen && (
                 <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-48 midnight-card rounded-lg shadow-xl border border-slate-100 dark:border-electric-violet/30 z-50 overflow-hidden animate-fade-in-up" style={{ animationDuration: '150ms' }} onPointerDown={(e) => e.stopPropagation()}>
                   <div className="py-1">
-                    <button onClick={() => handleSortOptionSelect('amount')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${(sortOption === 'amount-desc' || sortOption === 'amount-asc') ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Importo {sortOption === 'amount-asc' ? '(Crescente)' : '(Decrescente)'}</span>{(sortOption === 'amount-desc' || sortOption === 'amount-asc') && <CheckIcon className="w-4 h-4" />}</button>
-                    <button onClick={() => handleSortOptionSelect('category')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'category' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Categoria</span>{sortOption === 'category' && <CheckIcon className="w-4 h-4" />}</button>
+                    <button onClick={() => handleSortOptionSelect('amount')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${(sortOption === 'amount-desc' || sortOption === 'amount-asc') ? 'text-sunset-coral bg-sunset-peach/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Importo {sortOption === 'amount-asc' ? '(Crescente)' : '(Decrescente)'}</span>{(sortOption === 'amount-desc' || sortOption === 'amount-asc') && <CheckIcon className="w-4 h-4" />}</button>
+                    <button onClick={() => handleSortOptionSelect('category')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${sortOption === 'category' ? 'text-sunset-coral bg-sunset-peach/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Categoria</span>{sortOption === 'category' && <CheckIcon className="w-4 h-4" />}</button>
                     <div className="border-t border-slate-100 dark:border-electric-violet/10 my-1"></div>
-                    <button onClick={() => handleSortOptionSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-500 dark:text-slate-400'}`}><span>Per Data (Default)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
+                    <button onClick={() => handleSortOptionSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${sortOption === 'date' ? 'text-sunset-coral bg-sunset-peach/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-500 dark:text-slate-400'}`}><span>Per Data (Default)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
                   </div>
                 </div>
               )}

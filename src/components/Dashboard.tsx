@@ -623,7 +623,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
+                <div className="bg-sunset-cream/80 border border-sunset-coral/20 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
                     <div className="mb-2 text-center">
                         <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
                         <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>

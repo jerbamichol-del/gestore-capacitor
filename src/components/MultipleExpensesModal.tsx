@@ -55,7 +55,7 @@ const SelectionButton = ({ label, value, onClick, placeholder, ariaLabel, disabl
           ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-electric-violet/20 text-slate-400 cursor-not-allowed'
           : hasValue
             ? 'bg-indigo-50 dark:bg-electric-violet/20 border-indigo-200 dark:border-electric-violet/50 text-indigo-700 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/30'
-            : 'bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-midnight-card'
+            : 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-500 dark:text-slate-400 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
           }`}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -206,7 +206,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
       >
-        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-electric-violet/20 sticky top-0 bg-[#FFF8F0] dark:bg-midnight backdrop-blur-md rounded-t-lg z-20 flex-shrink-0">
+        <div className="flex justify-between items-center p-6 border-b border-sunset-coral/20 dark:border-electric-violet/20 sticky top-0 bg-sunset-cream dark:bg-midnight backdrop-blur-md rounded-t-lg z-20 flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-800 dark:text-white">Spese Rilevate</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">Abbiamo trovato {expenses.length} spese. Seleziona e modifica i dettagli prima di aggiungerle.</p>
@@ -214,7 +214,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-full hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-full hover:bg-sunset-peach/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Chiudi"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -325,7 +325,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-[#FFF8F0] dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end gap-3 sticky bottom-0 rounded-b-lg flex-shrink-0">
+        <div className="px-6 py-4 bg-sunset-cream dark:bg-midnight border-t border-sunset-coral/20 dark:border-electric-violet/20 flex justify-end gap-3 sticky bottom-0 rounded-b-lg flex-shrink-0">
           <button
             type="button"
             onClick={onClose}

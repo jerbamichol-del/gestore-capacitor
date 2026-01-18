@@ -82,11 +82,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 bg-[#FFF8F0] dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg border-t dark:border-electric-violet/20">
+        <div className="px-6 py-4 bg-sunset-cream dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg border-t dark:border-electric-violet/20">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-slate-100 dark:hover:bg-midnight-card transition-colors"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-sunset-peach/30 dark:hover:bg-midnight-card transition-colors"
           >
             {cancelButtonText}
           </button>

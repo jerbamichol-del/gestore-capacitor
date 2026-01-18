@@ -495,7 +495,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             type="date"
             value={formData.date || ''}
             onChange={handleInputChange}
-            className={`block w-full rounded-md bg-white dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none [color-scheme:light] dark:[color-scheme:dark] ${dateError ? 'border-red-500 ring-1 ring-red-500' : 'border border-slate-300 dark:border-electric-violet/30 focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet'}`}
+            className={`block w-full rounded-md bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none [color-scheme:light] dark:[color-scheme:dark] ${dateError ? 'border-red-500 ring-1 ring-red-500' : 'border border-slate-300 dark:border-electric-violet/30 focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet'}`}
             enterKeyHint="done"
             onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
             onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -656,7 +656,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                           handleRemoveReceipt(index);
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="absolute top-1 right-1 p-1.5 bg-white/90 dark:bg-midnight/90 text-red-600 dark:text-rose-400 rounded-full shadow-md hover:bg-red-50 dark:hover:bg-midnight transition-colors z-10 flex items-center justify-center"
+                        className="absolute top-1 right-1 p-1.5 bg-sunset-cream/90 dark:bg-midnight/90 text-red-600 dark:text-rose-400 rounded-full shadow-md hover:bg-red-50 dark:hover:bg-midnight transition-colors z-10 flex items-center justify-center"
                         aria-label="Rimuovi ricevuta"
                       >
                         <XMarkIcon className="w-5 h-5" />
@@ -688,7 +688,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   type="button"
                   onClick={() => setIsFrequencyModalOpen(true)}
                   className={`w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${isFrequencySet
-                    ? 'bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card'
+                    ? 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
                     : 'btn-field dark:bg-midnight-card/30 text-sunset-text dark:text-slate-400 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
                     }`}
                 >
@@ -707,7 +707,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsRecurrenceModalOpen(true)}
-                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card"
+                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card"
                   >
                     <span className="truncate flex-1">{getRecurrenceSummary(formData)}</span>
                     <ChevronDownIcon className="w-5 h-5 text-slate-500" />
@@ -779,7 +779,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             onClick={(e) => handlePickReceipt(e, 'camera')}
             className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-sunset-cream/50 dark:bg-midnight-card/50 border border-sunset-coral/20 dark:border-electric-violet/30 hover:bg-sunset-peach/50 dark:hover:bg-electric-violet/20 hover:border-sunset-coral/50 transition-colors"
           >
-            <div className="w-12 h-12 rounded-full bg-white dark:bg-electric-violet/20 flex items-center justify-center shadow-sm text-sunset-coral dark:text-electric-violet">
+            <div className="w-12 h-12 rounded-full bg-sunset-cream dark:bg-electric-violet/20 flex items-center justify-center shadow-sm text-sunset-coral dark:text-electric-violet">
               <CameraIcon className="w-7 h-7" />
             </div>
             <span className="font-semibold text-slate-700 dark:text-slate-200">Fotocamera</span>
@@ -788,7 +788,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             onClick={(e) => handlePickReceipt(e, 'gallery')}
             className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-sunset-cream/50 dark:bg-midnight-card/50 border border-sunset-coral/20 dark:border-electric-violet/30 hover:bg-sunset-peach/50 dark:hover:bg-electric-pink/20 hover:border-sunset-coral/50 transition-colors"
           >
-            <div className="w-12 h-12 rounded-full bg-white dark:bg-electric-pink/20 flex items-center justify-center shadow-sm text-sunset-pink dark:text-electric-pink">
+            <div className="w-12 h-12 rounded-full bg-sunset-cream dark:bg-electric-pink/20 flex items-center justify-center shadow-sm text-sunset-pink dark:text-electric-pink">
               <PhotoIcon className="w-7 h-7" />
             </div>
             <span className="font-semibold text-slate-700 dark:text-slate-200">Galleria</span>
@@ -806,7 +806,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           <div className="relative">
             <button
               onClick={() => { setIsRecurrenceOptionsOpen(v => !v); setIsRecurrenceEndOptionsOpen(false); }}
-              className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 bg-white border-slate-300 text-slate-800 hover:bg-slate-50"
+              className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 bg-sunset-cream/60 dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-sunset-text dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card"
             >
               <span className="truncate flex-1 capitalize">
                 {recurrenceLabels[(tempRecurrence || 'monthly') as keyof typeof recurrenceLabels]}
@@ -815,12 +815,12 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             </button>
 
             {isRecurrenceOptionsOpen && (
-              <div className="absolute top-full mt-1 w-full bg-white border border-slate-200 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">
+              <div className="absolute top-full mt-1 w-full bg-sunset-cream dark:midnight-card border border-sunset-coral/20 dark:border-electric-violet/30 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">
                 {(Object.keys(recurrenceLabels) as Array<keyof typeof recurrenceLabels>).map((k) => (
                   <button
                     key={k}
                     onClick={() => { setTempRecurrence(k as any); setIsRecurrenceOptionsOpen(false); }}
-                    className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg bg-slate-50 text-slate-800 hover:bg-indigo-100 hover:text-indigo-800"
+                    className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg bg-sunset-cream/50 text-slate-800 hover:bg-sunset-peach/50 hover:text-sunset-coral"
                   >
                     {recurrenceLabels[k]}
                   </button>
@@ -830,7 +830,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           </div>
 
           <div className="pt-2">
-            <div className="flex items-center justify-center gap-2 bg-slate-100 p-3 rounded-lg">
+            <div className="flex items-center justify-center gap-2 bg-sunset-cream/60 p-3 rounded-lg">
               <span className="text-base text-slate-700">Ogni</span>
               <input
                 type="number"
@@ -868,7 +868,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                     }}
                     className={`w-14 h-14 rounded-full text-sm font-semibold border-2 transition-colors ${(tempRecurrenceDays || []).includes(d.value)
                       ? 'btn-electric text-white border-transparent'
-                      : 'bg-white text-sunset-text border-slate-300 hover:bg-sunset-cream'
+                      : 'bg-sunset-cream/60 text-sunset-text border-slate-300 hover:bg-sunset-peach/30'
                       }`}
                   >
                     {d.label}
@@ -908,7 +908,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => { setIsRecurrenceEndOptionsOpen(v => !v); setIsRecurrenceOptionsOpen(false); }}
-                  className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 bg-white border-slate-300 text-sunset-text hover:bg-sunset-cream"
+                  className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 bg-sunset-cream/60 border-slate-300 text-sunset-text hover:bg-sunset-peach/30"
                 >
                   <span className="truncate flex-1 capitalize">
                     {getRecurrenceEndLabel()}
@@ -917,7 +917,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 </button>
 
                 {isRecurrenceEndOptionsOpen && (
-                  <div className="absolute top-full mt-1 w-full bg-white border border-slate-200 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">
+                  <div className="absolute top-full mt-1 w-full bg-sunset-cream dark:midnight-card border border-sunset-coral/20 dark:border-electric-violet/30 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">
                     {(['forever', 'date', 'count'] as const).map(k => (
                       <button
                         key={k}
@@ -927,7 +927,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                           if (k === 'count') onFormChange({ recurrenceEndType: 'count', recurrenceCount: formData.recurrenceCount || 1, recurrenceEndDate: undefined });
                           setIsRecurrenceEndOptionsOpen(false);
                         }}
-                        className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg bg-slate-50 text-slate-800 hover:bg-indigo-100 hover:text-indigo-800"
+                        className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg bg-sunset-cream/50 text-slate-800 hover:bg-sunset-peach/50 hover:text-sunset-coral"
                       >
                         {k === 'forever' ? 'Per sempre' : k === 'date' ? 'Fino a' : 'Numero di volte'}
                       </button>
@@ -962,7 +962,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                       name="recurrenceCount"
                       value={formData.recurrenceCount || ''}
                       onChange={handleInputChange}
-                      className="block w-full text-center rounded-md border border-slate-300 bg-white py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-base"
+                      className="block w-full text-center rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card py-2.5 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base"
                       placeholder="N."
                       min="1"
                     />
