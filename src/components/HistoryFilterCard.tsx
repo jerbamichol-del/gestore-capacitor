@@ -1041,7 +1041,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         <SmoothPullTab width="88" height="19" fill="currentColor" />
         <ChevronDownIcon
           className={
-            'absolute w-5 h-5 text-slate-400 transition-transform duration-300 ' +
+            'absolute w-5 h-5 text-slate-400 dark:text-electric-violet transition-transform duration-300 ' +
             (isPanelOpen ? 'rotate-0' : 'rotate-180')
           }
           style={{ top: '2px' }}
