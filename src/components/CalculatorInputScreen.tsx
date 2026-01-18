@@ -371,7 +371,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     <div
       ref={ref}
       tabIndex={-1}
-      className="bg-[#FFF8F0] dark:bg-midnight w-full h-full flex flex-col focus:outline-none overflow-hidden transition-colors duration-300"
+      className="bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight w-full h-full flex flex-col focus:outline-none overflow-hidden transition-colors duration-300"
       style={{ touchAction: 'pan-y' }}
     >
       <div className="flex-1 flex flex-col">

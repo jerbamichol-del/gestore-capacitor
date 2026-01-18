@@ -93,7 +93,7 @@ const SelectionMenu: React.FC<SelectionMenuProps> = ({ isOpen, onClose, title, o
         ref={menuRef}
         onTransitionEnd={onInternalTransitionEnd}
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-0 left-0 right-0 z-10 bg-[#FFF8F0] dark:bg-midnight rounded-t-2xl shadow-xl max-h-[80vh] flex flex-col border-t border-sunset-coral/20 dark:border-electric-violet/30"
+        className="absolute bottom-0 left-0 right-0 z-10 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight rounded-t-2xl shadow-xl max-h-[80vh] flex flex-col border-t border-sunset-coral/20 dark:border-electric-violet/30"
         style={{
           transform: transformStyle,
           transition: transitionStyle,

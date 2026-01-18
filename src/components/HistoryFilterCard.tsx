@@ -64,7 +64,7 @@ interface HistoryFilterCardProps {
 /* -------------------- Checkbox Component -------------------- */
 export const Checkbox: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked, onChange }) => (
   <div
-    className={`w-6 h-6 rounded border flex items-center justify-center transition-colors cursor-pointer ${checked ? 'bg-indigo-600 dark:bg-electric-violet border-black dark:border-white' : 'bg-[#FFF8F0] dark:bg-midnight-card/50 border-slate-400 dark:border-electric-violet/30'}`}
+    className={`w-6 h-6 rounded border flex items-center justify-center transition-colors cursor-pointer ${checked ? 'bg-indigo-600 dark:bg-electric-violet border-black dark:border-white' : 'bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight-card/50 border-slate-400 dark:border-electric-violet/30'}`}
     onClick={(e) => { e.stopPropagation(); onChange(); }}
     onPointerDown={(e) => e.stopPropagation()}
   >
@@ -923,7 +923,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
 
   const renderCategorySelection = () => (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-[#FFF8F0] dark:bg-midnight z-10">
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight z-10">
         <button onClick={() => setCurrentView('main')} className="p-1 -ml-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" onPointerDown={(e) => e.stopPropagation()}>
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -1017,7 +1017,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-[#FFF8F0] dark:bg-midnight rounded-t-2xl shadow-[0_-3px_10px_rgba(71,85,105,0.6)] dark:shadow-[0_-3px_10px_rgba(0,0,0,0.8)] z-[1000] flex flex-col border-t border-sunset-coral/20 dark:border-electric-violet/30"
+      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl shadow-[0_-3px_10px_rgba(71,85,105,0.6)] dark:shadow-[0_-3px_10px_rgba(0,0,0,0.8)] z-[1000] flex flex-col border-t border-sunset-coral/20 dark:border-electric-violet/30"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
@@ -1049,7 +1049,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       </div>
 
       {/* Header Content Wrapper */}
-      <div className="flex-shrink-0 z-20 relative bg-[#FFF8F0] dark:bg-midnight rounded-t-2xl">
+      <div className="flex-shrink-0 z-20 relative bg-sunset-cream dark:bg-midnight rounded-t-2xl">
 
         {/* Header: Date Filters - Highest Z-Index to allow dropdown over inputs */}
         {/* ADDED data-swipe-area to mark this section as the only one allowing horizontal swipe */}

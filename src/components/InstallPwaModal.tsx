@@ -105,7 +105,7 @@ const InstallPwaModal: React.FC<InstallPwaModalProps> = ({ isOpen, onClose }) =>
             </p>
           </div>
         </div>
-        <div className="px-6 py-4 bg-[#FFF8F0] dark:bg-midnight flex justify-end">
+        <div className="px-6 py-4 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight flex justify-end">
           <button
             type="button"
             onClick={onClose}

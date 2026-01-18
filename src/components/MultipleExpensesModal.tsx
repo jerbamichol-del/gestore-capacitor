@@ -206,7 +206,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
       >
-        <div className="flex justify-between items-center p-6 border-b border-sunset-coral/20 dark:border-electric-violet/20 sticky top-0 bg-sunset-cream dark:bg-midnight backdrop-blur-md rounded-t-lg z-20 flex-shrink-0">
+        <div className={`bg-sunset-cream dark:bg-midnight backdrop-blur-md rounded-t-lg z-20 flex-shrink-0 flex justify-between items-center p-6 border-b border-sunset-coral/20 dark:border-electric-violet/20 sticky top-0`}>
           <div>
             <h2 className="text-xl font-bold text-slate-800 dark:text-white">Spese Rilevate</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">Abbiamo trovato {expenses.length} spese. Seleziona e modifica i dettagli prima di aggiungerle.</p>
@@ -214,7 +214,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-full hover:bg-sunset-peach/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-electric-violet transition-colors p-1 rounded-full hover:bg-sunset-peach/30 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Chiudi"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -273,7 +273,7 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
                   </div>
 
                   {isExpanded && (
-                    <div className="p-4 border-t border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight/40 space-y-4">
+                    <div className="p-4 border-t border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight-card/30 space-y-4">
                       <div>
                         <label htmlFor={`description-${index}`} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrizione</label>
                         <div className="relative">

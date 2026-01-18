@@ -46,7 +46,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const tapBridge = useTapBridge();
   const isRecurringInstance = !!expense.recurringExpenseId;
   const isAdjustment = expense.type === 'adjustment';
-  const itemBgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-sunset-cream/60 dark:bg-amber-900/10' : isAdjustment ? 'bg-sunset-cream/80 opacity-90 dark:bg-slate-800' : 'bg-sunset-cream/60 dark:bg-slate-800/60';
+  const itemBgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-sunset-cream/60 dark:bg-midnight-card/30' : isAdjustment ? 'bg-sunset-cream/80 opacity-90 dark:bg-midnight-card/60' : 'bg-sunset-cream/60 dark:bg-midnight-card/50';
   const longPressTimer = useRef<number | null>(null);
 
   const handlePointerDownItem = (e: React.PointerEvent) => {
@@ -176,11 +176,11 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   };
 
   return (
-    <div className={`relative bg-[#FFF8F0] dark:bg-midnight overflow-hidden transition-colors duration-200 select-none`}>
+    <div className={`relative bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight overflow-hidden transition-colors duration-200 select-none`}>
       <div className="absolute top-0 right-0 h-full flex items-center z-0">
         <button onClick={() => onDelete(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa" {...tapBridge}><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button>
       </div>
-      <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} bg-[#FFF8F0] dark:bg-midnight z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
+      <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
         {isRecurringInstance && !isSelectionMode && !isAdjustment && (<span className="absolute top-1.5 right-1.5 w-5 h-5 text-slate-900 bg-amber-100 border border-amber-400 text-[10px] font-bold rounded-full flex items-center justify-center z-20" title="Spesa Programmata">P</span>)}
         {renderIcon()}
         <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isAdjustment ? 'text-slate-600 dark:text-slate-400' : 'text-slate-800 dark:text-white'}`}>{isAdjustment ? 'Rettifica Saldo' : isIncomeMode ? accountName : `${expense.subcategory || style.label} • ${accountName}`}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-electric-violet/80' : 'text-slate-500 dark:text-slate-400'}`} title={expense.description}>{expense.description || 'Senza descrizione'}</p></div>
@@ -361,7 +361,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
   const handleSortOptionSelect = (value: 'date' | 'amount' | 'category') => { if (value === 'amount') { setSortOption(prev => prev === 'amount-desc' ? 'amount-asc' : 'amount-desc'); } else { setSortOption(value); } setIsSortMenuOpen(false); };
 
   return (
-    <div className={`fixed inset-0 z-20 bg-[#FFF8F0] dark:bg-midnight transform transition-transform duration-300 ease-in-out overscroll-contain ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
+    <div className={`fixed inset-0 z-20 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight transform transition-transform duration-300 ease-in-out overscroll-contain ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
       <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
         {isSelectionMode ? (
           <>

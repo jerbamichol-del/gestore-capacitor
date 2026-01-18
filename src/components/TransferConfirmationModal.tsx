@@ -97,7 +97,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
         </div>
 
         {/* Transaction Info */}
-        <div className="p-6 border-b border-slate-200 dark:border-electric-violet/20 bg-[#FFF8F0] dark:bg-midnight-card/50">
+        <div className="p-6 border-b border-slate-200 dark:border-electric-violet/20 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight-card/50">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Da</div>
@@ -221,7 +221,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-200 dark:border-electric-violet/20 bg-[#FFF8F0] dark:bg-midnight-card/50 rounded-b-2xl">
+        <div className="p-6 border-t border-slate-200 dark:border-electric-violet/20 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight-card/50 rounded-b-2xl">
           <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
             💡 <span className="font-medium">Suggerimento:</span> I trasferimenti creano due movimenti linkati per mantenere i saldi corretti su entrambi i conti
           </p>

@@ -346,7 +346,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
 
                         <XAxis
                             dataKey="date"
-                            tick={{ fontSize: 10, fill: '#94a3b8' }}
+                            tick={{ fontSize: 10, fill: 'var(--pie-text-secondary, #94a3b8)' }}
                             axisLine={false}
                             tickLine={false}
                             tickFormatter={(val) => {
@@ -363,7 +363,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                         />
 
                         <YAxis
-                            tick={{ fontSize: 10, fill: '#94a3b8' }}
+                            tick={{ fontSize: 10, fill: 'var(--pie-text-secondary, #94a3b8)' }}
                             axisLine={false}
                             tickLine={false}
                             tickFormatter={(val) => {
@@ -372,8 +372,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             }}
                         />
 
-                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                        <ReferenceLine y={0} stroke="#cbd5e1" strokeWidth={1} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--pie-text-secondary, #cbd5e1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                        <ReferenceLine y={0} stroke="var(--pie-text-secondary, #cbd5e1)" strokeWidth={1} />
 
                         <Bar
                             dataKey="income"
