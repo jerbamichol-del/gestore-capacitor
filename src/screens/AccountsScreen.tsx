@@ -196,7 +196,7 @@ const SwipableTransferRow: React.FC<{
         }
     };
 
-    const bgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : 'bg-slate-50 dark:bg-midnight-card/40';
+    const bgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : 'bg-white/60 dark:bg-midnight-card/40';
     return (
         <div className={`relative rounded-lg overflow-hidden border border-slate-100 dark:border-electric-violet/20 mb-2 transition-colors duration-200 ${bgClass}`}>
             <div className="absolute top-0 right-0 h-full flex items-center z-0">
@@ -500,7 +500,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
     const isFilterActive = sortOption !== 'date' || filterOption !== 'all';
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-midnight flex flex-col animate-fade-in-up transition-colors duration-300">
+        <div className="fixed inset-0 z-50 bg-white/50 backdrop-blur-strong dark:bg-midnight flex flex-col animate-fade-in-up transition-colors duration-300">
             <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
                 {isSelectionMode && !editingAccountId ? (
                     <>
@@ -616,7 +616,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                     <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-electric-violet/10 midnight-card backdrop-blur-md sticky top-0 z-40">
                         {isSelectionMode ? (
                             <>
-                                <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
+                                <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-sunset-cream text-sunset-text transition-colors">
                                     <ArrowLeftIcon className="w-6 h-6" />
                                 </button>
                                 <h3 className="font-bold text-lg text-indigo-800 flex-1 ml-2">{selectedTransferIds.size} Selezionati</h3>
@@ -626,7 +626,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             </>
                         ) : (
                             <>
-                                <button onClick={handleModalClose} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-midnight-card text-slate-500 dark:text-slate-400">
+                                <button onClick={handleModalClose} className="p-2 -ml-2 rounded-full hover:bg-sunset-cream dark:hover:bg-midnight-card text-sunset-text dark:text-slate-400">
                                     <XMarkIcon className="w-6 h-6" />
                                 </button>
                                 <h3 className="font-bold text-lg text-slate-800 dark:text-white flex-1 ml-4 text-left flex items-center gap-2">
@@ -637,25 +637,25 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                     <button
                                         ref={sortButtonRef}
                                         onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }}
-                                        className={`p-2 rounded-full transition-colors ${isFilterActive ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-slate-100 dark:hover:bg-midnight-card text-slate-600 dark:text-slate-400'}`}
+                                        className={`p-2 rounded-full transition-colors ${isFilterActive ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-sunset-cream dark:hover:bg-midnight-card text-sunset-text dark:text-slate-400'}`}
                                         aria-label="Ordina e Filtra"
                                     >
                                         <ArrowsUpDownIcon className="w-6 h-6" />
                                     </button>
                                     {isSortMenuOpen && (
-                                        <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-52 bg-white dark:midnight-card rounded-lg shadow-xl border border-slate-100 dark:border-electric-violet/30 z-50 overflow-hidden animate-fade-in-up" onPointerDown={(e) => e.stopPropagation()}>
+                                        <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-52 midnight-card rounded-lg shadow-xl border border-sunset-coral/20 dark:border-electric-violet/30 z-50 overflow-hidden animate-fade-in-up" onPointerDown={(e) => e.stopPropagation()}>
                                             <div className="py-2">
                                                 <p className="px-4 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Ordina per</p>
-                                                <button onClick={() => handleSortSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Data (Predefinito)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleSortSelect('amount-desc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'amount-desc' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Decrescente)</span>{sortOption === 'amount-desc' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleSortSelect('amount-asc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'amount-asc' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Crescente)</span>{sortOption === 'amount-asc' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${sortOption === 'date' ? 'text-sunset-text bg-sunset-cream/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Data (Predefinito)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('amount-desc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${sortOption === 'amount-desc' ? 'text-sunset-text bg-sunset-cream/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Decrescente)</span>{sortOption === 'amount-desc' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('amount-asc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${sortOption === 'amount-asc' ? 'text-sunset-text bg-sunset-cream/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Crescente)</span>{sortOption === 'amount-asc' && <CheckIcon className="w-4 h-4" />}</button>
 
                                                 <div className="border-t border-slate-100 dark:border-electric-violet/10 my-2"></div>
 
                                                 <p className="px-4 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Filtra per</p>
-                                                <button onClick={() => handleFilterSelect('all')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${filterOption === 'all' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Tutti</span>{filterOption === 'all' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleFilterSelect('incoming')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${filterOption === 'incoming' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Entrate</span>{filterOption === 'incoming' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleFilterSelect('outgoing')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${filterOption === 'outgoing' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Uscite</span>{filterOption === 'outgoing' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('all')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${filterOption === 'all' ? 'text-sunset-text bg-sunset-cream/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Tutti</span>{filterOption === 'all' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('incoming')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${filterOption === 'incoming' ? 'text-sunset-text bg-sunset-cream/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Entrate</span>{filterOption === 'incoming' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('outgoing')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 ${filterOption === 'outgoing' ? 'text-sunset-text bg-sunset-cream/50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Uscite</span>{filterOption === 'outgoing' && <CheckIcon className="w-4 h-4" />}</button>
                                             </div>
                                         </div>
                                     )}

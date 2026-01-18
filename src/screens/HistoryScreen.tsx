@@ -361,8 +361,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
   const handleSortOptionSelect = (value: 'date' | 'amount' | 'category') => { if (value === 'amount') { setSortOption(prev => prev === 'amount-desc' ? 'amount-asc' : 'amount-desc'); } else { setSortOption(value); } setIsSortMenuOpen(false); };
 
   return (
-    <div className={`fixed inset-0 z-20 bg-slate-100 dark:bg-midnight transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
-      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-midnight/80 backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
+    <div className={`fixed inset-0 z-20 bg-white/50 backdrop-blur-strong dark:bg-midnight transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
+      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
         {isSelectionMode ? (
           <>
             <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
@@ -395,7 +395,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
           {expenseGroups.length > 0 ? (
             expenseGroups.map((group) => (
               <div key={group.label} className="mb-6 last:mb-0">
-                <div className="flex items-center justify-between font-bold text-slate-800 dark:text-white text-lg px-4 py-2 sticky top-0 bg-slate-100/80 dark:bg-midnight/80 backdrop-blur-md z-10 transition-colors duration-300">
+                <div className="flex items-center justify-between font-bold text-sunset-text dark:text-white text-lg px-4 py-2 sticky top-0 bg-sunset-cream/90 backdrop-blur-strong dark:bg-midnight/80 z-10 transition-colors duration-300">
                   <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500 dark:text-slate-400">{group.dateRange}</span></h2>
                   <p className={`font-bold text-xl ${isIncomeMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-electric-violet'}`}>{formatCurrency(group.total)}</p>
                 </div>
