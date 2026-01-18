@@ -46,7 +46,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const tapBridge = useTapBridge();
   const isRecurringInstance = !!expense.recurringExpenseId;
   const isAdjustment = expense.type === 'adjustment';
-  const itemBgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-amber-50 dark:bg-amber-900/10' : isAdjustment ? 'bg-slate-50 opacity-90 dark:bg-slate-800' : 'bg-white dark:bg-slate-800';
+  const itemBgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-sunset-cream/60 dark:bg-amber-900/10' : isAdjustment ? 'bg-slate-50/80 opacity-90 dark:bg-slate-800' : 'bg-white/70 dark:bg-slate-800/60';
   const longPressTimer = useRef<number | null>(null);
 
   const handlePointerDownItem = (e: React.PointerEvent) => {

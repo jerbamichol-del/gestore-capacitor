@@ -40,7 +40,7 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
     if (isOpen) {
       setActiveTab(initialType);
       setSelectedDate(toInputFormat(initialDate, initialType === 'monthly' ? 'month' : 'date'));
-      
+
       if (initialCustomRange) {
         setCustomStart(toInputFormat(initialCustomRange.start));
         setCustomEnd(toInputFormat(initialCustomRange.end));
@@ -71,14 +71,14 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
     } else {
       if (!selectedDate) return;
       if (activeTab === 'monthly') {
-         const [y, m] = selectedDate.split('-').map(Number);
-         dateObj = new Date(y, m - 1, 1);
+        const [y, m] = selectedDate.split('-').map(Number);
+        dateObj = new Date(y, m - 1, 1);
       } else if (activeTab === 'yearly') {
-         // L'input type="number" per anno o simile
-         // Qui semplifico usando la data completa ma considerando solo l'anno
-         dateObj = new Date(selectedDate); 
+        // L'input type="number" per anno o simile
+        // Qui semplifico usando la data completa ma considerando solo l'anno
+        dateObj = new Date(selectedDate);
       } else {
-         dateObj = new Date(selectedDate);
+        dateObj = new Date(selectedDate);
       }
     }
 
@@ -109,7 +109,7 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
       role="dialog"
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`midnight-card rounded-2xl shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b border-slate-100">
@@ -126,11 +126,10 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                  activeTab === tab.id
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === tab.id
                     ? 'bg-white text-indigo-600 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -181,25 +180,25 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
                 <label className="block text-sm font-medium text-slate-700 mb-1">Seleziona Anno</label>
                 {/* Hack semplice per input anno: usiamo date e prendiamo l'anno, oppure number */}
                 <div className="flex gap-2 items-center">
-                    <button 
-                        onClick={() => {
-                            const d = new Date(selectedDate);
-                            d.setFullYear(d.getFullYear() - 1);
-                            setSelectedDate(toInputFormat(d));
-                        }}
-                        className="p-3 bg-slate-100 rounded-lg font-bold text-slate-600"
-                    >-</button>
-                    <div className="flex-1 text-center p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold text-lg text-slate-800">
-                        {new Date(selectedDate).getFullYear()}
-                    </div>
-                    <button 
-                        onClick={() => {
-                            const d = new Date(selectedDate);
-                            d.setFullYear(d.getFullYear() + 1);
-                            setSelectedDate(toInputFormat(d));
-                        }}
-                        className="p-3 bg-slate-100 rounded-lg font-bold text-slate-600"
-                    >+</button>
+                  <button
+                    onClick={() => {
+                      const d = new Date(selectedDate);
+                      d.setFullYear(d.getFullYear() - 1);
+                      setSelectedDate(toInputFormat(d));
+                    }}
+                    className="p-3 bg-slate-100 rounded-lg font-bold text-slate-600"
+                  >-</button>
+                  <div className="flex-1 text-center p-3 bg-slate-50 border border-slate-300 rounded-xl font-bold text-lg text-slate-800">
+                    {new Date(selectedDate).getFullYear()}
+                  </div>
+                  <button
+                    onClick={() => {
+                      const d = new Date(selectedDate);
+                      d.setFullYear(d.getFullYear() + 1);
+                      setSelectedDate(toInputFormat(d));
+                    }}
+                    className="p-3 bg-slate-100 rounded-lg font-bold text-slate-600"
+                  >+</button>
                 </div>
               </div>
             )}

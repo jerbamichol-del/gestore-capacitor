@@ -81,10 +81,10 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
       : 'Reinserisci il nuovo PIN per conferma.';
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">{title}</h1>
-        <p className="text-sm text-slate-500 mb-4">{description}</p>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-md midnight-card rounded-2xl shadow-lg p-6">
+        <h1 className="text-2xl font-bold text-sunset-text dark:text-white mb-2">{title}</h1>
+        <p className="text-sm text-sunset-text/70 dark:text-slate-400 mb-4">{description}</p>
 
         <p className="text-xs text-slate-400 mb-6 break-all">
           Email: <span className="font-mono text-slate-700">{normalizedEmail || '(sconosciuta)'}</span>
@@ -164,13 +164,13 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-xl shadow-lg text-white btn-electric disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
           >
             {isLoading
               ? 'Salvataggio...'
               : step === 'new_pin'
-              ? 'Continua'
-              : 'Salva PIN'}
+                ? 'Continua'
+                : 'Salva PIN'}
           </button>
 
           <button

@@ -15,7 +15,7 @@ import {
 } from '../services/biometrics';
 
 const BIO_SNOOZE_KEY = 'bio.snooze';
-const clearBiometricSnooze = () => { try { sessionStorage.removeItem(BIO_SNOOZE_KEY); } catch {} };
+const clearBiometricSnooze = () => { try { sessionStorage.removeItem(BIO_SNOOZE_KEY); } catch { } };
 
 interface SetupScreenProps {
   onSetupSuccess: (token: string, email: string) => void;
@@ -39,7 +39,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
   const [isLoading, setIsLoading] = useState(false);
   const [bioSupported, setBioSupported] = useState<boolean | null>(null);
   const [bioBusy, setBioBusy] = useState(false);
-  
+
   const [hasOpenedTelegram, setHasOpenedTelegram] = useState(false);
   const [showTelegramWarning, setShowTelegramWarning] = useState(false);
 
@@ -59,32 +59,32 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
     setError(null);
 
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setError('Inserisci un indirizzo email valido.');
-        return;
+      setError('Inserisci un indirizzo email valido.');
+      return;
     }
 
     // --- NUOVO CONTROLLO CLOUD ---
     setIsLoading(true);
     try {
-        const userExists = await checkUserInCloud(email.toLowerCase());
-        if (userExists) {
-            setError("Email già registrata. Vai su 'Accedi' per recuperare i dati.");
-            setIsLoading(false);
-            return; // Blocca la registrazione
-        }
+      const userExists = await checkUserInCloud(email.toLowerCase());
+      if (userExists) {
+        setError("Email già registrata. Vai su 'Accedi' per recuperare i dati.");
+        setIsLoading(false);
+        return; // Blocca la registrazione
+      }
     } catch (e) {
-        console.error(e);
-        // Se siamo offline o c'è un errore, potremmo decidere di bloccare o avvisare.
-        // Per sicurezza, lasciamo passare ma con un console.log, 
-        // oppure blocchiamo se è vitale. Qui lasciamo passare.
+      console.error(e);
+      // Se siamo offline o c'è un errore, potremmo decidere di bloccare o avvisare.
+      // Per sicurezza, lasciamo passare ma con un console.log, 
+      // oppure blocchiamo se è vitale. Qui lasciamo passare.
     }
     setIsLoading(false);
     // -----------------------------
 
     if (!hasOpenedTelegram && !showTelegramWarning) {
-        setShowTelegramWarning(true);
+      setShowTelegramWarning(true);
     } else {
-        setStep('pin_setup');
+      setStep('pin_setup');
     }
   };
 
@@ -157,7 +157,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
         <div className="text-center min-h-[300px] flex flex-col justify-center items-center">
           <SpinnerIcon className="w-12 h-12 text-indigo-600 mx-auto" />
           <p className="mt-4 text-slate-500">
-             {step === 'processing' ? 'Creazione account...' : 'Verifica email...'}
+            {step === 'processing' ? 'Creazione account...' : 'Verifica email...'}
           </p>
         </div>
       );
@@ -167,11 +167,11 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
       case 'email':
         return (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Crea un Account</h2>
-            <p className={`text-slate-500 mb-6 h-10 flex items-center justify-center ${error ? 'text-red-500 text-sm' : ''}`}>
-                {error || 'Inizia inserendo i tuoi dati.'}
+            <h2 className="text-xl font-bold text-sunset-text dark:text-white mb-2">Crea un Account</h2>
+            <p className={`text-sunset-text/70 dark:text-slate-500 mb-6 h-10 flex items-center justify-center ${error ? 'text-red-500 text-sm' : ''}`}>
+              {error || 'Inizia inserendo i tuoi dati.'}
             </p>
-            
+
             {showTelegramWarning && (
               <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-3 text-left animate-fade-in-up relative">
                 <div className="flex gap-3">
@@ -210,7 +210,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
               <button
                 type="submit"
                 disabled={!email}
-                className="w-full px-4 py-3 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:bg-indigo-300"
+                className="w-full px-4 py-3 text-sm font-bold text-white btn-electric rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 Continua
               </button>
@@ -223,23 +223,23 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
             </p>
 
             <div className="mt-8 pt-6 border-t border-slate-200">
-                <a 
-                    href={getTelegramLink()}
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={(e) => {
-                      if (!email) {
-                        e.preventDefault();
-                        setError('Inserisci prima la tua email.');
-                      } else {
-                        setHasOpenedTelegram(true);
-                      }
-                    }}
-                    className={`inline-flex items-center gap-2 text-sm font-medium transition-colors bg-sky-50 px-4 py-2 rounded-full hover:bg-sky-100 ${!email ? 'text-slate-400 cursor-not-allowed' : 'text-sky-600 hover:text-sky-700'}`}
-                >
-                    <TelegramIcon className="w-5 h-5" />
-                    Registra mail su telegram
-                </a>
+              <a
+                href={getTelegramLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (!email) {
+                    e.preventDefault();
+                    setError('Inserisci prima la tua email.');
+                  } else {
+                    setHasOpenedTelegram(true);
+                  }
+                }}
+                className={`inline-flex items-center gap-2 text-sm font-medium transition-colors bg-sky-50 px-4 py-2 rounded-full hover:bg-sky-100 ${!email ? 'text-slate-400 cursor-not-allowed' : 'text-sky-600 hover:text-sky-700'}`}
+              >
+                <TelegramIcon className="w-5 h-5" />
+                Registra mail su telegram
+              </a>
             </div>
           </div>
         );
@@ -263,8 +263,8 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
       case 'bio_offer': {
         return (
           <div className="text-center">
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Vuoi abilitare l’impronta / FaceID?</h2>
-            <p className="text-slate-500 h-10 flex items-center justify-center">Potrai sbloccare l’app senza inserire il PIN.</p>
+            <h2 className="text-xl font-bold text-sunset-text dark:text-white mb-2">Vuoi abilitare l’impronta / FaceID?</h2>
+            <p className="text-sunset-text/70 dark:text-slate-500 h-10 flex items-center justify-center">Potrai sbloccare l’app senza inserire il PIN.</p>
             <div className="mt-4 p-3 rounded-lg border border-slate-200 bg-slate-50 text-left inline-block">
               <p className="text-sm text-slate-700">Abilita ora lo sblocco biometrico?</p>
               <div className="flex gap-3 mt-2">
@@ -274,12 +274,12 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ onSetupSuccess, onGoToLogin }
                     try {
                       setBioBusy(true);
                       await registerBiometric('Profilo locale');
-                      clearBiometricSnooze(); 
+                      clearBiometricSnooze();
                       setBioBusy(false);
                     } catch { setBioBusy(false); } finally { await doRegisterAndLogin(); }
                   }}
                   disabled={bioBusy}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:bg-indigo-300"
+                  className="px-4 py-2 text-sm font-bold text-white btn-electric rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                   {bioBusy ? 'Attivo…' : 'Abilita e continua'}
                 </button>

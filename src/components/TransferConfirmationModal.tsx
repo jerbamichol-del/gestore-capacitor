@@ -75,7 +75,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300"
+        className="midnight-card rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

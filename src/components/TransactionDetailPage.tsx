@@ -447,7 +447,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
       <div
         ref={rootRef}
         tabIndex={-1}
-        className="flex flex-col h-full bg-slate-100 dark:bg-midnight items-center justify-center p-4"
+        className="flex flex-col h-full dark:bg-midnight items-center justify-center p-4"
         {...tapBridgeHandlers}
       >
         <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-white midnight-card shadow-sm absolute top-0 left-0 right-0 z-10 border-b border-transparent dark:border-electric-violet/20">
@@ -534,7 +534,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     <div
       ref={rootRef}
       tabIndex={-1}
-      className="flex flex-col h-full bg-slate-100 dark:bg-midnight focus:outline-none"
+      className="flex flex-col h-full dark:bg-midnight focus:outline-none"
       style={{ touchAction: 'pan-y' }}
       {...tapBridgeHandlers}
     >

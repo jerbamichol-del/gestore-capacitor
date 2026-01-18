@@ -501,7 +501,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
 
     return (
         <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-midnight flex flex-col animate-fade-in-up transition-colors duration-300">
-            <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-midnight/80 backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
+            <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
                 {isSelectionMode && !editingAccountId ? (
                     <>
                         <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
@@ -610,10 +610,10 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
             {/* MODAL EDIT SALDO FULL SCREEN */}
             {editingAccountId && (
                 <div
-                    className={`fixed inset-0 z-[60] bg-white dark:bg-midnight flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                    className={`fixed inset-0 z-[60] dark:bg-midnight flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                     onClick={(e) => { e.stopPropagation(); if (openTransferId) setOpenTransferId(null); }}
                 >
-                    <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-electric-violet/10 bg-white/80 dark:bg-midnight/80 backdrop-blur-md sticky top-0 z-40">
+                    <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-electric-violet/10 midnight-card backdrop-blur-md sticky top-0 z-40">
                         {isSelectionMode ? (
                             <>
                                 <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">

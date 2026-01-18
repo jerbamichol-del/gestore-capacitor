@@ -107,8 +107,8 @@ export const QuickFilterControl: React.FC<{
               `flex-1 flex items-center justify-center px-2 text-center font-semibold ${compact ? 'text-xs' : 'text-sm'} transition-colors duration-200 focus:outline-none ` +
               (i > 0 ? 'border-l ' : '') +
               (active
-                ? 'bg-indigo-600 dark:btn-electric text-white border-indigo-600'
-                : `bg-slate-100 dark:bg-midnight-card/50 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-midnight-card/80 ${isActive ? 'border-indigo-600 dark:border-electric-violet/30' : 'border-indigo-200 dark:border-slate-800'
+                ? 'btn-electric text-white border-sunset-coral/50'
+                : `bg-sunset-cream/40 dark:bg-midnight-card/50 text-sunset-text dark:text-slate-200 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card/80 ${isActive ? 'border-sunset-coral/30 dark:border-electric-violet/30' : 'border-slate-200 dark:border-slate-800'
                 }`)
             }
             {...tapBridge}
@@ -130,7 +130,7 @@ export const CustomDateRangeInputs: React.FC<{
   tapBridge?: any;
 }> = ({ range, onChange, isActive, compact, tapBridge }) => {
   // MODIFICATO: Colori sempre attivi (Indigo) come richiesto
-  const textColor = 'text-indigo-700 dark:text-electric-violet';
+  const textColor = 'text-sunset-coral dark:text-electric-violet';
   const textSize = 'text-sm font-semibold';
 
   const formatDate = (iso: string) => {

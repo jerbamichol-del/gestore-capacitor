@@ -417,8 +417,8 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-stretch justify-center bg-midnight/40 backdrop-blur-md animate-fade-in transition-opacity duration-200" onClick={onClose}>
-            <div className="w-full h-full flex flex-col overflow-hidden bg-white dark:bg-midnight text-slate-800 dark:text-white transition-colors duration-300" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-electric-violet/20 bg-white dark:bg-midnight flex-shrink-0">
+            <div className="w-full h-full flex flex-col overflow-hidden dark:bg-midnight text-sunset-text dark:text-white transition-colors duration-300" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-electric-violet/20 midnight-card flex-shrink-0">
                     <h3 className="text-xl font-semibold flex items-center gap-2">
                         <span className="text-2xl">🏦</span>
                         Sync Bancario (Enable Banking)
@@ -436,9 +436,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     {renderCredentialField('privateKey', 'RSA Private Key (PEM format)', '-----BEGIN PRIVATE KEY----- ...', true)}
 
                     <div className="flex gap-2 mb-6">
-                        <button className="flex-1 py-3 rounded-xl font-bold bg-indigo-600 dark:btn-electric text-white shadow-md hover:bg-indigo-700 transition-colors" onClick={handleSave}>💾 Salva</button>
+                        <button className="flex-1 py-3 rounded-xl font-bold btn-electric text-white shadow-md transition-colors" onClick={handleSave}>💾 Salva</button>
                         <button
-                            className={`flex-1 py-3 rounded-xl font-bold transition-colors border border-indigo-200 dark:border-electric-violet/50 text-indigo-700 dark:text-electric-violet hover:bg-indigo-50 dark:hover:bg-electric-violet/20 ${isTesting ? 'opacity-70 cursor-wait' : ''}`}
+                            className={`flex-1 py-3 rounded-xl font-bold transition-colors border border-sunset-coral/50 dark:border-electric-violet/50 text-sunset-coral dark:text-electric-violet hover:bg-sunset-cream dark:hover:bg-electric-violet/20 ${isTesting ? 'opacity-70 cursor-wait' : ''}`}
                             onClick={() => handleTestConnection()}
                             disabled={isTesting}
                         >
@@ -465,7 +465,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                     <div key={i} className="flex flex-col p-4 bg-slate-50 dark:bg-midnight-card/50 rounded-2xl border border-slate-200 dark:border-electric-violet/20 gap-3">
                                         <div className="flex justify-between items-center">
                                             <div className="flex flex-col min-w-0 flex-1 mr-2">
-                                                <span className="text-sm font-bold truncate text-slate-800 dark:text-white">{acc.name || 'Conto'}</span>
+                                                <span className="text-sm font-bold truncate text-sunset-text dark:text-white">{acc.name || 'Conto'}</span>
                                                 <span className="text-[10px] opacity-60 truncate font-mono text-slate-500 dark:text-slate-400">{acc.iban || acc.uid}</span>
                                             </div>
                                             <div className="text-right flex-shrink-0">
@@ -478,7 +478,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[10px] font-bold uppercase opacity-60 ml-1 text-slate-500 dark:text-slate-400">Collega a Conto Locale:</label>
                                             <select
-                                                className="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet"
+                                                className="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/30 dark:bg-midnight-card/50 text-sunset-text dark:text-white focus:outline-none focus:ring-2 focus:ring-sunset-coral dark:focus:ring-electric-violet"
                                                 value={accountMappings[acc.uid] || ''}
                                                 onChange={(e) => {
                                                     const val = e.target.value;

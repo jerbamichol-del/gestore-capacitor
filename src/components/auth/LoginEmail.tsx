@@ -109,7 +109,7 @@ export default function LoginEmail({ onSubmit }: Props) {
 
       <button
         type="submit"
-        className="mt-4 w-full min-h-[44px] rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+        className="mt-4 w-full min-h-[44px] rounded-xl text-white font-bold btn-electric shadow-lg transition-all active:scale-[0.98] outline-none"
       >
         Continua
       </button>

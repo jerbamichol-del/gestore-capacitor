@@ -57,7 +57,7 @@ const Header: React.FC = () => (
         aria-label="Logo Gestore Spese"
       />
     </div>
-    <h1 className="text-[28px] font-extrabold text-slate-900 dark:text-white m-0 transition-colors">
+    <h1 className="text-[28px] font-extrabold text-sunset-text dark:text-white m-0 transition-colors">
       Gestore Spese
     </h1>
   </div>
@@ -81,7 +81,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
     <div
       style={containerStyle}
-      className="bg-slate-100 dark:bg-midnight font-sans flex flex-col p-4 overflow-auto overflow-x-hidden touch-manipulation transition-colors duration-300"
+      className="dark:bg-midnight font-sans flex flex-col p-4 overflow-auto overflow-x-hidden touch-manipulation transition-colors duration-300"
     >
       <div className="flex flex-1 items-center justify-center relative overflow-visible">
         <div className="w-full max-w-[480px]">

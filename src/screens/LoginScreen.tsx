@@ -405,7 +405,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 truncate" title={activeEmail}>
           {activeEmail}
         </p>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Inserisci il PIN di 4 cifre</h2>
+        <h2 className="text-xl font-bold text-sunset-text dark:text-white mb-2">Inserisci il PIN di 4 cifre</h2>
 
         {/* Container for status/error that collapses when empty */}
         <div className={`flex items-center justify-center transition-all duration-200 overflow-hidden ${error || isLoading ? 'h-6 mb-2' : 'h-0'}`}>

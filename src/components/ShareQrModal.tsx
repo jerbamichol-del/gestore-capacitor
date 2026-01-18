@@ -10,13 +10,13 @@ interface ShareQrModalProps {
 const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showNativeQr, setShowNativeQr] = useState(false);
-  
+
   // URL PWA (attuale)
   const pwaUrl = typeof window !== 'undefined' ? window.location.href : '';
-  
+
   // URL APK da GitHub Releases (sempre l'ultima versione)
   const apkUrl = 'https://github.com/jerbamichol-del/gestore-capacitor/releases/latest/download/gestore-spese.apk';
-  
+
   // URL da mostrare nel QR
   const qrUrl = showNativeQr ? apkUrl : pwaUrl;
 
@@ -39,7 +39,7 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
       role="dialog"
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`midnight-card rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-6 border-b border-slate-200">
@@ -53,21 +53,19 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
         <div className="px-6 pt-6 flex gap-2">
           <button
             onClick={() => setShowNativeQr(false)}
-            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-              !showNativeQr
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${!showNativeQr
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
           >
             📱 Web App (PWA)
           </button>
           <button
             onClick={() => setShowNativeQr(true)}
-            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
-              showNativeQr
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${showNativeQr
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
           >
             🤖 App Nativa (APK)
           </button>
@@ -82,7 +80,7 @@ const ShareQrModal: React.FC<ShareQrModalProps> = ({ isOpen, onClose }) => {
               viewBox={`0 0 256 256`}
             />
           </div>
-          
+
           {showNativeQr ? (
             <div className="text-center space-y-2">
               <p className="text-slate-800 font-semibold text-sm">

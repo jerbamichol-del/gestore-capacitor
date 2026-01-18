@@ -189,7 +189,8 @@ const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
       }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+        className="midnight-card rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+        style={{ animation: 'modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white relative">
