@@ -93,7 +93,7 @@ const SelectionMenu: React.FC<SelectionMenuProps> = ({ isOpen, onClose, title, o
         ref={menuRef}
         onTransitionEnd={onInternalTransitionEnd}
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-0 left-0 right-0 z-10 bg-slate-50 dark:bg-midnight rounded-t-2xl shadow-xl max-h-[80vh] flex flex-col border-t dark:border-electric-violet/30"
+        className="absolute bottom-0 left-0 right-0 z-10 bg-[#FFF8F0] dark:bg-midnight rounded-t-2xl shadow-xl max-h-[80vh] flex flex-col border-t border-sunset-coral/20 dark:border-electric-violet/30"
         style={{
           transform: transformStyle,
           transition: transitionStyle,
@@ -126,18 +126,18 @@ const SelectionMenu: React.FC<SelectionMenuProps> = ({ isOpen, onClose, title, o
                   <button
                     onClick={() => onSelect(option.value)}
                     style={{ touchAction: 'manipulation' }}
-                    className={`w-full text-left p-4 flex items-center justify-between gap-4 transition-colors rounded-lg ${isSelected ? 'bg-indigo-100 dark:bg-electric-violet/20' : 'hover:bg-slate-200 dark:hover:bg-midnight-card'
+                    className={`w-full text-left p-4 flex items-center justify-between gap-4 transition-colors rounded-lg ${isSelected ? 'bg-sunset-peach/40 dark:bg-electric-violet/20' : 'hover:bg-sunset-cream/60 dark:hover:bg-midnight-card'
                       }`}
                   >
                     <span className="flex items-center gap-4 min-w-0">
                       {option.Icon && (
                         <option.Icon className="w-12 h-12 flex-shrink-0" />
                       )}
-                      <span className={`font-medium text-lg truncate ${isSelected ? 'text-indigo-700 dark:text-electric-violet' : 'text-slate-800 dark:text-slate-200'}`}>
+                      <span className={`font-medium text-lg truncate ${isSelected ? 'text-sunset-coral dark:text-electric-violet' : 'text-slate-800 dark:text-slate-200'}`}>
                         {option.label}
                       </span>
                     </span>
-                    {isSelected && <CheckCircleIcon className="w-7 h-7 text-indigo-600 dark:text-electric-violet flex-shrink-0" />}
+                    {isSelected && <CheckCircleIcon className="w-7 h-7 text-sunset-coral dark:text-electric-violet flex-shrink-0" />}
                   </button>
                 </li>
               );

@@ -82,7 +82,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 bg-slate-50 dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg border-t dark:border-slate-800">
+        <div className="px-6 py-4 bg-[#FFF8F0] dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg border-t dark:border-electric-violet/20">
           <button
             type="button"
             onClick={onClose}
