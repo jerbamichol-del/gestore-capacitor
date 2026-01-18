@@ -456,7 +456,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <div className="md:p-6 pb-32 md:pb-32 space-y-6 bg-slate-100 dark:bg-midnight" {...tapBridgeHandlers}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 flex flex-col gap-4">
-                        <div className="bg-white border border-slate-200 dark:midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col justify-between relative transition-all duration-300">
+                        <div className="bg-white border border-slate-200 midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col justify-between relative transition-all duration-300">
                             <div className="text-center mb-2 relative z-10">
                                 <h3 className="text-lg font-bold text-black dark:text-white leading-tight uppercase tracking-wide">{periodLabel}</h3>
                                 <p className="text-sm font-medium text-slate-400 dark:text-slate-500 capitalize mb-1">{dateRangeLabel}</p>
@@ -584,14 +584,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
 
                         <input type="file" ref={fileInputRef} className="hidden" accept=".csv, .xlsx, .xls, .json" onChange={handleFileChange} />
-                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 dark:midnight-card text-indigo-700 dark:text-electric-violet font-bold rounded-2xl border border-indigo-100 dark:border-electric-violet/20 shadow-sm hover:bg-indigo-100 transition-colors">
+                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 midnight-card text-indigo-700 dark:text-electric-violet font-bold rounded-2xl border border-indigo-100 dark:border-electric-violet/20 shadow-sm hover:bg-indigo-100 transition-colors">
                             <ArrowsUpDownIcon className="w-5 h-5" />
                             <span>Imp/Exp</span>
                         </button>
                     </div>
 
                     <div className="lg:col-span-2 flex flex-col gap-6">
-                        <div className="bg-white border border-slate-200 dark:midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
+                        <div className="bg-white border border-slate-200 midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
                             <div className="mb-4">
                                 <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
                                 <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
@@ -623,7 +623,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 dark:midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
+                <div className="bg-white border border-slate-200 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
                     <div className="mb-2 text-center">
                         <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
                         <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
@@ -700,7 +700,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             {isImportExportMenuOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
                     <div
-                        className="bg-white dark:midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
+                        className="bg-white midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">

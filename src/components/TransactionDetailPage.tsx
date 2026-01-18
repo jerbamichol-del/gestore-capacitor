@@ -72,7 +72,7 @@ const Modal = memo<{
       role="dialog"
     >
       <div
-        className={`bg-white dark:midnight-card rounded-lg shadow-xl w-full max-w-sm border border-transparent dark:border-electric-violet/30 transform transition-all duration-300 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${className || ''}`}
+        className={`bg-white midnight-card rounded-lg shadow-xl w-full max-w-sm border border-transparent dark:border-electric-violet/30 transform transition-all duration-300 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${className || ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-electric-violet/20">
@@ -450,7 +450,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         className="flex flex-col h-full bg-slate-100 dark:bg-midnight items-center justify-center p-4"
         {...tapBridgeHandlers}
       >
-        <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-white bg-white dark:midnight-card shadow-sm absolute top-0 left-0 right-0 z-10 border-b border-transparent dark:border-electric-violet/20">
+        <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-white bg-white midnight-card shadow-sm absolute top-0 left-0 right-0 z-10 border-b border-transparent dark:border-electric-violet/20">
           {!isDesktop && (
             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Torna alla calcolatrice">
               <ArrowLeftIcon className="w-6 h-6" />
@@ -538,7 +538,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
       style={{ touchAction: 'pan-y' }}
       {...tapBridgeHandlers}
     >
-      <header className="p-4 flex items-center justify-between gap-4 text-slate-800 dark:text-white bg-white dark:midnight-card shadow-sm sticky top-0 z-10 transition-colors border-b border-transparent dark:border-electric-violet/20">
+      <header className="p-4 flex items-center justify-between gap-4 text-slate-800 dark:text-white bg-white midnight-card shadow-sm sticky top-0 z-10 transition-colors border-b border-transparent dark:border-electric-violet/20">
         <div className="flex items-center gap-4">
           {!isDesktop && (
             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Torna alla calcolatrice">
@@ -681,7 +681,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           )}
 
           {!isIncome && !isTransfer && !isAdjustment && (
-            <div className="bg-white dark:midnight-card p-4 rounded-lg border border-slate-200 dark:border-electric-violet/20 space-y-4">
+            <div className="bg-white midnight-card p-4 rounded-lg border border-slate-200 dark:border-electric-violet/20 space-y-4">
               <div>
                 <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Frequenza</label>
                 <button

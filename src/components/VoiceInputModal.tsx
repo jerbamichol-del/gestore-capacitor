@@ -340,7 +340,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
       role="dialog"
     >
       <div
-        className={`bg-white dark:midnight-card rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        className={`bg-white midnight-card rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
           } border border-transparent dark:border-electric-violet/30`}
         onClick={(e) => e.stopPropagation()}
       >

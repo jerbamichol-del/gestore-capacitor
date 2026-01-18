@@ -51,7 +51,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const expensePositive = Math.abs(data.negExpense);
 
         return (
-            <div className="dark:midnight-card backdrop-blur-md p-4 rounded-xl shadow-xl border border-slate-100 dark:border-electric-violet/30 text-sm z-50">
+            <div className="midnight-card backdrop-blur-md p-4 rounded-xl shadow-xl border border-slate-100 dark:border-electric-violet/30 text-sm z-50">
                 <p className="text-slate-500 dark:text-slate-400 font-medium mb-2 border-b border-slate-100 dark:border-electric-violet/20 pb-1">{dateLabel}</p>
 
                 <div className="space-y-1.5">
@@ -324,7 +324,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     if (chartData.length === 0) return null;
 
     return (
-        <div className="bg-white dark:midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/30 transition-colors">
+        <div className="bg-white midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/30 transition-colors">
             <div className="mb-6 flex justify-between items-end">
                 <div>
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white">Andamento Patrimonio</h3>

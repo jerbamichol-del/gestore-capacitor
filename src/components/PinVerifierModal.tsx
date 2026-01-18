@@ -99,7 +99,7 @@ const PinVerifierModal: React.FC<PinVerifierModalProps> = ({ isOpen, onClose, on
 
       {/* Modale Centrato e Compatto */}
       <div
-        className="relative w-full max-w-xs bg-white dark:midnight-card rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-colors border border-transparent dark:border-electric-violet/30"
+        className="relative w-full max-w-xs bg-white midnight-card rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-colors border border-transparent dark:border-electric-violet/30"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header compatto */}

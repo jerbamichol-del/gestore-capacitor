@@ -474,9 +474,9 @@ export function PendingTransactionsModal({
       />
 
       {/* Modal - Full screen on mobile, centered on desktop */}
-      <div className="relative w-full sm:max-w-lg bg-white dark:midnight-card sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col border border-transparent dark:border-electric-violet/30">
+      <div className="relative w-full sm:max-w-lg bg-white midnight-card sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col border border-transparent dark:border-electric-violet/30">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:midnight-card border-b border-gray-200 dark:border-electric-violet/20 px-6 py-4 z-10">
+        <div className="sticky top-0 bg-white midnight-card border-b border-gray-200 dark:border-electric-violet/20 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Transazioni Rilevate</h2>
             <button

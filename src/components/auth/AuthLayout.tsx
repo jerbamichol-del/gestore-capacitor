@@ -44,7 +44,7 @@ const useIsStudio = () => {
 };
 
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="bg-white dark:midnight-card p-6 rounded-2xl shadow-[0_12px_28px_rgba(0,0,0,0.12)] border border-transparent dark:border-electric-violet/30 relative overflow-visible opacity-100 transition-colors duration-300">
+  <div className="bg-white midnight-card p-6 rounded-2xl shadow-[0_12px_28px_rgba(0,0,0,0.12)] border border-transparent dark:border-electric-violet/30 relative overflow-visible opacity-100 transition-colors duration-300">
     {children}
   </div>
 );

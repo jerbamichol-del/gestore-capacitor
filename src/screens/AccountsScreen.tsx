@@ -527,7 +527,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                 {/* Card Totale Espandibile */}
                 <div
                     onClick={() => { if (!isSelectionMode) setIsTotalExpanded(!isTotalExpanded) }}
-                    className={`bg-indigo-600 dark:bg-midnight-card dark:border dark:border-electric-violet/30 rounded-2xl p-6 text-white shadow-xl dark:shadow-electric-violet/5 shadow-indigo-200 transition-all duration-300 ${!isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+                    className={`bg-indigo-600 midnight-card dark:border dark:border-electric-violet/30 rounded-2xl p-6 text-white shadow-xl dark:shadow-electric-violet/5 shadow-indigo-200 transition-all duration-300 ${!isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : ''}`}
                 >
                     <div className="flex justify-between items-start">
                         <div>
@@ -579,7 +579,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             <div
                                 key={acc.id}
                                 onClick={() => !isSelectionMode && handleAccountClick(acc.id)}
-                                className={`bg-white dark:midnight-card p-4 rounded-xl shadow-sm border border-slate-200 dark:border-electric-violet/20 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
+                                className={`bg-white midnight-card p-4 rounded-xl shadow-sm border border-slate-200 dark:border-electric-violet/20 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
                             >
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="relative">
