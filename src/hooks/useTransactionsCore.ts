@@ -112,10 +112,11 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
     const confirmDelete = useCallback(() => {
         if (!expenseToDeleteId) return;
         setExpenses(p => p.filter(e => e.id !== expenseToDeleteId));
+        setRecurringExpenses(p => p.filter(e => e.id !== expenseToDeleteId));
         setExpenseToDeleteId(null);
         setIsConfirmDeleteModalOpen(false);
-        showToast({ message: 'Spesa eliminata.', type: 'info' });
-    }, [expenseToDeleteId, setExpenses, showToast]);
+        showToast({ message: 'Elemento eliminato.', type: 'info' });
+    }, [expenseToDeleteId, setExpenses, setRecurringExpenses, showToast]);
 
     const deleteExpenses = useCallback((ids: string[]) => {
         if (!ids || ids.length === 0) return;

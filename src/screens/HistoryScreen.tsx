@@ -372,7 +372,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
   const handleSortOptionSelect = (value: 'date' | 'amount' | 'category') => { if (value === 'amount') { setSortOption(prev => prev === 'amount-desc' ? 'amount-asc' : 'amount-desc'); } else { setSortOption(value); } setIsSortMenuOpen(false); };
 
   return (
-    <div className={`fixed inset-0 z-20 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight transform transition-transform duration-300 ease-in-out overscroll-contain ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
+    <div className={`fixed inset-0 z-20 bg-sunset-cream dark:bg-midnight transform transition-transform duration-300 ease-in-out overscroll-contain ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
       <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
         {isSelectionMode ? (
           <>

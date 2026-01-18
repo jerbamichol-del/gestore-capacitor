@@ -100,8 +100,6 @@ interface RecurringExpensesScreenProps {
 const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recurringExpenses, expenses, accounts, onClose, onCloseStart, onEdit, onDelete, onDeleteRecurringExpenses }) => {
   const [isAnimatingIn, setIsAnimatingIn] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
-  const [expenseToDeleteId, setExpenseToDeleteId] = useState<string | null>(null);
-  const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
   const autoCloseRef = useRef<number | null>(null);
   const tapBridge = useTapBridge();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -137,7 +135,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
 
   useEffect(() => { const timer = setTimeout(() => setIsAnimatingIn(true), 10); return () => clearTimeout(timer); }, []);
   useEffect(() => { if (!isAnimatingIn && openItemId) setOpenItemId(null); }, [isAnimatingIn, openItemId]);
-  useEffect(() => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); if (openItemId && !isConfirmDeleteModalOpen) autoCloseRef.current = window.setTimeout(() => setOpenItemId(null), 5000); return () => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); }; }, [openItemId, isConfirmDeleteModalOpen]);
+  useEffect(() => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); if (openItemId) autoCloseRef.current = window.setTimeout(() => setOpenItemId(null), 5000); return () => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); }; }, [openItemId]);
 
   useEffect(() => {
     if (isAnimatingIn) {
@@ -151,9 +149,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
   }, [isAnimatingIn]);
 
   const handleClose = () => { setOpenItemId(null); if (onCloseStart) onCloseStart(); setIsAnimatingIn(false); setTimeout(onClose, 300); }
-  const handleDeleteRequest = (id: string) => { setExpenseToDeleteId(id); setIsConfirmDeleteModalOpen(true); };
-  const confirmDelete = () => { if (expenseToDeleteId) { onDelete(expenseToDeleteId); setExpenseToDeleteId(null); setIsConfirmDeleteModalOpen(false); setOpenItemId(null); } };
-  const cancelDelete = () => { setIsConfirmDeleteModalOpen(false); setExpenseToDeleteId(null); };
+  const handleDeleteRequest = (id: string) => { onDelete(id); };
   const handleLongPress = (id: string) => { setSelectedIds(new Set([id])); if (navigator.vibrate) navigator.vibrate(50); };
   const handleToggleSelection = (id: string) => { setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
   const handleCancelSelection = () => { setSelectedIds(new Set()); };
@@ -162,7 +158,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
   const sortedExpenses = [...activeRecurringExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className={`fixed inset-0 z-50 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight transform transition-transform duration-300 ease-in-out overscroll-contain ${isAnimatingIn ? 'translate-y-0' : 'translate-y-full'}`} style={{ touchAction: 'pan-y' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
+    <div className={`fixed inset-0 z-50 bg-sunset-cream dark:bg-midnight transform transition-transform duration-300 ease-in-out overscroll-contain ${isAnimatingIn ? 'translate-y-0' : 'translate-y-full'}`} style={{ touchAction: 'pan-y' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
       <header className="sticky top-0 z-20 flex items-center gap-4 p-4 midnight-card shadow-sm dark:shadow-electric-violet/5 h-[60px] border-b border-transparent dark:border-electric-violet/10 transition-colors">
         {isSelectionMode ? (
           <>
@@ -195,7 +191,6 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
           </div>
         )}
       </main>
-      <ConfirmationModal isOpen={isConfirmDeleteModalOpen} onClose={cancelDelete} onConfirm={confirmDelete} title="Conferma Eliminazione" message={<>Sei sicuro di voler eliminare questa spesa programmata? <br />Le spese già generate non verranno cancellate.</>} variant="danger" />
       <ConfirmationModal isOpen={isBulkDeleteModalOpen} onClose={() => setIsBulkDeleteModalOpen(false)} onConfirm={handleConfirmBulkDelete} title="Elimina Selezionati" message={`Sei sicuro di voler eliminare ${selectedIds.size} elementi?`} variant="danger" confirmButtonText="Elimina" cancelButtonText="Annulla" />
     </div>
   );

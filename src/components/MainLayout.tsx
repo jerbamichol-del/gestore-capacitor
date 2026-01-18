@@ -10,7 +10,7 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ header, children, fab, modals, badges }) => {
     return (
-        <div className="h-full w-full dark:bg-midnight flex flex-col font-sans" style={{ touchAction: 'pan-y' }}>
+        <div className="h-full w-full bg-sunset-cream dark:bg-midnight flex flex-col font-sans" style={{ touchAction: 'pan-y' }}>
             <div className="flex-shrink-0 z-20">
                 {header}
             </div>
