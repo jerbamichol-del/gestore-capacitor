@@ -469,14 +469,14 @@ export function PendingTransactionsModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-midnight/60 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal - Full screen on mobile, centered on desktop */}
-      <div className="relative w-full sm:max-w-lg bg-white dark:bg-slate-900 sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative w-full sm:max-w-lg bg-white dark:midnight-card sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col border border-transparent dark:border-electric-violet/30">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4 z-10">
+        <div className="sticky top-0 bg-white dark:midnight-card border-b border-gray-200 dark:border-electric-violet/20 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Transazioni Rilevate</h2>
             <button
@@ -500,7 +500,7 @@ export function PendingTransactionsModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4 border border-gray-200 dark:border-slate-700">
+          <div className="bg-gray-50 dark:bg-midnight-card/50 rounded-lg p-4 border border-gray-200 dark:border-electric-violet/30">
             {/* Transaction Info */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
@@ -521,17 +521,17 @@ export function PendingTransactionsModal({
 
             {/* Rule Match Info */}
             {match && match.rule && match.confidence === 100 && (
-              <div className="mb-3 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-xs font-medium text-green-700 dark:text-green-400">
+              <div className="mb-3 p-2 bg-green-50 dark:bg-emerald-500/10 border border-green-200 dark:border-emerald-500/30 rounded-lg">
+                <p className="text-xs font-medium text-green-700 dark:text-emerald-400">
                   ✅ Regola riconosciuta: {match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-300 mt-0.5">"{match.rule.destinatario}"</p>
+                <p className="text-xs text-green-600 dark:text-emerald-300/70 mt-0.5">"{match.rule.destinatario}"</p>
               </div>
             )}
             {match && match.rule && match.confidence === 75 && (
-              <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400">⚠️ Possibile corrispondenza</p>
-                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5">Simile a "{match.rule.destinatario}"</p>
+              <div className="mb-3 p-2 bg-yellow-50 dark:bg-amber-500/10 border border-yellow-200 dark:border-amber-500/30 rounded-lg">
+                <p className="text-xs font-medium text-yellow-700 dark:text-amber-400">⚠️ Possibile corrispondenza</p>
+                <p className="text-xs text-yellow-600 dark:text-amber-300/70 mt-0.5">Simile a "{match.rule.destinatario}"</p>
               </div>
             )}
 
@@ -548,9 +548,9 @@ export function PendingTransactionsModal({
             )}
 
             {/* Raw Info (Time & Text) */}
-            <div className="mb-3 p-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+            <div className="mb-3 p-2 bg-slate-50 dark:bg-midnight-card/30 border border-slate-200 dark:border-electric-violet/20 rounded-lg">
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Dettagli originali:</p>
-              <p className="text-xs text-slate-700 dark:text-slate-300 font-mono bg-white dark:bg-slate-900/50 p-1 rounded border border-slate-100 dark:border-slate-700">
+              <p className="text-xs text-slate-700 dark:text-slate-300 font-mono bg-white dark:bg-midnight-card/50 p-1 rounded border border-slate-100 dark:border-electric-violet/10">
                 {(currentTransaction as any).rawText || getTextForRules(currentTransaction)}
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 text-right">
@@ -565,8 +565,8 @@ export function PendingTransactionsModal({
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'expense')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'expense'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
+                    ? 'bg-red-600 dark:bg-rose-600 text-white'
+                    : 'bg-gray-200 dark:bg-midnight-card/50 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-midnight-card'
                     }`}
                 >
                   💸 Spesa
@@ -574,8 +574,8 @@ export function PendingTransactionsModal({
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'income')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'income'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
+                    ? 'bg-green-600 dark:bg-emerald-600 text-white'
+                    : 'bg-gray-200 dark:bg-midnight-card/50 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-midnight-card'
                     }`}
                 >
                   💰 Entrata
@@ -583,8 +583,8 @@ export function PendingTransactionsModal({
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'transfer')}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'transfer'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
+                    ? 'bg-blue-600 dark:bg-sky-600 text-white'
+                    : 'bg-gray-200 dark:bg-midnight-card/50 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-midnight-card'
                     }`}
                 >
                   🔄 Trasferimento
@@ -599,11 +599,11 @@ export function PendingTransactionsModal({
                 <select
                   value={currentAccountId}
                   onChange={(e) => handleAccountChange(currentTransaction.id, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-electric-violet/30 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-midnight-card/50 text-slate-900 dark:text-white"
                 >
-                  <option value="" className="dark:bg-slate-800">-- Seleziona conto --</option>
+                  <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                   {accounts.map((account) => (
-                    <option key={account.id} value={account.id} className="dark:bg-slate-800">
+                    <option key={account.id} value={account.id} className="dark:bg-midnight">
                       {account.name}
                     </option>
                   ))}
@@ -613,21 +613,21 @@ export function PendingTransactionsModal({
 
             {/* Transfer Account Selection */}
             {selectedType === 'transfer' && (
-              <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg">
-                <p className="text-xs font-medium text-blue-900 dark:text-blue-300 mb-2">Seleziona conti:</p>
+              <div className="mb-3 p-3 bg-blue-50 dark:bg-sky-500/10 border border-blue-200 dark:border-sky-500/30 rounded-lg">
+                <p className="text-xs font-medium text-blue-900 dark:text-sky-300 mb-2">Seleziona conti:</p>
                 <div className="space-y-2">
                   <div>
-                    <label className="text-xs text-blue-700 dark:text-blue-300 font-medium block mb-1">Da (origine):</label>
+                    <label className="text-xs text-blue-700 dark:text-sky-400 font-medium block mb-1">Da (origine):</label>
                     <select
                       value={transferAccountSelection?.from || ''}
                       onChange={(e) =>
                         handleTransferAccountChange(currentTransaction.id, 'from', e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-blue-300 dark:border-sky-500/30 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-midnight-card/50 text-slate-900 dark:text-white"
                     >
-                      <option value="" className="dark:bg-slate-800">-- Seleziona conto --</option>
+                      <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                       {accounts.map((account) => (
-                        <option key={account.id} value={account.id} className="dark:bg-slate-800">
+                        <option key={account.id} value={account.id} className="dark:bg-midnight">
                           {account.name}
                         </option>
                       ))}
@@ -635,17 +635,17 @@ export function PendingTransactionsModal({
                   </div>
 
                   <div>
-                    <label className="text-xs text-blue-700 dark:text-blue-300 font-medium block mb-1">Verso (destinazione):</label>
+                    <label className="text-xs text-blue-700 dark:text-sky-400 font-medium block mb-1">Verso (destinazione):</label>
                     <select
                       value={transferAccountSelection?.to || ''}
                       onChange={(e) =>
                         handleTransferAccountChange(currentTransaction.id, 'to', e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-blue-300 dark:border-sky-500/30 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-midnight-card/50 text-slate-900 dark:text-white"
                     >
-                      <option value="" className="dark:bg-slate-800">-- Seleziona conto --</option>
+                      <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                       {accounts.map((account) => (
-                        <option key={account.id} value={account.id} className="dark:bg-slate-800">
+                        <option key={account.id} value={account.id} className="dark:bg-midnight">
                           {account.name}
                         </option>
                       ))}
@@ -661,7 +661,7 @@ export function PendingTransactionsModal({
 
             {/* Expense-only fields */}
             {selectedType === 'expense' && (
-              <div className="mb-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg">
+              <div className="mb-3 p-3 bg-white dark:bg-midnight-card/50 border border-gray-200 dark:border-electric-violet/20 rounded-lg">
                 <p className="text-xs font-medium text-gray-900 dark:text-white mb-2">Dettagli spesa:</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -670,11 +670,11 @@ export function PendingTransactionsModal({
                     <select
                       value={expenseMeta.category || ''}
                       onChange={(e) => handleExpenseCategoryChange(currentTransaction.id, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-electric-violet/30 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-midnight-card/50 text-slate-900 dark:text-white"
                     >
-                      <option value="" className="dark:bg-slate-800">-- Seleziona categoria --</option>
+                      <option value="" className="dark:bg-midnight">-- Seleziona categoria --</option>
                       {categoryOptions.map((cat) => (
-                        <option key={cat} value={cat} className="dark:bg-slate-800">
+                        <option key={cat} value={cat} className="dark:bg-midnight">
                           {cat}
                         </option>
                       ))}
@@ -689,12 +689,12 @@ export function PendingTransactionsModal({
                       value={expenseMeta.subcategory || ''}
                       disabled={isSubcategoryDisabled}
                       onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-600' : 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white'
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-gray-200 dark:border-electric-violet/10 bg-gray-100 dark:bg-midnight-card/20 text-gray-400 dark:text-slate-600' : 'border-gray-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 text-slate-900 dark:text-white'
                         }`}
                     >
-                      <option value="" className="dark:bg-slate-800">-- Seleziona sottocategoria --</option>
+                      <option value="" className="dark:bg-midnight">-- Seleziona sottocategoria --</option>
                       {subcategoryOptions.map((sub) => (
-                        <option key={sub} value={sub} className="dark:bg-slate-800">
+                        <option key={sub} value={sub} className="dark:bg-midnight">
                           {sub}
                         </option>
                       ))}
@@ -710,7 +710,7 @@ export function PendingTransactionsModal({
                       {expenseMeta.receipts.map((receipt, index) => (
                         <div
                           key={index}
-                          className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm aspect-video bg-gray-50 dark:bg-slate-700"
+                          className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-electric-violet/30 shadow-sm aspect-video bg-gray-50 dark:bg-midnight-card/50"
                         >
                           <img
                             src={`data:image/png;base64,${receipt}`}
@@ -736,14 +736,14 @@ export function PendingTransactionsModal({
                     <button
                       type="button"
                       onClick={() => handlePickReceipt(currentTransaction.id, 'camera')}
-                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50"
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-electric-violet/10 text-indigo-700 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/20 border border-indigo-200 dark:border-electric-violet/30 transition-colors"
                     >
                       Fotocamera
                     </button>
                     <button
                       type="button"
                       onClick={() => handlePickReceipt(currentTransaction.id, 'gallery')}
-                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/50"
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-electric-pink/10 text-indigo-700 dark:text-electric-pink hover:bg-indigo-100 dark:hover:bg-electric-pink/20 border border-indigo-200 dark:border-electric-pink/30 transition-colors"
                     >
                       Galleria
                     </button>
@@ -760,7 +760,7 @@ export function PendingTransactionsModal({
                     type="checkbox"
                     checked={saveRule}
                     onChange={(e) => handleSaveRuleChange(currentTransaction.id, e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500 bg-white dark:bg-slate-700"
+                    className="w-4 h-4 text-blue-600 border-gray-300 dark:border-electric-violet/30 rounded focus:ring-blue-500 bg-white dark:bg-midnight"
                   />
                   <span className="text-sm text-gray-700 dark:text-slate-300">Ricorda per il futuro</span>
                 </label>
@@ -773,8 +773,8 @@ export function PendingTransactionsModal({
                 onClick={() => handleConfirm(currentTransaction)}
                 disabled={!isTransferValid || processingId === currentTransaction.id}
                 className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${isTransferValid && processingId !== currentTransaction.id
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-gray-300 dark:bg-slate-700 text-gray-500 dark:text-slate-500 cursor-not-allowed'
+                  ? 'bg-blue-600 dark:btn-electric hover:bg-blue-700 text-white'
+                  : 'bg-gray-300 dark:bg-midnight-card text-gray-500 dark:text-slate-500 cursor-not-allowed border dark:border-electric-violet/20'
                   }`}
               >
                 ✓ Conferma
@@ -782,7 +782,7 @@ export function PendingTransactionsModal({
               <button
                 onClick={() => handleIgnore(currentTransaction.id)}
                 disabled={processingId === currentTransaction.id}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-midnight-card dark:hover:bg-midnight-card/80 dark:border dark:border-electric-violet/20 text-gray-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
               >
                 ✕ Ignora
               </button>

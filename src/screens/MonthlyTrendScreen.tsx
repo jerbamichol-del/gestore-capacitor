@@ -21,37 +21,37 @@ const categoryHexColors: Record<string, string> = {
 const DEFAULT_COLOR = '#78350f'; // Default to "Altro" color
 
 const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
-  const style = getCategoryStyle(payload.name);
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
+    const style = getCategoryStyle(payload.name);
 
-  return (
-    <g>
-      <text x={cx} y={cy - 12} textAnchor="middle" fill="#1e293b" className="text-base font-bold">
-        {style.label}
-      </text>
-      <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-xl font-extrabold">
-        {formatCurrency(payload.value)}
-      </text>
-      <text x={cx} y={cy + 32} textAnchor="middle" fill="#334155" className="text-sm font-bold">
-        {`(${(percent * 100).toFixed(2)}%)`}
-      </text>
-      
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 6}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        stroke="none"
-      />
-    </g>
-  );
+    return (
+        <g>
+            <text x={cx} y={cy - 12} textAnchor="middle" fill="var(--pie-text-primary)" className="text-base font-bold">
+                {style.label}
+            </text>
+            <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-xl font-extrabold">
+                {formatCurrency(payload.value)}
+            </text>
+            <text x={cx} y={cy + 32} textAnchor="middle" fill="var(--pie-text-secondary)" className="text-sm font-bold">
+                {`(${(percent * 100).toFixed(2)}%)`}
+            </text>
+
+            <Sector
+                cx={cx}
+                cy={cy}
+                innerRadius={innerRadius}
+                outerRadius={outerRadius + 6}
+                startAngle={startAngle}
+                endAngle={endAngle}
+                fill={fill}
+                stroke="none"
+            />
+        </g>
+    );
 };
 
 interface MonthlyTrendScreenProps {
-  expenses: Expense[];
+    expenses: Expense[];
 }
 
 const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => {
@@ -67,20 +67,20 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
             const expenseDate = new Date(e.date);
             return expenseDate >= startOfMonth && expenseDate <= endOfMonth && e.amount != null && !isNaN(Number(e.amount));
         });
-        
+
         const categoryTotals = monthlyExpenses.reduce((acc: Record<string, number>, expense) => {
             const category = expense.category || 'Altro';
             acc[category] = (acc[category] || 0) + Number(expense.amount);
             return acc;
         }, {});
-        
+
         return Object.entries(categoryTotals)
             .map(([name, value]) => ({ name, value: value as number }))
             .sort((a, b) => b.value - a.value);
 
     }, [expenses]);
-    
-     useEffect(() => {
+
+    useEffect(() => {
         if (selectedIndex !== null && selectedIndex >= monthlyData.length) {
             setSelectedIndex(monthlyData.length > 0 ? 0 : null);
         }
@@ -94,10 +94,10 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
 
     return (
         <div className="animate-fade-in-up">
-            <h1 className="text-2xl font-bold text-slate-800 mb-6">Andamento Mensile</h1>
-            
-            <div className="bg-white p-6 rounded-2xl shadow-lg">
-                <h3 className="text-xl font-bold text-slate-700 mb-2 text-center capitalize">
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Andamento Mensile</h1>
+
+            <div className="bg-white dark:midnight-card p-6 rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/20">
+                <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2 text-center capitalize">
                     Riepilogo di {currentMonthName}
                 </h3>
 
@@ -125,29 +125,28 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
                                 </Pie>
                             </PieChart>
                         </ResponsiveContainer>
-                        
-                        <div className="mt-4 pt-4 border-t border-slate-200">
+
+                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-electric-violet/20">
                             <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
-                            {monthlyData.map((entry, index) => {
-                                const style = getCategoryStyle(entry.name);
-                                const isActive = index === selectedIndex;
-                                return (
-                                <button
-                                    key={`item-${index}`}
-                                    onClick={() => setSelectedIndex(isActive ? null : index)}
-                                    onMouseEnter={() => setHoveredIndex(index)}
-                                    onMouseLeave={() => setHoveredIndex(null)}
-                                    className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 transform hover:shadow-md ${
-                                        isActive ? 'bg-indigo-100 ring-2 ring-indigo-300' : 'bg-slate-100'
-                                    }`}
-                                >
-                                    <style.Icon className="w-8 h-8 flex-shrink-0" />
-                                    <div className="min-w-0 pr-2">
-                                        <p className={`font-semibold text-sm truncate ${isActive ? 'text-indigo-800' : 'text-slate-700'}`}>{style.label}</p>
-                                    </div>
-                                </button>
-                                );
-                            })}
+                                {monthlyData.map((entry, index) => {
+                                    const style = getCategoryStyle(entry.name);
+                                    const isActive = index === selectedIndex;
+                                    return (
+                                        <button
+                                            key={`item-${index}`}
+                                            onClick={() => setSelectedIndex(isActive ? null : index)}
+                                            onMouseEnter={() => setHoveredIndex(index)}
+                                            onMouseLeave={() => setHoveredIndex(null)}
+                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 transform hover:shadow-md ${isActive ? 'bg-indigo-100 dark:bg-electric-violet/20 ring-2 ring-indigo-300 dark:ring-electric-violet' : 'bg-slate-100 dark:bg-midnight-card/50'
+                                                }`}
+                                        >
+                                            <style.Icon className="w-8 h-8 flex-shrink-0" />
+                                            <div className="min-w-0 pr-2">
+                                                <p className={`font-semibold text-sm truncate ${isActive ? 'text-indigo-800 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-400'}`}>{style.label}</p>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 

@@ -60,7 +60,7 @@ const Modal = memo<{
 
   return (
     <div
-      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/60 backdrop-blur-sm`}
+      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-midnight/60 backdrop-blur-md`}
       onClick={(e) => {
         e.stopPropagation();
         onClose();
@@ -72,15 +72,15 @@ const Modal = memo<{
       role="dialog"
     >
       <div
-        className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${className || ''}`}
+        className={`bg-white dark:midnight-card rounded-lg shadow-xl w-full max-w-sm border border-transparent dark:border-electric-violet/30 transform transition-all duration-300 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${className || ''}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-electric-violet/20">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-electric-violet p-1 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
             aria-label="Chiudi"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -447,12 +447,12 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
       <div
         ref={rootRef}
         tabIndex={-1}
-        className="flex flex-col h-full bg-slate-100 dark:bg-slate-900 items-center justify-center p-4"
+        className="flex flex-col h-full bg-slate-100 dark:bg-midnight items-center justify-center p-4"
         {...tapBridgeHandlers}
       >
-        <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-white bg-white dark:bg-slate-800 shadow-sm absolute top-0 left-0 right-0 z-10">
+        <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-white bg-white dark:midnight-card shadow-sm absolute top-0 left-0 right-0 z-10 border-b border-transparent dark:border-electric-violet/20">
           {!isDesktop && (
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700" aria-label="Torna alla calcolatrice">
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Torna alla calcolatrice">
               <ArrowLeftIcon className="w-6 h-6" />
             </button>
           )}
@@ -495,7 +495,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             type="date"
             value={formData.date || ''}
             onChange={handleInputChange}
-            className={`block w-full rounded-md bg-white dark:bg-slate-800 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none ${dateError ? 'border-red-500 ring-1 ring-red-500' : 'border border-slate-300 dark:border-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'}`}
+            className={`block w-full rounded-md bg-white dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none [color-scheme:light] dark:[color-scheme:dark] ${dateError ? 'border-red-500 ring-1 ring-red-500' : 'border border-slate-300 dark:border-electric-violet/30 focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet'}`}
             enterKeyHint="done"
             onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
             onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -517,7 +517,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
               type="time"
               value={formData.time || ''}
               onChange={handleInputChange}
-              className="block w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet [color-scheme:light] dark:[color-scheme:dark]"
               enterKeyHint="done"
               onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
               onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -534,14 +534,14 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     <div
       ref={rootRef}
       tabIndex={-1}
-      className="flex flex-col h-full bg-slate-100 dark:bg-slate-900 focus:outline-none"
+      className="flex flex-col h-full bg-slate-100 dark:bg-midnight focus:outline-none"
       style={{ touchAction: 'pan-y' }}
       {...tapBridgeHandlers}
     >
-      <header className="p-4 flex items-center justify-between gap-4 text-slate-800 dark:text-white bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-10 transition-colors">
+      <header className="p-4 flex items-center justify-between gap-4 text-slate-800 dark:text-white bg-white dark:midnight-card shadow-sm sticky top-0 z-10 transition-colors border-b border-transparent dark:border-electric-violet/20">
         <div className="flex items-center gap-4">
           {!isDesktop && (
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700" aria-label="Torna alla calcolatrice">
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Torna alla calcolatrice">
               <ArrowLeftIcon className="w-6 h-6" />
             </button>
           )}
@@ -580,7 +580,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 type="text"
                 value={formData.description || ''}
                 onChange={handleInputChange}
-                className="block w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
                 placeholder="Es. Caffè al bar"
                 enterKeyHint="done"
                 onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
@@ -595,7 +595,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveMenu('account')}
-                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700"
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card"
                 >
                   <CreditCardIcon className="h-7 w-7 text-slate-400" />
                   <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
@@ -607,7 +607,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveMenu('toAccount')}
-                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700"
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card"
                 >
                   <CreditCardIcon className="h-7 w-7 text-slate-400" />
                   <span className="truncate flex-1">{selectedToAccountLabel || 'Seleziona'}</span>
@@ -621,7 +621,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveMenu('account')}
-                className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700"
+                className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card"
               >
                 <CreditCardIcon className="h-7 w-7 text-slate-400" />
                 <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
@@ -641,7 +641,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   {formData.receipts.map((receipt, index) => (
                     <div
                       key={index}
-                      className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm aspect-video bg-slate-50 dark:bg-slate-800 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors"
+                      className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-electric-violet/30 shadow-sm aspect-video bg-slate-50 dark:bg-midnight-card/50 cursor-pointer hover:border-indigo-300 dark:hover:border-electric-violet transition-colors"
                       onClick={() => setViewingImage(receipt)}
                     >
                       <img
@@ -656,7 +656,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                           handleRemoveReceipt(index);
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="absolute top-1 right-1 p-1.5 bg-white/90 text-red-600 rounded-full shadow-md hover:bg-red-50 hover:text-red-700 transition-colors z-10 flex items-center justify-center"
+                        className="absolute top-1 right-1 p-1.5 bg-white/90 dark:bg-midnight/90 text-red-600 dark:text-rose-400 rounded-full shadow-md hover:bg-red-50 dark:hover:bg-midnight transition-colors z-10 flex items-center justify-center"
                         aria-label="Rimuovi ricevuta"
                       >
                         <XMarkIcon className="w-5 h-5" />
@@ -672,7 +672,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   if (Date.now() - receiptMenuCloseTimeRef.current < 500) return;
                   setIsReceiptMenuOpen(true);
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg border border-dashed border-indigo-300 dark:border-indigo-500/50 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 hover:border-indigo-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg border border-dashed border-indigo-300 dark:border-electric-violet/50 bg-indigo-50 dark:bg-electric-violet/10 text-indigo-600 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/20 hover:border-indigo-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <PaperClipIcon className="w-5 h-5" />
                 <span>{formData.receipts && formData.receipts.length > 0 ? 'Aggiungi un\'altra ricevuta' : 'Allega Ricevuta'}</span>
@@ -681,15 +681,15 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           )}
 
           {!isIncome && !isTransfer && !isAdjustment && (
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 space-y-4">
+            <div className="bg-white dark:midnight-card p-4 rounded-lg border border-slate-200 dark:border-electric-violet/20 space-y-4">
               <div>
                 <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Frequenza</label>
                 <button
                   type="button"
                   onClick={() => setIsFrequencyModalOpen(true)}
                   className={`w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${isFrequencySet
-                    ? 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700'
-                    : 'bg-slate-100 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    ? 'bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card'
+                    : 'bg-slate-100 dark:bg-midnight-card/30 border-slate-200 dark:border-electric-violet/10 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-midnight-card'
                     }`}
                 >
                   <span className="truncate flex-1 capitalize">
@@ -707,7 +707,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsRecurrenceModalOpen(true)}
-                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700"
+                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card"
                   >
                     <span className="truncate flex-1">{getRecurrenceSummary(formData)}</span>
                     <ChevronDownIcon className="w-5 h-5 text-slate-500" />
@@ -728,8 +728,8 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
               : isTransfer
                 ? 'bg-sky-600 hover:bg-sky-700 focus:ring-sky-500 disabled:bg-sky-300'
                 : isAdjustment
-                  ? 'bg-slate-600 hover:bg-slate-700 focus:ring-slate-500 dark:bg-slate-700 dark:hover:bg-slate-600'
-                  : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 disabled:bg-indigo-300'
+                  ? 'bg-slate-600 hover:bg-slate-700 focus:ring-slate-500 dark:bg-midnight-card dark:border-electric-violet/30 dark:hover:bg-midnight-card/80'
+                  : 'bg-indigo-600 dark:btn-electric hover:bg-indigo-700 focus:ring-indigo-500 disabled:bg-indigo-300'
               }`}
           >
             {isTransfer ? 'Conferma Trasferimento' : isIncome ? 'Aggiungi Entrata' : isAdjustment ? 'Salva Rettifica' : 'Aggiungi Spesa'}
@@ -762,9 +762,9 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         title="Seleziona Frequenza"
       >
         <div className="p-4 space-y-2">
-          <button onClick={() => handleFrequencySelect('none')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-indigo-300">Nessuna</button>
-          <button onClick={() => handleFrequencySelect('single')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-indigo-300">Singolo</button>
-          <button onClick={() => handleFrequencySelect('recurring')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-indigo-300">Ricorrente</button>
+          <button onClick={() => handleFrequencySelect('none')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-midnight-card/50 border border-transparent dark:border-electric-violet/20 text-slate-800 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">Nessuna</button>
+          <button onClick={() => handleFrequencySelect('single')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-midnight-card/50 border border-transparent dark:border-electric-violet/20 text-slate-800 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">Singolo</button>
+          <button onClick={() => handleFrequencySelect('recurring')} className="w-full px-4 py-3 text-base font-semibold rounded-lg bg-slate-100 dark:bg-midnight-card/50 border border-transparent dark:border-electric-violet/20 text-slate-800 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">Ricorrente</button>
         </div>
       </Modal>
 
@@ -777,18 +777,18 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         <div className="p-4 grid grid-cols-2 gap-4">
           <button
             onClick={(e) => handlePickReceipt(e, 'camera')}
-            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors"
+            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-midnight-card/50 border border-slate-200 dark:border-electric-violet/30 hover:bg-indigo-50 dark:hover:bg-electric-violet/20 hover:border-indigo-200 transition-colors"
           >
-            <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-600 flex items-center justify-center shadow-sm text-indigo-600 dark:text-indigo-400">
+            <div className="w-12 h-12 rounded-full bg-white dark:bg-electric-violet/20 flex items-center justify-center shadow-sm text-indigo-600 dark:text-electric-violet">
               <CameraIcon className="w-7 h-7" />
             </div>
             <span className="font-semibold text-slate-700 dark:text-slate-200">Fotocamera</span>
           </button>
           <button
             onClick={(e) => handlePickReceipt(e, 'gallery')}
-            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-colors"
+            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-midnight-card/50 border border-slate-200 dark:border-electric-violet/30 hover:bg-indigo-50 dark:hover:bg-electric-pink/20 hover:border-indigo-200 transition-colors"
           >
-            <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-600 flex items-center justify-center shadow-sm text-purple-600 dark:text-purple-400">
+            <div className="w-12 h-12 rounded-full bg-white dark:bg-electric-pink/20 flex items-center justify-center shadow-sm text-purple-600 dark:text-electric-pink">
               <PhotoIcon className="w-7 h-7" />
             </div>
             <span className="font-semibold text-slate-700 dark:text-slate-200">Galleria</span>

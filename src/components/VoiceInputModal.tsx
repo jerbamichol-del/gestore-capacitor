@@ -307,8 +307,8 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
       case 'processing':
         return {
           icon: (
-            <div className="w-24 h-24 rounded-full bg-indigo-500 flex items-center justify-center">
-              <div className="w-12 h-12 animate-spin rounded-full border-4 border-t-transparent border-white" />
+            <div className="w-24 h-24 rounded-full bg-electric-violet/20 flex items-center justify-center">
+              <div className="w-12 h-12 animate-spin rounded-full border-4 border-t-transparent border-electric-violet" />
             </div>
           ),
           text: 'Elaborazione...',
@@ -334,22 +334,22 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
   return (
     <div
       className={`fixed inset-0 z-50 flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'
-        } bg-slate-900/50 backdrop-blur-sm`}
+        } bg-midnight/50 backdrop-blur-md`}
       onClick={handleClose}
       aria-modal="true"
       role="dialog"
     >
       <div
-        className={`bg-slate-50 dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-          }`}
+        className={`bg-white dark:midnight-card rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          } border border-transparent dark:border-electric-violet/30`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-electric-violet/20">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">Aggiungi con Voce</h2>
           <button
             type="button"
             onClick={handleClose}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-electric-violet transition-colors p-1 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Chiudi"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -362,7 +362,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
           <p className="text-slate-500 dark:text-slate-400 mt-2">{subtext}</p>
 
           {transcript && (
-            <div className="mt-6 p-3 bg-slate-100 dark:bg-slate-800 rounded-md w-full text-left">
+            <div className="mt-6 p-3 bg-slate-100 dark:bg-midnight-card/50 rounded-md w-full text-left border border-transparent dark:border-electric-violet/20">
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
                 Descrizione rilevata:
               </p>
@@ -374,7 +374,7 @@ const VoiceInputModal: React.FC<VoiceInputModalProps> = ({
             <button
               type="button"
               onClick={startRecording}
-              className="mt-6 px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+              className="mt-6 px-4 py-2 rounded-lg bg-indigo-600 dark:btn-electric text-white font-semibold hover:bg-indigo-700 transition-colors"
             >
               Riprova registrazione
             </button>

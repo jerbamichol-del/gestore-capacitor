@@ -196,9 +196,9 @@ const SwipableTransferRow: React.FC<{
         }
     };
 
-    const bgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200 dark:bg-indigo-900/30 dark:ring-indigo-700' : 'bg-slate-50 dark:bg-slate-800/50';
+    const bgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : 'bg-slate-50 dark:bg-midnight-card/40';
     return (
-        <div className={`relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 mb-2 transition-colors duration-200 ${bgClass}`}>
+        <div className={`relative rounded-lg overflow-hidden border border-slate-100 dark:border-electric-violet/20 mb-2 transition-colors duration-200 ${bgClass}`}>
             <div className="absolute top-0 right-0 h-full flex items-center z-0">
                 <button
                     onClick={() => onDelete(transfer.id)}
@@ -221,11 +221,11 @@ const SwipableTransferRow: React.FC<{
             >
                 <div className="flex items-center gap-3">
                     {isSelected ? (
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-indigo-600 text-white flex-shrink-0">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-indigo-600 dark:bg-electric-violet text-white flex-shrink-0">
                             <CheckIcon className="w-5 h-5" strokeWidth={3} />
                         </div>
                     ) : (
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isIncoming ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isIncoming ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
                             <ArrowRightIcon className={`w-4 h-4 transform ${isIncoming ? 'rotate-180' : ''}`} />
                         </div>
                     )}
@@ -238,7 +238,7 @@ const SwipableTransferRow: React.FC<{
                         </p>
                     </div>
                 </div>
-                <span className={`font-bold ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isIncoming ? 'text-green-600 dark:text-green-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`font-bold ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isIncoming ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
                     {isIncoming ? '+' : '-'}{formatCurrency(transfer.amount)}
                 </span>
             </div>
@@ -500,8 +500,8 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
     const isFilterActive = sortOption !== 'date' || filterOption !== 'all';
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 flex flex-col animate-fade-in-up transition-colors duration-300">
-            <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm border-b border-transparent dark:border-slate-800 h-[60px] transition-colors duration-300">
+        <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-midnight flex flex-col animate-fade-in-up transition-colors duration-300">
+            <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-midnight/80 backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
                 {isSelectionMode && !editingAccountId ? (
                     <>
                         <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
@@ -527,7 +527,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                 {/* Card Totale Espandibile */}
                 <div
                     onClick={() => { if (!isSelectionMode) setIsTotalExpanded(!isTotalExpanded) }}
-                    className={`bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200 transition-all duration-300 ${!isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+                    className={`bg-indigo-600 dark:bg-midnight-card dark:border dark:border-electric-violet/30 rounded-2xl p-6 text-white shadow-xl dark:shadow-electric-violet/5 shadow-indigo-200 transition-all duration-300 ${!isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : ''}`}
                 >
                     <div className="flex justify-between items-start">
                         <div>
@@ -579,13 +579,13 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             <div
                                 key={acc.id}
                                 onClick={() => !isSelectionMode && handleAccountClick(acc.id)}
-                                className={`bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
+                                className={`bg-white dark:midnight-card p-4 rounded-xl shadow-sm border border-slate-200 dark:border-electric-violet/20 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
                             >
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="relative">
-                                        <Icon className="w-12 h-12 text-indigo-600" />
+                                        <Icon className="w-12 h-12 text-indigo-600 dark:text-electric-violet" />
                                         {isSynced && (
-                                            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
+                                            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white dark:border-midnight">
                                                 <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" /></svg>
                                             </div>
                                         )}
@@ -595,7 +595,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                         {isSynced && <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tighter leading-none">Automatico</span>}
                                     </div>
                                 </div>
-                                <span className={`font-bold text-lg flex-shrink-0 ml-2 ${balance >= 0 ? 'text-slate-800 dark:text-white' : 'text-red-600 dark:text-red-400'}`}>
+                                <span className={`font-bold text-lg flex-shrink-0 ml-2 ${balance >= 0 ? 'text-slate-800 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
                                     {formatCurrency(balance)}
                                 </span>
                             </div>
@@ -610,10 +610,10 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
             {/* MODAL EDIT SALDO FULL SCREEN */}
             {editingAccountId && (
                 <div
-                    className={`fixed inset-0 z-[60] bg-white dark:bg-slate-900 flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                    className={`fixed inset-0 z-[60] bg-white dark:bg-midnight flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                     onClick={(e) => { e.stopPropagation(); if (openTransferId) setOpenTransferId(null); }}
                 >
-                    <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
+                    <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-electric-violet/10 bg-white/80 dark:bg-midnight/80 backdrop-blur-md sticky top-0 z-40">
                         {isSelectionMode ? (
                             <>
                                 <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
@@ -626,7 +626,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             </>
                         ) : (
                             <>
-                                <button onClick={handleModalClose} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400">
+                                <button onClick={handleModalClose} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-midnight-card text-slate-500 dark:text-slate-400">
                                     <XMarkIcon className="w-6 h-6" />
                                 </button>
                                 <h3 className="font-bold text-lg text-slate-800 dark:text-white flex-1 ml-4 text-left flex items-center gap-2">
@@ -637,25 +637,25 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                     <button
                                         ref={sortButtonRef}
                                         onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }}
-                                        className={`p-2 rounded-full transition-colors ${isFilterActive ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+                                        className={`p-2 rounded-full transition-colors ${isFilterActive ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-slate-100 dark:hover:bg-midnight-card text-slate-600 dark:text-slate-400'}`}
                                         aria-label="Ordina e Filtra"
                                     >
                                         <ArrowsUpDownIcon className="w-6 h-6" />
                                     </button>
                                     {isSortMenuOpen && (
-                                        <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-52 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-up" onPointerDown={(e) => e.stopPropagation()}>
+                                        <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-52 bg-white dark:midnight-card rounded-lg shadow-xl border border-slate-100 dark:border-electric-violet/30 z-50 overflow-hidden animate-fade-in-up" onPointerDown={(e) => e.stopPropagation()}>
                                             <div className="py-2">
                                                 <p className="px-4 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Ordina per</p>
-                                                <button onClick={() => handleSortSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Data (Predefinito)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleSortSelect('amount-desc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'amount-desc' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Decrescente)</span>{sortOption === 'amount-desc' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleSortSelect('amount-asc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'amount-asc' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Crescente)</span>{sortOption === 'amount-asc' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Data (Predefinito)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('amount-desc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'amount-desc' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Decrescente)</span>{sortOption === 'amount-desc' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleSortSelect('amount-asc')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'amount-asc' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Importo (Crescente)</span>{sortOption === 'amount-asc' && <CheckIcon className="w-4 h-4" />}</button>
 
-                                                <div className="border-t border-slate-100 dark:border-slate-700 my-2"></div>
+                                                <div className="border-t border-slate-100 dark:border-electric-violet/10 my-2"></div>
 
                                                 <p className="px-4 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Filtra per</p>
-                                                <button onClick={() => handleFilterSelect('all')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${filterOption === 'all' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Tutti</span>{filterOption === 'all' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleFilterSelect('incoming')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${filterOption === 'incoming' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Entrate</span>{filterOption === 'incoming' && <CheckIcon className="w-4 h-4" />}</button>
-                                                <button onClick={() => handleFilterSelect('outgoing')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${filterOption === 'outgoing' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Uscite</span>{filterOption === 'outgoing' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('all')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${filterOption === 'all' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Tutti</span>{filterOption === 'all' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('incoming')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${filterOption === 'incoming' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Entrate</span>{filterOption === 'incoming' && <CheckIcon className="w-4 h-4" />}</button>
+                                                <button onClick={() => handleFilterSelect('outgoing')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${filterOption === 'outgoing' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Solo Uscite</span>{filterOption === 'outgoing' && <CheckIcon className="w-4 h-4" />}</button>
                                             </div>
                                         </div>
                                     )}
@@ -666,7 +666,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
 
                     <div className="flex-1 overflow-y-auto p-6" onClick={() => setOpenTransferId(null)}>
                         <div className="space-y-6">
-                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-center border border-slate-200 dark:border-slate-700 transition-colors duration-200">
+                            <div className="bg-slate-50 dark:bg-midnight-card/50 p-4 rounded-2xl text-center border border-slate-200 dark:border-electric-violet/20 transition-colors duration-200 shadow-sm">
                                 <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wide mb-1">Saldo Attuale</p>
                                 <p className="text-3xl font-bold text-slate-800 dark:text-white">{formatCurrency(accountBalances[editingAccountId] || 0)}</p>
                             </div>
@@ -686,7 +686,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                         onChange={(e) => setNewBalanceValue(e.target.value)}
                                         placeholder={isEditingAccountSynced ? 'Sincronizzato API' : '0.00'}
                                         disabled={isEditingAccountSynced}
-                                        className="block w-full pl-12 pr-14 py-4 border border-slate-300 dark:border-slate-700 rounded-2xl leading-5 bg-white dark:bg-slate-800 placeholder-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-2xl font-semibold text-slate-900 dark:text-white shadow-sm transition-colors"
+                                        className="block w-full pl-12 pr-14 py-4 border border-slate-300 dark:border-electric-violet/30 rounded-2xl leading-5 bg-white dark:bg-midnight-card placeholder-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:border-indigo-500 dark:focus:border-electric-violet text-2xl font-semibold text-slate-900 dark:text-white shadow-sm transition-colors"
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleSaveBalance();
                                         }}
@@ -694,7 +694,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                     {!isEditingAccountSynced && (
                                         <button
                                             onClick={handleSaveBalance}
-                                            className="absolute inset-y-0 right-0 flex items-center pr-4 text-green-600 hover:text-green-700 transition-colors focus:outline-none"
+                                            className="absolute inset-y-0 right-0 flex items-center pr-4 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors focus:outline-none"
                                             aria-label="Conferma nuovo saldo"
                                         >
                                             <CheckIcon className="w-8 h-8" strokeWidth={3} />
@@ -712,13 +712,13 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                 <div className={`flex gap-3 pt-2 ${isSelectionMode ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <button
                                         onClick={handleModalClose}
-                                        className="flex-1 py-3 text-slate-700 dark:text-slate-300 font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                                        className="flex-1 py-3 text-slate-700 dark:text-slate-300 font-bold bg-slate-100 dark:bg-midnight-card border dark:border-electric-violet/20 hover:bg-slate-200 dark:hover:bg-midnight-card/80 rounded-xl transition-colors"
                                     >
                                         Annulla
                                     </button>
                                     <button
                                         onClick={handleSaveBalance}
-                                        className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-colors"
+                                        className="flex-1 py-3 bg-indigo-600 dark:btn-electric text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-colors"
                                     >
                                         Salva
                                     </button>
@@ -726,11 +726,11 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                             )}
 
                             {/* Storico Trasferimenti */}
-                            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+                            <div className="pt-6 border-t border-slate-100 dark:border-electric-violet/10">
                                 <div className="flex items-center justify-between mb-4">
                                     <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wide">Storico Trasferimenti</h4>
                                     {isFilterActive && (
-                                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                                        <span className="text-xs font-semibold text-indigo-600 dark:text-electric-violet bg-indigo-50 dark:bg-electric-violet/20 px-2 py-1 rounded-full">
                                             Filtro attivo
                                         </span>
                                     )}

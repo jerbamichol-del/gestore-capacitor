@@ -51,12 +51,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const expensePositive = Math.abs(data.negExpense);
 
         return (
-            <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 text-sm z-50">
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-2 border-b border-slate-100 dark:border-slate-700 pb-1">{dateLabel}</p>
+            <div className="dark:midnight-card backdrop-blur-md p-4 rounded-xl shadow-xl border border-slate-100 dark:border-electric-violet/30 text-sm z-50">
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-2 border-b border-slate-100 dark:border-electric-violet/20 pb-1">{dateLabel}</p>
 
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-4">
-                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">Patrimonio:</span>
+                        <span className="text-indigo-600 dark:text-electric-violet font-bold">Patrimonio:</span>
                         <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(data.balance)}</span>
                     </div>
 
@@ -79,7 +79,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                         </span>
                     </div>
 
-                    <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-700 grid grid-cols-2 gap-x-4 text-xs">
+                    <div className="pt-2 mt-2 border-t border-slate-100 dark:border-electric-violet/20 grid grid-cols-2 gap-x-4 text-xs">
                         <div className="text-emerald-600 dark:text-emerald-400 font-medium">
                             Entrate: {formatCurrency(data.income)}
                         </div>
@@ -324,11 +324,11 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     if (chartData.length === 0) return null;
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-slate-700 transition-colors">
+        <div className="bg-white dark:midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/30 transition-colors">
             <div className="mb-6 flex justify-between items-end">
                 <div>
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white">Andamento Patrimonio</h3>
-                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">Patrimonio (linea), Entrate (verde), Uscite (rosso)</p>
+                    <p className="text-xs font-medium text-slate-400 dark:text-slate-400 mt-0.5">Patrimonio (linea), Entrate (verde), Uscite (rosso)</p>
                 </div>
             </div>
 
@@ -337,12 +337,12 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                     <ComposedChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }} stackOffset="sign">
                         <defs>
                             <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#A855F7" stopOpacity={0.2} />
+                                <stop offset="95%" stopColor="#A855F7" stopOpacity={0} />
                             </linearGradient>
                         </defs>
 
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-electric-violet/10" strokeOpacity={0.5} />
 
                         <XAxis
                             dataKey="date"
@@ -380,6 +380,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             stackId="stack"
                             barSize={12}
                             fill="#10b981"
+                            className="dark:fill-emerald-400"
                             fillOpacity={0.8}
                             radius={[0, 0, 0, 0]}
                         />
@@ -389,6 +390,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                             stackId="stack"
                             barSize={12}
                             fill="#f43f5e"
+                            className="dark:fill-rose-400"
                             fillOpacity={0.8}
                             radius={[0, 0, 0, 0]}
                         />
@@ -396,11 +398,11 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
                         <Area
                             type="monotone"
                             dataKey="balance"
-                            stroke="#6366f1"
+                            stroke="#A855F7"
                             strokeWidth={3}
                             fillOpacity={1}
                             fill="url(#colorBalance)"
-                            activeDot={{ r: 6, strokeWidth: 0, fill: '#4f46e5' }}
+                            activeDot={{ r: 6, strokeWidth: 0, fill: '#A855F7' }}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>

@@ -453,14 +453,14 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     return (
         <>
-            <div className="md:p-6 pb-32 md:pb-32 space-y-6 bg-slate-100 dark:bg-slate-900" {...tapBridgeHandlers}>
+            <div className="md:p-6 pb-32 md:pb-32 space-y-6 bg-slate-100 dark:bg-midnight" {...tapBridgeHandlers}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 flex flex-col gap-4">
-                        <div className="bg-white/80 backdrop-blur-md border border-white/50 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none dark:backdrop-blur-none p-6 md:rounded-2xl shadow-xl flex flex-col justify-between relative transition-all duration-300">
+                        <div className="bg-white border border-slate-200 dark:midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col justify-between relative transition-all duration-300">
                             <div className="text-center mb-2 relative z-10">
                                 <h3 className="text-lg font-bold text-black dark:text-white leading-tight uppercase tracking-wide">{periodLabel}</h3>
                                 <p className="text-sm font-medium text-slate-400 dark:text-slate-500 capitalize mb-1">{dateRangeLabel}</p>
-                                <div className="relative flex justify-center items-center text-indigo-600 mt-1">
+                                <div className="relative flex justify-center items-center text-indigo-600 dark:text-electric-violet mt-1">
                                     <div className="relative flex items-baseline">
                                         <span className="absolute right-full mr-2 text-3xl font-semibold opacity-80 top-1/2 -translate-y-1/2">€</span>
                                         <span className="text-5xl font-extrabold tracking-tight dark:text-white">
@@ -520,7 +520,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <button
                                             key={i}
                                             onClick={() => setActiveViewIndex(i)}
-                                            className={`w-2 h-2 rounded-full transition-colors ${activeViewIndex === i ? 'bg-indigo-600' : 'bg-slate-300 hover:bg-slate-400'}`}
+                                            className={`w-2 h-2 rounded-full transition-colors ${activeViewIndex === i ? 'bg-indigo-600 dark:bg-electric-violet' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'}`}
                                             aria-label={`Vai alla pagina filtri ${i + 1}`}
                                         />
                                     ))}
@@ -538,14 +538,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <div className="flex justify-between items-center mb-1">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onToggleBalanceVisibility(); }}
-                                                className="p-2 -ml-2 rounded-full text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="p-2 -ml-2 rounded-full text-slate-400 hover:text-indigo-600 dark:hover:text-electric-violet hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 aria-label={isBalanceVisible ? "Nascondi patrimonio" : "Mostra patrimonio"}
                                             >
                                                 {isBalanceVisible ? <EyeSlashIcon className="w-6 h-6" /> : <EyeIcon className="w-6 h-6" />}
                                             </button>
                                             <h4 className="text-sm font-medium text-slate-400 dark:text-slate-500 cursor-default select-none">Patrimonio</h4>
                                         </div>
-                                        <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800 dark:text-white' : totalAccountsBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        <p className={`text-xl font-bold text-right ${!isBalanceVisible ? 'text-slate-800 dark:text-white' : totalAccountsBalance >= 0 ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-rose-400'}`}>
                                             {isBalanceVisible ? (
                                                 <>
                                                     {totalAccountsBalance >= 0 ? '+' : ''}{formatCurrency(totalAccountsBalance)}
@@ -570,7 +570,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <button onClick={handleNavigateToRecurring} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-slate-900 bg-amber-100 rounded-full hover:bg-amber-200 focus:outline-none active:scale-95 active:bg-amber-200 active:ring-2 active:ring-offset-2 active:ring-amber-500 transition-all border border-amber-400">
                                         <ProgrammateDetailedIcon className="w-7 h-7" /> <span className="text-sm">Programmate</span>
                                     </button>
-                                    <button onClick={handleNavigateToHistory} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-indigo-900 bg-indigo-100 rounded-full hover:bg-indigo-200 focus:outline-none active:scale-95 active:bg-indigo-200 active:ring-2 active:ring-offset-2 active:ring-indigo-500 transition-all border border-indigo-200">
+                                    <button onClick={handleNavigateToHistory} className="flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-indigo-900 bg-indigo-100 dark:bg-midnight-card dark:text-electric-violet rounded-full hover:bg-indigo-200 dark:hover:bg-midnight-card/80 transition-all border border-indigo-200 dark:border-electric-violet/30">
                                         <ExpensesDetailedIcon className="w-7 h-7" /> <span className="text-sm">Spese</span>
                                     </button>
                                     <button onClick={handleNavigateToIncomes} className={`flex-none flex items-center justify-center gap-2 py-1 px-3 text-center font-semibold text-emerald-900 bg-emerald-100 rounded-full hover:bg-emerald-200 focus:outline-none active:scale-95 active:bg-emerald-200 active:ring-2 active:ring-offset-2 active:ring-emerald-500 transition-all border border-emerald-200 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
@@ -584,14 +584,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </div>
 
                         <input type="file" ref={fileInputRef} className="hidden" accept=".csv, .xlsx, .xls, .json" onChange={handleFileChange} />
-                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-bold rounded-2xl border border-indigo-100 dark:border-indigo-800 shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 bg-indigo-50 dark:midnight-card text-indigo-700 dark:text-electric-violet font-bold rounded-2xl border border-indigo-100 dark:border-electric-violet/20 shadow-sm hover:bg-indigo-100 transition-colors">
                             <ArrowsUpDownIcon className="w-5 h-5" />
                             <span>Imp/Exp</span>
                         </button>
                     </div>
 
                     <div className="lg:col-span-2 flex flex-col gap-6">
-                        <div className="bg-white/80 backdrop-blur-md border border-white/50 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none dark:backdrop-blur-none p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
+                        <div className="bg-white border border-slate-200 dark:midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
                             <div className="mb-4">
                                 <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
                                 <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
@@ -611,7 +611,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                         <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
                                                     </div>
                                                     <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
-                                                        <div className="bg-indigo-500 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                                                        <div className="bg-indigo-500 dark:bg-electric-violet h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -623,7 +623,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white/80 backdrop-blur-md border border-white/50 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none dark:backdrop-blur-none p-6 md:rounded-2xl shadow-xl transition-all duration-300">
+                <div className="bg-white border border-slate-200 dark:midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
                     <div className="mb-2 text-center">
                         <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
                         <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
@@ -676,7 +676,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         >
                                             <style.Icon className="w-8 h-8 flex-shrink-0" />
                                             <div className="min-w-0 pr-2">
-                                                <p className={`font-semibold text-sm truncate text-slate-700`}>{style.label}</p>
+                                                <p className={`font-semibold text-sm truncate text-slate-700 dark:text-slate-300`}>{style.label}</p>
                                             </div>
                                         </button>
                                     );
@@ -700,7 +700,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             {isImportExportMenuOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
                     <div
-                        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
+                        className="bg-white dark:midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">
@@ -745,9 +745,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             window.history.back();
                                             setTimeout(onOpenBankSyncSettings, 50);
                                         }}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left group"
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-midnight-card/50 hover:bg-slate-100 dark:hover:bg-midnight-card transition-colors text-left group"
                                     >
-                                        <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                                        <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-electric-violet/20 flex items-center justify-center text-indigo-600 dark:text-electric-violet group-hover:scale-110 transition-transform">
                                             <span className="text-2xl">🏦</span>
                                         </div>
                                         <div className="flex flex-col">

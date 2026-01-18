@@ -11,11 +11,26 @@
 
   <meta name="theme-color" content="#4f46e5" />
 
-  <!-- Tailwind via CDN: Semplice e funzionante -->
+  <!-- Tailwind via CDN with Midnight Electric Theme -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            midnight: {
+              DEFAULT: '#0F172A',
+              card: 'rgba(30, 41, 59, 0.7)',
+              border: 'rgba(168, 85, 247, 0.2)',
+            },
+            electric: {
+              violet: '#A855F7',
+              pink: '#EC4899',
+            }
+          }
+        }
+      }
     }
   </script>
 
@@ -55,6 +70,37 @@
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       background-color: #f1f5f9;
+    }
+
+    body.dark {
+      background-color: #0F172A;
+    }
+
+    /* Midnight Electric Card Effect */
+    .dark .midnight-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      transition: all 0.3s ease;
+    }
+
+    .dark .midnight-card:hover {
+      border-color: rgba(168, 85, 247, 0.4);
+      box-shadow: 0 8px 32px 0 rgba(168, 85, 247, 0.1);
+    }
+
+    /* Primary Gradient Button */
+    .dark .btn-electric {
+      background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+    }
+
+    .dark .btn-electric:active {
+      transform: scale(0.95);
+      opacity: 0.9;
     }
 
     /* Animations */
@@ -101,11 +147,6 @@
     }
 
     .dark {
-      --pie-text-primary: #ffffff;
-      --pie-text-secondary: #e2e8f0;
-    }
-
-    html.dark {
       --pie-text-primary: #ffffff;
       --pie-text-secondary: #e2e8f0;
     }

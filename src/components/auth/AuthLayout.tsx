@@ -44,7 +44,7 @@ const useIsStudio = () => {
 };
 
 const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-[0_12px_28px_rgba(0,0,0,0.12)] relative overflow-visible opacity-100 transition-colors duration-300">
+  <div className="bg-white dark:midnight-card p-6 rounded-2xl shadow-[0_12px_28px_rgba(0,0,0,0.12)] border border-transparent dark:border-electric-violet/30 relative overflow-visible opacity-100 transition-colors duration-300">
     {children}
   </div>
 );
@@ -81,7 +81,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
     <div
       style={containerStyle}
-      className="bg-slate-100 dark:bg-slate-900 font-sans flex flex-col p-4 overflow-auto overflow-x-hidden touch-manipulation transition-colors duration-300"
+      className="bg-slate-100 dark:bg-midnight font-sans flex flex-col p-4 overflow-auto overflow-x-hidden touch-manipulation transition-colors duration-300"
     >
       <div className="flex flex-1 items-center justify-center relative overflow-visible">
         <div className="w-full max-w-[480px]">

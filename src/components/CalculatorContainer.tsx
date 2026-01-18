@@ -39,7 +39,7 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
   onClose,
   onSubmit,
   accounts,
-  onMenuStateChange = (_isOpen: boolean) => {},
+  onMenuStateChange = (_isOpen: boolean) => { },
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [view, setView] = useState<'calculator' | 'details'>('calculator');
@@ -171,32 +171,32 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
     if (isSubmitting || submittingRef.current) return;
     setIsSubmitting(true);
     submittingRef.current = true;
-    
+
     // ✅ Se stiamo in TransactionDetailPage, chiudi prima quella pagina
     if (view === 'details') {
       setView('calculator');
       window.history.back();
     }
-    
+
     // Poi chiama onSubmit che chiuderà anche la calcolatrice
     onSubmit(data);
   }, [isSubmitting, onSubmit, view]);
 
   const currentTransform = useMemo(() => {
-      let base = view === 'calculator' ? 0 : -50;
-      let shift = 0;
+    let base = view === 'calculator' ? 0 : -50;
+    let shift = 0;
 
-      if (isSwiping) {
-          shift = progress * 50;
-          if (view === 'calculator') {
-              if (shift > 0) shift = 0;
-              if (formData.type === 'transfer' && shift < 0) shift = 0;
-          } else {
-              if (shift < 0) shift = 0;
-          }
+    if (isSwiping) {
+      shift = progress * 50;
+      if (view === 'calculator') {
+        if (shift > 0) shift = 0;
+        if (formData.type === 'transfer' && shift < 0) shift = 0;
+      } else {
+        if (shift < 0) shift = 0;
       }
-      
-      return `translateX(${base + shift}%)`;
+    }
+
+    return `translateX(${base + shift}%)`;
   }, [view, isSwiping, progress, formData.type]);
 
   if (!isOpen && !isAnimating) return null;
@@ -204,39 +204,39 @@ const CalculatorContainer: React.FC<CalculatorContainerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-[5000] bg-slate-100 transition-transform duration-300 ease-in-out pb-[env(safe-area-inset-bottom)] ${isAnimating ? 'translate-y-0' : 'translate-y-full'}`}
+      className={`fixed inset-0 z-[5000] bg-slate-100 dark:bg-midnight transition-transform duration-300 ease-in-out pb-[env(safe-area-inset-bottom)] ${isAnimating ? 'translate-y-0' : 'translate-y-full'}`}
       {...tapBridgeHandlers}
     >
-      <div 
+      <div
         className="flex flex-row w-[200%] h-full will-change-transform"
-        style={{ 
-            transform: currentTransform,
-            transition: isSwiping ? 'none' : 'transform 0.12s ease-out'
+        style={{
+          transform: currentTransform,
+          transition: isSwiping ? 'none' : 'transform 0.12s ease-out'
         }}
       >
         <div className="w-1/2 h-full shrink-0 relative">
-            <CalculatorInputScreen
-              onClose={onClose}
-              onSubmit={handleSubmit}
-              accounts={accounts}
-              formData={formData}
-              onFormChange={handleFormChange}
-              onMenuStateChange={onMenuStateChange}
-              isDesktop={isDesktop}
-              onNavigateToDetails={() => navigateTo('details')}
-            />
+          <CalculatorInputScreen
+            onClose={onClose}
+            onSubmit={handleSubmit}
+            accounts={accounts}
+            formData={formData}
+            onFormChange={handleFormChange}
+            onMenuStateChange={onMenuStateChange}
+            isDesktop={isDesktop}
+            onNavigateToDetails={() => navigateTo('details')}
+          />
         </div>
         <div className="w-1/2 h-full shrink-0 relative">
-            <TransactionDetailPage
-              formData={formData}
-              onFormChange={handleFormChange}
-              accounts={accounts}
-              onClose={() => navigateTo('calculator')}
-              onSubmit={handleSubmit}
-              isDesktop={isDesktop}
-              onMenuStateChange={onMenuStateChange}
-              dateError={dateError}
-            />
+          <TransactionDetailPage
+            formData={formData}
+            onFormChange={handleFormChange}
+            accounts={accounts}
+            onClose={() => navigateTo('calculator')}
+            onSubmit={handleSubmit}
+            isDesktop={isDesktop}
+            onMenuStateChange={onMenuStateChange}
+            dateError={dateError}
+          />
         </div>
       </div>
     </div>

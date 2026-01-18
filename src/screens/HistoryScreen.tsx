@@ -46,7 +46,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const tapBridge = useTapBridge();
   const isRecurringInstance = !!expense.recurringExpenseId;
   const isAdjustment = expense.type === 'adjustment';
-  const itemBgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200 dark:bg-indigo-900/30 dark:ring-indigo-700' : isRecurringInstance ? 'bg-amber-50 dark:bg-amber-900/20' : isAdjustment ? 'bg-slate-50 opacity-90 dark:bg-slate-800/80' : 'bg-white dark:bg-slate-800';
+  const itemBgClass = isSelected ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-amber-50 dark:bg-amber-900/10' : isAdjustment ? 'bg-slate-50 opacity-90 dark:bg-midnight-card/40' : 'bg-white dark:bg-midnight-card/60';
   const longPressTimer = useRef<number | null>(null);
 
   const handlePointerDownItem = (e: React.PointerEvent) => {
@@ -163,16 +163,16 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   };
 
   const renderIcon = () => {
-    if (isSelected) return <span className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 text-white transition-transform duration-200 transform scale-100"><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>;
-    if (isAdjustment) return <span className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-slate-200 text-slate-500"><ArrowsUpDownIcon className="w-6 h-6" /></span>;
-    if (isIncomeMode && AccountIcon) return <AccountIcon className="w-10 h-10 text-green-600 flex-shrink-0 transition-transform duration-200" />;
+    if (isSelected) return <span className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 dark:bg-electric-violet text-white transition-transform duration-200 transform scale-100"><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>;
+    if (isAdjustment) return <span className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"><ArrowsUpDownIcon className="w-6 h-6" /></span>;
+    if (isIncomeMode && AccountIcon) return <AccountIcon className="w-10 h-10 text-emerald-600 dark:text-emerald-400 flex-shrink-0 transition-transform duration-200" />;
     return <style.Icon className="w-10 h-10 flex-shrink-0 transition-transform duration-200" />;
   };
 
   const renderAmount = () => {
     const amt = Number(expense.amount) || 0;
-    if (isAdjustment) return <span className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-200' : 'text-slate-500 dark:text-slate-400'}`}>{formatCurrency(amt)}</span>;
-    return <p className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>{isIncomeMode ? '+' : ''}{formatCurrency(amt)}</p>;
+    if (isAdjustment) return <span className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : 'text-slate-500 dark:text-slate-400'}`}>{formatCurrency(amt)}</span>;
+    return <p className={`font-bold text-lg text-right shrink-0 whitespace-nowrap min-w-[90px] ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isIncomeMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>{isIncomeMode ? '+' : ''}{formatCurrency(amt)}</p>;
   };
 
   return (
@@ -183,7 +183,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
       <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
         {isRecurringInstance && !isSelectionMode && !isAdjustment && (<span className="absolute top-1.5 right-1.5 w-5 h-5 text-slate-900 bg-amber-100 border border-amber-400 text-[10px] font-bold rounded-full flex items-center justify-center z-20" title="Spesa Programmata">P</span>)}
         {renderIcon()}
-        <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : isAdjustment ? 'text-slate-600 dark:text-slate-400' : 'text-slate-800 dark:text-white'}`}>{isAdjustment ? 'Rettifica Saldo' : isIncomeMode ? accountName : `${expense.subcategory || style.label} • ${accountName}`}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`} title={expense.description}>{expense.description || 'Senza descrizione'}</p></div>
+        <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isAdjustment ? 'text-slate-600 dark:text-slate-400' : 'text-slate-800 dark:text-white'}`}>{isAdjustment ? 'Rettifica Saldo' : isIncomeMode ? accountName : `${expense.subcategory || style.label} • ${accountName}`}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-electric-violet/80' : 'text-slate-500 dark:text-slate-400'}`} title={expense.description}>{expense.description || 'Senza descrizione'}</p></div>
         {renderAmount()}
       </div>
     </div>
@@ -361,8 +361,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
   const handleSortOptionSelect = (value: 'date' | 'amount' | 'category') => { if (value === 'amount') { setSortOption(prev => prev === 'amount-desc' ? 'amount-asc' : 'amount-desc'); } else { setSortOption(value); } setIsSortMenuOpen(false); };
 
   return (
-    <div className={`fixed inset-0 z-20 bg-slate-100 dark:bg-slate-900 transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
-      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm border-b border-transparent dark:border-slate-800 h-[60px] transition-colors duration-300">
+    <div className={`fixed inset-0 z-20 bg-slate-100 dark:bg-midnight transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'}`} style={{ touchAction: 'pan-y', willChange: 'transform', visibility: isAnimatingIn ? 'visible' : 'hidden', transitionProperty: 'transform, visibility', transitionDuration: '300ms, 0s', transitionDelay: isAnimatingIn ? '0s, 0s' : '0s, 300ms' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
+      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-midnight/80 backdrop-blur-md shadow-sm border-b border-transparent dark:border-electric-violet/10 h-[60px] transition-colors duration-300">
         {isSelectionMode ? (
           <>
             <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors text-slate-600" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
@@ -374,14 +374,14 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
             <button onClick={handleClose} className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-200" /></button>
             <h1 className="text-xl font-bold text-slate-800 dark:text-white flex-1">{isIncomeMode ? 'Storico Entrate' : 'Storico Spese'}</h1>
             <div className="relative">
-              <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
+              <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-slate-200 dark:hover:bg-midnight-card text-slate-600 dark:text-slate-400'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
               {isSortMenuOpen && (
-                <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-up" style={{ animationDuration: '150ms' }} onPointerDown={(e) => e.stopPropagation()}>
+                <div ref={sortMenuRef} className="absolute top-full right-0 mt-2 w-48 bg-white dark:midnight-card rounded-lg shadow-xl border border-slate-100 dark:border-electric-violet/30 z-50 overflow-hidden animate-fade-in-up" style={{ animationDuration: '150ms' }} onPointerDown={(e) => e.stopPropagation()}>
                   <div className="py-1">
-                    <button onClick={() => handleSortOptionSelect('amount')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${(sortOption === 'amount-desc' || sortOption === 'amount-asc') ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Importo {sortOption === 'amount-asc' ? '(Crescente)' : '(Decrescente)'}</span>{(sortOption === 'amount-desc' || sortOption === 'amount-asc') && <CheckIcon className="w-4 h-4" />}</button>
-                    <button onClick={() => handleSortOptionSelect('category')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'category' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Categoria</span>{sortOption === 'category' && <CheckIcon className="w-4 h-4" />}</button>
-                    <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
-                    <button onClick={() => handleSortOptionSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}><span>Per Data (Default)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
+                    <button onClick={() => handleSortOptionSelect('amount')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${(sortOption === 'amount-desc' || sortOption === 'amount-asc') ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Importo {sortOption === 'amount-asc' ? '(Crescente)' : '(Decrescente)'}</span>{(sortOption === 'amount-desc' || sortOption === 'amount-asc') && <CheckIcon className="w-4 h-4" />}</button>
+                    <button onClick={() => handleSortOptionSelect('category')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'category' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-700 dark:text-slate-200'}`}><span>Per Categoria</span>{sortOption === 'category' && <CheckIcon className="w-4 h-4" />}</button>
+                    <div className="border-t border-slate-100 dark:border-electric-violet/10 my-1"></div>
+                    <button onClick={() => handleSortOptionSelect('date')} className={`w-full text-left px-4 py-2.5 text-sm font-semibold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-midnight-card/50 ${sortOption === 'date' ? 'text-indigo-600 bg-indigo-50 dark:bg-electric-violet/20 dark:text-electric-violet' : 'text-slate-500 dark:text-slate-400'}`}><span>Per Data (Default)</span>{sortOption === 'date' && <CheckIcon className="w-4 h-4" />}</button>
                   </div>
                 </div>
               )}
@@ -395,14 +395,14 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
           {expenseGroups.length > 0 ? (
             expenseGroups.map((group) => (
               <div key={group.label} className="mb-6 last:mb-0">
-                <div className="flex items-center justify-between font-bold text-slate-800 dark:text-white text-lg px-4 py-2 sticky top-0 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 transition-colors duration-300">
+                <div className="flex items-center justify-between font-bold text-slate-800 dark:text-white text-lg px-4 py-2 sticky top-0 bg-slate-100/80 dark:bg-midnight/80 backdrop-blur-md z-10 transition-colors duration-300">
                   <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500 dark:text-slate-400">{group.dateRange}</span></h2>
-                  <p className={`font-bold text-xl ${isIncomeMode ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{formatCurrency(group.total)}</p>
+                  <p className={`font-bold text-xl ${isIncomeMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-electric-violet'}`}>{formatCurrency(group.total)}</p>
                 </div>
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md mx-2 overflow-hidden transition-colors duration-300">
+                <div className="bg-white dark:midnight-card dark:border dark:border-electric-violet/20 rounded-xl shadow-md mx-2 overflow-hidden transition-colors duration-300">
                   {group.expenses.map((expense, index) => (
                     <React.Fragment key={expense.id}>
-                      {index > 0 && <hr className="border-t border-slate-200 dark:border-slate-700 ml-16" />}
+                      {index > 0 && <hr className="border-t border-slate-200 dark:border-electric-violet/10 ml-16" />}
                       <ExpenseItem expense={expense} accounts={accounts} onEdit={onEditExpense} onDelete={onDeleteExpense} isOpen={openItemId === expense.id} onOpen={handleOpenItem} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isIncomeMode={isIncomeMode} />
                     </React.Fragment>
                   ))}

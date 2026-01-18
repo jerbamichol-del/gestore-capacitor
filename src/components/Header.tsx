@@ -12,7 +12,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800"
+      className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
       aria-label="Cambia Tema"
       title={isDark ? 'Passa a Chiaro' : 'Passa a Scuro'}
     >
@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({
   requestNotificationPermission = () => { }
 }) => {
   return (
-    <header className="bg-white dark:bg-slate-900 shadow-md sticky top-0 z-20 transition-colors duration-300">
+    <header className="bg-white dark:bg-midnight shadow-md sticky top-0 z-20 transition-colors duration-300">
       <div className="mx-auto">
         <div className="py-2 flex items-center justify-between gap-3 px-4 md:px-8 h-[58px]">
           <h1 className="text-xl font-bold text-slate-800 dark:text-white transition-colors">Gestore Spese</h1>
@@ -96,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onShowQr}
-              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800"
+              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
               aria-label="Mostra QR Code"
               title="Condividi via QR"
             >
@@ -105,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onLogout}
-              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800"
+              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
               aria-label="Logout"
               title="Logout"
             >

@@ -82,12 +82,12 @@ const RecurringExpenseItem: React.FC<{
   const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); if (dragState.current.isDragging || dragState.current.wasHorizontal) return; if (isSelectionMode) { onToggleSelection(expense.id); } else if (isOpen) { onOpen(''); } else { onEdit(expense); } };
 
   return (
-    <div className={`relative overflow-hidden transition-colors duration-200 select-none ${isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-700' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50 opacity-75' : 'bg-amber-50 dark:bg-slate-800'}`}>
+    <div className={`relative overflow-hidden transition-colors duration-200 select-none ${isSelected ? 'bg-indigo-50 dark:bg-electric-violet/20 ring-1 ring-inset ring-indigo-200 dark:ring-electric-violet/40' : isFinished ? 'bg-slate-50 dark:bg-midnight-card/40 opacity-75' : 'bg-amber-50 dark:bg-midnight-card/60'}`}>
       <div className="absolute top-0 right-0 h-full flex items-center z-0"><button onClick={() => onDeleteRequest(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-colors focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa programmata"><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button></div>
-      <div ref={itemRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : isFinished ? 'bg-slate-50 dark:bg-slate-900/50' : 'bg-amber-50 dark:bg-slate-800'} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
-        {isSelected ? (<span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 text-white transition-transform duration-200 transform scale-100`}><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>) : (<style.Icon className={`w-10 h-10 flex-shrink-0 transition-transform duration-200 ${isFinished ? 'grayscale' : ''}`} />)}
-        <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-indigo-300' : isFinished ? 'text-slate-500 dark:text-slate-500 line-through' : 'text-slate-800 dark:text-white'}`}>{expense.description || 'Senza descrizione'}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>{getRecurrenceSummary(expense)} • {accountName}</p></div>
-        <div className="flex flex-col items-end shrink-0 min-w-[90px]"><p className={`font-bold text-lg text-right whitespace-nowrap ${isSelected ? 'text-indigo-900 dark:text-indigo-300' : isFinished ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>{formatCurrency(Number(expense.amount) || 0)}</p>{isFinished ? (<div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">Completata</div>) : nextDueDate && (<div className={`text-sm font-medium mt-1 whitespace-nowrap ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>{formatDate(nextDueDate)}</div>)}</div>
+      <div ref={itemRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${isSelected ? 'bg-indigo-50 dark:bg-electric-violet/20' : isFinished ? 'bg-slate-50 dark:bg-midnight-card/40' : 'bg-amber-50 dark:bg-midnight-card/60'} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
+        {isSelected ? (<span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 dark:bg-electric-violet text-white transition-transform duration-200 transform scale-100`}><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>) : (<style.Icon className={`w-10 h-10 flex-shrink-0 transition-transform duration-200 ${isFinished ? 'grayscale' : ''}`} />)}
+        <div className="flex-grow min-w-0"><p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isFinished ? 'text-slate-500 dark:text-slate-500 line-through' : 'text-slate-800 dark:text-white'}`}>{expense.description || 'Senza descrizione'}</p><p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-electric-violet/80' : 'text-slate-500 dark:text-slate-400'}`}>{getRecurrenceSummary(expense)} • {accountName}</p></div>
+        <div className="flex flex-col items-end shrink-0 min-w-[90px]"><p className={`font-bold text-lg text-right whitespace-nowrap ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isFinished ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>{formatCurrency(Number(expense.amount) || 0)}</p>{isFinished ? (<div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider bg-slate-200 dark:bg-midnight-card px-2 py-0.5 rounded-full">Completata</div>) : nextDueDate && (<div className={`text-sm font-medium mt-1 whitespace-nowrap ${isSelected ? 'text-indigo-600 dark:text-electric-violet' : 'text-slate-500 dark:text-slate-400'}`}>{formatDate(nextDueDate)}</div>)}</div>
       </div>
     </div>
   );
@@ -151,27 +151,27 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
   const sortedExpenses = [...activeRecurringExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className={`fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0' : 'translate-y-full'}`} style={{ touchAction: 'pan-y' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
-      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm dark:shadow-slate-800 h-[60px] border-b border-transparent dark:border-slate-800 transition-colors">
+    <div className={`fixed inset-0 z-50 bg-slate-100 dark:bg-midnight transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0' : 'translate-y-full'}`} style={{ touchAction: 'pan-y' }} onClick={() => { if (openItemId) setOpenItemId(null); }} {...tapBridge}>
+      <header className="sticky top-0 z-20 flex items-center gap-4 p-4 bg-white/80 dark:bg-midnight/80 backdrop-blur-md shadow-sm dark:shadow-electric-violet/5 h-[60px] border-b border-transparent dark:border-electric-violet/10 transition-colors">
         {isSelectionMode ? (
           <>
-            <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
-            <h1 className="text-xl font-bold text-indigo-800 dark:text-indigo-400 flex-1">{selectedIds.size} Selezionati</h1>
-            <button onClick={handleBulkDeleteClick} className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors" aria-label="Elimina selezionati"><TrashIcon className="w-6 h-6" /></button>
+            <button onClick={handleCancelSelection} className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors text-slate-600 dark:text-slate-300" aria-label="Annulla selezione"><ArrowLeftIcon className="w-6 h-6" /></button>
+            <h1 className="text-xl font-bold text-indigo-800 dark:text-electric-violet flex-1">{selectedIds.size} Selezionati</h1>
+            <button onClick={handleBulkDeleteClick} className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-rose-500/20 text-red-600 dark:text-rose-400 transition-colors" aria-label="Elimina selezionati"><TrashIcon className="w-6 h-6" /></button>
           </>
         ) : (
           <>
-            <button onClick={handleClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-300" /></button>
+            <button onClick={handleClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-300" /></button>
             <h1 className="text-xl font-bold text-slate-800 dark:text-white flex-1">Spese Programmate</h1>
           </>
         )}
       </header>
       <main className="overflow-y-auto h-[calc(100%-60px)] p-2" style={{ touchAction: 'pan-y' }}>
         {sortedExpenses.length > 0 ? (
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md overflow-hidden my-4 border border-slate-200 dark:border-slate-700">
+          <div className="bg-white dark:midnight-card rounded-xl shadow-md overflow-hidden my-4 border border-slate-200 dark:border-electric-violet/20">
             {sortedExpenses.map((expense, index) => (
               <React.Fragment key={expense.id}>
-                {index > 0 && <hr className="border-t border-slate-200 dark:border-slate-700 ml-16" />}
+                {index > 0 && <hr className="border-t border-slate-200 dark:border-electric-violet/10 ml-16" />}
                 <RecurringExpenseItem expense={expense} accounts={accounts} onEdit={onEdit} onDeleteRequest={handleDeleteRequest} isOpen={openItemId === expense.id} onOpen={setOpenItemId} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isFinished={expense.isFinished} />
               </React.Fragment>
             ))}

@@ -353,12 +353,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
           {isLoading && (
             <div className="mt-4 flex justify-center">
-              <SpinnerIcon className="w-6 h-6 text-indigo-600" />
+              <SpinnerIcon className="w-6 h-6 text-indigo-600 dark:text-electric-violet" />
             </div>
           )}
 
           {error && (
-            <p className="mt-4 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 p-2 rounded">{error}</p>
+            <p className="mt-4 text-sm text-red-500 bg-red-50 dark:bg-rose-900/20 dark:text-rose-400 p-2 rounded border border-transparent dark:border-rose-900/30">{error}</p>
           )}
 
           {/* PULSANTE BIOMETRICO NELLA SCHERMATA EMAIL */}
@@ -368,7 +368,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                 type="button"
                 onClick={loginWithBiometrics}
                 disabled={bioBusy}
-                className="flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-colors disabled:opacity-50 shadow-sm border border-indigo-100 dark:border-indigo-800"
+                className="flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-indigo-700 dark:text-electric-violet bg-indigo-50 dark:bg-electric-violet/10 hover:bg-indigo-100 dark:hover:bg-electric-violet/20 rounded-lg transition-colors disabled:opacity-50 shadow-sm border border-indigo-100 dark:border-electric-violet/20"
               >
                 <FingerprintIcon className="w-5 h-5" />
                 {bioBusy ? 'Accesso in corso...' : 'Accedi con impronta'}
@@ -381,7 +381,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               href="https://t.me/mailsendreset_bot?start=recover"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
+              className="inline-block text-sm font-semibold text-indigo-600 dark:text-electric-violet hover:text-indigo-500 dark:hover:text-electric-violet/80"
             >
               Email dimenticata?
             </a>
@@ -410,9 +410,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* Container for status/error that collapses when empty */}
         <div className={`flex items-center justify-center transition-all duration-200 overflow-hidden ${error || isLoading ? 'h-6 mb-2' : 'h-0'}`}>
           {isLoading ? (
-            <SpinnerIcon className="w-4 h-4 text-indigo-600" />
+            <SpinnerIcon className="w-4 h-4 text-indigo-600 dark:text-electric-violet" />
           ) : error ? (
-            <p className="text-sm text-red-500">{error}</p>
+            <p className="text-sm text-red-500 dark:text-rose-400">{error}</p>
           ) : null}
         </div>
 
@@ -427,13 +427,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
           <div className="flex w-full items-center justify-between px-1">
             <button
               onClick={handleSwitchUser}
-              className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+              className="text-sm font-semibold text-indigo-600 dark:text-electric-violet hover:text-indigo-500 dark:hover:text-electric-violet/80 transition-colors"
             >
               Cambia Utente
             </button>
             <button
               onClick={onGoToForgotPassword}
-              className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+              className="text-sm font-semibold text-indigo-600 dark:text-electric-violet hover:text-indigo-500 dark:hover:text-electric-violet/80 transition-colors"
             >
               PIN Dimenticato?
             </button>

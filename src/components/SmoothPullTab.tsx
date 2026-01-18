@@ -6,6 +6,7 @@ type Props = {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
+  className?: string;
 };
 
 /**
@@ -17,6 +18,7 @@ export default function SmoothPullTab({
   fill = "currentColor",
   stroke = "none",
   strokeWidth = 0,
+  className = "",
 }: Props) {
   const W = Number(width);
   const H = Number(height);
@@ -43,21 +45,23 @@ export default function SmoothPullTab({
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="Linguetta morbida con effetto rilievo"
+      className={className}
       style={{ overflow: 'visible' }} // Allow shadow to render outside the viewbox
     >
       <defs>
         {/* Filter for a more pronounced and directional drop shadow */}
         <filter id={dropShadowFilterId} x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow 
-                dx="0" 
-                dy="-3" 
-                stdDeviation="2" 
-                floodColor="#475569" // slate-600
-                floodOpacity="0.6" 
-            />
+          <feDropShadow
+            dx="0"
+            dy="-3"
+            stdDeviation="2"
+            floodColor="currentColor"
+            floodOpacity="0.4"
+            className="text-slate-400 dark:text-electric-violet/30"
+          />
         </filter>
       </defs>
-      
+
       {/* Apply the shadow filter to the group */}
       <g filter={`url(#${dropShadowFilterId})`}>
         {/* Single path for a uniform color fill */}

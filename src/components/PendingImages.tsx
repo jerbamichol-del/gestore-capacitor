@@ -19,33 +19,33 @@ const PendingImages: React.FC<PendingImagesProps> = ({ images, onAnalyze, onDele
   if (!images || images.length === 0) {
     return null;
   }
-  
+
   const isAnalyzing = !!syncingImageId;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg">
-      <button 
+    <div className="bg-white dark:midnight-card rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/20">
+      <button
         className="w-full flex items-center justify-between p-6 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 rounded-2xl"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-slate-700">Immagini in Attesa</h2>
-            <span className="flex items-center justify-center min-w-[24px] h-6 px-2 text-sm font-semibold text-white bg-indigo-500 rounded-full">
-                {images.length}
-            </span>
+          <h2 className="text-xl font-bold text-slate-700 dark:text-slate-200">Immagini in Attesa</h2>
+          <span className="flex items-center justify-center min-w-[24px] h-6 px-2 text-sm font-semibold text-white bg-indigo-500 dark:bg-electric-violet rounded-full">
+            {images.length}
+          </span>
         </div>
         <ChevronDownIcon className={`w-6 h-6 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="px-6 pb-6 animate-fade-in-up" style={{animationDuration: '300ms'}}>
-          <p className="text-sm text-slate-500 mb-6 border-t border-slate-200 pt-6">
+        <div className="px-6 pb-6 animate-fade-in-up" style={{ animationDuration: '300ms' }}>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 border-t border-slate-200 dark:border-electric-violet/20 pt-6">
             Queste immagini sono state salvate mentre eri offline. Clicca su "Analizza" per processarle ora che sei online.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {images.map(image => (
-              <div key={image.id} className="border border-slate-200 shadow-sm flex flex-col group rounded-lg">
+              <div key={image.id} className="border border-slate-200 dark:border-electric-violet/20 shadow-sm flex flex-col group rounded-lg overflow-hidden">
                 <div className="relative">
                   <img
                     src={`data:${image.mimeType};base64,${image.base64Image}`}
@@ -53,29 +53,29 @@ const PendingImages: React.FC<PendingImagesProps> = ({ images, onAnalyze, onDele
                     className="w-full h-24 object-cover bg-slate-100 rounded-t-lg"
                   />
                   {syncingImageId === image.id && (
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-t-lg">
-                      <SpinnerIcon className="w-8 h-8 text-indigo-600" />
+                    <div className="absolute inset-0 bg-white/80 dark:bg-midnight/80 backdrop-blur-sm flex items-center justify-center rounded-t-lg">
+                      <SpinnerIcon className="w-8 h-8 text-indigo-600 dark:text-electric-violet" />
                       <span className="sr-only">Analisi in corso...</span>
                     </div>
                   )}
                 </div>
-                <div className="p-2 mt-auto flex items-center justify-center gap-2 bg-slate-50 rounded-b-lg">
-                    <button
-                      onClick={() => onAnalyze(image)}
-                      disabled={!isOnline || isAnalyzing}
-                      className="flex-1 px-2 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
-                      title={!isOnline ? "Connettiti a internet per analizzare" : "Analizza immagine"}
-                    >
-                      Analizza
-                    </button>
-                    <button
-                      onClick={() => onDelete(image.id)}
-                      disabled={isAnalyzing}
-                      className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      aria-label="Elimina immagine in attesa"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
+                <div className="p-2 mt-auto flex items-center justify-center gap-2 bg-slate-50 dark:bg-midnight-card/50 rounded-b-lg">
+                  <button
+                    onClick={() => onAnalyze(image)}
+                    disabled={!isOnline || isAnalyzing}
+                    className="flex-1 px-2 py-1.5 text-xs font-semibold text-white bg-indigo-600 dark:btn-electric rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!isOnline ? "Connettiti a internet per analizzare" : "Analizza immagine"}
+                  >
+                    Analizza
+                  </button>
+                  <button
+                    onClick={() => onDelete(image.id)}
+                    disabled={isAnalyzing}
+                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-100 dark:hover:bg-rose-500/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Elimina immagine in attesa"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             ))}
