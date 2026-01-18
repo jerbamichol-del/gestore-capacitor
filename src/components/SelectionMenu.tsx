@@ -86,7 +86,7 @@ const SelectionMenu: React.FC<SelectionMenuProps> = ({ isOpen, onClose, title, o
       role="dialog"
     >
       <div
-        className={`absolute inset-0 bg-slate-900/60 transition-opacity duration-300 ease-in-out ${isMounted ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-slate-900 transition-opacity duration-300 ease-in-out ${isMounted ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleManualClose}
       />
       <div
@@ -126,7 +126,7 @@ const SelectionMenu: React.FC<SelectionMenuProps> = ({ isOpen, onClose, title, o
                   <button
                     onClick={() => onSelect(option.value)}
                     style={{ touchAction: 'manipulation' }}
-                    className={`w-full text-left p-4 flex items-center justify-between gap-4 transition-colors rounded-lg ${isSelected ? 'bg-sunset-peach/40 dark:bg-electric-violet/20' : 'hover:bg-sunset-cream/60 dark:hover:bg-midnight-card'
+                    className={`w-full text-left p-4 flex items-center justify-between gap-4 transition-colors rounded-lg ${isSelected ? 'bg-sunset-peach/40 dark:bg-electric-violet/20' : 'hover:bg-sunset-cream dark:hover:bg-midnight-card'
                       }`}
                   >
                     <span className="flex items-center gap-4 min-w-0">

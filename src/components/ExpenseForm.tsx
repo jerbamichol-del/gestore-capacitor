@@ -48,7 +48,7 @@ const FormInput = React.memo(React.forwardRef<HTMLInputElement, FormInputProps>(
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           {icon}
         </div>
-        <input ref={ref} id={id} name={name} value={value || ''} onChange={onChange} className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base" {...props} />
+        <input ref={ref} id={id} name={name} value={value || ''} onChange={onChange} className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream dark:bg-midnight-card py-2.5 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base" {...props} />
       </div>
     </div>
   );
@@ -573,7 +573,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
             ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-electric-violet/20 text-slate-400 cursor-not-allowed'
             : hasValue
               ? 'bg-indigo-50 dark:bg-electric-violet/20 border-indigo-200 dark:border-electric-violet/50 text-indigo-700 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/30'
-              : 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-500 dark:text-slate-400 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
+              : 'bg-sunset-cream dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-slate-500 dark:text-slate-400 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
             }`}
         >
           {icon}
@@ -596,6 +596,17 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
   const selectedAccountLabel = safeAccounts.find(a => a.id === formData.accountId)?.name;
   const selectedToAccountLabel = safeAccounts.find(a => a.id === formData.toAccountId)?.name;
   const selectedCategoryLabel = formData.category ? getCategoryStyle(formData.category).label : undefined;
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   return (
     <>

@@ -46,7 +46,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   const tapBridge = useTapBridge();
   const isRecurringInstance = !!expense.recurringExpenseId;
   const isAdjustment = expense.type === 'adjustment';
-  const itemBgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-sunset-cream/60 dark:bg-midnight-card/30' : isAdjustment ? 'bg-sunset-cream/80 opacity-90 dark:bg-midnight-card/60' : 'bg-sunset-cream/60 dark:bg-midnight-card/50';
+  const itemBgClass = isSelected ? 'bg-sunset-peach/30 ring-1 ring-inset ring-sunset-coral/30 dark:bg-electric-violet/20 dark:ring-electric-violet/40' : isRecurringInstance ? 'bg-sunset-cream dark:bg-midnight-card' : isAdjustment ? 'bg-sunset-cream dark:bg-midnight-card' : 'bg-sunset-cream dark:bg-midnight-card';
   const longPressTimer = useRef<number | null>(null);
 
   const handlePointerDownItem = (e: React.PointerEvent) => {
@@ -271,6 +271,17 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
   useEffect(() => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); if (openItemId && !isEditingOrDeleting) { autoCloseRef.current = window.setTimeout(() => setOpenItemId(null), 5000); } return () => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); }; }, [openItemId, isEditingOrDeleting]);
 
   useEffect(() => {
+    if (isAnimatingIn) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isAnimatingIn]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isSortMenuOpen && sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node) && sortButtonRef.current && !sortButtonRef.current.contains(event.target as Node)) {
         setIsSortMenuOpen(false);
@@ -395,7 +406,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
           {expenseGroups.length > 0 ? (
             expenseGroups.map((group) => (
               <div key={group.label} className="mb-6 last:mb-0">
-                <div className="flex items-center justify-between font-bold text-sunset-text dark:text-white text-lg px-4 py-2 sticky top-0 bg-sunset-cream/90 backdrop-blur-strong dark:bg-midnight/80 z-10 transition-colors duration-300">
+                <div className="flex items-center justify-between font-bold text-sunset-text dark:text-white text-lg px-4 py-2 sticky top-0 bg-sunset-cream dark:bg-midnight z-10 transition-colors duration-300">
                   <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500 dark:text-slate-400">{group.dateRange}</span></h2>
                   <p className={`font-bold text-xl ${isIncomeMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-electric-violet'}`}>{formatCurrency(group.total)}</p>
                 </div>

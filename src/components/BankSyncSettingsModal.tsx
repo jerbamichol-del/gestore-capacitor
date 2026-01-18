@@ -61,6 +61,17 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
 
     const handleSave = () => {
         if (!credentials.appId || !credentials.clientId || !credentials.privateKey) {
@@ -397,7 +408,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             <div className="form-group mb-4">
                 <label className="text-xs font-bold uppercase opacity-60 text-slate-500 dark:text-slate-400">{label}</label>
                 <div className="flex items-center gap-2">
-                    <div className="flex-1 text-sm opacity-70 font-mono truncate p-3 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-xl text-slate-700 dark:text-slate-300">
+                    <div className="flex-1 text-sm opacity-70 font-mono truncate p-3 bg-sunset-cream dark:bg-midnight-card rounded-xl text-slate-700 dark:text-slate-300">
                         {maskValue(value)}
                     </div>
                     <button
@@ -416,7 +427,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-stretch justify-center bg-midnight/40 backdrop-blur-md animate-fade-in transition-opacity duration-200" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] flex items-stretch justify-center bg-midnight animate-fade-in transition-opacity duration-200" onClick={onClose}>
             <div className="w-full h-full flex flex-col overflow-hidden dark:bg-midnight text-sunset-text dark:text-white transition-colors duration-300" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-electric-violet/20 midnight-card flex-shrink-0">
                     <h3 className="text-xl font-semibold flex items-center gap-2">

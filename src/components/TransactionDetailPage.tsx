@@ -60,7 +60,7 @@ const Modal = memo<{
 
   return (
     <div
-      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-midnight/60 backdrop-blur-md`}
+      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-midnight`}
       onClick={(e) => {
         e.stopPropagation();
         onClose();
@@ -495,7 +495,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
             type="date"
             value={formData.date || ''}
             onChange={handleInputChange}
-            className={`block w-full rounded-md bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none [color-scheme:light] dark:[color-scheme:dark] ${dateError ? 'border-red-500 ring-1 ring-red-500' : 'border border-slate-300 dark:border-electric-violet/30 focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet'}`}
+            className={`block w-full rounded-md bg-sunset-cream dark:bg-midnight-card py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none [color-scheme:light] dark:[color-scheme:dark] ${dateError ? 'border-red-500 ring-1 ring-red-500' : 'border border-slate-300 dark:border-electric-violet/30 focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet'}`}
             enterKeyHint="done"
             onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
             onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
