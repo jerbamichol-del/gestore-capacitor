@@ -517,7 +517,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
               type="time"
               value={formData.time || ''}
               onChange={handleInputChange}
-              className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet [color-scheme:light] dark:[color-scheme:dark]"
+              className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet [color-scheme:light] dark:[color-scheme:dark]"
               enterKeyHint="done"
               onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
               onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -580,7 +580,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 type="text"
                 value={formData.description || ''}
                 onChange={handleInputChange}
-                className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
+                className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
                 placeholder="Es. Caffè al bar"
                 enterKeyHint="done"
                 onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}

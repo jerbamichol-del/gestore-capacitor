@@ -81,7 +81,7 @@ export default function LoginEmail({ onSubmit }: Props) {
             (e.currentTarget.closest('form') as HTMLFormElement)?.requestSubmit();
           }
         }}
-        className="block w-full min-h-[44px] text-base px-3 py-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+        className="block w-full min-h-[44px] text-base px-3 py-2.5 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white border border-slate-300 dark:border-electric-violet/30 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
         style={{
           // evita formattazione ricca su mobile webkit
           WebkitUserModify: 'read-write-plaintext-only' as any,
