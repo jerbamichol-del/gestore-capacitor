@@ -59,7 +59,7 @@ const renderActiveShape = (props: any) => {
             <text x={cx} y={cy - 12} textAnchor="middle" className="text-base font-bold" style={{ fill: 'var(--pie-text-primary, #1e293b)' }}>
                 {payload.name}
             </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-lg font-extrabold" style={isDark ? { filter: `drop-shadow(0 0 8px ${shadowColor})` } : {}}>
+            <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-lg font-extrabold" style={isDark ? { filter: `drop-shadow(0 0 4px ${shadowColor})` } : {}}>
                 {formatCurrency(payload.value)}
             </text>
             <text x={cx} y={cy + 32} textAnchor="middle" className="text-sm font-bold" style={{ fill: 'var(--pie-text-secondary, #334155)' }}>
@@ -74,9 +74,9 @@ const renderActiveShape = (props: any) => {
                 startAngle={startAngle}
                 endAngle={endAngle}
                 fill={fill}
-                stroke={isDark ? fill : "none"}
+                stroke={isDark ? '#e0e0e0' : "none"}
                 strokeWidth={isDark ? 2 : 0}
-                style={isDark ? { filter: `drop-shadow(0 0 6px ${shadowColor})` } : {}}
+                style={isDark ? { filter: `drop-shadow(0 0 4px ${shadowColor})` } : {}}
             />
         </g>
     );
@@ -123,6 +123,39 @@ const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null =>
     return nextDate;
 };
 
+// --- Sortable Item Component ---
+const SortableItem = ({ id, children }: { id: string, children: React.ReactNode }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform ? { ...transform, scaleX: isDragging ? 0.95 : 1, scaleY: isDragging ? 0.95 : 1 } : null),
+        transition,
+        zIndex: isDragging ? 50 : 'auto',
+        opacity: isDragging ? 0.9 : 1,
+        position: 'relative' as const,
+        touchAction: 'manipulation', // Allow scrolling on the card content
+        boxShadow: isDragging ? '0 10px 30px -10px rgba(0,0,0,0.5)' : 'none',
+        borderRadius: isDragging ? '16px' : '0'
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="group relative">
+            {/* Drag Handle - Visible on hover or always on touch if preferred */}
+            <div
+                {...attributes}
+                {...listeners}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center cursor-grab active:cursor-grabbing z-50 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity touch-none bg-white/50 dark:bg-black/50 rounded-full"
+                title="Trascina per spostare"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path fillRule="evenodd" d="M3 9a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm0 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm8-6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm0 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm8-6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm0 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z" clipRule="evenodd" />
+                </svg>
+            </div>
+            {children}
+        </div>
+    );
+};
+
 const Dashboard: React.FC<DashboardProps> = ({
     accounts,
     expenses,
@@ -138,24 +171,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     onToggleBalanceVisibility,
     showToast
 }) => {
-    // --- Sortable Item Component ---
-    const SortableItem = ({ id, children }: { id: string, children: React.ReactNode }) => {
-        const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
-        const style = {
-            transform: CSS.Transform.toString(transform),
-            transition,
-            zIndex: isDragging ? 50 : 'auto',
-            opacity: isDragging ? 0.8 : 1,
-            touchAction: 'none' // Important for touch devices
-        };
-
-        return (
-            <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-                {children}
-            </div>
-        );
-    };
 
     // --- State & DnD Logic ---
     const [items, setItems] = useState<string[]>(() => {
@@ -166,8 +182,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 250, // Long press to activate (250ms)
-                tolerance: 5,
+                distance: 8, // Requires 8px movement to start drag (prevents accidental clicks)
             },
         }),
         useSensor(KeyboardSensor, {
@@ -651,7 +666,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     {/* --- RIGHT COLUMN (Movable Items Container) --- */}
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                        autoScroll={{
+                            acceleration: 50,
+                            interval: 5,
+                            layoutShiftCompensation: true,
+                            threshold: {
+                                x: 0.2, // 20% from edge
+                                y: 0.2
+                            }
+                        }}
+                    >
                         <div className="lg:col-span-2 flex flex-col gap-6">
                             <SortableContext items={items} strategy={verticalListSortingStrategy}>
                                 {items.map(id => {
@@ -723,9 +751,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                                                 <Cell
                                                                                     key={`cell-${entry.name}`}
                                                                                     fill={color}
-                                                                                    stroke={isDark ? categoryHexColors[entry.name] || DEFAULT_COLOR : "none"}
+                                                                                    stroke={isDark ? '#e0e0e0' : "none"}
                                                                                     strokeWidth={isDark ? 2 : 0}
-                                                                                    style={isDark ? { filter: `drop-shadow(0 0 8px ${color})` } as React.CSSProperties : {}}
+                                                                                    style={isDark ? { filter: `drop-shadow(0 0 4px ${color})` } as React.CSSProperties : {}}
                                                                                 />
                                                                             );
                                                                         })}
