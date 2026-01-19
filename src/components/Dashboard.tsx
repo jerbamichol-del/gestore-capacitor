@@ -672,8 +672,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
                         autoScroll={{
-                            acceleration: 50,
-                            interval: 5,
+                            acceleration: 20,
+                            interval: 10,
                             layoutShiftCompensation: true,
                             threshold: {
                                 x: 0.2, // 20% from edge
