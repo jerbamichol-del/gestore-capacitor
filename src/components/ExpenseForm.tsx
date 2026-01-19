@@ -116,6 +116,7 @@ const daysOfWeekForPicker = [{ label: 'Lun', value: 1 }, { label: 'Mar', value: 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, initialData, prefilledData, accounts, isForRecurringTemplate = false }) => {
   const safeAccounts = useMemo(() => accounts || [], [accounts]);
 
+  const [isMounted, setIsMounted] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosableByBackdrop, setIsClosableByBackdrop] = useState(false);
 
@@ -204,6 +205,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
     }
   };
 
+  // Handle data initialization when the form opens
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
@@ -234,9 +236,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
       }
       setHasChanges(false);
 
-      const animTimer = setTimeout(() => {
-        setIsAnimating(true);
-      }, 10);
+      // Trigger mount animation
+      requestAnimationFrame(() => {
+        setIsMounted(true);
+        setTimeout(() => setIsAnimating(true), 10);
+      });
 
       const focusTimer = setTimeout(() => {
         titleRef.current?.focus();
@@ -246,19 +250,20 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
         setIsClosableByBackdrop(true);
       }, 400);
 
+      document.body.style.overflow = 'hidden';
+
       return () => {
-        clearTimeout(animTimer);
         clearTimeout(focusTimer);
         clearTimeout(closableTimer);
-        setIsClosableByBackdrop(false);
+        document.body.style.overflow = '';
       };
     } else {
+      setIsMounted(false);
       setIsAnimating(false);
       setIsClosableByBackdrop(false);
+      document.body.style.overflow = '';
     }
-    // We only want to run this when the form opens or initialData/prefilledData changes.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Only run on open
-  }, [isOpen, initialData, prefilledData, isForRecurringTemplate, safeAccounts]);
+  }, [isOpen, initialData, prefilledData, isForRecurringTemplate, safeAccounts, resetForm]);
 
   useEffect(() => {
     if (isRecurrenceModalOpen) {
@@ -602,20 +607,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
   const selectedToAccountLabel = safeAccounts.find(a => a.id === formData.toAccountId)?.name;
   const selectedCategoryLabel = formData.category ? getCategoryStyle(formData.category).label : undefined;
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  if (!isOpen) return null;
 
-  return (
+  const formContent = (
     <>
-      <div className={`fixed inset-0 z-[5000] transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/40 backdrop-blur-sm`} onClick={handleBackdropClick} aria-modal="true" role="dialog">
+      <div className={`fixed inset-0 z-[5000] transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-black/40 backdrop-blur-sm`} onClick={handleBackdropClick} aria-modal="true" role="dialog">
         <div className={`bg-sunset-cream dark:bg-midnight w-full h-full flex flex-col absolute bottom-0 transform transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-y-0' : 'translate-y-full'}`} onClick={(e) => e.stopPropagation()} style={{ touchAction: 'pan-y' }}>
           <header className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800 flex-shrink-0"><h2 ref={titleRef} tabIndex={-1} className="text-2xl font-bold text-slate-800 dark:text-white focus:outline-none">{isEditing ? (isTransfer ? 'Modifica Trasferimento' : isIncome ? 'Modifica Entrata' : 'Modifica Spesa') : (isTransfer ? 'Nuovo Trasferimento' : isIncome ? 'Aggiungi Entrata' : 'Aggiungi Spesa')}</h2><button type="button" onClick={handleClose} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Chiudi"><XMarkIcon className="w-6 h-6" /></button></header>
           <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col overflow-hidden">
@@ -650,32 +646,34 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
         <SelectionMenu isOpen={activeMenu === 'subcategory'} onClose={() => setActiveMenu(null)} title="Seleziona Sottocategoria" options={subcategoryOptions} selectedValue={formData.subcategory || ''} onSelect={(value: string) => handleSelectChange('subcategory', value)} />
         <SelectionMenu isOpen={activeMenu === 'frequency'} onClose={() => setActiveMenu(null)} title="Imposta Frequenza" options={frequencyOptions} selectedValue={isSingleRecurring ? 'single' : formData.frequency !== 'recurring' ? 'none' : 'recurring'} onSelect={handleFrequencyOptionSelect as (value: string) => void} />
 
-        {isRecurrenceModalOpen && (
-          <div className={`fixed inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${isRecurrenceModalAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/80 backdrop-blur-md`} onClick={handleCloseRecurrenceModal} aria-modal="true" role="dialog">
-            <div className={`midnight-card rounded-lg shadow-xl w-full max-w-sm border border-slate-200 dark:border-electric-violet/30 transform transition-all duration-300 ease-in-out ${isRecurrenceModalAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`} onClick={(e) => e.stopPropagation()}>
+        {isRecurrenceModalOpen && createPortal(
+          <div className={`fixed inset-0 z-[10000] flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${isRecurrenceModalAnimating ? 'opacity-100' : 'opacity-0'} bg-black/60 backdrop-blur-sm`} onClick={handleCloseRecurrenceModal} aria-modal="true" role="dialog">
+            <div className={`bg-white dark:bg-midnight rounded-lg shadow-xl w-full max-w-sm border border-slate-200 dark:border-electric-violet/30 transform transition-all duration-300 ease-in-out ${isRecurrenceModalAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`} onClick={(e) => e.stopPropagation()}>
               <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700"><h2 className="text-lg font-bold text-slate-800 dark:text-white">Imposta Ricorrenza</h2><button type="button" onClick={handleCloseRecurrenceModal} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Chiudi"><XMarkIcon className="w-6 h-6" /></button></header>
               <main className="p-4 space-y-4">
-                <div className="relative"><button onClick={() => { setIsRecurrenceOptionsOpen(prev => !prev); setIsRecurrenceEndOptionsOpen(false); }} className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80"><span className="truncate flex-1 capitalize">{recurrenceLabels[tempRecurrence as keyof typeof recurrenceLabels] || 'Seleziona'}</span><ChevronDownIcon className={`w-5 h-5 text-slate-500 dark:text-slate-400 transition-transform ${isRecurrenceOptionsOpen ? 'rotate-180' : ''}`} /></button>{isRecurrenceOptionsOpen && (<div className="absolute top-full mt-1 w-full bg-sunset-cream dark:midnight-card border border-sunset-coral/20 dark:border-electric-violet/30 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">{(Object.keys(recurrenceLabels) as Array<keyof typeof recurrenceLabels>).map((key) => (<button key={key} onClick={() => { setTempRecurrence(key); setIsRecurrenceOptionsOpen(false); }} className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg transition-colors bg-sunset-cream/50 dark:bg-midnight-card text-slate-800 dark:text-white hover:bg-sunset-peach/50 hover:text-sunset-coral dark:hover:bg-indigo-900/50 dark:hover:text-indigo-300">{recurrenceLabels[key]}</button>))}</div>)}</div>
-                <div className="animate-fade-in-up pt-2"><div className="flex items-center justify-center gap-2 bg-sunset-cream/60 dark:bg-midnight-card/50 p-3 rounded-lg"><span className="text-base text-slate-700 dark:text-slate-300">Ogni</span><input type="number" value={tempRecurrenceInterval || ''} onChange={(e) => { const val = e.target.value; if (val === '') { setTempRecurrenceInterval(undefined); } else { const num = parseInt(val, 10); if (!isNaN(num) && num > 0) { setTempRecurrenceInterval(num); } } }} onFocus={(e) => e.currentTarget.select()} className="w-12 text-center text-lg font-bold text-slate-800 dark:text-white bg-transparent border-0 border-b-2 border-slate-400 focus:ring-0 focus:outline-none focus:border-sunset-coral dark:focus:border-electric-violet p-0" min="1" /><span className="text-base text-slate-700 dark:text-slate-300">{getIntervalLabel(tempRecurrence as any, tempRecurrenceInterval)}</span></div></div>
-                {tempRecurrence === 'weekly' && (<div className="animate-fade-in-up pt-2"><div className="flex flex-wrap justify-center gap-2">{daysOfWeekForPicker.map(day => (<button key={day.value} onClick={() => handleToggleDay(day.value)} className={`w-14 h-14 rounded-full text-sm font-semibold transition-colors focus:outline-none border-2 ${(tempRecurrenceDays || []).includes(day.value) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-sunset-cream/60 dark:bg-slate-700 text-slate-800 dark:text-white border-indigo-400 dark:border-indigo-600 hover:bg-sunset-peach/30 dark:hover:bg-slate-600'}`}>{day.label}</button>))}</div></div>)}
+                <div className="relative"><button onClick={() => { setIsRecurrenceOptionsOpen(prev => !prev); setIsRecurrenceEndOptionsOpen(false); }} className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card/80"><span className="truncate flex-1 capitalize">{recurrenceLabels[tempRecurrence as keyof typeof recurrenceLabels] || 'Seleziona'}</span><ChevronDownIcon className={`w-5 h-5 text-slate-500 dark:text-slate-400 transition-transform ${isRecurrenceOptionsOpen ? 'rotate-180' : ''}`} /></button>{isRecurrenceOptionsOpen && (<div className="absolute top-full mt-1 w-full bg-white dark:bg-midnight-card border border-slate-200 dark:border-electric-violet/30 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">{(Object.keys(recurrenceLabels) as Array<keyof typeof recurrenceLabels>).map((key) => (<button key={key} onClick={() => { setTempRecurrence(key); setIsRecurrenceOptionsOpen(false); }} className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg transition-colors bg-white dark:bg-midnight-card text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-indigo-900/50 dark:hover:text-indigo-300">{recurrenceLabels[key]}</button>))}</div>)}</div>
+                <div className="animate-fade-in-up pt-2"><div className="flex items-center justify-center gap-2 bg-slate-50 dark:bg-midnight-card/50 p-3 rounded-lg"><span className="text-base text-slate-700 dark:text-slate-300">Ogni</span><input type="number" value={tempRecurrenceInterval || ''} onChange={(e) => { const val = e.target.value; if (val === '') { setTempRecurrenceInterval(undefined); } else { const num = parseInt(val, 10); if (!isNaN(num) && num > 0) { setTempRecurrenceInterval(num); } } }} onFocus={(e) => e.currentTarget.select()} className="w-12 text-center text-lg font-bold text-slate-800 dark:text-white bg-transparent border-0 border-b-2 border-slate-400 focus:ring-0 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet p-0" min="1" /><span className="text-base text-slate-700 dark:text-slate-300">{getIntervalLabel(tempRecurrence as any, tempRecurrenceInterval)}</span></div></div>
+                {tempRecurrence === 'weekly' && (<div className="animate-fade-in-up pt-2"><div className="flex flex-wrap justify-center gap-2">{daysOfWeekForPicker.map(day => (<button key={day.value} onClick={() => handleToggleDay(day.value)} className={`w-14 h-14 rounded-full text-sm font-semibold transition-colors focus:outline-none border-2 ${(tempRecurrenceDays || []).includes(day.value) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white border-slate-300 dark:border-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-600'}`}>{day.label}</button>))}</div></div>)}
                 {tempRecurrence === 'monthly' && (<div className="animate-fade-in-up pt-4 space-y-2 border-t border-slate-200 dark:border-slate-700"><div role="radio" aria-checked={tempMonthlyRecurrenceType === 'dayOfMonth'} onClick={() => setTempMonthlyRecurrenceType('dayOfMonth')} className="flex items-center gap-3 p-2 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center flex-shrink-0">{tempMonthlyRecurrenceType === 'dayOfMonth' && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full" />}</div><label className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">Lo stesso giorno di ogni mese</label></div><div role="radio" aria-checked={tempMonthlyRecurrenceType === 'dayOfWeek'} onClick={() => setTempMonthlyRecurrenceType('dayOfWeek')} className="flex items-center gap-3 p-2 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"><div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center flex-shrink-0">{tempMonthlyRecurrenceType === 'dayOfWeek' && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full" />}</div><label className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">{dynamicMonthlyDayOfWeekLabel}</label></div></div>)}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-700"><div className="grid grid-cols-2 gap-4 items-end"><div className={`relative ${!formData.recurrenceEndType || formData.recurrenceEndType === 'forever' ? 'col-span-2' : ''}`}><button type="button" onClick={() => { setIsRecurrenceEndOptionsOpen(prev => !prev); setIsRecurrenceOptionsOpen(false); }} className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80"><span className="truncate flex-1 capitalize">{getRecurrenceEndLabel()}</span><ChevronDownIcon className={`w-5 h-5 text-slate-500 dark:text-slate-400 transition-transform ${isRecurrenceEndOptionsOpen ? 'rotate-180' : ''}`} /></button>{isRecurrenceEndOptionsOpen && (<div className="absolute top-full mt-1 w-full bg-sunset-cream dark:midnight-card border border-sunset-coral/20 dark:border-electric-violet/30 shadow-lg rounded-lg z-10 p-2 space-y-1 animate-fade-in-down">{(['forever', 'date', 'count'] as const).map(key => (<button key={key} onClick={() => handleRecurrenceEndTypeSelect(key)} className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg transition-colors bg-sunset-cream/50 dark:bg-midnight-card text-slate-800 dark:text-white hover:bg-sunset-peach/50 hover:text-sunset-coral dark:hover:bg-indigo-900/50 dark:hover:text-indigo-300">{key === 'forever' ? 'Per sempre' : key === 'date' ? 'Fino a' : 'Numero di volte'}</button>))}</div>)}</div>{formData.recurrenceEndType === 'date' && (<div className="animate-fade-in-up"><label htmlFor="recurrence-end-date" className="relative w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 text-indigo-600 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/20 font-semibold cursor-pointer h-[46.5px]"><CalendarIcon className="w-5 h-5" /><span>{formData.recurrenceEndDate ? formatDate(parseLocalYYYYMMDD(formData.recurrenceEndDate)!) : 'Seleziona'}</span><input type="date" id="recurrence-end-date" name="recurrenceEndDate" value={formData.recurrenceEndDate || ''} onChange={(e) => setFormData(prev => ({ ...prev, recurrenceEndDate: e.target.value, recurrenceEndType: 'date' }))} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" /></label></div>)}{formData.recurrenceEndType === 'count' && (<div className="animate-fade-in-up"><div className="relative"><input type="number" id="recurrence-count" name="recurrenceCount" value={formData.recurrenceCount || ''} onChange={handleInputChange} className="block w-full text-center rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card py-2.5 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base" placeholder="N." min="1" /></div></div>)}</div></div>
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700"><div className="grid grid-cols-2 gap-4 items-end"><div className={`relative ${!formData.recurrenceEndType || formData.recurrenceEndType === 'forever' ? 'col-span-2' : ''}`}><button type="button" onClick={() => { setIsRecurrenceEndOptionsOpen(prev => !prev); setIsRecurrenceOptionsOpen(false); }} className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-white dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-midnight-card/80"><span className="truncate flex-1 capitalize">{getRecurrenceEndLabel()}</span><ChevronDownIcon className={`w-5 h-5 text-slate-500 dark:text-slate-400 transition-transform ${isRecurrenceOptionsOpen ? 'rotate-180' : ''}`} /></button>{isRecurrenceOptionsOpen && (<div className="absolute top-full mt-1 w-full bg-white dark:bg-midnight-card border border-slate-200 dark:border-electric-violet/30 shadow-lg rounded-lg z-20 p-2 space-y-1 animate-fade-in-down">{(['forever', 'date', 'count'] as const).map(key => (<button key={key} onClick={() => handleRecurrenceEndTypeSelect(key)} className="w-full text-left px-4 py-3 text-base font-semibold rounded-lg transition-colors bg-white dark:bg-midnight-card text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-indigo-900/50 dark:hover:text-indigo-300">{key === 'forever' ? 'Per sempre' : key === 'date' ? 'Fino a' : 'Numero di volte'}</button>))}</div>)}</div>{formData.recurrenceEndType === 'date' && (<div className="animate-fade-in-up"><label htmlFor="recurrence-end-date" className="relative w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 text-indigo-600 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/20 font-semibold cursor-pointer h-[46.5px]"><CalendarIcon className="w-5 h-5" /><span>{formData.recurrenceEndDate ? formatDate(parseLocalYYYYMMDD(formData.recurrenceEndDate)!) : 'Seleziona'}</span><input type="date" id="recurrence-end-date" name="recurrenceEndDate" value={formData.recurrenceEndDate || ''} onChange={(e) => setFormData(prev => ({ ...prev, recurrenceEndDate: e.target.value, recurrenceEndType: 'date' }))} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" /></label></div>)}{formData.recurrenceEndType === 'count' && (<div className="animate-fade-in-up"><div className="relative"><input type="number" id="recurrence-count" name="recurrenceCount" value={formData.recurrenceCount || ''} onChange={handleInputChange} className="block w-full text-center rounded-md border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card py-2.5 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base" placeholder="N." min="1" /></div></div>)}</div></div>
               </main>
-              <footer className="p-4 bg-sunset-cream dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end"><button type="button" onClick={handleApplyRecurrence} className="px-4 py-2 text-sm font-bold text-white btn-electric rounded-lg shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all">Applica</button></footer>
+              <footer className="p-4 bg-slate-50 dark:bg-midnight border-t border-slate-200 dark:border-slate-700 flex justify-end"><button type="button" onClick={handleApplyRecurrence} className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 dark:btn-electric rounded-lg shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all">Applica</button></footer>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
-        {isReceiptMenuOpen && (
-          <div className={`fixed inset-0 z-[5200] flex justify-center items-center p-4 bg-midnight/80 backdrop-blur-md transition-opacity duration-300 ease-in-out ${isReceiptMenuAnimating ? 'opacity-100' : 'opacity-0'}`} onClick={handleCloseReceiptMenu}>
-            <div className="midnight-card rounded-lg shadow-xl w-full max-w-sm border border-sunset-coral/20 dark:border-electric-violet/30" onClick={(e) => e.stopPropagation()}>
-              <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700"><h2 className="text-lg font-bold text-slate-800 dark:text-white">Allega Ricevuta</h2><button onClick={handleCloseReceiptMenu} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card"><XMarkIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" /></button></header>
+        {isReceiptMenuOpen && createPortal(
+          <div className={`fixed inset-0 z-[10000] flex justify-center items-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${isReceiptMenuAnimating ? 'opacity-100' : 'opacity-0'}`} onClick={handleCloseReceiptMenu}>
+            <div className="bg-white dark:bg-midnight rounded-lg shadow-xl w-full max-w-sm border border-slate-200 dark:border-electric-violet/30 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+              <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700"><h2 className="text-xl font-bold text-slate-800 dark:text-white">Allega Ricevuta</h2><button onClick={handleCloseReceiptMenu} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-midnight-card"><XMarkIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" /></button></header>
               <div className="p-4 grid grid-cols-2 gap-4">
-                <button onClick={() => handlePickReceipt('camera')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl midnight-card border border-sunset-coral/20 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-electric-violet/20 hover:border-sunset-coral/50 transition-colors"><div className="w-10 h-10 rounded-full bg-sunset-peach/50 dark:bg-electric-violet/20 flex items-center justify-center text-sunset-coral dark:text-electric-violet"><CameraIcon className="w-6 h-6" /></div><span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Fotocamera</span></button>
-                <button onClick={() => handlePickReceipt('gallery')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl midnight-card border border-sunset-coral/20 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-electric-pink/20 hover:border-sunset-coral/50 transition-colors"><div className="w-10 h-10 rounded-full bg-sunset-pink/30 dark:bg-electric-pink/20 flex items-center justify-center text-sunset-pink dark:text-electric-pink"><PhotoIcon className="w-6 h-6" /></div><span className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Galleria</span></button>
+                <button onClick={() => handlePickReceipt('camera')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-electric-violet/30 bg-white dark:bg-midnight-card hover:bg-slate-50 dark:hover:bg-electric-violet/20 hover:border-indigo-300 transition-colors"><div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-electric-violet/20 flex items-center justify-center text-indigo-600 dark:text-electric-violet"><CameraIcon className="w-8 h-8" /></div><span className="font-bold text-slate-700 dark:text-slate-200 text-sm">Fotocamera</span></button>
+                <button onClick={() => handlePickReceipt('gallery')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 dark:border-electric-violet/30 bg-white dark:bg-midnight-card hover:bg-slate-50 dark:hover:bg-electric-pink/20 hover:border-pink-300 transition-colors"><div className="w-12 h-12 rounded-full bg-pink-50 dark:bg-electric-pink/20 flex items-center justify-center text-pink-600 dark:text-electric-pink"><PhotoIcon className="w-8 h-8" /></div><span className="font-bold text-slate-700 dark:text-slate-200 text-sm">Galleria</span></button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {renderImageViewer()}
@@ -684,6 +682,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
       </div>
     </>
   );
+
+  return createPortal(formContent, document.body);
 };
 
 export default ExpenseForm;

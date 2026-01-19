@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ExclamationTriangleIcon } from './icons/ExclamationTriangleIcon';
 import { InformationCircleIcon } from './icons/InformationCircleIcon';
 
@@ -53,16 +53,16 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   }
   const { icon: Icon, iconColor, bgColor, confirmButtonClasses } = config[variant];
 
-  return (
+  const modalContent = (
     <div
-      className={`fixed inset-0 z-[5100] flex justify-center items-center p-4 transition-opacity duration-75 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-midnight/80 backdrop-blur-md`}
+      className={`fixed inset-0 z-[10000] flex justify-center items-center p-4 transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-black/60 backdrop-blur-sm`}
       onClick={onClose}
       aria-modal="true"
       role="dialog"
       aria-labelledby="modal-title"
     >
       <div
-        className={`midnight-card rounded-lg shadow-xl w-full max-w-md border dark:border-electric-violet/30 transform transition-all duration-75 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-white dark:bg-midnight rounded-lg shadow-xl w-full max-w-md border dark:border-electric-violet/30 transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -71,29 +71,29 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden="true" />
             </div>
             <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-              <h3 className="text-lg font-semibold leading-6 text-slate-900 dark:text-white" id="modal-title">
+              <h3 className="text-lg font-bold leading-6 text-slate-900 dark:text-white" id="modal-title">
                 {title}
               </h3>
               <div className="mt-2">
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                   {message}
                 </p>
               </div>
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 bg-sunset-cream dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg border-t dark:border-electric-violet/20">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg border-t dark:border-electric-violet/20">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-sunset-peach/30 dark:hover:bg-midnight-card transition-colors"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-midnight-card border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             {cancelButtonText}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${confirmButtonClasses}`}
+            className={`w-full sm:w-auto px-4 py-2 text-sm font-bold text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${confirmButtonClasses}`}
           >
             {confirmButtonText}
           </button>
@@ -101,6 +101,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ConfirmationModal;
