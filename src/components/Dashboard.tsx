@@ -27,6 +27,7 @@ import { useSwipe } from '../hooks/useSwipe';
 import { BudgetTrendChart } from './BudgetTrendChart';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
+import { useTheme } from '../hooks/useTheme';
 
 const categoryHexColors: Record<string, string> = {
     'Trasporti': '#64748b',
@@ -47,12 +48,15 @@ const renderActiveShape = (props: any) => {
 
     if (!payload) return null;
 
+    const isDark = document.documentElement.classList.contains('dark');
+    const shadowColor = fill;
+
     return (
         <g>
             <text x={cx} y={cy - 12} textAnchor="middle" className="text-base font-bold" style={{ fill: 'var(--pie-text-primary, #1e293b)' }}>
                 {payload.name}
             </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-lg font-extrabold">
+            <text x={cx} y={cy + 12} textAnchor="middle" fill={fill} className="text-lg font-extrabold" style={isDark ? { filter: `drop-shadow(0 0 8px ${shadowColor})` } : {}}>
                 {formatCurrency(payload.value)}
             </text>
             <text x={cx} y={cy + 32} textAnchor="middle" className="text-sm font-bold" style={{ fill: 'var(--pie-text-secondary, #334155)' }}>
@@ -67,7 +71,9 @@ const renderActiveShape = (props: any) => {
                 startAngle={startAngle}
                 endAngle={endAngle}
                 fill={fill}
-                stroke="none"
+                stroke={isDark ? fill : "none"}
+                strokeWidth={isDark ? 2 : 0}
+                style={isDark ? { filter: `drop-shadow(0 0 6px ${shadowColor})` } : {}}
             />
         </g>
     );
@@ -129,6 +135,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     onToggleBalanceVisibility,
     showToast
 }) => {
+    const { isDark } = useTheme();
     const tapBridgeHandlers = useTapBridge();
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [activeViewIndex, setActiveViewIndex] = useState(1);
@@ -646,9 +653,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         {...({ activeIndex: activeIndex ?? undefined } as any)}
                                         activeShape={renderActiveShape}
                                     >
-                                        {categoryData.map((entry) => (
-                                            <Cell key={`cell-${entry.name}`} fill={categoryHexColors[entry.name] || DEFAULT_COLOR} />
-                                        ))}
+                                        {categoryData.map((entry) => {
+                                            const color = categoryHexColors[entry.name] || DEFAULT_COLOR;
+                                            return (
+                                                <Cell
+                                                    key={`cell-${entry.name}`}
+                                                    fill={color}
+                                                    stroke={isDark ? categoryHexColors[entry.name] || DEFAULT_COLOR : "none"}
+                                                    strokeWidth={isDark ? 2 : 0}
+                                                    style={isDark ? { filter: `drop-shadow(0 0 8px ${color})` } as React.CSSProperties : {}}
+                                                />
+                                            );
+                                        })}
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
