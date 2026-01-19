@@ -60,7 +60,7 @@ const Modal = memo<{
 
   return (
     <div
-      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-midnight`}
+      className={`absolute inset-0 z-[60] flex justify-center items-center p-4 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/40 backdrop-blur-sm`}
       onClick={(e) => {
         e.stopPropagation();
         onClose();
@@ -534,7 +534,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     <div
       ref={rootRef}
       tabIndex={-1}
-      className="flex flex-col h-full dark:bg-midnight focus:outline-none"
+      className="flex flex-col h-full bg-sunset-cream dark:bg-midnight focus:outline-none"
       style={{ touchAction: 'pan-y' }}
       {...tapBridgeHandlers}
     >
@@ -580,7 +580,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 type="text"
                 value={formData.description || ''}
                 onChange={handleInputChange}
-                className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
+                className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream dark:bg-midnight-card py-2.5 pl-10 pr-3 text-base text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
                 placeholder="Es. Caffè al bar"
                 enterKeyHint="done"
                 onKeyDown={(e) => { if (e.key === 'Enter') { (e.currentTarget as HTMLInputElement).blur(); e.preventDefault(); } }}
@@ -595,7 +595,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveMenu('account')}
-                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
                 >
                   <CreditCardIcon className="h-7 w-7 text-slate-400" />
                   <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>

@@ -114,7 +114,7 @@ const getIntervalLabel = (recurrence?: 'daily' | 'weekly' | 'monthly' | 'yearly'
 const daysOfWeekForPicker = [{ label: 'Lun', value: 1 }, { label: 'Mar', value: 2 }, { label: 'Mer', value: 3 }, { label: 'Gio', value: 4 }, { label: 'Ven', value: 5 }, { label: 'Sab', value: 6 }, { label: 'Dom', value: 0 }];
 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, initialData, prefilledData, accounts, isForRecurringTemplate = false }) => {
-  const safeAccounts = accounts || [];
+  const safeAccounts = useMemo(() => accounts || [], [accounts]);
 
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosableByBackdrop, setIsClosableByBackdrop] = useState(false);
@@ -215,7 +215,6 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
         setFormData(dataWithTime);
         setOriginalExpenseState(dataWithTime);
       } else if (prefilledData) {
-        const defaultAccountId = safeAccounts.length > 0 ? safeAccounts[0].id : '';
         setFormData({
           description: prefilledData.description || '',
           amount: prefilledData.amount || '',
@@ -223,7 +222,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
           time: prefilledData.time || getCurrentTime(),
           category: prefilledData.category || '',
           subcategory: prefilledData.subcategory || '',
-          accountId: prefilledData.accountId || defaultAccountId,
+          accountId: prefilledData.accountId || (safeAccounts.length > 0 ? safeAccounts[0].id : ''),
           toAccountId: prefilledData.toAccountId || '',
           frequency: 'single',
           tags: prefilledData.tags || [],
@@ -237,15 +236,19 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
 
       const animTimer = setTimeout(() => {
         setIsAnimating(true);
+      }, 10);
+
+      const focusTimer = setTimeout(() => {
         titleRef.current?.focus();
-      }, 50);
+      }, 100);
 
       const closableTimer = setTimeout(() => {
         setIsClosableByBackdrop(true);
-      }, 300);
+      }, 400);
 
       return () => {
         clearTimeout(animTimer);
+        clearTimeout(focusTimer);
         clearTimeout(closableTimer);
         setIsClosableByBackdrop(false);
       };
@@ -253,7 +256,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
       setIsAnimating(false);
       setIsClosableByBackdrop(false);
     }
-  }, [isOpen, initialData, prefilledData, resetForm, safeAccounts, isForRecurringTemplate]);
+    // We only want to run this when the form opens or initialData/prefilledData changes.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Only run on open
+  }, [isOpen, initialData, prefilledData, isForRecurringTemplate, safeAccounts]);
 
   useEffect(() => {
     if (isRecurrenceModalOpen) {
@@ -610,15 +615,15 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
 
   return (
     <>
-      <div className={`fixed inset-0 z-[5000] transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/80 backdrop-blur-md`} onClick={handleBackdropClick} aria-modal="true" role="dialog">
+      <div className={`fixed inset-0 z-[5000] transition-opacity duration-300 ease-in-out ${isAnimating ? 'opacity-100' : 'opacity-0'} bg-slate-900/40 backdrop-blur-sm`} onClick={handleBackdropClick} aria-modal="true" role="dialog">
         <div className={`bg-sunset-cream dark:bg-midnight w-full h-full flex flex-col absolute bottom-0 transform transition-transform duration-300 ease-in-out ${isAnimating ? 'translate-y-0' : 'translate-y-full'}`} onClick={(e) => e.stopPropagation()} style={{ touchAction: 'pan-y' }}>
           <header className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800 flex-shrink-0"><h2 ref={titleRef} tabIndex={-1} className="text-2xl font-bold text-slate-800 dark:text-white focus:outline-none">{isEditing ? (isTransfer ? 'Modifica Trasferimento' : isIncome ? 'Modifica Entrata' : 'Modifica Spesa') : (isTransfer ? 'Nuovo Trasferimento' : isIncome ? 'Aggiungi Entrata' : 'Aggiungi Spesa')}</h2><button type="button" onClick={handleClose} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors p-1 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Chiudi"><XMarkIcon className="w-6 h-6" /></button></header>
           <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col overflow-hidden">
             <div className="p-6 space-y-4 flex-1 overflow-y-auto">
               <FormInput ref={descriptionInputRef} id="description" name="description" label="Descrizione (opzionale)" value={formData.description || ''} onChange={handleInputChange} icon={<DocumentTextIcon className="h-5 w-5 text-slate-400" />} type="text" placeholder="Es. Caffè al bar" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><FormInput ref={amountInputRef} id="amount" name="amount" label="Importo" value={formData.amount || ''} onChange={handleInputChange} onKeyDown={handleAmountEnter} icon={<CurrencyEuroIcon className="h-5 w-5 text-slate-400" />} type="text" inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="0.00" required autoComplete="off" />
-                <div className={`grid ${formData.frequency === 'recurring' ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}><div><label htmlFor="date" className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">{isSingleRecurring ? 'Data del Pagamento' : formData.frequency === 'recurring' ? 'Data di Inizio' : 'Data'}</label><div className="relative"><div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><CalendarIcon className="h-5 w-5 text-slate-400" /></div><input id="date" name="date" value={formData.date || ''} onChange={handleInputChange} className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base [color-scheme:light] dark:[color-scheme:dark]" type="date" /></div></div>
-                  {formData.frequency !== 'recurring' && (<div><label htmlFor="time" className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Ora (opz.)</label><div className="relative"><div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><ClockIcon className="h-5 w-5 text-slate-400" /></div><input id="time" name="time" value={formData.time || ''} onChange={handleInputChange} className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2.5 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base [color-scheme:light] dark:[color-scheme:dark]" type="time" /></div></div>)}</div></div>
+                <div className={`grid ${formData.frequency === 'recurring' ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}><div><label htmlFor="date" className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">{isSingleRecurring ? 'Data del Pagamento' : formData.frequency === 'recurring' ? 'Data di Inizio' : 'Data'}</label><div className="relative"><div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><CalendarIcon className="h-5 w-5 text-slate-400" /></div><input id="date" name="date" value={formData.date || ''} onChange={handleInputChange} className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream dark:bg-midnight-card py-2.5 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base" type="date" /></div></div>
+                  {formData.frequency !== 'recurring' && (<div><label htmlFor="time" className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Ora (opz.)</label><div className="relative"><div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><ClockIcon className="h-5 w-5 text-slate-400" /></div><input id="time" name="time" value={formData.time || ''} onChange={handleInputChange} className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream dark:bg-midnight-card py-2.5 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base" type="time" /></div></div>)}</div></div>
 
               {isTransfer ? (<div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><SelectionButton label="Da Conto" value={selectedAccountLabel} onClick={() => setActiveMenu('account')} placeholder="Seleziona" ariaLabel="Seleziona conto di origine" icon={<CreditCardIcon className="h-7 w-7" />} /><SelectionButton label="A Conto" value={selectedToAccountLabel} onClick={() => setActiveMenu('toAccount')} placeholder="Seleziona" ariaLabel="Seleziona conto di destinazione" icon={<CreditCardIcon className="h-7 w-7" />} /></div>) : isIncome ? (<div className="grid grid-cols-1 gap-4"><SelectionButton label="Conto" value={selectedAccountLabel} onClick={() => setActiveMenu('account')} placeholder="Seleziona" ariaLabel="Seleziona conto di accredito" icon={<CreditCardIcon className="h-7 w-7" />} /></div>) : (<div className="grid grid-cols-1 sm:grid-cols-3 gap-4"><SelectionButton label="Conto" value={selectedAccountLabel} onClick={() => setActiveMenu('account')} placeholder="Seleziona" ariaLabel="Seleziona conto di pagamento" icon={<CreditCardIcon className="h-7 w-7" />} /><SelectionButton label="Categoria (opzionale)" value={selectedCategoryLabel} onClick={() => setActiveMenu('category')} placeholder="Seleziona" ariaLabel="Seleziona categoria" icon={<TagIcon className="h-5 w-5" />} /><SelectionButton label="Sottocategoria (opzionale)" value={formData.subcategory} onClick={() => setActiveMenu('subcategory')} placeholder="Seleziona" ariaLabel="Seleziona sottocategoria" disabled={isSubcategoryDisabled} icon={<TagIcon className="h-5 w-5" />} /></div>)}
 

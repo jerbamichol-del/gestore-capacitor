@@ -371,7 +371,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
     <div
       ref={ref}
       tabIndex={-1}
-      className="bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight w-full h-full flex flex-col focus:outline-none overflow-hidden transition-colors duration-300"
+      className="bg-sunset-cream dark:bg-midnight w-full h-full flex flex-col focus:outline-none overflow-hidden transition-colors duration-300"
       style={{ touchAction: 'pan-y' }}
     >
       <div className="flex-1 flex flex-col">
@@ -599,7 +599,7 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
           </div>
 
           <div
-            className="h-full w-1/5 flex flex-col gap-1.5 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-2xl p-1"
+            className="h-full w-1/5 flex flex-col gap-1.5 bg-sunset-cream dark:bg-midnight-card/80 rounded-2xl p-1"
             style={{ touchAction: 'pan-y' }}
           >
             <OperatorButton onClick={() => handleKeyPress('÷')}>÷</OperatorButton>
