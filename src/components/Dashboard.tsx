@@ -558,7 +558,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 </div>
 
                                 <div
-                                    className="mt-4 flex gap-3 overflow-x-auto py-2 -mx-6 px-6 no-scrollbar"
+                                    className="mt-4 flex items-center gap-3 overflow-x-auto py-2 -mx-6 px-6 no-scrollbar"
                                     style={{
                                         scrollbarWidth: 'none',
                                         msOverflowStyle: 'none',
@@ -567,7 +567,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     }}
                                 >
                                     <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-                                    <button onClick={handleNavigateToRecurring} className="flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-slate-900 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 rounded-full hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all border border-amber-400 dark:border-amber-500/30 focus:outline-none active:scale-95 active:bg-amber-200 active:ring-2 active:ring-offset-2 active:ring-amber-500">
+                                    <button onClick={handleNavigateToRecurring} className="flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-amber-900 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 rounded-full hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all border border-amber-200 dark:border-amber-500/30">
                                         <ProgrammateDetailedIcon className="w-7 h-7" /> <span className="text-sm">Programmate</span>
                                     </button>
                                     <button onClick={handleNavigateToHistory} className="flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-indigo-900 bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-all border border-indigo-200 dark:border-indigo-500/30">
