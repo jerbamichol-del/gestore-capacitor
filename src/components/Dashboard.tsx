@@ -28,6 +28,9 @@ import { BudgetTrendChart } from './BudgetTrendChart';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { useTheme } from '../hooks/useTheme';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const categoryHexColors: Record<string, string> = {
     'Trasporti': '#64748b',
@@ -135,6 +138,56 @@ const Dashboard: React.FC<DashboardProps> = ({
     onToggleBalanceVisibility,
     showToast
 }) => {
+    // --- Sortable Item Component ---
+    const SortableItem = ({ id, children }: { id: string, children: React.ReactNode }) => {
+        const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+
+        const style = {
+            transform: CSS.Transform.toString(transform),
+            transition,
+            zIndex: isDragging ? 50 : 'auto',
+            opacity: isDragging ? 0.8 : 1,
+            touchAction: 'none' // Important for touch devices
+        };
+
+        return (
+            <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+                {children}
+            </div>
+        );
+    };
+
+    // --- State & DnD Logic ---
+    const [items, setItems] = useState<string[]>(() => {
+        const saved = localStorage.getItem('dashboard_order_safe');
+        return saved ? JSON.parse(saved) : ['summary', 'categoryPie', 'trend'];
+    });
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                delay: 250, // Long press to activate (250ms)
+                tolerance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (active.id !== over?.id) {
+            setItems((items) => {
+                const oldIndex = items.indexOf(active.id as string);
+                const newIndex = items.indexOf(over?.id as string);
+                const newOrder = arrayMove(items, oldIndex, newIndex);
+                localStorage.setItem('dashboard_order_safe', JSON.stringify(newOrder));
+                return newOrder;
+            });
+        }
+    };
+
     const { isDark } = useTheme();
     const tapBridgeHandlers = useTapBridge();
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -597,217 +650,242 @@ const Dashboard: React.FC<DashboardProps> = ({
                         </button>
                     </div>
 
-                    <div className="lg:col-span-2 flex flex-col gap-6">
-                        <div className="midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
-                            <div className="mb-4">
-                                <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
-                                <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
-                            </div>
-
-                            {categoryData.length > 0 ? (
-                                <div className="space-y-4 flex-grow">
-                                    {categoryData.map(cat => {
-                                        const style = getCategoryStyle(cat.name);
-                                        const percentage = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
+                    {/* --- RIGHT COLUMN (Movable Items Container) --- */}
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <div className="lg:col-span-2 flex flex-col gap-6">
+                            <SortableContext items={items} strategy={verticalListSortingStrategy}>
+                                {items.map(id => {
+                                    if (id === 'summary') {
                                         return (
-                                            <div key={cat.name} className="flex items-center gap-4 text-base">
-                                                <style.Icon className="w-10 h-10 flex-shrink-0" />
-                                                <div className="flex-grow">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="font-semibold text-slate-700 dark:text-slate-300">{style.label}</span>
-                                                        <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
+                                            <SortableItem key={id} id={id}>
+                                                <div className="midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
+                                                    <div className="mb-4">
+                                                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
+                                                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
                                                     </div>
-                                                    <div className="w-full bg-sunset-cream/90 dark:bg-slate-700 rounded-full h-2.5">
-                                                        <div className="bg-indigo-500 dark:bg-electric-violet h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
-                                                    </div>
+
+                                                    {categoryData.length > 0 ? (
+                                                        <div className="space-y-4 flex-grow">
+                                                            {categoryData.map(cat => {
+                                                                const style = getCategoryStyle(cat.name);
+                                                                const percentage = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
+                                                                return (
+                                                                    <div key={cat.name} className="flex items-center gap-4 text-base">
+                                                                        <style.Icon className="w-10 h-10 flex-shrink-0" />
+                                                                        <div className="flex-grow">
+                                                                            <div className="flex justify-between items-center mb-1">
+                                                                                <span className="font-semibold text-slate-700 dark:text-slate-300">{style.label}</span>
+                                                                                <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
+                                                                            </div>
+                                                                            <div className="w-full bg-sunset-cream/90 dark:bg-slate-700 rounded-full h-2.5">
+                                                                                <div className="bg-indigo-500 dark:bg-electric-violet h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    ) : <p className="text-center text-slate-500 dark:text-slate-400 flex-grow flex items-center justify-center">Nessuna spesa registrata in questo periodo.</p>}
                                                 </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            ) : <p className="text-center text-slate-500 dark:text-slate-400 flex-grow flex items-center justify-center">Nessuna spesa registrata in questo periodo.</p>}
+                                            </SortableItem>
+                                        );
+                                    }
+
+                                    if (id === 'categoryPie') {
+                                        return (
+                                            <SortableItem key={id} id={id}>
+                                                <div className="bg-sunset-cream/80 border border-sunset-coral/20 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
+                                                    <div className="mb-2 text-center">
+                                                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
+                                                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
+                                                    </div>
+
+                                                    {categoryData.length > 0 ? (
+                                                        <div className="relative cursor-pointer" onClick={handleChartBackgroundClick}>
+                                                            <ResponsiveContainer width="100%" height={300}>
+                                                                <PieChart>
+                                                                    <Pie
+                                                                        data={categoryData}
+                                                                        cx="50%"
+                                                                        cy="50%"
+                                                                        innerRadius={68}
+                                                                        outerRadius={102}
+                                                                        fill="#8884d8"
+                                                                        paddingAngle={2}
+                                                                        dataKey="value"
+                                                                        nameKey="name"
+                                                                        {...({ activeIndex: activeIndex ?? undefined } as any)}
+                                                                        activeShape={renderActiveShape}
+                                                                    >
+                                                                        {categoryData.map((entry) => {
+                                                                            const color = categoryHexColors[entry.name] || DEFAULT_COLOR;
+                                                                            return (
+                                                                                <Cell
+                                                                                    key={`cell-${entry.name}`}
+                                                                                    fill={color}
+                                                                                    stroke={isDark ? categoryHexColors[entry.name] || DEFAULT_COLOR : "none"}
+                                                                                    strokeWidth={isDark ? 2 : 0}
+                                                                                    style={isDark ? { filter: `drop-shadow(0 0 8px ${color})` } as React.CSSProperties : {}}
+                                                                                />
+                                                                            );
+                                                                        })}
+                                                                    </Pie>
+                                                                </PieChart>
+                                                            </ResponsiveContainer>
+                                                            {activeIndex === null && (
+                                                                <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
+                                                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
+                                                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-white mt-1">
+                                                                        {formatCurrency(totalExpenses)}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : <p className="text-center text-slate-500 py-16">Nessun dato da visualizzare.</p>}
+
+                                                    {categoryData.length > 0 && (
+                                                        <div className="mt-4 pt-4 border-t border-slate-200">
+                                                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
+                                                                {categoryData.map((entry, index) => {
+                                                                    const style = getCategoryStyle(entry.name);
+                                                                    return (
+                                                                        <button
+                                                                            key={`item-${index}`}
+                                                                            onClick={(e) => handleLegendItemClick(index, e)}
+                                                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-sunset-cream/60 dark:bg-midnight-card hover:bg-sunset-peach/50 dark:hover:bg-midnight-card/80`}
+                                                                        >
+                                                                            <style.Icon className="w-8 h-8 flex-shrink-0" />
+                                                                            <div className="min-w-0 pr-2">
+                                                                                <p className={`font-semibold text-sm truncate text-slate-700 dark:text-slate-300`}>{style.label}</p>
+                                                                            </div>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </SortableItem>
+                                        );
+                                    }
+
+                                    if (id === 'trend') {
+                                        return (
+                                            <SortableItem key={id} id={id}>
+                                                <BudgetTrendChart
+                                                    expenses={expenses}
+                                                    accounts={accounts}
+                                                    periodType={periodType}
+                                                    periodDate={periodDate}
+                                                    activeViewIndex={activeViewIndex}
+                                                    quickFilter={quickFilter}
+                                                    customRange={customRange}
+                                                />
+                                            </SortableItem>
+                                        );
+                                    }
+                                    return null;
+                                })}
+                            </SortableContext>
                         </div>
-                    </div>
+                    </DndContext>
                 </div>
 
-                <div className="bg-sunset-cream/80 border border-sunset-coral/20 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
-                    <div className="mb-2 text-center">
-                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
-                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
-                    </div>
-
-                    {categoryData.length > 0 ? (
-                        <div className="relative cursor-pointer" onClick={handleChartBackgroundClick}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie
-                                        data={categoryData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={68}
-                                        outerRadius={102}
-                                        fill="#8884d8"
-                                        paddingAngle={2}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        {...({ activeIndex: activeIndex ?? undefined } as any)}
-                                        activeShape={renderActiveShape}
-                                    >
-                                        {categoryData.map((entry) => {
-                                            const color = categoryHexColors[entry.name] || DEFAULT_COLOR;
-                                            return (
-                                                <Cell
-                                                    key={`cell-${entry.name}`}
-                                                    fill={color}
-                                                    stroke={isDark ? categoryHexColors[entry.name] || DEFAULT_COLOR : "none"}
-                                                    strokeWidth={isDark ? 2 : 0}
-                                                    style={isDark ? { filter: `drop-shadow(0 0 8px ${color})` } as React.CSSProperties : {}}
-                                                />
-                                            );
-                                        })}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                            {activeIndex === null && (
-                                <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
-                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
-                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-white mt-1">
-                                        {formatCurrency(totalExpenses)}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    ) : <p className="text-center text-slate-500 py-16">Nessun dato da visualizzare.</p>}
-
-                    {categoryData.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
-                                {categoryData.map((entry, index) => {
-                                    const style = getCategoryStyle(entry.name);
-                                    return (
-                                        <button
-                                            key={`item-${index}`}
-                                            onClick={(e) => handleLegendItemClick(index, e)}
-                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-sunset-cream/60 dark:bg-midnight-card hover:bg-sunset-peach/50 dark:hover:bg-midnight-card/80`}
-                                        >
-                                            <style.Icon className="w-8 h-8 flex-shrink-0" />
-                                            <div className="min-w-0 pr-2">
-                                                <p className={`font-semibold text-sm truncate text-slate-700 dark:text-slate-300`}>{style.label}</p>
+                {isImportExportMenuOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-midnight/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
+                        <div
+                            className="midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">
+                                {showExportOptions && (
+                                    <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/50 dark:hover:bg-midnight-card text-slate-500 dark:text-slate-400" aria-label="Indietro">
+                                        <ArrowLeftIcon className="w-5 h-5" />
+                                    </button>
+                                )}
+                                <h3 className={`text-lg font-bold text-slate-800 dark:text-white flex-1 text-center ${showExportOptions ? '' : 'pl-8'}`}>
+                                    {showExportOptions ? "Scegli Formato" : "Gestione Dati"}
+                                </h3>
+                                <button onClick={handleCloseNavigation} className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-sunset-peach/50 dark:hover:bg-midnight-card transition-colors">
+                                    <XMarkIcon className="w-6 h-6" />
+                                </button>
+                            </div>
+                            <div className="p-4 space-y-3">
+                                {!showExportOptions ? (
+                                    <>
+                                        <button onClick={handleSyncClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
+                                            <div className="w-12 h-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform">
+                                                <ArrowPathIcon className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Sincronizza Cloud</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">Scarica ultimi dati dal cloud</span>
                                             </div>
                                         </button>
-                                    );
-                                })}
+                                        <button onClick={handleImportClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
+                                            <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
+                                                <ArrowDownTrayIcon className="w-6 h-6" />
+                                            </div>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Importa (CSV/Excel/JSON)</span>
+                                        </button>
+                                        <button onClick={openExportOptions} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
+                                            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                                                <ArrowUpTrayIcon className="w-6 h-6" />
+                                            </div>
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Esporta (Excel/JSON)</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                window.history.back();
+                                                setTimeout(onOpenBankSyncSettings, 50);
+                                            }}
+                                            className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group"
+                                        >
+                                            <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-electric-violet/20 flex items-center justify-center text-indigo-600 dark:text-electric-violet group-hover:scale-110 transition-transform">
+                                                <span className="text-2xl">🏦</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Configura Banche</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">Collega Revolut e conti ITA</span>
+                                            </div>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => handleExportClick('excel')}
+                                            disabled={isExporting}
+                                            className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+                                                <span className="font-bold text-sm">XLSX</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Excel (.xlsx)</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">Le ricevute non verranno salvate</span>
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => handleExportClick('json')}
+                                            disabled={isExporting}
+                                            className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400 group-hover:scale-110 transition-transform">
+                                                <span className="font-bold text-sm">JSON</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">JSON (.json)</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">Backup completo dell'app</span>
+                                            </div>
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
-                    )}
-                </div>
-
-                <BudgetTrendChart
-                    expenses={expenses}
-                    accounts={accounts}
-                    periodType={periodType}
-                    periodDate={periodDate}
-                    activeViewIndex={activeViewIndex}
-                    quickFilter={quickFilter}
-                    customRange={customRange}
-                />
-            </div>
-
-            {isImportExportMenuOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-midnight/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
-                    <div
-                        className="midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">
-                            {showExportOptions && (
-                                <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/50 dark:hover:bg-midnight-card text-slate-500 dark:text-slate-400" aria-label="Indietro">
-                                    <ArrowLeftIcon className="w-5 h-5" />
-                                </button>
-                            )}
-                            <h3 className={`text-lg font-bold text-slate-800 dark:text-white flex-1 text-center ${showExportOptions ? '' : 'pl-8'}`}>
-                                {showExportOptions ? "Scegli Formato" : "Gestione Dati"}
-                            </h3>
-                            <button onClick={handleCloseNavigation} className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-sunset-peach/50 dark:hover:bg-midnight-card transition-colors">
-                                <XMarkIcon className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <div className="p-4 space-y-3">
-                            {!showExportOptions ? (
-                                <>
-                                    <button onClick={handleSyncClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform">
-                                            <ArrowPathIcon className="w-6 h-6" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Sincronizza Cloud</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Scarica ultimi dati dal cloud</span>
-                                        </div>
-                                    </button>
-                                    <button onClick={handleImportClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
-                                            <ArrowDownTrayIcon className="w-6 h-6" />
-                                        </div>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Importa (CSV/Excel/JSON)</span>
-                                    </button>
-                                    <button onClick={openExportOptions} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                                            <ArrowUpTrayIcon className="w-6 h-6" />
-                                        </div>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Esporta (Excel/JSON)</span>
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            window.history.back();
-                                            setTimeout(onOpenBankSyncSettings, 50);
-                                        }}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group"
-                                    >
-                                        <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-electric-violet/20 flex items-center justify-center text-indigo-600 dark:text-electric-violet group-hover:scale-110 transition-transform">
-                                            <span className="text-2xl">🏦</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Configura Banche</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Collega Revolut e conti ITA</span>
-                                        </div>
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button
-                                        onClick={() => handleExportClick('excel')}
-                                        disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                                            <span className="font-bold text-sm">XLSX</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Excel (.xlsx)</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Le ricevute non verranno salvate</span>
-                                        </div>
-                                    </button>
-                                    <button
-                                        onClick={() => handleExportClick('json')}
-                                        disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400 group-hover:scale-110 transition-transform">
-                                            <span className="font-bold text-sm">JSON</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">JSON (.json)</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Backup completo dell'app</span>
-                                        </div>
-                                    </button>
-                                </>
-                            )}
-                        </div>
                     </div>
-                </div>
-            )}
-        </>
-    );
+                )}
+            </>
+            );
 };
 
-export default Dashboard;
+            export default Dashboard;
