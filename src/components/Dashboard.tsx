@@ -74,9 +74,10 @@ const renderActiveShape = (props: any) => {
                 startAngle={startAngle}
                 endAngle={endAngle}
                 fill={fill}
-                stroke={isDark ? '#e0e0e0' : "none"}
-                strokeWidth={isDark ? 2 : 0}
-                style={isDark ? { filter: `drop-shadow(0 0 4px ${shadowColor})` } : {}}
+                fillOpacity={isDark ? 0.6 : 1}
+                stroke={isDark ? fill : "none"}
+                strokeWidth={isDark ? 3 : 0}
+                style={isDark ? { filter: `drop-shadow(0 0 8px ${shadowColor})` } : {}}
             />
         </g>
     );
@@ -751,9 +752,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                                                 <Cell
                                                                                     key={`cell-${entry.name}`}
                                                                                     fill={color}
-                                                                                    stroke={isDark ? '#e0e0e0' : "none"}
-                                                                                    strokeWidth={isDark ? 2 : 0}
-                                                                                    style={isDark ? { filter: `drop-shadow(0 0 4px ${color})` } as React.CSSProperties : {}}
+                                                                                    fillOpacity={isDark ? 0.6 : 1}
+                                                                                    stroke={isDark ? color : "none"}
+                                                                                    strokeWidth={isDark ? 3 : 0}
+                                                                                    style={isDark ? { filter: `drop-shadow(0 0 6px ${color})` } as React.CSSProperties : {}}
                                                                                 />
                                                                             );
                                                                         })}
