@@ -130,7 +130,7 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
 
     const style = {
         transform: CSS.Transform.toString(transform ? { ...transform, scaleX: isDragging ? 0.95 : 1, scaleY: isDragging ? 0.95 : 1 } : null),
-        transition,
+        transition: isDragging ? undefined : transition,
         zIndex: isDragging ? 50 : 'auto',
         opacity: isDragging ? 0.9 : 1,
         position: 'relative' as const,
