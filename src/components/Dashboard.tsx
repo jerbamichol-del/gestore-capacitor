@@ -671,15 +671,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         sensors={sensors}
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
-                        autoScroll={{
-                            acceleration: 15,
-                            interval: 10,
-                            layoutShiftCompensation: false,
-                            threshold: {
-                                x: 0.2,
-                                y: 0.2
-                            }
-                        }}
+                        autoScroll={false}
                     >
                         <div className="lg:col-span-2 flex flex-col gap-6">
                             <SortableContext items={items} strategy={verticalListSortingStrategy}>
