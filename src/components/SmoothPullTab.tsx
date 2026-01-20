@@ -22,7 +22,8 @@ export default function SmoothPullTab({
 }: Props) {
   const W = Number(width);
   const H = Number(height);
-  const dropShadowFilterId = "smooth-pull-tab-shadow-filter";
+  const lightShadowId = "smooth-pull-tab-shadow-light";
+  const darkShadowId = "smooth-pull-tab-shadow-dark";
 
   // The path calculation remains the same
   const topPlateauWidth = W * 0.35;
@@ -49,27 +50,45 @@ export default function SmoothPullTab({
       style={{ overflow: 'visible' }} // Allow shadow to render outside the viewbox
     >
       <defs>
-        {/* Filter for a more pronounced and directional drop shadow */}
-        <filter id={dropShadowFilterId} x="-50%" y="-50%" width="200%" height="200%">
+        {/* Light mode shadow: slate with 0.6 opacity */}
+        <filter id={lightShadowId} x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow
             dx="0"
             dy="-3"
             stdDeviation="5"
             floodColor="#475569"
             floodOpacity="0.6"
-            className="text-slate-600 dark:text-black"
+          />
+        </filter>
+        {/* Dark mode shadow: black with 0.8 opacity */}
+        <filter id={darkShadowId} x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow
+            dx="0"
+            dy="-3"
+            stdDeviation="5"
+            floodColor="#000000"
+            floodOpacity="0.8"
           />
         </filter>
       </defs>
 
-      {/* Apply the shadow filter to the group */}
-      <g filter={`url(#${dropShadowFilterId})`}>
-        {/* Single path for a uniform color fill */}
+      {/* Light mode path */}
+      <g className="dark:hidden" filter={`url(#${lightShadowId})`}>
         <path
           d={d}
           fill={fill}
-          stroke={stroke}
-          strokeWidth={strokeWidth}
+          stroke="none"
+          vectorEffect="non-scaling-stroke"
+        />
+      </g>
+
+      {/* Dark mode path with purple border */}
+      <g className="hidden dark:block" filter={`url(#${darkShadowId})`}>
+        <path
+          d={d}
+          fill={fill}
+          stroke="rgba(168, 85, 247, 0.3)"
+          strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
       </g>
