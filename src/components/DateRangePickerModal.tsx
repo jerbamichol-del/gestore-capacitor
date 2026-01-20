@@ -99,7 +99,7 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({ isOp
         </div>
 
         {/* Footer */}
-        <footer className="p-4 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end gap-3 rounded-b-lg">
+        <footer className="p-4 bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight border-t border-slate-200 dark:border-electric-violet/20 flex justify-end gap-3 rounded-b-lg">
           <button
             type="button"
             onClick={handleBackdropClick}

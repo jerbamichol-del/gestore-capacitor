@@ -476,12 +476,12 @@ export function PendingTransactionsModal({
       {/* Modal - Full screen on mobile, centered on desktop */}
       <div className="relative w-full sm:max-w-lg midnight-card sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col border border-transparent dark:border-electric-violet/30">
         {/* Header */}
-        <div className="sticky top-0 midnight-card border-b border-gray-200 dark:border-electric-violet/20 px-6 py-4 z-10">
+        <div className="sticky top-0 midnight-card border-b border-slate-200 dark:border-electric-violet/20 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Transazioni Rilevate</h2>
+            <h2 className="text-xl font-semibold text-sunset-text dark:text-white">Transazioni Rilevate</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-slate-400 hover:text-slate-600 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -489,10 +489,10 @@ export function PendingTransactionsModal({
             </button>
           </div>
           <div className="flex items-center justify-between mt-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-slate-600 dark:text-gray-400">
               {transactions.length} {transactions.length === 1 ? 'transazione' : 'transazioni'} da confermare
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-slate-500 dark:text-gray-400">
               {currentIndex + 1}/{transactions.length}
             </p>
           </div>
@@ -505,10 +505,10 @@ export function PendingTransactionsModal({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{currentTransaction.sourceApp || 'APP'}</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(currentTransaction.createdAt)}</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{currentTransaction.sourceApp || 'APP'}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(currentTransaction.createdAt)}</span>
                 </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white mb-1 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
+                <p className="text-sm font-medium text-slate-900 dark:text-white mb-1 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
                   {currentTransaction.description && currentTransaction.description.length > 100
                     ? currentTransaction.description.substring(0, 97) + '...'
                     : currentTransaction.description}
@@ -560,7 +560,7 @@ export function PendingTransactionsModal({
 
             {/* Type Selection */}
             <div className="mb-3">
-              <p className="text-xs font-medium text-gray-700 dark:text-slate-300 mb-2">Seleziona tipo:</p>
+              <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Seleziona tipo:</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleTypeChange(currentTransaction.id, 'expense')}
@@ -595,7 +595,7 @@ export function PendingTransactionsModal({
             {/* Account selection for expense/income */}
             {selectedType !== 'transfer' && (
               <div className="mb-3">
-                <p className="text-xs font-medium text-gray-700 dark:text-slate-300 mb-2">Seleziona conto:</p>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Seleziona conto:</p>
                 <select
                   value={currentAccountId}
                   onChange={(e) => handleAccountChange(currentTransaction.id, e.target.value)}
@@ -662,11 +662,11 @@ export function PendingTransactionsModal({
             {/* Expense-only fields */}
             {selectedType === 'expense' && (
               <div className="mb-3 p-3 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-sunset-coral/20 dark:border-electric-violet/20 rounded-lg">
-                <p className="text-xs font-medium text-gray-900 dark:text-white mb-2">Dettagli spesa:</p>
+                <p className="text-xs font-medium text-slate-900 dark:text-white mb-2">Dettagli spesa:</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs text-gray-700 dark:text-slate-300 font-medium block mb-1">Categoria (opzionale)</label>
+                    <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">Categoria (opzionale)</label>
                     <select
                       value={expenseMeta.category || ''}
                       onChange={(e) => handleExpenseCategoryChange(currentTransaction.id, e.target.value)}
@@ -682,7 +682,7 @@ export function PendingTransactionsModal({
                   </div>
 
                   <div>
-                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-gray-400 dark:text-slate-600' : 'text-gray-700 dark:text-slate-300'}`}>
+                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-slate-400 dark:text-slate-600' : 'text-slate-700 dark:text-slate-300'}`}>
                       Sottocategoria (opzionale)
                     </label>
                     <select
@@ -703,14 +703,14 @@ export function PendingTransactionsModal({
                 </div>
 
                 <div className="mt-3">
-                  <p className="text-xs font-medium text-gray-700 dark:text-slate-300 mb-2">Ricevute</p>
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Ricevute</p>
 
                   {expenseMeta.receipts?.length > 0 && (
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       {expenseMeta.receipts.map((receipt, index) => (
                         <div
                           key={index}
-                          className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-electric-violet/30 shadow-sm aspect-video bg-gray-50 dark:bg-midnight-card/50"
+                          className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-electric-violet/30 shadow-sm aspect-video bg-slate-50 dark:bg-midnight-card/50"
                         >
                           <img
                             src={`data:image/png;base64,${receipt}`}
@@ -762,7 +762,7 @@ export function PendingTransactionsModal({
                     onChange={(e) => handleSaveRuleChange(currentTransaction.id, e.target.checked)}
                     className="w-4 h-4 text-blue-600 border-gray-300 dark:border-electric-violet/30 rounded focus:ring-blue-500 bg-white dark:bg-midnight"
                   />
-                  <span className="text-sm text-gray-700 dark:text-slate-300">Ricorda per il futuro</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Ricorda per il futuro</span>
                 </label>
               </div>
             )}
@@ -774,7 +774,7 @@ export function PendingTransactionsModal({
                 disabled={!isTransferValid || processingId === currentTransaction.id}
                 className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${isTransferValid && processingId !== currentTransaction.id
                   ? 'bg-blue-600 dark:btn-electric hover:bg-blue-700 text-white'
-                  : 'bg-gray-300 dark:bg-midnight-card text-gray-500 dark:text-slate-500 cursor-not-allowed border dark:border-electric-violet/20'
+                  : 'bg-slate-300 dark:bg-midnight-card text-slate-500 dark:text-slate-500 cursor-not-allowed border dark:border-electric-violet/20'
                   }`}
               >
                 ✓ Conferma
@@ -782,7 +782,7 @@ export function PendingTransactionsModal({
               <button
                 onClick={() => handleIgnore(currentTransaction.id)}
                 disabled={processingId === currentTransaction.id}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-midnight-card dark:hover:bg-midnight-card/80 dark:border dark:border-electric-violet/20 text-gray-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-midnight-card dark:hover:bg-midnight-card/80 dark:border dark:border-electric-violet/20 text-slate-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
               >
                 ✕ Ignora
               </button>

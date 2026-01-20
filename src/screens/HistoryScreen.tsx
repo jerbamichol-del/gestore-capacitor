@@ -176,7 +176,7 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
   };
 
   return (
-    <div className={`relative bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight overflow-hidden transition-colors duration-200 select-none`}>
+    <div className={`relative bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight overflow-hidden transition-colors duration-200 select-none`}>
       <div className="absolute top-0 right-0 h-full flex items-center z-0">
         <button onClick={() => onDelete(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa" {...tapBridge}><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button>
       </div>

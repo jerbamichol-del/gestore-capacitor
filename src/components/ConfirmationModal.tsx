@@ -62,7 +62,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       aria-labelledby="modal-title"
     >
       <div
-        className={`bg-white dark:bg-midnight rounded-lg shadow-xl w-full max-w-md border dark:border-electric-violet/30 transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`midnight-card w-full max-w-md transform transition-all duration-300 ease-in-out ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -82,11 +82,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 bg-slate-50 dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-lg border-t dark:border-electric-violet/20">
+        <div className="px-6 py-4 bg-sunset-cream/40 dark:bg-midnight flex flex-col-reverse sm:flex-row sm:justify-end gap-3 rounded-b-2xl border-t border-slate-100 dark:border-electric-violet/20">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-midnight-card border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-midnight-card border border-slate-300 dark:border-electric-violet/30 rounded-lg shadow-sm hover:bg-sunset-peach/30 dark:hover:bg-slate-800 transition-colors"
           >
             {cancelButtonText}
           </button>

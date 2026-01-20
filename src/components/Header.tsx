@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({
   requestNotificationPermission = () => { }
 }) => {
   return (
-    <header className="bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight shadow-md sticky top-0 z-20 transition-colors duration-300">
+    <header className="bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight shadow-md sticky top-0 z-20 transition-colors duration-300">
       <div className="mx-auto">
         <div className="py-2 flex items-center justify-between gap-3 px-4 md:px-8 h-[58px]">
           <h1 className="text-xl font-bold text-slate-800 dark:text-white transition-colors">Gestore Spese</h1>

@@ -28,12 +28,12 @@
               violet: '#A855F7',
               pink: '#EC4899',
             },
-            sunset: {
-              cream: '#FFF8F0',
-              peach: '#FFDEE9',
-              coral: '#FF9966',
-              pink: '#FF5E62',
-              text: '#4A403A',
+            sunset: { // Keeping key 'sunset' temporarily to minimize component breakage during step-by-step migration, but values are MINT
+              cream: '#F2F4F2',    // Sage Off-White
+              peach: '#E8EBE8',    // Light Sage (Hover)
+              coral: '#C89F65',    // Earthy Gold (Accent)
+              pink: '#2D5A27',     // Forest Green (Primary)
+              text: '#1B3B1A',     // Dark Forest Green (Text)
             }
           }
         }
@@ -61,7 +61,7 @@
 
   <style>
     :root {
-      --sunset-cream: #FFF8F0;
+      --sunset-cream: #F2F4F2;
       --midnight: #0F172A;
       --midnight-card: #1E293B;
     }
@@ -82,29 +82,31 @@
       overscroll-behavior-y: contain;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      /* Sunset Serenity Background Gradient */
-      background: linear-gradient(135deg, #FFF5E1 0%, #FFEEEF 100%);
-      background-attachment: fixed;
+      /* Modern Mint Background */
+      background: #F2F4F2;
+      color: #1B3B1A;
     }
 
     .dark body {
       background: #0F172A;
-      /* Solid Midnight Blue */
+      color: white;
     }
 
-    /* Sunset Serenity Card Effect (Light Mode Default) */
+    /* Modern Mint Card Effect (Light Mode Default) */
     .midnight-card {
       background: #FFFFFF;
-      border: 1px solid rgba(255, 153, 102, 0.4);
-      /* Soft Coral */
-      box-shadow: 0 8px 32px 0 rgba(255, 153, 102, 0.12);
-      /* Warm Shadow */
+      border: 1px solid rgba(45, 90, 39, 0.08);
+      /* Organic Green Border */
+      box-shadow: 0 4px 20px -2px rgba(45, 90, 39, 0.05);
+      /* Soft Organic Shadow */
       transition: all 0.3s ease;
+      border-radius: 20px;
+      /* More rounded */
     }
 
     .midnight-card:hover {
-      border-color: rgba(255, 153, 102, 0.4);
-      box-shadow: 0 10px 32px 0 rgba(255, 153, 102, 0.2);
+      border-color: rgba(45, 90, 39, 0.15);
+      box-shadow: 0 8px 25px -5px rgba(45, 90, 39, 0.1);
     }
 
     /* Midnight Electric Card Effect (Dark Mode Override) */
@@ -112,6 +114,7 @@
       background: #1E293B;
       border: 1px solid rgba(168, 85, 247, 0.3);
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      border-radius: 16px;
     }
 
     .dark .midnight-card:hover {
@@ -121,11 +124,12 @@
 
     /* Button Styles */
 
-    /* Sunset Gradient (Light Mode) */
+    /* Modern Mint Gradient (Light Mode) */
     .btn-electric {
-      background: linear-gradient(135deg, #FF9966 0%, #FF5E62 100%);
+      background: linear-gradient(135deg, #2D5A27 0%, #3A7D34 100%);
+      /* Forest Green */
       color: white;
-      box-shadow: 0 4px 15px rgba(255, 94, 98, 0.3);
+      box-shadow: 0 4px 15px rgba(45, 90, 39, 0.25);
       transition: all 0.2s ease;
     }
 
@@ -179,9 +183,10 @@
 
     /* Pie chart text colors */
     :root {
-      --pie-text-primary: #4A403A;
-      /* Sunset Text */
-      --pie-text-secondary: #706560;
+      --pie-text-primary: #1B3B1A;
+      /* Dark Forest */
+      --pie-text-secondary: #4A5D4A;
+      /* Soft Sage Text */
     }
 
     .dark {

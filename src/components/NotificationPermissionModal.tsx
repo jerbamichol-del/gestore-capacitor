@@ -51,10 +51,10 @@ export function NotificationPermissionModal({
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-gray-700 text-sm leading-relaxed mb-2">
+              <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-2">
                 <strong>Perfetto!</strong> Il rilevamento automatico delle transazioni è ora attivo.
               </p>
-              <p className="text-gray-600 text-sm leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                 Quando riceverai una notifica bancaria, ti verrà chiesto se vuoi aggiungere la transazione.
               </p>
             </div>
@@ -112,7 +112,7 @@ export function NotificationPermissionModal({
         {/* Content - Scrollable */}
         <div className="px-4 py-4 overflow-y-auto flex-1">
           {/* Feature Description */}
-          <p className="text-gray-700 text-sm leading-relaxed mb-3">
+          <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-3">
             <strong>Rileva automaticamente</strong> le transazioni dalle notifiche bancarie e ti permette di aggiungerle con un clic.
           </p>
 
@@ -173,7 +173,7 @@ export function NotificationPermissionModal({
           </div>
 
           {/* Privacy */}
-          <div className="flex items-start gap-1.5 text-xs text-gray-600">
+          <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-400">
             <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
@@ -184,11 +184,11 @@ export function NotificationPermissionModal({
         </div>
 
         {/* Actions - Fixed Footer */}
-        <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-gray-100">
+        <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-slate-100 dark:border-electric-violet/20">
           <div className="flex gap-2 mb-2">
             <button
               onClick={onClose}
-              className="flex-1 px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors"
+              className="flex-1 px-3 py-2.5 bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/50 dark:hover:bg-midnight-card text-slate-700 dark:text-slate-200 text-sm font-semibold rounded-lg transition-colors border border-slate-300 dark:border-electric-violet/30"
             >
               Non ora
             </button>
@@ -206,7 +206,7 @@ export function NotificationPermissionModal({
               localStorage.setItem('notification_permission_dismissed_forever', 'true');
               onClose();
             }}
-            className="w-full text-xs text-gray-500 hover:text-gray-700 underline py-1"
+            className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline py-1"
           >
             Non mostrare più
           </button>

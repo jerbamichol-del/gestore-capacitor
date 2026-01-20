@@ -81,8 +81,8 @@ const InstallPwaModal: React.FC<InstallPwaModalProps> = ({ isOpen, onClose }) =>
               <button
                 onClick={handleCopy}
                 className={`w-[110px] flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 ${copied
-                    ? 'bg-green-600 text-white'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
               >
                 {copied ? <ClipboardDocumentCheckIcon className="w-5 h-5" /> : <ClipboardDocumentIcon className="w-5 h-5" />}
@@ -105,7 +105,7 @@ const InstallPwaModal: React.FC<InstallPwaModalProps> = ({ isOpen, onClose }) =>
             </p>
           </div>
         </div>
-        <div className="px-6 py-4 bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight flex justify-end">
+        <div className="px-6 py-4 bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight flex justify-end">
           <button
             type="button"
             onClick={onClose}

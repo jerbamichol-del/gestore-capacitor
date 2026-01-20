@@ -64,7 +64,7 @@ interface HistoryFilterCardProps {
 /* -------------------- Checkbox Component -------------------- */
 export const Checkbox: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked, onChange }) => (
   <div
-    className={`w-6 h-6 rounded border flex items-center justify-center transition-colors cursor-pointer ${checked ? 'bg-indigo-600 dark:bg-electric-violet border-black dark:border-white' : 'bg-[var(--sunset-cream, #FFF8F0)] dark:bg-midnight-card/50 border-slate-400 dark:border-electric-violet/30'}`}
+    className={`w-6 h-6 rounded border flex items-center justify-center transition-colors cursor-pointer ${checked ? 'bg-indigo-600 dark:bg-electric-violet border-black dark:border-white' : 'bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight-card/50 border-slate-400 dark:border-electric-violet/30'}`}
     onClick={(e) => { e.stopPropagation(); onChange(); }}
     onPointerDown={(e) => e.stopPropagation()}
   >
