@@ -1034,7 +1034,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
     >
       {/* Pull Tab */}
       <div
-        className="text-white dark:text-midnight absolute top-0 left-1/2 -translate-x-1/2 w-[88px] h-auto flex justify-center cursor-grab z-50"
+        className="text-sunset-cream dark:text-midnight absolute top-0 left-1/2 -translate-x-1/2 w-[88px] h-auto flex justify-center cursor-grab z-50"
         style={{ transform: 'translateX(-50%) translateY(-19px)' }}
         aria-hidden="true"
       >

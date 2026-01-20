@@ -54,10 +54,10 @@ export default function SmoothPullTab({
           <feDropShadow
             dx="0"
             dy="-3"
-            stdDeviation="2"
-            floodColor="currentColor"
-            floodOpacity="0.4"
-            className="text-slate-400 dark:text-electric-violet/30"
+            stdDeviation="5"
+            floodColor="#475569"
+            floodOpacity="0.6"
+            className="text-slate-600 dark:text-black"
           />
         </filter>
       </defs>
