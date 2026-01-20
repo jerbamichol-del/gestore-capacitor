@@ -128,8 +128,8 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = {
-        transform: transform 
-            ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)` 
+        transform: transform
+            ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
             : undefined,
         transition,
         zIndex: isDragging ? 100 : 'auto',
@@ -177,7 +177,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         const saved = localStorage.getItem('dashboard_order_safe');
         return saved ? JSON.parse(saved) : ['summary', 'categoryPie', 'trend'];
     });
-    
+
     const [activeId, setActiveId] = useState<string | null>(null);
 
     const sensors = useSensors(
@@ -190,7 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-    
+
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
     };
@@ -198,7 +198,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveId(null);
-        
+
         if (active.id !== over?.id) {
             setItems((items) => {
                 const oldIndex = items.indexOf(active.id as string);
@@ -570,7 +570,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             );
         } else if (id === 'categoryPie') {
             content = (
-                <div className="bg-sunset-cream/80 border border-sunset-coral/20 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
+                <div className="midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
                     <div className="mb-2 text-center">
                         <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
                         <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
@@ -833,7 +833,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 {items.map(id => renderCard(id))}
                             </SortableContext>
                         </div>
-                        
+
                         <DragOverlay>
                             {activeId ? renderCard(activeId, true) : null}
                         </DragOverlay>
