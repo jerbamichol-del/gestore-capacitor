@@ -660,7 +660,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         if (isOverlay) {
             return (
-                <div className="cursor-grabbing scale-105 shadow-2xl z-50">
+                <div className="cursor-grabbing scale-[0.65] shadow-2xl z-50">
                     {content}
                 </div>
             );
