@@ -30,7 +30,6 @@ import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { useTheme } from '../hooks/useTheme';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 const categoryHexColors: Record<string, string> = {
     'Trasporti': '#64748b',
@@ -129,10 +128,12 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = {
-        transform: transform ? CSS.Translate.toString({ ...transform, scaleX: isDragging ? 1.02 : 1, scaleY: isDragging ? 1.02 : 1 }) : undefined,
+        transform: transform 
+            ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0) scale(${isDragging ? 1.02 : 1})` 
+            : undefined,
         transition: isDragging ? 'none' : transition,
         zIndex: isDragging ? 100 : 'auto',
-        opacity: isDragging ? 0.6 : 1,
+        opacity: isDragging ? 0.8 : 1,
         position: 'relative' as const,
         willChange: isDragging ? 'transform' : 'auto',
         boxShadow: isDragging ? '0 15px 30px -5px rgba(0,0,0,0.3)' : 'none',
@@ -671,12 +672,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
                         autoScroll={{
-                            acceleration: 5,
-                            interval: 5,
-                            layoutShiftCompensation: true,
+                            acceleration: 15,
+                            interval: 10,
+                            layoutShiftCompensation: false,
                             threshold: {
-                                x: 0.15,
-                                y: 0.15
+                                x: 0.2,
+                                y: 0.2
                             }
                         }}
                     >
