@@ -14,6 +14,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Expense } from '../types';
 
 export class AutoTransactionService {
+  private static readonly IGNORED_HASHES_KEY = 'auto_transactions_ignored_hashes';
 
   /**
    * Genera hash univoco per detect duplicati
@@ -30,9 +31,66 @@ export class AutoTransactionService {
   }
 
   /**
-   * Controlla se transazione già esiste (duplicato)
+   * Get permanently ignored hashes with timestamps
+   */
+  private static getIgnoredHashes(): Record<string, number> {
+    const stored = localStorage.getItem(this.IGNORED_HASHES_KEY);
+    return stored ? JSON.parse(stored) : {};
+  }
+
+  /**
+   * Save a hash to the permanent ignored list
+   */
+  private static addIgnoredHash(hash: string): void {
+    const ignored = this.getIgnoredHashes();
+    ignored[hash] = Date.now();
+    localStorage.setItem(this.IGNORED_HASHES_KEY, JSON.stringify(ignored));
+    console.log(`📌 Hash permanently ignored: ${hash}`);
+  }
+
+  /**
+   * Check if a hash is in the permanent ignored list
+   */
+  private static isHashIgnored(hash: string): boolean {
+    const ignored = this.getIgnoredHashes();
+    return hash in ignored;
+  }
+
+  /**
+   * Cleanup ignored hashes older than 90 days (API window)
+   */
+  static cleanupIgnoredHashes(): number {
+    const ignored = this.getIgnoredHashes();
+    const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+    let removed = 0;
+
+    const filtered: Record<string, number> = {};
+    for (const [hash, timestamp] of Object.entries(ignored)) {
+      if (timestamp > ninetyDaysAgo) {
+        filtered[hash] = timestamp;
+      } else {
+        removed++;
+      }
+    }
+
+    localStorage.setItem(this.IGNORED_HASHES_KEY, JSON.stringify(filtered));
+    if (removed > 0) {
+      console.log(`🧹 Cleaned up ${removed} ignored hashes older than 90 days`);
+    }
+    return removed;
+  }
+
+  /**
+   * Controlla se transazione già esiste (duplicato o ignorato permanentemente)
    */
   static async isDuplicate(hash: string): Promise<boolean> {
+    // Check permanent ignored list first (faster)
+    if (this.isHashIgnored(hash)) {
+      console.log(`⏭️ Transaction hash in permanent ignore list, skipping`);
+      return true;
+    }
+
+    // Check database for existing transactions
     const existing = await getAutoTransactionByHash(hash);
     return existing !== undefined;
   }
@@ -190,9 +248,18 @@ export class AutoTransactionService {
   }
 
   /**
-   * Ignora transazione
+   * Ignora transazione e salva hash permanentemente
    */
   static async ignoreTransaction(id: string): Promise<void> {
+    // Get transaction to extract hash
+    const allTransactions = await getAutoTransactions();
+    const tx = allTransactions.find(t => t.id === id);
+
+    if (tx) {
+      // Add hash to permanent ignored list
+      this.addIgnoredHash(tx.sourceHash);
+    }
+
     await updateAutoTransaction(id, {
       status: 'ignored',
       confirmedAt: Date.now()
@@ -276,11 +343,15 @@ export class AutoTransactionService {
   }
 
   /**
-   * Pulisci transazioni vecchie (oltre 30 giorni)
+   * Pulisci transazioni vecchie (oltre 30 giorni) e hash ignorati oltre 90 giorni
    */
   static async cleanupOldTransactions(): Promise<number> {
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    return await deleteOldAutoTransactions(thirtyDaysAgo);
+    const deletedTx = await deleteOldAutoTransactions(thirtyDaysAgo);
+    const deletedHashes = this.cleanupIgnoredHashes();
+
+    console.log(`🧹 Cleanup complete: ${deletedTx} old transactions, ${deletedHashes} old ignored hashes`);
+    return deletedTx;
   }
 
   /**

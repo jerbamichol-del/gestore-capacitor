@@ -617,7 +617,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
             {/* MODAL EDIT SALDO FULL SCREEN */}
             {editingAccountId && (
                 <div
-                    className={`fixed inset-0 z-[60] dark:bg-midnight flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                    className={`fixed inset-0 z-[60] bg-sunset-cream dark:bg-midnight flex flex-col transition-all duration-300 ${isModalAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                     onClick={(e) => { e.stopPropagation(); if (openTransferId) setOpenTransferId(null); }}
                 >
                     <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-electric-violet/10 midnight-card sticky top-0 z-40">
