@@ -28,7 +28,7 @@ import { BudgetTrendChart } from './BudgetTrendChart';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { useTheme } from '../hooks/useTheme';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 
 const categoryHexColors: Record<string, string> = {
@@ -129,14 +129,12 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
 
     const style = {
         transform: transform 
-            ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0) scale(${isDragging ? 1.02 : 1})` 
+            ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)` 
             : undefined,
-        transition: isDragging ? 'none' : transition,
+        transition,
         zIndex: isDragging ? 100 : 'auto',
-        opacity: isDragging ? 0.8 : 1,
+        opacity: isDragging ? 0 : 1, // Nasconde l'originale, DragOverlay mostra la copia
         position: 'relative' as const,
-        willChange: isDragging ? 'transform' : 'auto',
-        boxShadow: isDragging ? '0 15px 30px -5px rgba(0,0,0,0.3)' : 'none',
     };
 
     return (
@@ -179,6 +177,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         const saved = localStorage.getItem('dashboard_order_safe');
         return saved ? JSON.parse(saved) : ['summary', 'categoryPie', 'trend'];
     });
+    
+    const [activeId, setActiveId] = useState<string | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -190,9 +190,15 @@ const Dashboard: React.FC<DashboardProps> = ({
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
+    
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+    };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
+        setActiveId(null);
+        
         if (active.id !== over?.id) {
             setItems((items) => {
                 const oldIndex = items.indexOf(active.id as string);
@@ -527,6 +533,146 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     const listTx = -activeViewIndex * (100 / 3);
 
+    const renderCard = (id: string, isOverlay: boolean = false) => {
+        let content = null;
+
+        if (id === 'summary') {
+            content = (
+                <div className="midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
+                    <div className="mb-4">
+                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
+                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
+                    </div>
+
+                    {categoryData.length > 0 ? (
+                        <div className="space-y-4 flex-grow">
+                            {categoryData.map(cat => {
+                                const style = getCategoryStyle(cat.name);
+                                const percentage = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
+                                return (
+                                    <div key={cat.name} className="flex items-center gap-4 text-base">
+                                        <style.Icon className="w-10 h-10 flex-shrink-0" />
+                                        <div className="flex-grow">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-300">{style.label}</span>
+                                                <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
+                                            </div>
+                                            <div className="w-full bg-sunset-cream/90 dark:bg-slate-700 rounded-full h-2.5">
+                                                <div className="bg-indigo-500 dark:bg-electric-violet h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : <p className="text-center text-slate-500 dark:text-slate-400 flex-grow flex items-center justify-center">Nessuna spesa registrata in questo periodo.</p>}
+                </div>
+            );
+        } else if (id === 'categoryPie') {
+            content = (
+                <div className="bg-sunset-cream/80 border border-sunset-coral/20 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
+                    <div className="mb-2 text-center">
+                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
+                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
+                    </div>
+
+                    {categoryData.length > 0 ? (
+                        <div className="relative cursor-pointer" onClick={handleChartBackgroundClick}>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Pie
+                                        data={categoryData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={68}
+                                        outerRadius={102}
+                                        cornerRadius={6}
+                                        fill="#8884d8"
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        {...({ activeIndex: activeIndex ?? undefined } as any)}
+                                        activeShape={renderActiveShape}
+                                    >
+                                        {categoryData.map((entry) => {
+                                            const color = categoryHexColors[entry.name] || DEFAULT_COLOR;
+                                            return (
+                                                <Cell
+                                                    key={`cell-${entry.name}`}
+                                                    fill={color}
+                                                    fillOpacity={isDark ? 0.15 : 1}
+                                                    stroke={isDark ? color : "none"}
+                                                    strokeWidth={isDark ? 2 : 0}
+                                                    style={isDark ? { filter: `drop-shadow(0 0 3px ${color})` } as React.CSSProperties : {}}
+                                                />
+                                            );
+                                        })}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {activeIndex === null && (
+                                <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
+                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
+                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-white mt-1">
+                                        {formatCurrency(totalExpenses)}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    ) : <p className="text-center text-slate-500 py-16">Nessun dato da visualizzare.</p>}
+
+                    {categoryData.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
+                                {categoryData.map((entry, index) => {
+                                    const style = getCategoryStyle(entry.name);
+                                    return (
+                                        <button
+                                            key={`item-${index}`}
+                                            onClick={(e) => handleLegendItemClick(index, e)}
+                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-sunset-cream/60 dark:bg-midnight-card hover:bg-sunset-peach/50 dark:hover:bg-midnight-card/80`}
+                                        >
+                                            <style.Icon className="w-8 h-8 flex-shrink-0" />
+                                            <div className="min-w-0 pr-2">
+                                                <p className={`font-semibold text-sm truncate text-slate-700 dark:text-slate-300`}>{style.label}</p>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        } else if (id === 'trend') {
+            content = (
+                <BudgetTrendChart
+                    expenses={expenses}
+                    accounts={accounts}
+                    periodType={periodType}
+                    periodDate={periodDate}
+                    activeViewIndex={activeViewIndex}
+                    quickFilter={quickFilter}
+                    customRange={customRange}
+                />
+            );
+        }
+
+        if (isOverlay) {
+            return (
+                <div className="cursor-grabbing scale-105 shadow-2xl z-50">
+                    {content}
+                </div>
+            );
+        }
+
+        return (
+            <SortableItem key={id} id={id}>
+                {content}
+            </SortableItem>
+        );
+    };
+
     return (
         <>
             <div className="md:p-6 pb-32 md:pb-32 space-y-6 dark:bg-midnight" {...tapBridgeHandlers}>
@@ -670,147 +816,27 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
-                        autoScroll={false}
+                        autoScroll={{
+                            acceleration: 15,
+                            interval: 10,
+                            layoutShiftCompensation: false,
+                            threshold: {
+                                x: 0.2,
+                                y: 0.2
+                            }
+                        }}
                     >
                         <div className="lg:col-span-2 flex flex-col gap-6">
                             <SortableContext items={items} strategy={verticalListSortingStrategy}>
-                                {items.map(id => {
-                                    if (id === 'summary') {
-                                        return (
-                                            <SortableItem key={id} id={id}>
-                                                <div className="midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
-                                                    <div className="mb-4">
-                                                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
-                                                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
-                                                    </div>
-
-                                                    {categoryData.length > 0 ? (
-                                                        <div className="space-y-4 flex-grow">
-                                                            {categoryData.map(cat => {
-                                                                const style = getCategoryStyle(cat.name);
-                                                                const percentage = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
-                                                                return (
-                                                                    <div key={cat.name} className="flex items-center gap-4 text-base">
-                                                                        <style.Icon className="w-10 h-10 flex-shrink-0" />
-                                                                        <div className="flex-grow">
-                                                                            <div className="flex justify-between items-center mb-1">
-                                                                                <span className="font-semibold text-slate-700 dark:text-slate-300">{style.label}</span>
-                                                                                <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
-                                                                            </div>
-                                                                            <div className="w-full bg-sunset-cream/90 dark:bg-slate-700 rounded-full h-2.5">
-                                                                                <div className="bg-indigo-500 dark:bg-electric-violet h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    ) : <p className="text-center text-slate-500 dark:text-slate-400 flex-grow flex items-center justify-center">Nessuna spesa registrata in questo periodo.</p>}
-                                                </div>
-                                            </SortableItem>
-                                        );
-                                    }
-
-                                    if (id === 'categoryPie') {
-                                        return (
-                                            <SortableItem key={id} id={id}>
-                                                <div className="bg-sunset-cream/80 border border-sunset-coral/20 midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
-                                                    <div className="mb-2 text-center">
-                                                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
-                                                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
-                                                    </div>
-
-                                                    {categoryData.length > 0 ? (
-                                                        <div className="relative cursor-pointer" onClick={handleChartBackgroundClick}>
-                                                            <ResponsiveContainer width="100%" height={300}>
-                                                                <PieChart>
-                                                                    <Pie
-                                                                        data={categoryData}
-                                                                        cx="50%"
-                                                                        cy="50%"
-                                                                        innerRadius={68}
-                                                                        outerRadius={102}
-                                                                        cornerRadius={6}
-                                                                        fill="#8884d8"
-                                                                        paddingAngle={4}
-                                                                        dataKey="value"
-                                                                        nameKey="name"
-                                                                        {...({ activeIndex: activeIndex ?? undefined } as any)}
-                                                                        activeShape={renderActiveShape}
-                                                                    >
-                                                                        {categoryData.map((entry) => {
-                                                                            const color = categoryHexColors[entry.name] || DEFAULT_COLOR;
-                                                                            return (
-                                                                                <Cell
-                                                                                    key={`cell-${entry.name}`}
-                                                                                    fill={color}
-                                                                                    fillOpacity={isDark ? 0.15 : 1}
-                                                                                    stroke={isDark ? color : "none"}
-                                                                                    strokeWidth={isDark ? 2 : 0}
-                                                                                    style={isDark ? { filter: `drop-shadow(0 0 3px ${color})` } as React.CSSProperties : {}}
-                                                                                />
-                                                                            );
-                                                                        })}
-                                                                    </Pie>
-                                                                </PieChart>
-                                                            </ResponsiveContainer>
-                                                            {activeIndex === null && (
-                                                                <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
-                                                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
-                                                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-white mt-1">
-                                                                        {formatCurrency(totalExpenses)}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ) : <p className="text-center text-slate-500 py-16">Nessun dato da visualizzare.</p>}
-
-                                                    {categoryData.length > 0 && (
-                                                        <div className="mt-4 pt-4 border-t border-slate-200">
-                                                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
-                                                                {categoryData.map((entry, index) => {
-                                                                    const style = getCategoryStyle(entry.name);
-                                                                    return (
-                                                                        <button
-                                                                            key={`item-${index}`}
-                                                                            onClick={(e) => handleLegendItemClick(index, e)}
-                                                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-sunset-cream/60 dark:bg-midnight-card hover:bg-sunset-peach/50 dark:hover:bg-midnight-card/80`}
-                                                                        >
-                                                                            <style.Icon className="w-8 h-8 flex-shrink-0" />
-                                                                            <div className="min-w-0 pr-2">
-                                                                                <p className={`font-semibold text-sm truncate text-slate-700 dark:text-slate-300`}>{style.label}</p>
-                                                                            </div>
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </SortableItem>
-                                        );
-                                    }
-
-                                    if (id === 'trend') {
-                                        return (
-                                            <SortableItem key={id} id={id}>
-                                                <BudgetTrendChart
-                                                    expenses={expenses}
-                                                    accounts={accounts}
-                                                    periodType={periodType}
-                                                    periodDate={periodDate}
-                                                    activeViewIndex={activeViewIndex}
-                                                    quickFilter={quickFilter}
-                                                    customRange={customRange}
-                                                />
-                                            </SortableItem>
-                                        );
-                                    }
-                                    return null;
-                                })}
+                                {items.map(id => renderCard(id))}
                             </SortableContext>
                         </div>
+                        
+                        <DragOverlay>
+                            {activeId ? renderCard(activeId, true) : null}
+                        </DragOverlay>
                     </DndContext>
                 </div>
 
