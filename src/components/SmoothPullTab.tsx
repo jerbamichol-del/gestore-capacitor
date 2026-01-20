@@ -82,11 +82,19 @@ export default function SmoothPullTab({
         />
       </g>
 
-      {/* Dark mode path with purple border */}
+      {/* Dark mode path with purple border only on top and sides (not base) */}
       <g className="hidden dark:block" filter={`url(#${darkShadowId})`}>
+        {/* Fill */}
         <path
           d={d}
           fill={fill}
+          stroke="none"
+          vectorEffect="non-scaling-stroke"
+        />
+        {/* Border only on curved parts, excluding the base */}
+        <path
+          d={`M 0 ${H} C ${bulgeFactor} ${H}, ${x1 - bulgeFactor} 0, ${x1} 0 L ${x2} 0 C ${x2 + bulgeFactor} 0, ${W - bulgeFactor} ${H}, ${W} ${H}`}
+          fill="none"
           stroke="rgba(168, 85, 247, 0.3)"
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
