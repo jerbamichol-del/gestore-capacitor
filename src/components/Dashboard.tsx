@@ -74,10 +74,10 @@ const renderActiveShape = (props: any) => {
                 startAngle={startAngle}
                 endAngle={endAngle}
                 fill={fill}
-                fillOpacity={isDark ? 0.6 : 1}
+                fillOpacity={isDark ? 0.15 : 1}
                 stroke={isDark ? fill : "none"}
                 strokeWidth={isDark ? 3 : 0}
-                style={isDark ? { filter: `drop-shadow(0 0 8px ${shadowColor})` } : {}}
+                style={isDark ? { filter: `drop-shadow(0 0 5px ${shadowColor})` } : {}}
             />
         </g>
     );
@@ -672,12 +672,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
                         autoScroll={{
-                            acceleration: 20,
-                            interval: 10,
-                            layoutShiftCompensation: true,
+                            acceleration: 0,
+                            interval: 5,
+                            layoutShiftCompensation: false,
                             threshold: {
-                                x: 0.2, // 20% from edge
-                                y: 0.2
+                                x: 0.1,
+                                y: 0.1
                             }
                         }}
                     >
@@ -739,8 +739,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                                         cy="50%"
                                                                         innerRadius={68}
                                                                         outerRadius={102}
+                                                                        cornerRadius={6}
                                                                         fill="#8884d8"
-                                                                        paddingAngle={2}
+                                                                        paddingAngle={4}
                                                                         dataKey="value"
                                                                         nameKey="name"
                                                                         {...({ activeIndex: activeIndex ?? undefined } as any)}
@@ -752,10 +753,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                                                 <Cell
                                                                                     key={`cell-${entry.name}`}
                                                                                     fill={color}
-                                                                                    fillOpacity={isDark ? 0.6 : 1}
+                                                                                    fillOpacity={isDark ? 0.15 : 1}
                                                                                     stroke={isDark ? color : "none"}
-                                                                                    strokeWidth={isDark ? 3 : 0}
-                                                                                    style={isDark ? { filter: `drop-shadow(0 0 6px ${color})` } as React.CSSProperties : {}}
+                                                                                    strokeWidth={isDark ? 2 : 0}
+                                                                                    style={isDark ? { filter: `drop-shadow(0 0 3px ${color})` } as React.CSSProperties : {}}
                                                                                 />
                                                                             );
                                                                         })}
