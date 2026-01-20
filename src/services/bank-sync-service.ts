@@ -14,6 +14,9 @@ export class BankSyncService {
     private static readonly STORAGE_KEY_MAPPINGS = 'bank_sync_account_mappings';
     private static readonly BASE_URL = 'https://api.enablebanking.com';
 
+    // Sync lock to prevent concurrent syncs
+    private static isSyncing = false;
+
     /**
      * Check if a specific bank is handled by API
      */
@@ -335,7 +338,7 @@ export class BankSyncService {
     }
 
     /**
-     * Fetch all authorized accounts, removing expired sessions
+     * Fetch all authorized accounts, removing expired sessions and duplicate connections
      */
     static async fetchAccounts(): Promise<any[]> {
         const creds = this.getCredentials();
@@ -345,6 +348,7 @@ export class BankSyncService {
         const sessions = await this.getSessions();
         let allAccounts = new Map<string, any>();
         let expiredSessions: string[] = [];
+        let duplicateSessions: string[] = [];
         let validSessionCount = 0;
 
         for (const sessionId of sessions) {
@@ -359,6 +363,8 @@ export class BankSyncService {
                     const data = await response.json();
                     if (data.accounts_data) {
                         console.log(`Session ${sessionId} returned ${data.accounts_data.length} accounts`);
+                        let sessionHasUniqueAccount = false;
+
                         // De-duplicate accounts by UID
                         for (const acc of data.accounts_data) {
                             const uid = String(acc.uid).toLowerCase();
@@ -367,12 +373,20 @@ export class BankSyncService {
                                     ...acc,
                                     _sessionId: sessionId
                                 });
+                                sessionHasUniqueAccount = true;
                             } else {
-                                console.log(`Skipping duplicate account ${acc.uid} (normalized: ${uid}) already seen`);
+                                console.log(`🔄 Duplicate account ${acc.uid} already covered by another session`);
                             }
                         }
+
+                        // If this session only provided duplicate accounts, mark it for removal
+                        if (!sessionHasUniqueAccount && data.accounts_data.length > 0) {
+                            console.log(`🗑️ Session ${sessionId} is redundant (all accounts already covered), marking for cleanup`);
+                            duplicateSessions.push(sessionId);
+                        } else {
+                            validSessionCount++;
+                        }
                     }
-                    validSessionCount++;
                 } else if (response.status === 401) {
                     // Session expired
                     const errorText = await response.text();
@@ -389,6 +403,12 @@ export class BankSyncService {
             await this.removeSession(expiredId);
         }
 
+        // Remove duplicate/redundant sessions
+        for (const duplicateId of duplicateSessions) {
+            await this.removeSession(duplicateId);
+            console.log(`✅ Removed redundant session: ${duplicateId}`);
+        }
+
         // If all sessions expired, throw specific error
         if (expiredSessions.length > 0 && validSessionCount === 0) {
             throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute. Ricollega la banca dalle impostazioni.');
@@ -396,6 +416,10 @@ export class BankSyncService {
 
         if (expiredSessions.length > 0 && validSessionCount > 0) {
             console.warn(`${expiredSessions.length} sessioni scadute rimosse, ${validSessionCount} ancora valide`);
+        }
+
+        if (duplicateSessions.length > 0) {
+            console.log(`🧹 Pulite ${duplicateSessions.length} sessioni duplicate`);
         }
 
         return Array.from(allAccounts.values());
@@ -595,8 +619,17 @@ export class BankSyncService {
 
     /**
      * Sync all accounts (Transactions + Balances)
+     * Includes lock to prevent concurrent syncs
      */
     static async syncAll(): Promise<{ transactions: number, adjustments: number }> {
+        // Prevent concurrent syncs
+        if (this.isSyncing) {
+            console.log('⏳ Sync already in progress, skipping duplicate call');
+            return { transactions: 0, adjustments: 0 };
+        }
+
+        this.isSyncing = true;
+
         try {
             const accounts = await this.fetchAccounts();
             console.log('Fetched accounts:', JSON.stringify(accounts, null, 2));
@@ -665,6 +698,9 @@ export class BankSyncService {
         } catch (error) {
             console.error('Bank sync failed:', error);
             throw error;
+        } finally {
+            // Always release the lock
+            this.isSyncing = false;
         }
     }
 
