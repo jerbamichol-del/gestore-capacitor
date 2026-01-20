@@ -129,18 +129,17 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = {
-        transform: CSS.Transform.toString(transform ? { ...transform, scaleX: isDragging ? 0.95 : 1, scaleY: isDragging ? 0.95 : 1 } : null),
-        transition: isDragging ? undefined : transition,
-        zIndex: isDragging ? 50 : 'auto',
-        opacity: isDragging ? 0.9 : 1,
+        transform: transform ? CSS.Translate.toString({ ...transform, scaleX: isDragging ? 1.02 : 1, scaleY: isDragging ? 1.02 : 1 }) : undefined,
+        transition: isDragging ? 'none' : transition,
+        zIndex: isDragging ? 100 : 'auto',
+        opacity: isDragging ? 0.6 : 1,
         position: 'relative' as const,
-        touchAction: 'manipulation', // Allow scrolling on the card content
-        boxShadow: isDragging ? '0 10px 30px -10px rgba(0,0,0,0.5)' : 'none',
-        borderRadius: isDragging ? '16px' : '0'
+        willChange: isDragging ? 'transform' : 'auto',
+        boxShadow: isDragging ? '0 15px 30px -5px rgba(0,0,0,0.3)' : 'none',
     };
 
     return (
-        <div ref={setNodeRef} style={style} className="group relative">
+        <div ref={setNodeRef} style={style} className={`group relative ${isDragging ? 'z-50' : ''}`}>
             {/* Drag Handle - Visible on hover or always on touch if preferred */}
             <div
                 {...attributes}
@@ -672,12 +671,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
                         autoScroll={{
-                            acceleration: 10,
-                            interval: 10,
-                            layoutShiftCompensation: false,
+                            acceleration: 5,
+                            interval: 5,
+                            layoutShiftCompensation: true,
                             threshold: {
-                                x: 0.25,
-                                y: 0.25
+                                x: 0.15,
+                                y: 0.15
                             }
                         }}
                     >
