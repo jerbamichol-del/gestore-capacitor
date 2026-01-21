@@ -161,11 +161,11 @@ export const CustomDateRangeInputs: React.FC<{
   return (
     <div
       className={
-        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-indigo-600 dark:border-electric-violet/50 bg-sunset-peach/40 dark:bg-electric-violet/20`
+        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-indigo-600 dark:border-electric-violet/50 bg-white dark:bg-electric-violet/20`
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
-        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor}`}>
+        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor} bg-sunset-peach/40 dark:bg-transparent`}>
           {range.start ? formatDate(range.start) : 'Dal'}
         </div>
         <input
@@ -181,7 +181,7 @@ export const CustomDateRangeInputs: React.FC<{
       </label>
       <div className="w-px my-1 bg-indigo-200" />
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
-        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor}`}>
+        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor} bg-sunset-peach/40 dark:bg-transparent`}>
           {range.end ? formatDate(range.end) : 'Al'}
         </div>
         <input
@@ -337,7 +337,7 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(-1)}
           type="button"
-          className={`h-full px-4 rounded-l-lg ${compact ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+          className={`h-full px-4 rounded-l-lg bg-sunset-peach/40 dark:bg-transparent ${compact ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-600'}`}
           aria-label="Periodo precedente"
           data-no-drag
           {...tapBridge}
@@ -359,7 +359,7 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(+1)}
           type="button"
-          className={`h-full px-4 rounded-r-lg ${compact ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+          className={`h-full px-4 rounded-r-lg bg-sunset-peach/40 dark:bg-transparent ${compact ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-600'}`}
           aria-label="Periodo successivo"
           data-no-drag
           {...tapBridge}
