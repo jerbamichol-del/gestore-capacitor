@@ -129,8 +129,8 @@ export const CustomDateRangeInputs: React.FC<{
   compact?: boolean;
   tapBridge?: any;
 }> = ({ range, onChange, isActive, compact, tapBridge }) => {
-  // MODIFICATO: Colori sempre attivi (Indigo) come richiesto
-  const textColor = 'text-sunset-coral dark:text-electric-violet';
+  // MODIFICATO: Colore testo nero in light mode, viola in dark
+  const textColor = 'text-slate-900 dark:text-electric-violet';
   const textSize = 'text-sm font-semibold';
 
   const formatDate = (iso: string) => {
@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
   return (
     <div
       className={
-        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-indigo-600 dark:border-electric-violet/50 bg-indigo-50 dark:bg-electric-violet/20`
+        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-indigo-600 dark:border-electric-violet/50 bg-sunset-peach/40 dark:bg-electric-violet/20`
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -348,8 +348,8 @@ export const PeriodNavigator: React.FC<{
           onClick={() => onMenuToggle(!isMenuOpen)}
           type="button"
           className={
-            `flex-1 h-full text-sm font-semibold bg-indigo-100 dark:bg-electric-violet/20 text-indigo-700 dark:text-electric-violet ` +
-            (compact ? '' : ' hover:bg-indigo-200 dark:hover:bg-electric-violet/30 transition-colors')
+            `flex-1 h-full text-sm font-semibold bg-sunset-peach/40 dark:bg-electric-violet/20 text-slate-900 dark:text-electric-violet ` +
+            (compact ? '' : ' hover:bg-sunset-peach/60 dark:hover:bg-electric-violet/30 transition-colors')
           }
           data-no-drag
           {...tapBridge}
@@ -386,7 +386,7 @@ export const PeriodNavigator: React.FC<{
                 className={
                   'w-full text-left px-4 py-2 text-sm font-semibold rounded-lg ' +
                   (isActive && periodType === v
-                    ? 'bg-indigo-100 dark:bg-electric-violet/20 text-indigo-800 dark:text-electric-violet'
+                    ? 'bg-sunset-peach/40 dark:bg-electric-violet/20 text-slate-900 dark:text-electric-violet'
                     : 'bg-slate-50 dark:bg-midnight-card/50 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-midnight-card')
                 }
                 {...tapBridge}
