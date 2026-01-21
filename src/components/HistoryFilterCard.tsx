@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
   return (
     <div
       className={
-        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-sunset-pink/20 dark:border-electric-violet/50 bg-sunset-peach/30 dark:bg-electric-violet/20`
+        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-sunset-pink/20 dark:border-electric-violet/50 bg-sunset-peach/40 dark:bg-electric-violet/20`
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -337,7 +337,7 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(-1)}
           type="button"
-          className={`h-full px-4 rounded-l-lg`}
+          className={`h-full px-4 rounded-l-lg bg-transparent hover:bg-transparent active:bg-transparent transition-none`}
           aria-label="Periodo precedente"
           data-no-drag
           {...tapBridge}
@@ -348,8 +348,8 @@ export const PeriodNavigator: React.FC<{
           onClick={() => onMenuToggle(!isMenuOpen)}
           type="button"
           className={
-            `flex-1 h-full text-sm font-semibold bg-sunset-peach/30 dark:bg-electric-violet/20 text-black dark:text-electric-violet ` +
-            (compact ? '' : ' hover:bg-sunset-peach/50 dark:hover:bg-electric-violet/30 transition-colors')
+            `flex-1 h-full text-sm font-semibold bg-sunset-peach/40 dark:bg-electric-violet/20 text-black dark:text-electric-violet ` +
+            (compact ? '' : ' hover:bg-sunset-peach/60 dark:hover:bg-electric-violet/30 transition-colors')
           }
           data-no-drag
           {...tapBridge}
@@ -359,7 +359,7 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(+1)}
           type="button"
-          className={`h-full px-4 rounded-r-lg`}
+          className={`h-full px-4 rounded-r-lg bg-transparent hover:bg-transparent active:bg-transparent transition-none`}
           aria-label="Periodo successivo"
           data-no-drag
           {...tapBridge}
