@@ -1103,8 +1103,9 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onClickCapture={handleClickCapture}
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
+      data-filter-card
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col shadow-[0_-10px_35px_rgba(0,0,0,0.15)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.6)]"
+      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
@@ -1115,10 +1116,17 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         opacity: laidOut ? 1 : 0,
         pointerEvents: laidOut ? 'auto' : 'none',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        filter: 'url(#header-shadow-light)'
       }}
       onTransitionEnd={() => setAnim(false)}
     >
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .dark [data-filter-card] {
+          filter: url(#header-shadow-dark) !important;
+        }
+      `}} />
       {/* Integrated Header (SVG Pull Tab + Corners + Shadow) */}
       <IntegratedFilterHeader isPanelOpen={isPanelOpen} />
 
