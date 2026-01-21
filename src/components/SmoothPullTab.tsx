@@ -7,6 +7,7 @@ type Props = {
   stroke?: string;
   strokeWidth?: number;
   className?: string;
+  sunkHeight?: number;
 };
 
 /**
@@ -19,6 +20,7 @@ export default function SmoothPullTab({
   stroke = "none",
   strokeWidth = 0,
   className = "",
+  sunkHeight = 0,
 }: Props) {
   const W = Number(width);
   const H = Number(height);
@@ -50,12 +52,17 @@ export default function SmoothPullTab({
       style={{ overflow: 'visible' }} // Allow shadow to render outside the viewbox
     >
       <defs>
+        {/* Clip path to hide everything below the panel's edge */}
+        <clipPath id="smooth-pull-tab-clip">
+          <rect x="-50" y="-50" width={W + 100} height={H - sunkHeight} />
+        </clipPath>
+
         {/* Light mode shadow: slate with 0.6 opacity */}
         <filter id={lightShadowId} x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow
             dx="0"
             dy="-3"
-            stdDeviation="5"
+            stdDeviation="3"
             floodColor="#475569"
             floodOpacity="0.6"
           />
@@ -65,7 +72,7 @@ export default function SmoothPullTab({
           <feDropShadow
             dx="0"
             dy="-3"
-            stdDeviation="5"
+            stdDeviation="3"
             floodColor="#000000"
             floodOpacity="0.8"
           />
@@ -73,7 +80,7 @@ export default function SmoothPullTab({
       </defs>
 
       {/* Light mode path */}
-      <g className="dark:hidden" filter={`url(#${lightShadowId})`}>
+      <g className="dark:hidden" filter={`url(#${lightShadowId})`} clipPath="url(#smooth-pull-tab-clip)">
         <path
           d={d}
           fill={fill}
@@ -83,7 +90,7 @@ export default function SmoothPullTab({
       </g>
 
       {/* Dark mode path with purple border only on top and sides (not base) */}
-      <g className="hidden dark:block" filter={`url(#${darkShadowId})`}>
+      <g className="hidden dark:block" filter={`url(#${darkShadowId})`} clipPath="url(#smooth-pull-tab-clip)">
         {/* Fill */}
         <path
           d={d}
@@ -91,9 +98,9 @@ export default function SmoothPullTab({
           stroke="none"
           vectorEffect="non-scaling-stroke"
         />
-        {/* Border only on curved parts, ending 1px before the base to avoid overlap when sunk */}
+        {/* Border only on curved parts, starting and ending exactly where the panel edge is */}
         <path
-          d={`M 0 ${H - 1} C ${bulgeFactor} ${H - 1}, ${x1 - bulgeFactor} 0, ${x1} 0 L ${x2} 0 C ${x2 + bulgeFactor} 0, ${W - bulgeFactor} ${H - 1}, ${W} ${H - 1}`}
+          d={`M 0 ${H - sunkHeight} C ${bulgeFactor} ${H - sunkHeight}, ${x1 - bulgeFactor} 0, ${x1} 0 L ${x2} 0 C ${x2 + bulgeFactor} 0, ${W - bulgeFactor} ${H - sunkHeight}, ${W} ${H - sunkHeight}`}
           fill="none"
           stroke="rgba(168, 85, 247, 0.3)"
           strokeWidth="1"
