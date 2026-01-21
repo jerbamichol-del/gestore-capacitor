@@ -459,7 +459,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   ].join(' ');
 
   return (
-    <div className="absolute top-0 left-0 w-full pointer-events-none z-10">
+    <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
       <svg
         width={width}
         height={tabH + R + 50}
