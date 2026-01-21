@@ -1124,17 +1124,10 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         opacity: laidOut ? 1 : 0,
         pointerEvents: laidOut ? 'auto' : 'none',
         display: 'flex',
-        flexDirection: 'column',
-        filter: 'url(#header-shadow-light)'
+        flexDirection: 'column'
       }}
       onTransitionEnd={() => setAnim(false)}
     >
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        .dark [data-filter-card] {
-          filter: url(#header-shadow-dark) !important;
-        }
-      `}} />
       {/* Integrated Header (SVG Pull Tab + Corners + Shadow) */}
       <IntegratedFilterHeader isPanelOpen={isPanelOpen} />
 
@@ -1204,13 +1197,15 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         </div>
 
         {/* Header Inputs (Desc & Amount) */}
-        {currentView === 'main' && (
-          <div className="pt-1.5 relative z-20">
-            {renderHeaderInputs()}
-            {renderBodyMain()}
-          </div>
-        )}
-      </div>
+        {
+          currentView === 'main' && (
+            <div className="pt-1.5 relative z-20">
+              {renderHeaderInputs()}
+              {renderBodyMain()}
+            </div>
+          )
+        }
+      </div >
 
       <div className="w-full h-px bg-slate-200 dark:bg-slate-800 mb-2 flex-shrink-0 relative z-10" />
 
@@ -1229,7 +1224,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         {/* Spacer for Safe Area */}
         <div style={{ height: 'env(safe-area-inset-bottom, 20px)' }} />
       </div>
-    </div>
+    </div >
   );
 
   if (typeof window === 'undefined') return null;
