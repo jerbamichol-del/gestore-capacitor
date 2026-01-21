@@ -1038,7 +1038,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         style={{ transform: 'translateX(-50%) translateY(-19px)' }}
         aria-hidden="true"
       >
-        <SmoothPullTab width="88" height="24" fill="currentColor" sunkHeight={5} />
+        <SmoothPullTab width="88" height="19" fill="currentColor" />
         <ChevronDownIcon
           className={
             'absolute w-5 h-5 text-slate-400 dark:text-electric-violet transition-transform duration-300 ' +
