@@ -419,7 +419,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const R = 20; // Corner radius matching the 'More rounded' (20px) style from index.html
+  const R = 20;
   const tabW = 88;
   const tabH = 19;
   const bulge = 22;
@@ -431,31 +431,14 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   const tx1 = mid - plateau / 2;
   const tx2 = mid + plateau / 2;
 
-  // Path for the tab ONLY (used for fill, grab interaction and icon centering)
   const tabPath = [
-    `M ${x1} 0`,
-    `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
+    `M ${x1} 1`,
+    `C ${x1 + bulge} 1, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
     `L ${tx2} -${tabH}`,
-    `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
+    `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 1, ${x2} 1`,
     `Z`
   ].join(' ');
 
-  // Master path for the whole top edge including a VERY thin 2px cap inside the card
-  const masterPath = [
-    `M 0 2`, // Only 2px deep to avoid covering filters
-    `L 0 ${R}`,
-    `Q 0 0 ${R} 0`,
-    `L ${x1} 0`,
-    `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
-    `L ${tx2} -${tabH}`,
-    `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
-    `L ${width - R} 0`,
-    `Q ${width} 0 ${width} ${R}`,
-    `L ${width} 2`,
-    `Z`
-  ].join(' ');
-
-  // Stroke path for the visible border line
   const strokePath = [
     `M 0 ${R}`,
     `Q 0 0 ${R} 0`,
@@ -468,47 +451,36 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   ].join(' ');
 
   return (
-    <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
+    <div className="absolute top-0 left-0 w-full h-0 pointer-events-none z-50">
       <svg
         width={width}
-        height={tabH + R + 5}
-        viewBox={`0 -${tabH + 5} ${width} ${tabH + R + 5}`}
-        className="overflow-visible absolute"
-        style={{ top: -tabH }}
+        height={tabH}
+        viewBox={`0 -${tabH} ${width} ${tabH}`}
+        className="overflow-visible absolute top-0"
+        style={{ marginTop: -tabH }}
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="-3" stdDeviation="5" floodColor="#475569" floodOpacity="0.4" />
           </filter>
           <filter id="header-shadow-dark" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-4" stdDeviation="8" floodColor="#000000" floodOpacity="0.9" />
+            <feDropShadow dx="0" dy="-4" stdDeviation="8" floodColor="#000000" floodOpacity="0.8" />
           </filter>
         </defs>
 
-        {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          {/* Main shape fill (very shallow, no pointer events) */}
-          <path d={masterPath} fill="#F2F4F2" className="pointer-events-none" />
-          {/* Grab area (tab only) */}
           <path d={tabPath} fill="#F2F4F2" className="pointer-events-auto cursor-grab" />
-          {/* Continuous stroke */}
-          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.3)" strokeWidth="1" />
+          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.4)" strokeWidth="1.5" />
         </g>
 
-        {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          {/* Main shape fill (very shallow, no pointer events) */}
-          <path d={masterPath} fill="#0F172A" className="pointer-events-none" />
-          {/* Grab area (tab only) */}
           <path d={tabPath} fill="#0F172A" className="pointer-events-auto cursor-grab" />
-          {/* Continuous stroke */}
-          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.4)" strokeWidth="1" />
+          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.4)" strokeWidth="1.5" />
         </g>
       </svg>
 
-      {/* Icon centered in the tab */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-20"
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-50"
         style={{ top: -tabH + 2 }}
       >
         <ChevronDownIcon
@@ -1130,7 +1102,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col"
+      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col shadow-2xl"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
@@ -1149,7 +1121,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       <IntegratedFilterHeader isPanelOpen={isPanelOpen} />
 
       {/* Header Content Wrapper */}
-      <div className="flex-shrink-0 z-20 relative">
+      <div className="flex-shrink-0 z-20 relative bg-sunset-cream dark:bg-midnight rounded-t-2xl">
 
         {/* Header: Date Filters - Highest Z-Index to allow dropdown over inputs */}
         {/* ADDED data-swipe-area to mark this section as the only one allowing horizontal swipe */}
