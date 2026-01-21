@@ -461,10 +461,10 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-3" stdDeviation="5" floodColor="#475569" floodOpacity="0.4" />
+            <feDropShadow dx="0" dy="-4" stdDeviation="10" floodColor="#000000" floodOpacity="0.15" />
           </filter>
           <filter id="header-shadow-dark" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-4" stdDeviation="8" floodColor="#000000" floodOpacity="0.8" />
+            <feDropShadow dx="0" dy="-4" stdDeviation="12" floodColor="#000000" floodOpacity="0.5" />
           </filter>
         </defs>
 
@@ -1104,7 +1104,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col shadow-[0_-8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_-8px_32px_0_rgba(0,0,0,1)]"
+      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col shadow-[0_-10px_35px_rgba(0,0,0,0.15)] dark:shadow-[0_-12px_40px_rgba(0,0,0,0.6)]"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
