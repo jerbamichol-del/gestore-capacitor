@@ -419,7 +419,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const R = 20; // Corner radius matching rounded-t-2xl
+  const R = 16; // Corner radius matching rounded-t-2xl (1rem = 16px)
   const tabW = 88;
   const tabH = 19;
   const bulge = 22;
@@ -456,9 +456,10 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
       <svg
         width={width}
-        height={tabH + 10}
-        viewBox={`0 -${tabH + 5} ${width} ${tabH + 5}`}
+        height={1}
+        viewBox={`0 -${tabH + 5} ${width} 1`}
         className="overflow-visible"
+        style={{ position: 'absolute', top: 0 }}
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
@@ -472,20 +473,20 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
         {/* Light Mode */}
         <g className="dark:hidden">
           <path d={tabPath} fill="#F2F4F2" filter="url(#header-shadow-light)" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.4)" strokeWidth="1.5" filter="url(#header-shadow-light)" />
+          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.4)" strokeWidth="1" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block">
           <path d={tabPath} fill="#0F172A" filter="url(#header-shadow-dark)" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="1.5" filter="url(#header-shadow-dark)" />
+          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="1" />
         </g>
       </svg>
 
-      {/* Icon centered in the tab */}
+      {/* Icon centered in the tab - lower position for better centering */}
       <div
         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-        style={{ top: -tabH + 3 }}
+        style={{ top: -tabH + 2 }}
       >
         <ChevronDownIcon
           className={
