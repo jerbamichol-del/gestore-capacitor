@@ -419,7 +419,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const R = 16; // Corner radius matching rounded-t-2xl (1rem = 16px)
+  const R = 20; // Corner radius matching the 'More rounded' (20px) style from index.html
   const tabW = 88;
   const tabH = 19;
   const bulge = 22;
@@ -453,7 +453,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   ].join(' ');
 
   return (
-    <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
+    <div className="absolute left-0 w-full pointer-events-none z-50" style={{ top: '-2px' }}>
       <svg
         width={width}
         height={1}
@@ -483,10 +483,10 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
         </g>
       </svg>
 
-      {/* Icon centered in the tab - lower position for better centering */}
+      {/* Icon centered in the tab - precisely calibrated position */}
       <div
         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-        style={{ top: -tabH + 2 }}
+        style={{ top: -tabH + 4 }}
       >
         <ChevronDownIcon
           className={
