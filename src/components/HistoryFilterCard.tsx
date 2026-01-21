@@ -476,7 +476,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={tabPath} fill="#1E293B" className="pointer-events-auto cursor-grab" />
+          <path d={tabPath} fill="#0F172A" className="pointer-events-auto cursor-grab" />
           <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.4)" strokeWidth="1.5" />
         </g>
       </svg>
@@ -1104,7 +1104,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col shadow-[0_-8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_-8px_32px_0_rgba(0,0,0,0.37)]"
+      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col shadow-[0_-8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_-8px_32px_0_rgba(0,0,0,1)]"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
