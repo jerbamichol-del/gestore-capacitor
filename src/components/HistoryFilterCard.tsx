@@ -129,8 +129,8 @@ export const CustomDateRangeInputs: React.FC<{
   compact?: boolean;
   tapBridge?: any;
 }> = ({ range, onChange, isActive, compact, tapBridge }) => {
-  // MODIFICATO: Colore testo nero in light mode, viola in dark
-  const textColor = 'text-slate-900 dark:text-electric-violet';
+  // MODIFICATO: Testo nero assoluto in light mode per massima leggibilità
+  const textColor = 'text-black dark:text-electric-violet';
   const textSize = 'text-sm font-semibold';
 
   const formatDate = (iso: string) => {
@@ -179,7 +179,7 @@ export const CustomDateRangeInputs: React.FC<{
           {...tapBridge}
         />
       </label>
-      <div className="w-px my-1 bg-sunset-pink/20" />
+      <div className="w-px my-1 bg-sunset-pink/30" />
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
         <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor}`}>
           {range.end ? formatDate(range.end) : 'Al'}
@@ -331,7 +331,7 @@ export const PeriodNavigator: React.FC<{
       <div
         ref={wrapperRef}
         className={
-          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg border-sunset-pink/30 dark:border-electric-violet/50 bg-sunset-peach dark:bg-midnight-card`
+          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg border-sunset-pink/40 dark:border-electric-violet/50 bg-sunset-peach dark:bg-midnight-card`
         }
       >
         <button
@@ -348,7 +348,7 @@ export const PeriodNavigator: React.FC<{
           onClick={() => onMenuToggle(!isMenuOpen)}
           type="button"
           className={
-            `flex-1 h-full text-sm font-semibold bg-sunset-peach dark:bg-electric-violet/20 text-slate-900 dark:text-electric-violet ` +
+            `flex-1 h-full text-sm font-semibold bg-sunset-peach dark:bg-electric-violet/20 text-black dark:text-electric-violet ` +
             (compact ? '' : ' hover:bg-sunset-pink/10 dark:hover:bg-electric-violet/30 transition-colors')
           }
           data-no-drag
