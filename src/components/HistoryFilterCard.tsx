@@ -431,7 +431,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   const tx1 = mid - plateau / 2;
   const tx2 = mid + plateau / 2;
 
-  // Path for the FILL: only the tab area sticking out
+  // Path for the FILL: only the tab area
   const tabPath = [
     `M ${x1} 0`,
     `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
@@ -440,7 +440,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     `Z`
   ].join(' ');
 
-  // Path for the STROKE: the whole top edge including corners and tab
+  // Path for the STROKE: top edge + corners + tab
   const strokePath = [
     `M 0 ${R}`,
     `Q 0 0 ${R} 0`,
@@ -453,13 +453,13 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   ].join(' ');
 
   return (
-    <div className="absolute left-0 w-full pointer-events-none z-50" style={{ top: '-2px' }}>
+    <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
       <svg
         width={width}
-        height={1}
-        viewBox={`0 -${tabH + 5} ${width} 1`}
-        className="overflow-visible"
-        style={{ position: 'absolute', top: 0 }}
+        height={tabH + R}
+        viewBox={`0 -${tabH} ${width} ${tabH + R}`}
+        className="overflow-visible absolute"
+        style={{ top: -tabH }}
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
@@ -483,10 +483,10 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
         </g>
       </svg>
 
-      {/* Icon centered in the tab - precisely calibrated position */}
+      {/* Icon centered in the tab */}
       <div
         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-        style={{ top: -tabH + 4 }}
+        style={{ top: -tabH + 2 }}
       >
         <ChevronDownIcon
           className={
@@ -1126,7 +1126,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       <IntegratedFilterHeader isPanelOpen={isPanelOpen} />
 
       {/* Header Content Wrapper */}
-      <div className="flex-shrink-0 z-20 relative bg-sunset-cream dark:bg-midnight rounded-t-2xl">
+      <div className="flex-shrink-0 z-20 relative">
 
         {/* Header: Date Filters - Highest Z-Index to allow dropdown over inputs */}
         {/* ADDED data-swipe-area to mark this section as the only one allowing horizontal swipe */}
