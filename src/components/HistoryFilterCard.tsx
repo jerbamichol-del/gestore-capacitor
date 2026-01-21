@@ -431,16 +431,22 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   const tx1 = mid - plateau / 2;
   const tx2 = mid + plateau / 2;
 
-  // Path for the FILL: only the tab area
-  const tabPath = [
-    `M ${x1} 0`,
+  // Master path for the whole top edge (used for fill and shadow continuity)
+  const masterPath = [
+    `M 0 50`, // Deep fill to act as a solid cap
+    `L 0 ${R}`,
+    `Q 0 0 ${R} 0`,
+    `L ${x1} 0`,
     `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
     `L ${tx2} -${tabH}`,
     `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
+    `L ${width - R} 0`,
+    `Q ${width} 0 ${width} ${R}`,
+    `L ${width} 50`,
     `Z`
   ].join(' ');
 
-  // Path for the STROKE: top edge + corners + tab
+  // Stroke path for the visible border line
   const strokePath = [
     `M 0 ${R}`,
     `Q 0 0 ${R} 0`,
@@ -453,39 +459,39 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   ].join(' ');
 
   return (
-    <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
+    <div className="absolute top-0 left-0 w-full pointer-events-none z-10">
       <svg
         width={width}
-        height={tabH + R}
-        viewBox={`0 -${tabH} ${width} ${tabH + R}`}
+        height={tabH + R + 50}
+        viewBox={`0 -${tabH + 5} ${width} ${tabH + R + 50}`}
         className="overflow-visible absolute"
         style={{ top: -tabH }}
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-2" stdDeviation="4" floodColor="#475569" floodOpacity="0.4" />
+            <feDropShadow dx="0" dy="-3" stdDeviation="5" floodColor="#475569" floodOpacity="0.4" />
           </filter>
           <filter id="header-shadow-dark" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-3" stdDeviation="6" floodColor="#000000" floodOpacity="0.8" />
+            <feDropShadow dx="0" dy="-4" stdDeviation="8" floodColor="#000000" floodOpacity="0.8" />
           </filter>
         </defs>
 
-        {/* Light Mode */}
-        <g className="dark:hidden">
-          <path d={tabPath} fill="#F2F4F2" filter="url(#header-shadow-light)" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.4)" strokeWidth="1" />
+        {/* Light Mode: shadow applied to the entire top edge group */}
+        <g className="dark:hidden" filter="url(#header-shadow-light)">
+          <path d={masterPath} fill="#F2F4F2" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.3)" strokeWidth="1" />
         </g>
 
-        {/* Dark Mode */}
-        <g className="hidden dark:block">
-          <path d={tabPath} fill="#0F172A" filter="url(#header-shadow-dark)" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="1" />
+        {/* Dark Mode: shadow applied to the entire top edge group */}
+        <g className="hidden dark:block" filter="url(#header-shadow-dark)">
+          <path d={masterPath} fill="#0F172A" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.4)" strokeWidth="1" />
         </g>
       </svg>
 
       {/* Icon centered in the tab */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-20"
         style={{ top: -tabH + 2 }}
       >
         <ChevronDownIcon
