@@ -431,22 +431,16 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   const tx1 = mid - plateau / 2;
   const tx2 = mid + plateau / 2;
 
-  // Coordinate setup: y=0 is the top edge of the panel.
-  // Tab peaks at y=-19. We draw a fill that goes down into the panel (y=50).
-  const d = [
-    `M 0 50`,
-    `L 0 ${R}`,
-    `Q 0 0 ${R} 0`,
-    `L ${x1} 0`,
+  // Path for the FILL: only the tab area sticking out
+  const tabPath = [
+    `M ${x1} 0`,
     `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
     `L ${tx2} -${tabH}`,
     `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
-    `L ${width - R} 0`,
-    `Q ${width} 0 ${width} ${R}`,
-    `L ${width} 50`,
-    'Z'
+    `Z`
   ].join(' ');
 
+  // Path for the STROKE: the whole top edge including corners and tab
   const strokePath = [
     `M 0 ${R}`,
     `Q 0 0 ${R} 0`,
@@ -462,36 +456,36 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
       <svg
         width={width}
-        height={50}
-        viewBox={`0 -25 ${width} 50`}
+        height={tabH + 10}
+        viewBox={`0 -${tabH + 5} ${width} ${tabH + 5}`}
         className="overflow-visible"
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-3" stdDeviation="5" floodColor="#475569" floodOpacity="0.5" />
+            <feDropShadow dx="0" dy="-2" stdDeviation="4" floodColor="#475569" floodOpacity="0.4" />
           </filter>
           <filter id="header-shadow-dark" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-4" stdDeviation="8" floodColor="#000000" floodOpacity="1" />
+            <feDropShadow dx="0" dy="-3" stdDeviation="6" floodColor="#000000" floodOpacity="0.8" />
           </filter>
         </defs>
 
-        {/* Light Mode: uses sunset-cream fill and gold/coral stroke */}
+        {/* Light Mode */}
         <g className="dark:hidden">
-          <path d={d} fill="#F2F4F2" filter="url(#header-shadow-light)" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.2)" strokeWidth="1" />
+          <path d={tabPath} fill="#F2F4F2" filter="url(#header-shadow-light)" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.4)" strokeWidth="1.5" filter="url(#header-shadow-light)" />
         </g>
 
-        {/* Dark Mode: uses midnight fill and electric-violet stroke */}
+        {/* Dark Mode */}
         <g className="hidden dark:block">
-          <path d={d} fill="#0F172A" filter="url(#header-shadow-dark)" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.3)" strokeWidth="1" />
+          <path d={tabPath} fill="#0F172A" filter="url(#header-shadow-dark)" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="1.5" filter="url(#header-shadow-dark)" />
         </g>
       </svg>
 
-      {/* Icon positioned at the peak of the integrated tab */}
+      {/* Icon centered in the tab */}
       <div
         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-        style={{ top: -tabH + 2 }}
+        style={{ top: -tabH + 3 }}
       >
         <ChevronDownIcon
           className={
@@ -1112,7 +1106,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight z-[1000] flex flex-col"
+      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl z-[1000] flex flex-col"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
