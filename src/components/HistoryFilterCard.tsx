@@ -470,7 +470,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={tabPath} fill="#F2F4F2" className="pointer-events-auto cursor-grab" />
+          <path d={tabPath} fill="var(--sunset-cream, #F2F4F2)" className="pointer-events-auto cursor-grab" />
           <path d={strokePath} fill="none" stroke="rgba(45, 90, 39, 0.15)" strokeWidth="1.5" />
         </g>
 
