@@ -419,7 +419,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const R = 20;
+  const R = 16; // Match rounded-t-2xl (16px)
   const tabW = 88;
   const tabH = 19;
   const bulge = 22;
@@ -431,11 +431,19 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   const tx1 = mid - plateau / 2;
   const tx2 = mid + plateau / 2;
 
-  const tabPath = [
-    `M ${x1} 1`,
-    `C ${x1 + bulge} 1, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
+  // Una singola forma che copre sia la linguetta che il bordo superiore della card
+  // per assicurare che il colore sia identico e non ci siano intercapedini.
+  const headerFillPath = [
+    `M 0 ${R}`,
+    `Q 0 0 ${R} 0`,
+    `L ${x1} 0`,
+    `C ${x1 + bulge} 0, ${tx1} -${tabH}, ${tx1} -${tabH}`,
     `L ${tx2} -${tabH}`,
-    `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 1, ${x2} 1`,
+    `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
+    `L ${width - R} 0`,
+    `Q ${width} 0 ${width} ${R}`,
+    `L ${width} 10`, // scende un po' dentro la card per sovrapporsi
+    `L 0 10`,
     `Z`
   ].join(' ');
 
@@ -443,7 +451,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     `M 0 ${R}`,
     `Q 0 0 ${R} 0`,
     `L ${x1} 0`,
-    `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
+    `C ${x1 + bulge} 0, ${tx1} -${tabH}, ${tx1} -${tabH}`,
     `L ${tx2} -${tabH}`,
     `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
     `L ${width - R} 0`,
@@ -461,7 +469,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-2" stdDeviation="4" floodColor="#000000" floodOpacity="0.3" />
+            <feDropShadow dx="0" dy="-2" stdDeviation="4" floodColor="#000000" floodOpacity="0.2" />
           </filter>
           <filter id="header-shadow-dark" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="-4" stdDeviation="6" floodColor="#000000" floodOpacity="0.9" />
@@ -470,14 +478,14 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={tabPath} fill="#F2F4F2" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(45, 90, 39, 0.15)" strokeWidth="1.5" />
+          <path d={headerFillPath} fill="#F2F4F2" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(45, 90, 39, 0.1)" strokeWidth="1" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={tabPath} fill="#0F172A" className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.4)" strokeWidth="1.5" />
+          <path d={headerFillPath} fill="#0F172A" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.3)" strokeWidth="1" />
         </g>
       </svg>
 
