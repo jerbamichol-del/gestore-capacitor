@@ -421,6 +421,16 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         isBalanceVisible={isBalanceVisible}
         onToggleBalanceVisibility={handleToggleBalanceVisibility}
         showToast={ui.showToast}
+        isDraggingDisabled={
+          ui.nav.isHistoryScreenOpen ||
+          ui.nav.isIncomeHistoryOpen ||
+          ui.nav.isRecurringScreenOpen ||
+          ui.nav.isAccountsScreenOpen ||
+          ui.nav.isCalculatorContainerOpen ||
+          ui.nav.isFormOpen ||
+          ui.nav.isBankSyncModalOpen ||
+          isPinVerifierOpen
+        }
       />
       <PendingImages images={ui.pendingImages} onAnalyze={handleAnalyzeImage} onDelete={async (id) => { await deleteImageFromQueue(id); ui.refreshPendingImages(); }} isOnline={isOnline} syncingImageId={ui.syncingImageId} />
 

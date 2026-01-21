@@ -9,6 +9,7 @@ import { ArrowUpTrayIcon } from './icons/ArrowUpTrayIcon';
 import { ArrowPathIcon } from './icons/ArrowPathIcon';
 import { XMarkIcon } from './icons/XMarkIcon';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
+import { ChevronRightIcon } from './icons/ChevronRightIcon';
 import { ProgrammateDetailedIcon } from './icons/ProgrammateDetailedIcon';
 import { ExpensesDetailedIcon } from './icons/ExpensesDetailedIcon';
 import { IncomeDetailedIcon } from './icons/IncomeDetailedIcon';
@@ -97,6 +98,7 @@ interface DashboardProps {
     isBalanceVisible: boolean;
     onToggleBalanceVisibility: () => void;
     showToast: (msg: { message: string; type: 'success' | 'info' | 'error' }) => void;
+    isDraggingDisabled?: boolean;
 }
 
 const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null => {
@@ -168,7 +170,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     onOpenBankSyncSettings,
     isBalanceVisible,
     onToggleBalanceVisibility,
-    showToast
+    showToast,
+    isDraggingDisabled = false
 }) => {
 
 
@@ -349,7 +352,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 setIsSwipeAnimating(true);
             }
         }
-    }, { threshold: 40, slop: 10, enabled: !isPeriodMenuOpen });
+    }, { threshold: 40, slop: 10, enabled: !isPeriodMenuOpen && !isDraggingDisabled });
 
     useEffect(() => {
         if (isSwipeAnimating) {
@@ -798,145 +801,165 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     <button onClick={handleNavigateToIncomes} className={`flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-emerald-900 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all border border-emerald-200 dark:border-emerald-500/30 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
                                         <IncomeDetailedIcon className="w-7 h-7" /> <span className="text-sm">Entrate</span>
                                     </button>
-                                    <button onClick={handleNavigateToAccounts} className={`flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-sky-900 bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 rounded-full hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-all border border-sky-200 dark:border-sky-500/30 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
+                                    <button onClick={handleNavigateToAccounts} className={`flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-slate-900 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-600/50 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
                                         <AccountsDetailedIcon className="w-7 h-7" /> <span className="text-sm">Conti</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <input type="file" ref={fileInputRef} className="hidden" accept=".csv, .xlsx, .xls, .json" onChange={handleFileChange} />
-                        <button onClick={openImportExportMenu} className="w-auto mx-4 md:mx-0 flex items-center justify-center gap-3 py-3 px-4 midnight-card text-indigo-700 dark:text-electric-violet font-bold rounded-2xl border border-indigo-100 dark:border-electric-violet/20 shadow-sm hover:bg-indigo-100 transition-colors">
-                            <ArrowsUpDownIcon className="w-5 h-5" />
-                            <span>Imp/Exp</span>
-                        </button>
-                    </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={openImportExportMenu}
+                                className="midnight-card flex items-center justify-between p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/10 hover:shadow-xl transition-all group overflow-hidden relative"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-indigo-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <div className="w-12 h-12 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                                        <ArrowsUpDownIcon className="w-7 h-7" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="font-bold text-slate-700 dark:text-white underline decoration-indigo-200 dark:decoration-indigo-900 decoration-2 underline-offset-4">IMP/EXP</p>
+                                        <p className="text-xs text-slate-500 font-medium">Importa o Esporta Dati</p>
+                                    </div>
+                                </div>
+                                <ChevronRightIcon className="w-6 h-6 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                            </button>
 
-                    {/* --- RIGHT COLUMN (Movable Items Container) --- */}
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        autoScroll={{
-                            acceleration: 15,
-                            interval: 10,
-                            layoutShiftCompensation: false,
-                            threshold: {
-                                x: 0.2,
-                                y: 0.2
-                            }
-                        }}
-                    >
-                        <div className="lg:col-span-2 flex flex-col gap-6">
-                            <SortableContext items={items} strategy={verticalListSortingStrategy}>
-                                {items.map(id => renderCard(id))}
-                            </SortableContext>
-                        </div>
-
-                        <DragOverlay>
-                            {activeId ? renderCard(activeId, true) : null}
-                        </DragOverlay>
-                    </DndContext>
-                </div>
-
-            </div>
-
-            {isImportExportMenuOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-midnight/60 backdrop-blur-sm transition-opacity" onClick={handleCloseNavigation}>
-                    <div
-                        className="midnight-card rounded-2xl shadow-xl w-full max-max-sm overflow-hidden animate-fade-in-up transition-colors duration-300"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700">
-                            {showExportOptions && (
-                                <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/50 dark:hover:bg-midnight-card text-slate-500 dark:text-slate-400" aria-label="Indietro">
-                                    <ArrowLeftIcon className="w-5 h-5" />
-                                </button>
-                            )}
-                            <h3 className={`text-lg font-bold text-slate-800 dark:text-white flex-1 text-center ${showExportOptions ? '' : 'pl-8'}`}>
-                                {showExportOptions ? "Scegli Formato" : "Gestione Dati"}
-                            </h3>
-                            <button onClick={handleCloseNavigation} className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-sunset-peach/50 dark:hover:bg-midnight-card transition-colors">
-                                <XMarkIcon className="w-6 h-6" />
+                            <button
+                                onClick={handleSyncClick}
+                                className="midnight-card flex items-center justify-between p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-emerald-500/10 hover:shadow-xl transition-all group overflow-hidden relative"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <div className="w-12 h-12 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                                        <ArrowPathIcon className="w-7 h-7" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="font-bold text-slate-700 dark:text-white underline decoration-emerald-200 dark:decoration-emerald-900 decoration-2 underline-offset-4 uppercase">Sincronizza Cloud</p>
+                                        <p className="text-xs text-slate-500 font-medium">Backup su Google Drive</p>
+                                    </div>
+                                </div>
+                                <ChevronRightIcon className="w-6 h-6 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
                             </button>
                         </div>
-                        <div className="p-4 space-y-3">
+                    </div>
+
+                    <div className="lg:col-span-2 flex flex-col gap-6">
+                        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+                            <DndContext
+                                sensors={isDraggingDisabled ? [] : sensors}
+                                collisionDetection={closestCenter}
+                                onDragStart={handleDragStart}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <div className="space-y-6">
+                                    {items.map((id) => renderCard(id))}
+                                </div>
+
+                                <DragOverlay>
+                                    {activeId ? renderCard(activeId, true) : null}
+                                </DragOverlay>
+                            </DndContext>
+                        </SortableContext>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal Import/Export (Menu) */}
+            {isImportExportMenuOpen && (
+                <div className="fixed inset-0 z-[6000] flex justify-center items-end md:items-center p-0 md:p-4 bg-midnight/60 backdrop-blur-md animate-fade-in" onClick={handleCloseNavigation}>
+                    <div
+                        className="bg-white dark:midnight-card rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-lg border border-transparent dark:border-electric-violet/30 overflow-hidden animate-slide-up md:animate-scale-in"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="p-6 flex items-center justify-between border-b dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                                {showExportOptions && (
+                                    <button onClick={handleBackNavigation} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                        <ArrowLeftIcon className="w-6 h-6 text-slate-500" />
+                                    </button>
+                                )}
+                                <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                                    {showExportOptions ? 'Seleziona Formato' : 'Importa / Esporta'}
+                                </h2>
+                            </div>
+                            <button onClick={handleCloseNavigation} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                <XMarkIcon className="w-6 h-6 text-slate-500" />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6">
                             {!showExportOptions ? (
-                                <>
-                                    <button onClick={handleSyncClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform">
-                                            <ArrowPathIcon className="w-6 h-6" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Sincronizza Cloud</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Scarica ultimi dati dal cloud</span>
-                                        </div>
-                                    </button>
-                                    <button onClick={handleImportClick} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
-                                            <ArrowDownTrayIcon className="w-6 h-6" />
-                                        </div>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Importa (CSV/Excel/JSON)</span>
-                                    </button>
-                                    <button onClick={openExportOptions} className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group">
-                                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                                            <ArrowUpTrayIcon className="w-6 h-6" />
-                                        </div>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Esporta (Excel/JSON)</span>
-                                    </button>
+                                <div className="grid grid-cols-1 gap-4">
                                     <button
-                                        onClick={() => {
-                                            window.history.back();
-                                            setTimeout(onOpenBankSyncSettings, 50);
-                                        }}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group"
+                                        onClick={handleImportClick}
+                                        className="flex items-center gap-4 p-4 rounded-xl border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-electric-violet hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all text-left group"
                                     >
-                                        <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-electric-violet/20 flex items-center justify-center text-indigo-600 dark:text-electric-violet group-hover:scale-110 transition-transform">
-                                            <span className="text-2xl">🏦</span>
+                                        <div className="w-12 h-12 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:scale-110 transition-transform">
+                                            <ArrowDownTrayIcon className="w-7 h-7" />
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Configura Banche</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Collega Revolut e conti ITA</span>
+                                        <div>
+                                            <p className="font-bold text-slate-800 dark:text-white text-lg">Importa Dati</p>
+                                            <p className="text-sm text-slate-500">Ripristina da un file JSON precedentemente esportato.</p>
                                         </div>
                                     </button>
-                                </>
+
+                                    <button
+                                        onClick={openExportOptions}
+                                        className="flex items-center gap-4 p-4 rounded-xl border-2 border-slate-100 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all text-left group"
+                                    >
+                                        <div className="w-12 h-12 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg group-hover:scale-110 transition-transform">
+                                            <ArrowUpTrayIcon className="w-7 h-7" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-800 dark:text-white text-lg">Esporta Dati</p>
+                                            <p className="text-sm text-slate-500">Salva tutte le tue spese in formato Excel o JSON.</p>
+                                        </div>
+                                    </button>
+                                </div>
                             ) : (
-                                <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <button
                                         onClick={() => handleExportClick('excel')}
                                         disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-slate-100 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all group disabled:opacity-50"
                                     >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                                            <span className="font-bold text-sm">XLSX</span>
+                                        <div className="w-16 h-16 flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-full mb-3 group-hover:scale-110 transition-transform">
+                                            <svg className="w-8 h-8 font-black" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16h-8v-2h8v2zm0-4h-8v-2h8v2zm-3-5V3.5L18.5 9H13z" /></svg>
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">Excel (.xlsx)</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Le ricevute non verranno salvate</span>
-                                        </div>
+                                        <p className="font-bold text-slate-800 dark:text-white">Excel (.xlsx)</p>
+                                        <p className="text-xs text-slate-500 mt-1">Leggibile con Excel/Drive</p>
                                     </button>
+
                                     <button
                                         onClick={() => handleExportClick('json')}
                                         disabled={isExporting}
-                                        className="w-full flex items-center gap-4 p-4 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card transition-colors text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all group disabled:opacity-50"
                                     >
-                                        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400 group-hover:scale-110 transition-transform">
-                                            <span className="font-bold text-sm">JSON</span>
+                                        <div className="w-16 h-16 flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full mb-3 group-hover:scale-110 transition-transform">
+                                            <svg className="w-8 h-8 font-black" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z" /><path d="M6 10h2v2H6zm0 4h2v2H6zm4-4h2v2h-2zm0 4h2v2h-2zm4-4h4v2h-4zm0 4h4v2h-4z" /></svg>
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200 text-lg">JSON (.json)</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">Backup completo dell'app</span>
-                                        </div>
+                                        <p className="font-bold text-slate-800 dark:text-white">JSON (.json)</p>
+                                        <p className="text-xs text-slate-500 mt-1">Backup completo dati</p>
                                     </button>
-                                </>
+                                </div>
+                            )}
+
+                            {isExporting && (
+                                <div className="mt-6 flex flex-col items-center">
+                                    <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3" />
+                                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 animate-pulse">Generazione file in corso...</p>
+                                </div>
                             )}
                         </div>
                     </div>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".json" />
                 </div>
             )}
         </>
-
     );
 };
 
