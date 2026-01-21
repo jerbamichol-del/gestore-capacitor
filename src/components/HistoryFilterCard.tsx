@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
   return (
     <div
       className={
-        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-sunset-pink/20 dark:border-electric-violet/50 bg-[rgb(190,204,189)] dark:bg-electric-violet/20`
+        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-sunset-pink/20 dark:border-electric-violet/50 bg-[rgb(198,214,197)] dark:bg-electric-violet/20`
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -348,8 +348,8 @@ export const PeriodNavigator: React.FC<{
           onClick={() => onMenuToggle(!isMenuOpen)}
           type="button"
           className={
-            `flex-1 h-full text-sm font-semibold bg-[rgb(190,204,189)] dark:bg-electric-violet/20 text-black dark:text-electric-violet ` +
-            (compact ? '' : ' hover:bg-[rgb(170,184,169)] dark:hover:bg-electric-violet/30 transition-colors')
+            `flex-1 h-full text-sm font-semibold bg-[rgb(198,214,197)] dark:bg-electric-violet/20 text-black dark:text-electric-violet ` +
+            (compact ? '' : ' hover:bg-[rgb(178,194,177)] dark:hover:bg-electric-violet/30 transition-colors')
           }
           data-no-drag
           {...tapBridge}
