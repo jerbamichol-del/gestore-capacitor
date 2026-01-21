@@ -67,6 +67,17 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   useStableViewportHeight();
   const isStudio = useIsStudio();
 
+  // Forza la classe 'dark' sul body se salvata nel localStorage per evitare flickering del background
+  React.useLayoutEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const isDarkGlobal = savedTheme === 'dark' || (savedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDarkGlobal) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   // Used only for dynamic height calculation that tailwind doesn't easily support with --vh
   const heightStyle: React.CSSProperties = {
     minHeight: 'calc(var(--vh, 1vh) * 100)',

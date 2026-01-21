@@ -461,10 +461,10 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
       >
         <defs>
           <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-4" stdDeviation="10" floodColor="#000000" floodOpacity="0.15" />
+            <feDropShadow dx="0" dy="-2" stdDeviation="4" floodColor="#000000" floodOpacity="0.3" />
           </filter>
           <filter id="header-shadow-dark" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="-4" stdDeviation="12" floodColor="#000000" floodOpacity="0.5" />
+            <feDropShadow dx="0" dy="-4" stdDeviation="6" floodColor="#000000" floodOpacity="0.9" />
           </filter>
         </defs>
 
