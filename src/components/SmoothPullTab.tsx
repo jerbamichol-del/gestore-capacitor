@@ -91,9 +91,9 @@ export default function SmoothPullTab({
           stroke="none"
           vectorEffect="non-scaling-stroke"
         />
-        {/* Border only on curved parts, excluding the base */}
+        {/* Border only on curved parts, ending 1px before the base to avoid overlap when sunk */}
         <path
-          d={`M 0 ${H} C ${bulgeFactor} ${H}, ${x1 - bulgeFactor} 0, ${x1} 0 L ${x2} 0 C ${x2 + bulgeFactor} 0, ${W - bulgeFactor} ${H}, ${W} ${H}`}
+          d={`M 0 ${H - 1} C ${bulgeFactor} ${H - 1}, ${x1 - bulgeFactor} 0, ${x1} 0 L ${x2} 0 C ${x2 + bulgeFactor} 0, ${W - bulgeFactor} ${H - 1}, ${W} ${H - 1}`}
           fill="none"
           stroke="rgba(168, 85, 247, 0.3)"
           strokeWidth="1"
