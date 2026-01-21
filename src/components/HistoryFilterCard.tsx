@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
   return (
     <div
       className={
-        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-sunset-pink/30 dark:border-electric-violet/50 bg-sunset-peach dark:bg-electric-violet/20`
+        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-sunset-pink/20 dark:border-electric-violet/50 bg-sunset-pink/10 dark:bg-electric-violet/20`
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -331,7 +331,7 @@ export const PeriodNavigator: React.FC<{
       <div
         ref={wrapperRef}
         className={
-          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg border-sunset-pink/40 dark:border-electric-violet/50 bg-sunset-peach dark:bg-midnight-card`
+          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg border-sunset-pink/20 dark:border-electric-violet/50 bg-white dark:bg-midnight-card`
         }
       >
         <button
@@ -348,8 +348,8 @@ export const PeriodNavigator: React.FC<{
           onClick={() => onMenuToggle(!isMenuOpen)}
           type="button"
           className={
-            `flex-1 h-full text-sm font-semibold bg-sunset-peach dark:bg-electric-violet/20 text-black dark:text-electric-violet ` +
-            (compact ? '' : ' hover:bg-sunset-pink/10 dark:hover:bg-electric-violet/30 transition-colors')
+            `flex-1 h-full text-sm font-semibold bg-sunset-pink/10 dark:bg-electric-violet/20 text-black dark:text-electric-violet ` +
+            (compact ? '' : ' hover:bg-sunset-pink/20 dark:hover:bg-electric-violet/30 transition-colors')
           }
           data-no-drag
           {...tapBridge}
@@ -359,7 +359,7 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(+1)}
           type="button"
-          className={`h-full px-4 rounded-r-lg hover:bg-sunset-pink/10 dark:hover:bg-slate-600`}
+          className={`h-full px-4 rounded-r-lg hover:bg-sunset-pink/5 dark:hover:bg-slate-600`}
           aria-label="Periodo successivo"
           data-no-drag
           {...tapBridge}
