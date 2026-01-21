@@ -337,7 +337,7 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(-1)}
           type="button"
-          className={`h-full px-4 rounded-l-lg hover:bg-sunset-pink/10 dark:hover:bg-slate-600`}
+          className={`h-full px-4 rounded-l-lg`}
           aria-label="Periodo precedente"
           data-no-drag
           {...tapBridge}
@@ -359,7 +359,7 @@ export const PeriodNavigator: React.FC<{
         <button
           onClick={() => step(+1)}
           type="button"
-          className={`h-full px-4 rounded-r-lg hover:bg-sunset-pink/5 dark:hover:bg-slate-600`}
+          className={`h-full px-4 rounded-r-lg`}
           aria-label="Periodo successivo"
           data-no-drag
           {...tapBridge}
