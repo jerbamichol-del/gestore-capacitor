@@ -409,6 +409,101 @@ export const PeriodNavigator: React.FC<{
 export const PEEK_PX = 78;
 const LOWER_OFFSET_PX = 16;
 
+/* -------------------- IntegratedFilterHeader -------------------- */
+const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpen }) => {
+  const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 400);
+
+  useEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const R = 20; // Corner radius matching rounded-t-2xl
+  const tabW = 88;
+  const tabH = 19;
+  const bulge = 22;
+  const plateau = 30.8;
+
+  const mid = width / 2;
+  const x1 = mid - tabW / 2;
+  const x2 = mid + tabW / 2;
+  const tx1 = mid - plateau / 2;
+  const tx2 = mid + plateau / 2;
+
+  // Coordinate setup: y=0 is the top edge of the panel.
+  // Tab peaks at y=-19. We draw a fill that goes down into the panel (y=50).
+  const d = [
+    `M 0 50`,
+    `L 0 ${R}`,
+    `Q 0 0 ${R} 0`,
+    `L ${x1} 0`,
+    `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
+    `L ${tx2} -${tabH}`,
+    `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
+    `L ${width - R} 0`,
+    `Q ${width} 0 ${width} ${R}`,
+    `L ${width} 50`,
+    'Z'
+  ].join(' ');
+
+  const strokePath = [
+    `M 0 ${R}`,
+    `Q 0 0 ${R} 0`,
+    `L ${x1} 0`,
+    `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
+    `L ${tx2} -${tabH}`,
+    `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
+    `L ${width - R} 0`,
+    `Q ${width} 0 ${width} ${R}`,
+  ].join(' ');
+
+  return (
+    <div className="absolute top-0 left-0 w-full pointer-events-none z-50">
+      <svg
+        width={width}
+        height={50}
+        viewBox={`0 -25 ${width} 50`}
+        className="overflow-visible"
+      >
+        <defs>
+          <filter id="header-shadow-light" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="-3" stdDeviation="5" floodColor="#475569" floodOpacity="0.5" />
+          </filter>
+          <filter id="header-shadow-dark" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="-4" stdDeviation="8" floodColor="#000000" floodOpacity="1" />
+          </filter>
+        </defs>
+
+        {/* Light Mode: uses sunset-cream fill and gold/coral stroke */}
+        <g className="dark:hidden">
+          <path d={d} fill="#F2F4F2" filter="url(#header-shadow-light)" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(200, 159, 101, 0.2)" strokeWidth="1" />
+        </g>
+
+        {/* Dark Mode: uses midnight fill and electric-violet stroke */}
+        <g className="hidden dark:block">
+          <path d={d} fill="#0F172A" filter="url(#header-shadow-dark)" className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" stroke="rgba(168, 85, 247, 0.3)" strokeWidth="1" />
+        </g>
+      </svg>
+
+      {/* Icon positioned at the peak of the integrated tab */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{ top: -tabH + 2 }}
+      >
+        <ChevronDownIcon
+          className={
+            'w-5 h-5 text-slate-400 dark:text-electric-violet transition-transform duration-300 ' +
+            (isPanelOpen ? 'rotate-0' : 'rotate-180')
+          }
+        />
+      </div>
+    </div>
+  );
+};
+
 export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const [activeViewIndex, setActiveViewIndex] = useState(0);
@@ -1017,7 +1112,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       onFocus={handlePanelFocus}
       onBlur={handlePanelBlur}
       data-no-page-swipe="true"
-      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight rounded-t-2xl shadow-[0_-3px_10px_rgba(71,85,105,0.6)] dark:shadow-[0_-3px_10px_rgba(0,0,0,0.8)] z-[1000] flex flex-col border-t border-sunset-coral/20 dark:border-electric-violet/30"
+      className="fixed bottom-0 left-0 right-0 bg-sunset-cream dark:bg-midnight z-[1000] flex flex-col"
       style={{
         height: `${openHeight}px`,
         transform: `translate3d(0, ${yForStyle}px, 0)`,
@@ -1032,21 +1127,8 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
       }}
       onTransitionEnd={() => setAnim(false)}
     >
-      {/* Pull Tab */}
-      <div
-        className="text-sunset-cream dark:text-midnight absolute top-0 left-1/2 -translate-x-1/2 w-[88px] h-auto flex justify-center cursor-grab z-50"
-        style={{ transform: 'translateX(-50%) translateY(-19px)' }}
-        aria-hidden="true"
-      >
-        <SmoothPullTab width="88" height="19" fill="currentColor" />
-        <ChevronDownIcon
-          className={
-            'absolute w-5 h-5 text-slate-400 dark:text-electric-violet transition-transform duration-300 ' +
-            (isPanelOpen ? 'rotate-0' : 'rotate-180')
-          }
-          style={{ top: '2px' }}
-        />
-      </div>
+      {/* Integrated Header (SVG Pull Tab + Corners + Shadow) */}
+      <IntegratedFilterHeader isPanelOpen={isPanelOpen} />
 
       {/* Header Content Wrapper */}
       <div className="flex-shrink-0 z-20 relative bg-sunset-cream dark:bg-midnight rounded-t-2xl">
