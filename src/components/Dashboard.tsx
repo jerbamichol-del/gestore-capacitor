@@ -129,7 +129,7 @@ const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null =>
 const SortableItem = ({ id, children }: { id: string, children: React.ReactNode }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
-    const style = {
+    const style: React.CSSProperties = {
         transform: transform
             ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
             : undefined,
@@ -137,6 +137,7 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
         zIndex: isDragging ? 100 : 'auto',
         opacity: isDragging ? 0 : 1, // Nasconde l'originale, DragOverlay mostra la copia
         position: 'relative' as const,
+        touchAction: 'none', // Impedisce al browser di intercettare i tocchi come scroll durante il drag
     };
 
     return (
@@ -181,7 +182,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 1200, // Richiede 1.2 secondi di pressione per iniziare il drag
+                delay: 700, // Richiede 0.7 secondi di pressione per iniziare il drag
                 tolerance: 5, // Tolleranza di movimento durante il delay
             },
         }),
