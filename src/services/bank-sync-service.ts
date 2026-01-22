@@ -755,6 +755,28 @@ export class BankSyncService {
             description = description.substring(0, 77) + '...';
         }
 
+        // ✅ CRITICAL: Extract unique transaction ID from API for stable hash generation
+        // Enable Banking API can provide these fields as unique identifiers:
+        // - entry_reference / entryReference (most reliable)
+        // - transaction_id / transactionId
+        // - internal_transaction_id / internalTransactionId
+        // - end_to_end_id / endToEndId
+        const bankTransactionId = tx.entry_reference
+            || tx.entryReference
+            || tx.transaction_id
+            || tx.transactionId
+            || tx.internal_transaction_id
+            || tx.internalTransactionId
+            || tx.end_to_end_id
+            || tx.endToEndId
+            || undefined; // Se nessuno disponibile, il sistema userà fallback
+
+        if (bankTransactionId) {
+            console.log(`✅ Bank transaction ID found: ${bankTransactionId}`);
+        } else {
+            console.log(`⚠️ No bank transaction ID found, will use fallback hash method`);
+        }
+
         return {
             type,
             amount: Math.abs(amount),
@@ -763,7 +785,8 @@ export class BankSyncService {
             account: accountUid, // Using the resolved localAccountId passed here
             sourceType: 'bank',
             sourceApp: 'enable_banking',
-            rawText: JSON.stringify(tx)
+            rawText: JSON.stringify(tx),
+            bankTransactionId, // ✅ NEW: Pass unique ID for stable hashing
         };
     }
 }

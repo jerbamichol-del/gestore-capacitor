@@ -28,6 +28,9 @@ export interface AutoTransaction {
   sourceHash: string; // Hash MD5 per detect duplicati
   rawText: string; // Testo originale SMS/notifica per debug
 
+  // ✅ Bank API unique ID (entry_reference/transaction_id) - usato per hash stabili
+  bankTransactionId?: string;
+
   // Stato
   status: TransactionStatus;
   createdAt: number;

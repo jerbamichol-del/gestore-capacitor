@@ -19,12 +19,25 @@ export class AutoTransactionService {
   /**
    * Genera hash univoco per detect duplicati
    */
+  /**
+   * Genera hash univoco per detect duplicati.
+   * ✅ NEW: Supporta bankTransactionId per hash stabili indipendenti dall'account locale.
+   */
   static generateTransactionHash(
     amount: number,
     date: string,
     account: string,
-    description: string
+    description: string,
+    bankTransactionId?: string
   ): string {
+    // 1. Stable Bank Hash (Preferred)
+    if (bankTransactionId) {
+      // Use ONLY the bank transaction ID for maximum stability
+      // Prefix with 'bank-' to avoid collisions with legacy hashes
+      return md5(`bank-${bankTransactionId}`);
+    }
+
+    // 2. Legacy Hash (Fallback for SMS/Notifications or banks without IDs)
     const normalized = normalizeForHash(description);
     const key = `${amount.toFixed(2)}-${date}-${account}-${normalized}`;
     return md5(key);
@@ -106,18 +119,26 @@ export class AutoTransactionService {
       data.amount,
       data.date,
       data.account,
-      data.description
+      data.description,
+      data.bankTransactionId // ✅ Pass unique bank ID if available
     );
 
-    // Check duplicato
+    // Check duplicato (Primary Hash)
     if (await this.isDuplicate(hash)) {
-      console.log('⚠️ Duplicate transaction detected, skipping:', {
-        hash,
-        description: data.description,
-        amount: data.amount,
-        source: data.sourceType
-      });
+      console.log('⚠️ Duplicate transaction detected (Primary Hash), skipping:', { hash, desc: data.description });
       return null;
+    }
+
+    // ✅ SAFETY CHECK: If using new Bank Hash, also check Legacy Hash to prevent duplicates with OLD transactions
+    if (data.bankTransactionId) {
+      const legacyHash = this.generateTransactionHash(data.amount, data.date, data.account, data.description);
+      if (await this.isDuplicate(legacyHash)) {
+        console.log('⚠️ Duplicate transaction detected (Legacy Hash Match), skipping:', { legacyHash, desc: data.description });
+        // We found a match with an old transaction that didn't have the new hash logic.
+        // We should treat this as a duplicate.
+        // Optional: We could update the old transaction with the new hash/ID here, but skipping is safer/simpler.
+        return null;
+      }
     }
 
     const transaction: AutoTransaction = {
