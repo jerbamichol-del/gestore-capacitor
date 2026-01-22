@@ -373,7 +373,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         if (isEditing) {
             return (
                 <div className="form-group mb-4">
-                    <label className="text-xs font-bold uppercase opacity-60 text-slate-500 dark:text-slate-400">{label}</label>
+                    <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400 dark:opacity-60">{label}</label>
                     {isTextarea ? (
                         <textarea
                             className="w-full h-32 font-mono text-xs rounded-xl border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet focus:outline-none transition-colors"
@@ -406,9 +406,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
         return (
             <div className="form-group mb-4">
-                <label className="text-xs font-bold uppercase opacity-60 text-slate-500 dark:text-slate-400">{label}</label>
+                <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400 dark:opacity-60">{label}</label>
                 <div className="flex items-center gap-2">
-                    <div className="flex-1 text-sm opacity-70 font-mono truncate p-3 bg-sunset-cream dark:bg-midnight-card rounded-xl text-slate-700 dark:text-slate-300">
+                    <div className="flex-1 text-sm font-mono truncate p-3 bg-sunset-cream dark:bg-midnight-card rounded-xl text-slate-800 dark:text-slate-300">
                         {maskValue(value)}
                     </div>
                     <button
@@ -424,11 +424,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
     if (!isOpen) return null;
 
-    if (!isOpen) return null;
-
     return (
         <div className="fixed inset-0 z-[9999] flex items-stretch justify-center bg-midnight animate-fade-in transition-opacity duration-200" onClick={onClose}>
-            <div className="w-full h-full flex flex-col overflow-hidden dark:bg-midnight text-sunset-text dark:text-white transition-colors duration-300" onClick={e => e.stopPropagation()}>
+            <div className="w-full h-full flex flex-col overflow-hidden bg-white dark:bg-midnight text-sunset-text dark:text-white transition-colors duration-300" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-electric-violet/20 midnight-card flex-shrink-0">
                     <h3 className="text-xl font-semibold flex items-center gap-2">
                         <span className="text-2xl">🏦</span>
@@ -477,7 +475,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                         <div className="flex justify-between items-center">
                                             <div className="flex flex-col min-w-0 flex-1 mr-2">
                                                 <span className="text-sm font-bold truncate text-sunset-text dark:text-white">{acc.name || 'Conto'}</span>
-                                                <span className="text-[10px] opacity-60 truncate font-mono text-slate-500 dark:text-slate-400">{acc.iban || acc.uid}</span>
+                                                <span className="text-[10px] truncate font-mono text-slate-600 dark:text-slate-400 dark:opacity-60">{acc.iban || acc.uid}</span>
                                             </div>
                                             <div className="text-right flex-shrink-0">
                                                 <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
@@ -487,7 +485,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                         </div>
 
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[10px] font-bold uppercase opacity-60 ml-1 text-slate-500 dark:text-slate-400">Collega a Conto Locale:</label>
+                                            <label className="text-[10px] font-bold uppercase ml-1 text-slate-600 dark:text-slate-400 dark:opacity-60">Collega a Conto Locale:</label>
                                             <select
                                                 className="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/30 dark:bg-midnight-card/50 text-sunset-text dark:text-white focus:outline-none focus:ring-2 focus:ring-sunset-coral dark:focus:ring-electric-violet"
                                                 value={accountMappings[acc.uid] || ''}
@@ -513,7 +511,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     )}
 
                     <div className="mb-4">
-                        <label className="text-xs font-bold uppercase opacity-60 block mb-2 text-slate-500 dark:text-slate-400">Collega Nuova Banca</label>
+                        <label className="text-xs font-bold uppercase block mb-2 text-slate-600 dark:text-slate-400 dark:opacity-60">Collega Nuova Banca</label>
                         <div className="flex gap-2 mb-2">
                             <input
                                 type="text"

@@ -816,19 +816,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={openImportExportMenu}
-                                className="midnight-card flex items-center justify-between p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/10 hover:shadow-xl transition-all group overflow-hidden relative"
+                                className="midnight-card flex items-center justify-center p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/10 hover:shadow-xl transition-all group overflow-hidden relative"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-indigo-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                                <div className="flex items-center gap-4 relative z-10">
+                                <div className="flex items-center gap-4 relative z-10 justify-center w-full">
                                     <div className="w-12 h-12 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
                                         <ArrowsUpDownIcon className="w-7 h-7" />
                                     </div>
-                                    <div className="text-left">
+                                    <div className="flex flex-col items-center">
                                         <p className="font-bold text-slate-700 dark:text-white underline decoration-indigo-200 dark:decoration-indigo-900 decoration-2 underline-offset-4">IMP/EXP</p>
                                         <p className="text-xs text-slate-500 font-medium">Backup completo dell'app</p>
                                     </div>
                                 </div>
-                                <ChevronRightIcon className="w-6 h-6 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                             </button>
                         </div>
                     </div>
@@ -858,7 +857,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             {isImportExportMenuOpen && (
                 <div className="fixed inset-0 z-[6000] flex justify-center items-end md:items-center p-0 md:p-4 bg-midnight/60 backdrop-blur-md animate-fade-in" onClick={handleCloseNavigation}>
                     <div
-                        className="bg-white dark:midnight-card rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-lg border border-transparent dark:border-electric-violet/30 overflow-hidden animate-slide-up md:animate-scale-in"
+                        className="midnight-card rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-lg border border-transparent dark:border-electric-violet/30 overflow-hidden animate-slide-up md:animate-scale-in"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
