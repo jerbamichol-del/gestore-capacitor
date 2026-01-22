@@ -29,7 +29,7 @@ import { BudgetTrendChart } from './BudgetTrendChart';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { useTheme } from '../hooks/useTheme';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 
 const categoryHexColors: Record<string, string> = {
@@ -126,7 +126,7 @@ const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null =>
 };
 
 // --- Sortable Item Component ---
-const SortableItem = ({ id, children, isDragActive }: { id: string, children: React.ReactNode, isDragActive: boolean }) => {
+const SortableItem = ({ id, children }: { id: string, children: React.ReactNode }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style: React.CSSProperties = {
@@ -137,8 +137,10 @@ const SortableItem = ({ id, children, isDragActive }: { id: string, children: Re
         zIndex: isDragging ? 100 : 'auto',
         opacity: isDragging ? 0 : 1, // Nasconde l'originale, DragOverlay mostra la copia
         position: 'relative' as const,
-        // Applica touchAction:none solo durante il drag per bloccare lo scroll del browser
-        touchAction: isDragActive ? 'none' : 'auto',
+        touchAction: 'manipulation', // Migliora la gestione touch
+        userSelect: 'none', // Previene selezione testo durante drag
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none', // Previene menu contestuale iOS
     };
 
     return (
@@ -148,6 +150,7 @@ const SortableItem = ({ id, children, isDragActive }: { id: string, children: Re
             className={`group relative ${isDragging ? 'z-50' : ''}`}
             {...attributes}
             {...listeners}
+            onContextMenu={(e) => e.preventDefault()} // Previene menu contestuale (long press)
         >
             {children}
         </div>
@@ -187,10 +190,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                 tolerance: 5, // Tolleranza di movimento durante il delay
             },
         }),
-        useSensor(PointerSensor, {
+        useSensor(MouseSensor, {
             activationConstraint: {
-                delay: 700, // Richiede 0.7 secondi di pressione per iniziare il drag
-                tolerance: 5, // Tolleranza di movimento durante il delay
+                distance: 10, // Richiede movimento di 10px per drag col mouse
             },
         }),
         useSensor(KeyboardSensor, {
@@ -679,7 +681,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         return (
-            <SortableItem key={id} id={id} isDragActive={activeId !== null}>
+            <SortableItem key={id} id={id}>
                 {content}
             </SortableItem>
         );
