@@ -31,6 +31,7 @@ import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { useTheme } from '../hooks/useTheme';
 import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const categoryHexColors: Record<string, string> = {
     'Trasporti': '#64748b',
@@ -130,9 +131,7 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style: React.CSSProperties = {
-        transform: transform
-            ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
-            : undefined,
+        transform: CSS.Translate.toString(transform),
         transition,
         zIndex: isDragging ? 100 : 'auto',
         opacity: isDragging ? 0 : 1, // Nasconde l'originale, DragOverlay mostra la copia
@@ -841,22 +840,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     <div className="lg:col-span-2 flex flex-col gap-6">
-                        <SortableContext items={items} strategy={verticalListSortingStrategy}>
-                            <DndContext
-                                sensors={isDraggingDisabled ? [] : sensors}
-                                collisionDetection={closestCenter}
-                                onDragStart={handleDragStart}
-                                onDragEnd={handleDragEnd}
-                            >
+                        <DndContext
+                            sensors={isDraggingDisabled ? [] : sensors}
+                            collisionDetection={closestCenter}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext items={items} strategy={verticalListSortingStrategy}>
                                 <div className="space-y-6">
                                     {items.map((id) => renderCard(id))}
                                 </div>
+                            </SortableContext>
 
-                                <DragOverlay>
-                                    {activeId ? renderCard(activeId, true) : null}
-                                </DragOverlay>
-                            </DndContext>
-                        </SortableContext>
+                            <DragOverlay>
+                                {activeId ? renderCard(activeId, true) : null}
+                            </DragOverlay>
+                        </DndContext>
                     </div>
                 </div>
             </div>
