@@ -29,7 +29,7 @@ import { BudgetTrendChart } from './BudgetTrendChart';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { useTheme } from '../hooks/useTheme';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 
 const categoryHexColors: Record<string, string> = {
@@ -137,7 +137,6 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
         zIndex: isDragging ? 100 : 'auto',
         opacity: isDragging ? 0 : 1, // Nasconde l'originale, DragOverlay mostra la copia
         position: 'relative' as const,
-        touchAction: 'none', // Impedisce al browser di intercettare i tocchi come scroll durante il drag
     };
 
     return (
@@ -180,6 +179,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     const [activeId, setActiveId] = useState<string | null>(null);
 
     const sensors = useSensors(
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 700, // Richiede 0.7 secondi di pressione per iniziare il drag
+                tolerance: 5, // Tolleranza di movimento durante il delay
+            },
+        }),
         useSensor(PointerSensor, {
             activationConstraint: {
                 delay: 700, // Richiede 0.7 secondi di pressione per iniziare il drag
