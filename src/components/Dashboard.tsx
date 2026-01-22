@@ -140,18 +140,13 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
     };
 
     return (
-        <div ref={setNodeRef} style={style} className={`group relative ${isDragging ? 'z-50' : ''}`}>
-            {/* Drag Handle - Visible on hover or always on touch if preferred */}
-            <div
-                {...attributes}
-                {...listeners}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center cursor-grab active:cursor-grabbing z-50 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity touch-none bg-white/50 dark:bg-black/50 rounded-full"
-                title="Trascina per spostare"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                    <path fillRule="evenodd" d="M3 9a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm0 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm8-6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm0 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm8-6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm0 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z" clipRule="evenodd" />
-                </svg>
-            </div>
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`group relative ${isDragging ? 'z-50' : ''}`}
+            {...attributes}
+            {...listeners}
+        >
             {children}
         </div>
     );
@@ -186,7 +181,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8, // Requires 8px movement to start drag (prevents accidental clicks)
+                delay: 1200, // Richiede 1.2 secondi di pressione per iniziare il drag
+                tolerance: 5, // Tolleranza di movimento durante il delay
             },
         }),
         useSensor(KeyboardSensor, {
@@ -816,18 +812,20 @@ const Dashboard: React.FC<DashboardProps> = ({
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={openImportExportMenu}
-                                className="midnight-card flex items-center justify-center p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/10 hover:shadow-xl transition-all group overflow-hidden relative"
+                                className="midnight-card flex items-center p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/10 hover:shadow-xl transition-all group overflow-hidden relative"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-indigo-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                                <div className="flex items-center gap-4 relative z-10 justify-center w-full">
-                                    <div className="w-12 h-12 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
-                                        <ArrowsUpDownIcon className="w-7 h-7" />
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <p className="font-bold text-slate-700 dark:text-white underline decoration-indigo-200 dark:decoration-indigo-900 decoration-2 underline-offset-4">IMP/EXP</p>
-                                        <p className="text-xs text-slate-500 font-medium">Backup completo dell'app</p>
-                                    </div>
+                                {/* Icona a sinistra */}
+                                <div className="w-12 h-12 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl relative z-10 flex-shrink-0">
+                                    <ArrowsUpDownIcon className="w-7 h-7" />
                                 </div>
+                                {/* Testo centrato nello spazio rimanente */}
+                                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                                    <p className="font-bold text-slate-700 dark:text-white underline decoration-indigo-200 dark:decoration-indigo-900 decoration-2 underline-offset-4">IMP/EXP</p>
+                                    <p className="text-xs text-slate-500 font-medium">Backup completo dell'app</p>
+                                </div>
+                                {/* Spacer trasparente a destra per bilanciare l'icona */}
+                                <div className="w-12 flex-shrink-0" />
                             </button>
                         </div>
                     </div>
