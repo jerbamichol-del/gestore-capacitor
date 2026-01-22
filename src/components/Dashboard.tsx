@@ -126,7 +126,7 @@ const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null =>
 };
 
 // --- Sortable Item Component ---
-const SortableItem = ({ id, children }: { id: string, children: React.ReactNode }) => {
+const SortableItem = ({ id, children, isDragActive }: { id: string, children: React.ReactNode, isDragActive: boolean }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style: React.CSSProperties = {
@@ -137,6 +137,8 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode 
         zIndex: isDragging ? 100 : 'auto',
         opacity: isDragging ? 0 : 1, // Nasconde l'originale, DragOverlay mostra la copia
         position: 'relative' as const,
+        // Applica touchAction:none solo durante il drag per bloccare lo scroll del browser
+        touchAction: isDragActive ? 'none' : 'auto',
     };
 
     return (
@@ -677,7 +679,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         }
 
         return (
-            <SortableItem key={id} id={id}>
+            <SortableItem key={id} id={id} isDragActive={activeId !== null}>
                 {content}
             </SortableItem>
         );
