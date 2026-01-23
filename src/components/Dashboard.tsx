@@ -821,19 +821,15 @@ const Dashboard: React.FC<DashboardProps> = ({
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={openImportExportMenu}
-                                className="midnight-card flex items-center p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/10 hover:shadow-xl transition-all group overflow-hidden relative"
+                                className="midnight-card flex items-center justify-center p-4 md:rounded-2xl shadow-lg border border-transparent dark:border-electric-violet/10 hover:shadow-xl transition-all group overflow-hidden relative"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-indigo-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                                {/* Icona a sinistra */}
-                                <div className="w-12 h-12 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl relative z-10 flex-shrink-0">
-                                    <ArrowsUpDownIcon className="w-7 h-7" />
-                                </div>
-                                {/* Testo centrato nello spazio rimanente */}
-                                <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                                <div className="relative z-10">
+                                    <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl flex-shrink-0">
+                                        <ArrowsUpDownIcon className="w-7 h-7" />
+                                    </div>
                                     <p className="font-bold text-slate-700 dark:text-white underline decoration-indigo-200 dark:decoration-indigo-900 decoration-2 underline-offset-4">IMP/EXP</p>
                                 </div>
-                                {/* Spacer trasparente a destra per bilanciare l'icona */}
-                                <div className="w-12 flex-shrink-0" />
                             </button>
                         </div>
                     </div>

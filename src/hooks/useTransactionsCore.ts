@@ -54,6 +54,7 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
             description: data.description || '',
             amount: amount,
             category: category,
+            subcategory: data.subcategory || '',
             date: data.date || new Date().toISOString().split('T')[0],
             tags: Array.isArray(data.tags) ? data.tags : [],
             receipts: Array.isArray(data.receipts) ? data.receipts : (imageBase64 ? [imageBase64] : []),

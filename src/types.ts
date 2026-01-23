@@ -6,11 +6,11 @@ export interface Account {
 }
 
 export interface Expense {
-  id:string;
+  id: string;
   type: 'expense' | 'income' | 'transfer' | 'adjustment'; // Added adjustment
   description: string;
   amount: number;
-  date: string; 
+  date: string;
   time?: string;
   category: string;
   subcategory?: string;
@@ -32,9 +32,9 @@ export interface Expense {
 
 export const CATEGORIES: Record<string, string[]> = {
   'Alimentari': ['Ristorante', 'Bar', 'Autogrill'],
-  'Trasporti': ['Mezzi Pubblici', 'Carburante', 'Taxi', 'Assicurazione',  'Manutenzione Auto', 'Pedaggio'],
+  'Trasporti': ['Mezzi Pubblici', 'Carburante', 'Taxi', 'Assicurazione', 'Manutenzione Auto', 'Pedaggio'],
   'Casa': ['Affitto/Mutuo', 'Bollette', 'Manutenzione', 'Arredamento'],
-  'Shopping': ['Supermercato', 'Abbigliamento', 'Elettronica', 'Libri', 'Regali'],
+  'Shopping': ['Supermercato', 'Abbigliamento', 'Elettronica', 'Libri', 'Regali', 'Tabacco/Svapo'],
   'Tempo Libero': ['Cinema', 'Concerti', 'Sport', 'Viaggi'],
   'Salute': ['Farmacia', 'Visite Mediche', 'Assicurazione'],
   'Istruzione': ['Corsi', 'Libri', 'Tasse Scolastiche'],

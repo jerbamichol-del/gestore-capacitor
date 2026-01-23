@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
-import { Expense, Account } from '../types';
+import { Expense, Account, CATEGORIES } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { DocumentTextIcon } from './icons/DocumentTextIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
 import { CreditCardIcon } from './icons/CreditCardIcon';
 import { ClockIcon } from './icons/ClockIcon';
+import { TagIcon } from './icons/TagIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { XMarkIcon } from './icons/XMarkIcon';
 import { PaperClipIcon } from './icons/PaperClipIcon';
@@ -17,6 +18,7 @@ import SelectionMenu from './SelectionMenu';
 import { useTapBridge } from '../hooks/useTapBridge';
 import { pickImage, processImageFile } from '../utils/fileHelper';
 import { parseLocalYYYYMMDD, toYYYYMMDD } from '../utils/date';
+import { getCategoryStyle } from '../utils/categoryStyles';
 
 interface TransactionDetailPageProps {
   formData: Partial<Omit<Expense, 'id'>>;
@@ -180,7 +182,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
 
   const tapBridgeHandlers = useTapBridge();
 
-  const [activeMenu, setActiveMenu] = useState<'account' | 'toAccount' | null>(null);
+  const [activeMenu, setActiveMenu] = useState<'account' | 'toAccount' | 'category' | 'subcategory' | null>(null);
 
   const [isFrequencyModalOpen, setIsFrequencyModalOpen] = useState(false);
   const [isFrequencyModalAnimating, setIsFrequencyModalAnimating] = useState(false);
@@ -315,6 +317,16 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
 
   const handleToAccountSelect = (toAccountId: string) => {
     onFormChange({ toAccountId });
+    setActiveMenu(null);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    onFormChange({ category, subcategory: undefined });
+    setActiveMenu(null);
+  };
+
+  const handleSubcategorySelect = (subcategory: string) => {
+    onFormChange({ subcategory });
     setActiveMenu(null);
   };
 
@@ -479,6 +491,22 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     [accounts, formData.accountId]
   );
 
+  const categoryOptions = useMemo(() =>
+    Object.keys(CATEGORIES).map(cat => ({
+      value: cat,
+      label: getCategoryStyle(cat).label,
+      Icon: getCategoryStyle(cat).Icon,
+      color: getCategoryStyle(cat).color,
+      bgColor: getCategoryStyle(cat).bgColor,
+    })),
+    []
+  );
+
+  const subcategoryOptions = useMemo(() =>
+    formData.category ? (CATEGORIES[formData.category]?.map(sub => ({ value: sub, label: sub })) || []) : [],
+    [formData.category]
+  );
+
   const DateTimeInputs = (
     <div className={`grid ${!formData.frequency ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
       <div>
@@ -616,17 +644,49 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
               </div>
             </div>
           ) : (
-            <div>
-              <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Conto</label>
-              <button
-                type="button"
-                onClick={() => setActiveMenu('account')}
-                className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
-              >
-                <CreditCardIcon className="h-7 w-7 text-slate-400" />
-                <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
-                <ChevronDownIcon className="w-5 h-5 text-slate-500" />
-              </button>
+            <div className={`grid ${isIncome ? 'grid-cols-1' : 'grid-cols-1 gap-4'}`}>
+              <div>
+                <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Conto</label>
+                <button
+                  type="button"
+                  onClick={() => setActiveMenu('account')}
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
+                >
+                  <CreditCardIcon className="h-7 w-7 text-slate-400" />
+                  <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
+                  <ChevronDownIcon className="w-5 h-5 text-slate-500" />
+                </button>
+              </div>
+
+              {!isIncome && !isAdjustment && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMenu('category')}
+                      className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
+                    >
+                      <TagIcon className="h-6 w-6 text-slate-400" />
+                      <span className="truncate flex-1">{formData.category ? getCategoryStyle(formData.category).label : 'Seleziona'}</span>
+                      <ChevronDownIcon className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Sottocategoria</label>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMenu('subcategory')}
+                      disabled={!formData.category}
+                      className={`w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white ${!formData.category ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                    >
+                      <TagIcon className="h-6 w-6 text-slate-400" />
+                      <span className="truncate flex-1">{formData.subcategory || 'Seleziona'}</span>
+                      <ChevronDownIcon className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -753,6 +813,24 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
         options={toAccountOptions}
         selectedValue={formData.toAccountId || ''}
         onSelect={handleToAccountSelect}
+      />
+
+      <SelectionMenu
+        isOpen={activeMenu === 'category'}
+        onClose={() => setActiveMenu(null)}
+        title="Seleziona Categoria"
+        options={categoryOptions}
+        selectedValue={formData.category || ''}
+        onSelect={handleCategorySelect}
+      />
+
+      <SelectionMenu
+        isOpen={activeMenu === 'subcategory'}
+        onClose={() => setActiveMenu(null)}
+        title="Seleziona Sottocategoria"
+        options={subcategoryOptions}
+        selectedValue={formData.subcategory || ''}
+        onSelect={handleSubcategorySelect}
       />
 
       <Modal
