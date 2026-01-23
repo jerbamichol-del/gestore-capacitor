@@ -831,7 +831,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 {/* Testo centrato nello spazio rimanente */}
                                 <div className="flex-1 flex flex-col items-center justify-center relative z-10">
                                     <p className="font-bold text-slate-700 dark:text-white underline decoration-indigo-200 dark:decoration-indigo-900 decoration-2 underline-offset-4">IMP/EXP</p>
-                                    <p className="text-xs text-slate-500 font-medium">Backup completo dell'app</p>
                                 </div>
                                 {/* Spacer trasparente a destra per bilanciare l'icona */}
                                 <div className="w-12 flex-shrink-0" />
