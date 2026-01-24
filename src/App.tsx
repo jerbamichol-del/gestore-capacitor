@@ -28,7 +28,9 @@ import ShareQrModal from './components/ShareQrModal';
 import { BankSyncSettingsModal } from './components/BankSyncSettingsModal';
 import GlobalSearchModal from './components/GlobalSearchModal';
 import AIChatModal from './components/AIChatModal';
+import BudgetSettingsModal from './components/BudgetSettingsModal';
 import { BankSyncService } from './services/bank-sync-service';
+import { Budgets } from './types';
 
 // Screens
 import HistoryScreen from './screens/HistoryScreen';
@@ -95,6 +97,18 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       resumeListener.then(l => l.remove());
     };
   }, []);
+
+  // 5. Budget State
+  const [budgets, setBudgets] = useState<Budgets>(() => {
+    const saved = localStorage.getItem('monthly_budgets_v1');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const handleSaveBudgets = (newBudgets: Budgets) => {
+    setBudgets(newBudgets);
+    localStorage.setItem('monthly_budgets_v1', JSON.stringify(newBudgets));
+    ui.showToast({ message: 'Budget aggiornati!', type: 'success' });
+  };
 
   const handleSkipUpdate = () => {
     skipVersion();
@@ -425,6 +439,11 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         isBalanceVisible={isBalanceVisible}
         onToggleBalanceVisibility={handleToggleBalanceVisibility}
         showToast={ui.showToast}
+        budgets={budgets}
+        onOpenBudgetSettings={() => {
+          window.history.pushState({ modal: 'budget' }, '');
+          ui.nav.setIsBudgetModalOpen(true);
+        }}
         isDraggingDisabled={
           ui.nav.isHistoryScreenOpen ||
           ui.nav.isIncomeHistoryOpen ||
@@ -471,6 +490,13 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         onClose={() => ui.nav.closeModalWithHistory()}
         expenses={data.expenses}
         accounts={data.accounts}
+      />
+
+      <BudgetSettingsModal
+        isOpen={ui.nav.isBudgetModalOpen}
+        onClose={() => ui.nav.closeModalWithHistory()}
+        currentBudgets={budgets}
+        onSave={handleSaveBudgets}
       />
 
     </MainLayout>

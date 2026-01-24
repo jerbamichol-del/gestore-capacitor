@@ -17,4 +17,5 @@ export type ModalType =
   | 'import_export_format'
   | 'bank_sync'
   | 'search'
-  | 'chat';
+  | 'chat'
+  | 'budget';

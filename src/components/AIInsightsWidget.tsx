@@ -1,14 +1,16 @@
 import React, { useMemo } from 'react';
-import { Expense } from '../types';
+import { Expense, Budgets } from '../types';
 import { formatCurrency } from './icons/formatters';
-import { LightBulbIcon } from './icons/LightBulbIcon';
-import { parseLocalYYYYMMDD, toYYYYMMDD } from '../utils/date';
+import { LightBulbIcon, ArrowsUpDownIcon } from './icons';
+import { parseLocalYYYYMMDD } from '../utils/date';
 
 interface AIInsightsWidgetProps {
     expenses: Expense[];
+    budgets?: Budgets;
+    onOpenBudgetSettings?: () => void;
 }
 
-const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses }) => {
+const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses, budgets = {}, onOpenBudgetSettings }) => {
     const insights = useMemo(() => {
         const list = expenses.filter(e => e.type === 'expense');
         const now = new Date();
@@ -80,25 +82,54 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses }) => {
             .filter(c => !expenses.some(e => e.frequency === 'recurring' && e.description === c.desc));
 
 
+        // 4. Budget Status
+        const budgetAlerts: Array<{ cat: string, spent: number, limit: number, percent: number }> = [];
+        Object.keys(budgets).forEach(cat => {
+            const limit = budgets[cat];
+            if (limit <= 0) return;
+
+            const spent = cat === 'total'
+                ? thisMonthTotal
+                : (catTotalsThis[cat] || 0);
+
+            const percent = (spent / limit) * 100;
+            if (percent > 0) {
+                budgetAlerts.push({ cat, spent, limit, percent });
+            }
+        });
+
+        // Sort by percent descending
+        budgetAlerts.sort((a, b) => b.percent - a.percent);
+
         return {
             thisMonthTotal,
             lastMonthTotal,
             diffTotal: thisMonthTotal - lastMonthTotal,
             maxSpikeCat,
             maxSpikeAmount,
-            potentialSubscriptions
+            potentialSubscriptions,
+            budgetAlerts
         };
-    }, [expenses]);
+    }, [expenses, budgets]);
 
     if (expenses.length === 0) return null;
 
     return (
         <div className="midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/30 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-midnight-card">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-full text-indigo-600 dark:text-indigo-400">
-                    <LightBulbIcon className="w-5 h-5" />
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-full text-indigo-600 dark:text-indigo-400">
+                        <LightBulbIcon className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Insights & Budget</h3>
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Financial Insights</h3>
+                <button
+                    onClick={onOpenBudgetSettings}
+                    className="p-2 text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                >
+                    <ArrowsUpDownIcon className="w-4 h-4" />
+                    Budget
+                </button>
             </div>
 
             <div className="space-y-4">
@@ -149,6 +180,34 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses }) => {
                             <p className="text-[10px] font-bold uppercase text-sky-600 dark:text-sky-400 cursor-pointer hover:underline">
                                 Verifica e aggiungi ai ricorrenti →
                             </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Budget Progress Bars */}
+                {insights.budgetAlerts.length > 0 && (
+                    <div className="pt-2 space-y-4">
+                        <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Stato Budget Mensile</label>
+                        </div>
+                        <div className="space-y-3">
+                            {insights.budgetAlerts.slice(0, 3).map(b => (
+                                <div key={b.cat} className="space-y-1.5">
+                                    <div className="flex justify-between items-end text-xs">
+                                        <span className="font-bold text-slate-600 dark:text-slate-300 capitalize">{b.cat === 'total' ? 'Totale Mese' : b.cat}</span>
+                                        <span className="font-mono opacity-80">{formatCurrency(b.spent)} / {formatCurrency(b.limit)}</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full transition-all duration-1000 ${b.percent >= 100 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' : b.percent >= 80 ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                                            style={{ width: `${Math.min(b.percent, 100)}%` }}
+                                        />
+                                    </div>
+                                    {b.percent >= 100 && (
+                                        <p className="text-[10px] text-rose-500 font-bold animate-pulse">Budget superato!</p>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

@@ -32,6 +32,7 @@ export const useBackNavigation = (
   const [isHistoryFilterOpen, setIsHistoryFilterOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
 
   const lastBackPressTime = useRef(0);
 
@@ -41,6 +42,7 @@ export const useBackNavigation = (
     setIsHistoryScreenOpen(false); setIsHistoryFilterOpen(false); setIsRecurringScreenOpen(false);
     setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); setIsAccountsScreenOpen(false);
     setIsBankSyncModalOpen(false); setIsSearchModalOpen(false); setIsChatModalOpen(false);
+    setIsBudgetModalOpen(false);
     setAnalysisImage(null);
   };
 
@@ -122,6 +124,7 @@ export const useBackNavigation = (
       if (modal !== 'bank_sync') setIsBankSyncModalOpen(false);
       if (modal !== 'search') setIsSearchModalOpen(false);
       if (modal !== 'chat') setIsChatModalOpen(false);
+      if (modal !== 'budget') setIsBudgetModalOpen(false);
       if (modal !== 'calculator' && modal !== 'calculator_details') setIsCalculatorContainerOpen(false);
 
       // Handle Screen Navigation
@@ -193,6 +196,7 @@ export const useBackNavigation = (
     isHistoryFilterOpen, setIsHistoryFilterOpen,
     isSearchModalOpen, setIsSearchModalOpen,
     isChatModalOpen, setIsChatModalOpen,
+    isBudgetModalOpen, setIsBudgetModalOpen,
     closeModalWithHistory,
     forceNavigateHome,
     closeAllModals

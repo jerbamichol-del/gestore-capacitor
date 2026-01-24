@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Expense, Account, CATEGORIES } from '../types';
-import { XMarkIcon } from './icons/XMarkIcon';
-import { PaperAirplaneIcon } from './icons/PaperAirplaneIcon';
+import { XMarkIcon, PaperAirplaneIcon } from './icons';
 import { formatCurrency } from './icons/formatters';
 import { parseLocalYYYYMMDD } from '../utils/date';
 import { getCategoryStyle } from '../utils/categoryStyles';

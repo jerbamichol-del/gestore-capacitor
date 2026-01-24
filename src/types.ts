@@ -42,3 +42,5 @@ export const CATEGORIES: Record<string, string[]> = {
   'Beneficienza': ['Donazione', 'Adozione a distanza', 'Elemosina'],
   'Altro': [],
 };
+
+export type Budgets = Record<string, number>; // e.g., { 'Alimentari': 500, 'total': 2000 }

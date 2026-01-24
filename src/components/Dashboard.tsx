@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
-import { Expense, Account } from '../types';
+import { Expense, Account, Budgets } from '../types';
 import { formatCurrency } from './icons/formatters';
 import { getCategoryStyle } from '../utils/categoryStyles';
 import { ArrowsUpDownIcon } from './icons/ArrowsUpDownIcon';
@@ -102,6 +102,8 @@ interface DashboardProps {
     onToggleBalanceVisibility: () => void;
     showToast: (msg: { message: string; type: 'success' | 'info' | 'error' }) => void;
     isDraggingDisabled?: boolean;
+    budgets?: Budgets;
+    onOpenBudgetSettings?: () => void;
 }
 
 const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null => {
@@ -172,7 +174,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     isBalanceVisible,
     onToggleBalanceVisibility,
     showToast,
-    isDraggingDisabled = false
+    isDraggingDisabled = false,
+    budgets = {},
+    onOpenBudgetSettings,
 }) => {
 
 
@@ -687,7 +691,11 @@ const Dashboard: React.FC<DashboardProps> = ({
             );
         } else if (id === 'insights') {
             content = (
-                <AIInsightsWidget expenses={expenses} />
+                <AIInsightsWidget
+                    expenses={expenses}
+                    budgets={budgets}
+                    onOpenBudgetSettings={onOpenBudgetSettings}
+                />
             );
         }
 
