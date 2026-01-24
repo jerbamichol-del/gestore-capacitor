@@ -15,4 +15,6 @@ export type ModalType =
   | 'exit_guard'
   | 'import_export_main'
   | 'import_export_format'
-  | 'bank_sync';
+  | 'bank_sync'
+  | 'search'
+  | 'chat';

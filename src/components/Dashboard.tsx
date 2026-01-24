@@ -26,6 +26,8 @@ import {
 } from './HistoryFilterCard';
 import { useSwipe } from '../hooks/useSwipe';
 import { BudgetTrendChart } from './BudgetTrendChart';
+import SavingsGoalsCard from './SavingsGoalsCard';
+import AIInsightsWidget from './AIInsightsWidget';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { useTheme } from '../hooks/useTheme';
@@ -177,7 +179,17 @@ const Dashboard: React.FC<DashboardProps> = ({
     // --- State & DnD Logic ---
     const [items, setItems] = useState<string[]>(() => {
         const saved = localStorage.getItem('dashboard_order_safe');
-        return saved ? JSON.parse(saved) : ['summary', 'categoryPie', 'trend'];
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // Ensure 'goals' and 'insights' are included
+            let modified = false;
+            if (!parsed.includes('goals')) { parsed.push('goals'); modified = true; }
+            if (!parsed.includes('insights')) { parsed.splice(1, 0, 'insights'); modified = true; } // Insert near top
+
+            if (modified) localStorage.setItem('dashboard_order_safe', JSON.stringify(parsed));
+            return parsed;
+        }
+        return ['summary', 'insights', 'categoryPie', 'trend', 'goals'];
     });
 
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -668,6 +680,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                     quickFilter={quickFilter}
                     customRange={customRange}
                 />
+            );
+        } else if (id === 'goals') {
+            content = (
+                <SavingsGoalsCard totalBalance={totalAccountsBalance} />
+            );
+        } else if (id === 'insights') {
+            content = (
+                <AIInsightsWidget expenses={expenses} />
             );
         }
 

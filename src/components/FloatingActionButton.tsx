@@ -1,19 +1,22 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { PlusIcon } from './icons/PlusIcon';
 import { MicrophoneIcon } from './icons/MicrophoneIcon';
 import { PhotoIcon } from './icons/PhotoIcon';
 import { PencilIcon } from './icons/PencilIcon';
+import { MagnifyingGlassIcon } from './icons/MagnifyingGlassIcon';
+import { LightBulbIcon } from './icons/LightBulbIcon'; // Reusing LightBulb or we can use another one, let's use a simple emoji or existing icon for now. I'll use LightBulb as "Idea/Chat" placeholder or import Sparkles if available. Let's use LightBulbIcon since I just created it.
+
 
 interface FloatingActionButtonProps {
     onAddManually: () => void;
     onAddFromImage: () => void;
     onAddFromVoice: () => void;
+    onSearch?: () => void;
+    onChat?: () => void;
     style?: React.CSSProperties;
 }
 
-const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onAddManually, onAddFromImage, onAddFromVoice, style }) => {
+const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onAddManually, onAddFromImage, onAddFromVoice, onSearch, onChat, style }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [renderActions, setRenderActions] = useState(false); // State to control rendering for animations
@@ -68,6 +71,8 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ onAddManual
         { label: 'Aggiungi Manualmente', icon: <PencilIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddManually), bgColor: 'bg-indigo-600 dark:bg-electric-violet', hoverBgColor: 'hover:bg-indigo-700 dark:hover:bg-electric-violet/80' },
         { label: 'Aggiungi da Immagine', icon: <PhotoIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddFromImage), bgColor: 'bg-sky-600 dark:bg-electric-pink', hoverBgColor: 'hover:bg-sky-700 dark:hover:bg-electric-pink/80' },
         { label: 'Aggiungi con Voce', icon: <MicrophoneIcon className="w-7 h-7" />, onClick: () => handleActionClick(onAddFromVoice), bgColor: 'bg-purple-600 dark:bg-violet-600', hoverBgColor: 'hover:bg-purple-700 dark:hover:bg-violet-700' },
+        ...(onChat ? [{ label: 'Assistant AI', icon: <LightBulbIcon className="w-7 h-7" />, onClick: () => handleActionClick(onChat), bgColor: 'bg-emerald-500 dark:bg-emerald-600', hoverBgColor: 'hover:bg-emerald-600 dark:hover:bg-emerald-700' }] : []),
+        ...(onSearch ? [{ label: 'Cerca', icon: <MagnifyingGlassIcon className="w-7 h-7" />, onClick: () => handleActionClick(onSearch), bgColor: 'bg-amber-500 dark:bg-amber-600', hoverBgColor: 'hover:bg-amber-600 dark:hover:bg-amber-700' }] : []),
     ];
 
     const baseStyle: React.CSSProperties = {

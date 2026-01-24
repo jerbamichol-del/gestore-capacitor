@@ -139,6 +139,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
   const [tempRecurrenceInterval, setTempRecurrenceInterval] = useState<number | undefined>(formData.recurrenceInterval);
   const [tempRecurrenceDays, setTempRecurrenceDays] = useState<number[] | undefined>(formData.recurrenceDays);
   const [tempMonthlyRecurrenceType, setTempMonthlyRecurrenceType] = useState(formData.monthlyRecurrenceType);
+  const [tagInput, setTagInput] = useState('');
+
+  // Split Bill State
+  const [isSplitActive, setIsSplitActive] = useState(false);
+  const [splitParticipants, setSplitParticipants] = useState(2);
 
   // Receipt Modal State
   const [isReceiptMenuOpen, setIsReceiptMenuOpen] = useState(false);
@@ -443,6 +448,27 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
     });
   };
 
+  const handleTagNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagInput(e.target.value);
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
+      e.preventDefault();
+      const newTag = tagInput.trim().replace(/^#/, '');
+      if (newTag && !(formData.tags || []).includes(newTag)) {
+        setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), newTag] }));
+        setTagInput('');
+      }
+    } else if (e.key === 'Backspace' && !tagInput && (formData.tags || []).length > 0) {
+      setFormData(prev => ({ ...prev, tags: (prev.tags || []).slice(0, -1) }));
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(t => t !== tag) }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amountAsString = String(formData.amount).replace(',', '.').trim();
@@ -451,6 +477,29 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
     if (amountAsString === '' || isNaN(amountAsNumber) || amountAsNumber <= 0) {
       setError('Inserisci un importo valido.');
       return;
+    }
+
+    if (isSplitActive && splitParticipants > 1) {
+      const myShare = amountAsNumber / splitParticipants;
+      const othersShare = amountAsNumber - myShare;
+      const text = `Ciao! Ho pagato ${amountAsNumber.toFixed(2)}€ per "${formData.description || 'la spesa'}". Siamo in ${splitParticipants}, quindi sono ${myShare.toFixed(2)}€ a testa. Mi devi ${myShare.toFixed(2)}€.`;
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+
+      // Auto-add #split tag
+      if (!(formData.tags || []).includes('split')) {
+        setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), 'split'] }));
+      }
+
+      window.open(url, '_blank');
+    }
+
+    // Add pending tag input if exists
+    let finalTags = formData.tags || [];
+    if (tagInput.trim()) {
+      const pendingTag = tagInput.trim().replace(/^#/, '');
+      if (pendingTag && !finalTags.includes(pendingTag)) {
+        finalTags = [...finalTags, pendingTag];
+      }
     }
 
     const finalDate = formData.date || getTodayString();
@@ -482,7 +531,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
       // If transfer or income, category/subcategory/tags/receipts might be empty or irrelevant
       category: isTransfer ? 'Trasferimento' : isIncome ? 'Entrata' : (formData.category || ''),
       subcategory: isTransfer || isIncome ? undefined : (formData.subcategory || undefined),
-      tags: isTransfer ? [] : (formData.tags || []),
+      tags: isTransfer ? [] : finalTags,
       receipts: isTransfer ? [] : (formData.receipts || []),
     };
 
@@ -622,6 +671,74 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
                   {formData.frequency !== 'recurring' && (<div><label htmlFor="time" className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Ora (opz.)</label><div className="relative"><div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><ClockIcon className="h-5 w-5 text-slate-400" /></div><input id="time" name="time" value={formData.time || ''} onChange={handleInputChange} className="block w-full rounded-md border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream dark:bg-midnight-card py-2.5 pl-10 pr-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet text-base" type="time" /></div></div>)}</div></div>
 
               {isTransfer ? (<div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><SelectionButton label="Da Conto" value={selectedAccountLabel} onClick={() => setActiveMenu('account')} placeholder="Seleziona" ariaLabel="Seleziona conto di origine" icon={<CreditCardIcon className="h-7 w-7" />} /><SelectionButton label="A Conto" value={selectedToAccountLabel} onClick={() => setActiveMenu('toAccount')} placeholder="Seleziona" ariaLabel="Seleziona conto di destinazione" icon={<CreditCardIcon className="h-7 w-7" />} /></div>) : isIncome ? (<div className="grid grid-cols-1 gap-4"><SelectionButton label="Conto" value={selectedAccountLabel} onClick={() => setActiveMenu('account')} placeholder="Seleziona" ariaLabel="Seleziona conto di accredito" icon={<CreditCardIcon className="h-7 w-7" />} /></div>) : (<div className="grid grid-cols-1 sm:grid-cols-3 gap-4"><SelectionButton label="Conto" value={selectedAccountLabel} onClick={() => setActiveMenu('account')} placeholder="Seleziona" ariaLabel="Seleziona conto di pagamento" icon={<CreditCardIcon className="h-7 w-7" />} /><SelectionButton label="Categoria (opzionale)" value={selectedCategoryLabel} onClick={() => setActiveMenu('category')} placeholder="Seleziona" ariaLabel="Seleziona categoria" icon={<TagIcon className="h-5 w-5" />} /><SelectionButton label="Sottocategoria (opzionale)" value={formData.subcategory} onClick={() => setActiveMenu('subcategory')} placeholder="Seleziona" ariaLabel="Seleziona sottocategoria" disabled={isSubcategoryDisabled} icon={<TagIcon className="h-5 w-5" />} /></div>)}
+
+              {!isTransfer && !isIncome && (
+                <>
+                  <div className="space-y-1">
+                    <label className="block text-base font-medium text-slate-700 dark:text-slate-300">Tag & Etichette</label>
+                    <div className="flex flex-wrap items-center gap-2 p-2 bg-white dark:bg-midnight-card border border-slate-300 dark:border-electric-violet/30 rounded-lg focus-within:ring-1 focus-within:ring-indigo-500">
+                      {(formData.tags || []).map(tag => (
+                        <span key={tag} className="flex items-center text-sm font-semibold bg-indigo-100 dark:bg-electric-violet/20 text-indigo-700 dark:text-electric-violet px-2 py-1 rounded-md">
+                          #{tag}
+                          <button type="button" onClick={() => removeTag(tag)} className="ml-1 text-slate-500 hover:text-red-500" tabIndex={-1}>&times;</button>
+                        </span>
+                      ))}
+                      <input
+                        type="text"
+                        value={tagInput}
+                        onChange={handleTagNameChange}
+                        onKeyDown={handleTagKeyDown}
+                        placeholder={formData.tags && formData.tags.length > 0 ? '' : 'Aggiungi tag (es. #vacanza)...'}
+                        className="flex-1 min-w-[120px] bg-transparent outline-none text-slate-800 dark:text-white placeholder:text-slate-400 text-sm py-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🍕</span>
+                        <label className="text-base font-bold text-slate-700 dark:text-slate-300">Dividi Spesa (Split)</label>
+                      </div>
+                      <div
+                        className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-colors ${isSplitActive ? 'bg-indigo-600 dark:bg-electric-violet' : 'bg-slate-300 dark:bg-slate-700'}`}
+                        onClick={() => setIsSplitActive(!isSplitActive)}
+                      >
+                        <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform ${isSplitActive ? 'translate-x-5' : ''}`} />
+                      </div>
+                    </div>
+
+                    {isSplitActive && (
+                      <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-500/30 animate-fade-in-down">
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <label className="text-xs font-bold uppercase text-slate-500 mb-1 block">Partecipanti</label>
+                            <input
+                              type="number"
+                              min="2"
+                              value={splitParticipants}
+                              onChange={(e) => setSplitParticipants(Math.max(2, parseInt(e.target.value) || 2))}
+                              className="w-full bg-white dark:bg-midnight border border-slate-200 dark:border-slate-700 rounded-lg py-2 px-3 text-center font-bold"
+                            />
+                          </div>
+                          <div className="flex flex-col items-center justify-center pt-4">
+                            <span className="text-indigo-500 font-bold">➔</span>
+                          </div>
+                          <div className="flex-1 text-right">
+                            <label className="text-xs font-bold uppercase text-slate-500 mb-1 block">A Testa</label>
+                            <p className="text-lg font-black text-indigo-600 dark:text-electric-violet">
+                              {formData.amount ? (parseFloat(String(formData.amount).replace(',', '.')) / splitParticipants).toFixed(2) : '0.00'}€
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-center text-slate-400 mt-2">
+                          Salvando, verrà generato un link WhatsApp per richiedere {(formData.amount ? (parseFloat(String(formData.amount).replace(',', '.')) * (splitParticipants - 1) / splitParticipants).toFixed(2) : '0.00')}€.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {!isIncome && !isTransfer && (<div className="animate-fade-in-up"><label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Ricevute</label>{formData.receipts && formData.receipts.length > 0 && (<div className="grid grid-cols-2 gap-3 mb-3">{formData.receipts.map((receipt, index) => (<div key={index} className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-electric-violet/30 shadow-sm aspect-video bg-sunset-cream dark:bg-midnight-card cursor-pointer hover:border-indigo-300 dark:hover:border-electric-violet transition-colors" onClick={() => setViewingImage(receipt)}><img src={`data:image/png;base64,${receipt}`} alt="Ricevuta" className="w-full h-full object-cover" /><button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveReceipt(index); }} onPointerDown={(e) => e.stopPropagation()} className="absolute top-1 right-1 p-1 bg-sunset-cream/90 dark:bg-midnight/90 text-red-600 dark:text-rose-400 rounded-full shadow-md hover:bg-red-50 dark:hover:bg-midnight transition-colors z-10 flex items-center justify-center" aria-label="Rimuovi ricevuta"><XMarkIcon className="w-5 h-5" /></button></div>))}</div>)}<button type="button" onClick={() => { if (Date.now() - receiptMenuCloseTimeRef.current < 500) return; setIsReceiptMenuOpen(true); }} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg border border-dashed border-indigo-300 dark:border-electric-violet shadow-sm bg-indigo-50 dark:bg-electric-violet/10 text-indigo-600 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/20 hover:border-indigo-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><PaperClipIcon className="w-5 h-5" /><span>{formData.receipts && formData.receipts.length > 0 ? 'Aggiungi un\'altra ricevuta' : 'Allega Ricevuta'}</span></button></div>)}
               {isForRecurringTemplate && !isIncome && !isTransfer && (<div className="bg-sunset-cream dark:bg-midnight-card p-4 rounded-lg border border-sunset-coral/20 dark:border-electric-violet/20 space-y-4"><div><label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Frequenza</label><button type="button" onClick={() => setActiveMenu('frequency')} className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-electric-violet transition-colors bg-sunset-cream dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80"><span className="truncate flex-1 capitalize">{isSingleRecurring ? 'Singolo' : formData.frequency !== 'recurring' ? 'Nessuna' : 'Ricorrente'}</span><ChevronDownIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" /></button></div>{formData.frequency === 'recurring' && !isSingleRecurring && (<div className="animate-fade-in-up"><label className="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1">Ricorrenza</label><button type="button" onClick={() => setIsRecurrenceModalOpen(true)} className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-electric-violet transition-colors bg-sunset-cream dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80"><span className="truncate flex-1">{getRecurrenceSummary(formData as Partial<Expense>)}</span><ChevronDownIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" /></button></div>)}</div>)}

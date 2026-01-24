@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SkeletonListItem } from './Skeleton';
 import { BankSyncService, BankSyncCredentials } from '../services/bank-sync-service';
 import { Capacitor } from '@capacitor/core';
 import { InAppBrowser } from '@awesome-cordova-plugins/in-app-browser';
@@ -525,7 +526,11 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar bg-sunset-cream/40 dark:bg-midnight-card/30 rounded-xl p-2 border border-sunset-coral/20 dark:border-electric-violet/10">
                             {isLoadingBanks ? (
-                                <div className="p-4 text-center opacity-50 text-sm italic text-slate-500">Caricamento banche...</div>
+                                <div className="space-y-2 p-2">
+                                    <SkeletonListItem />
+                                    <SkeletonListItem />
+                                    <SkeletonListItem />
+                                </div>
                             ) : filteredAspsps.length === 0 ? (
                                 <div className="p-4 text-center opacity-50 text-sm italic text-slate-500">Nessuna banca trovata.</div>
                             ) : (

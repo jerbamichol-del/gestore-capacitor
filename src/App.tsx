@@ -26,6 +26,8 @@ import { MainLayout } from './components/MainLayout';
 import LoadingOverlay from './components/LoadingOverlay';
 import ShareQrModal from './components/ShareQrModal';
 import { BankSyncSettingsModal } from './components/BankSyncSettingsModal';
+import GlobalSearchModal from './components/GlobalSearchModal';
+import AIChatModal from './components/AIChatModal';
 import { BankSyncService } from './services/bank-sync-service';
 
 // Screens
@@ -220,6 +222,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             onAddManually={() => { window.history.pushState({ modal: 'calculator' }, ''); ui.nav.setIsCalculatorContainerOpen(true); }}
             onAddFromImage={() => { window.history.pushState({ modal: 'source' }, ''); ui.nav.setIsImageSourceModalOpen(true); }}
             onAddFromVoice={() => { window.history.pushState({ modal: 'voice' }, ''); ui.nav.setIsVoiceModalOpen(true); }}
+            onSearch={() => { window.history.pushState({ modal: 'search' }, ''); ui.nav.setIsSearchModalOpen(true); }}
+            onChat={() => { window.history.pushState({ modal: 'chat' }, ''); ui.nav.setIsChatModalOpen(true); }}
             style={fabStyle}
           />
         )
@@ -448,6 +452,25 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         isOpen={ui.nav.isBankSyncModalOpen}
         onClose={() => ui.nav.closeModalWithHistory()}
         showToast={ui.showToast}
+      />
+
+      <GlobalSearchModal
+        isOpen={ui.nav.isSearchModalOpen}
+        onClose={() => ui.nav.closeModalWithHistory()}
+        expenses={data.expenses}
+        accounts={data.accounts}
+        onSelectExpense={(e) => {
+          ui.setEditingExpense(e);
+          window.history.pushState({ modal: 'form' }, '');
+          ui.nav.setIsFormOpen(true);
+        }}
+      />
+
+      <AIChatModal
+        isOpen={ui.nav.isChatModalOpen}
+        onClose={() => ui.nav.closeModalWithHistory()}
+        expenses={data.expenses}
+        accounts={data.accounts}
       />
 
     </MainLayout>

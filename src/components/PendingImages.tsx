@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { OfflineImage } from '../utils/db';
-import { SpinnerIcon } from './icons/SpinnerIcon';
+import Skeleton from './Skeleton';
 import { TrashIcon } from './icons/TrashIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 
@@ -53,9 +53,11 @@ const PendingImages: React.FC<PendingImagesProps> = ({ images, onAnalyze, onDele
                     className="w-full h-24 object-cover bg-sunset-cream/60 dark:bg-midnight-card rounded-t-lg"
                   />
                   {syncingImageId === image.id && (
-                    <div className="absolute inset-0 bg-sunset-cream/80 dark:bg-midnight/80 backdrop-blur-sm flex items-center justify-center rounded-t-lg">
-                      <SpinnerIcon className="w-8 h-8 text-indigo-600 dark:text-electric-violet" />
-                      <span className="sr-only">Analisi in corso...</span>
+                    <div className="absolute inset-0 rounded-t-lg z-10 overflow-hidden">
+                      <Skeleton variant="rectangular" height="100%" animation="wave" className="opacity-80" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-white/50 dark:bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Analisi...</span>
+                      </div>
                     </div>
                   )}
                 </div>
