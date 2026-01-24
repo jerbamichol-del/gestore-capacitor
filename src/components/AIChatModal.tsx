@@ -150,7 +150,7 @@ Se l'utente chiede totali o somme, calcolali con precisione basandoti SOLO sui d
 Usa formattazione Markdown (grassetti). non dilungarti troppo.
 `;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -257,8 +257,8 @@ Usa formattazione Markdown (grassetti). non dilungarti troppo.
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === 'user'
-                                ? 'bg-indigo-600 text-white rounded-br-none'
-                                : 'bg-white dark:bg-midnight-card text-slate-800 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-electric-violet/10'
+                            ? 'bg-indigo-600 text-white rounded-br-none'
+                            : 'bg-white dark:bg-midnight-card text-slate-800 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-electric-violet/10'
                             }`}>
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
