@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { XMarkIcon } from '../components/icons/XMarkIcon';
 import { CheckIcon } from '../components/icons/CheckIcon';
+import { ChevronLeftIcon } from '../components/icons/ChevronLeftIcon';
 import { ChevronRightIcon } from '../components/icons/ChevronRightIcon';
-import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
 import { Expense, Account, Budgets } from '../types';
 import { CategorySummaryCard } from '../components/dashboard/CategorySummaryCard';
 import { CategoryPieCard } from '../components/dashboard/CategoryPieCard';
@@ -13,37 +13,20 @@ import SavingsGoalsCard from '../components/SavingsGoalsCard';
 import { calculateDashboardMetrics, calculateTotalBalance } from '../utils/dashboardMetrics';
 import { DashboardCardId } from '../hooks/useDashboardConfig';
 
-interface ReportGroup {
-    title: string;
-    reports: {
-        id: DashboardCardId;
-        label: string;
-        description: string;
-        emoji: string;
-    }[];
+interface ReportItem {
+    id: DashboardCardId;
+    label: string;
+    description: string;
+    emoji: string;
 }
 
-const REPORT_GROUPS: ReportGroup[] = [
-    {
-        title: 'Analisi Spese',
-        reports: [
-            { id: 'summary', label: 'Riepilogo Categorie', description: 'Dettaglio testuale delle uscite per categoria', emoji: '📊' },
-            { id: 'categoryPie', label: 'Distribuzione Categorie', description: 'Grafico a torta interattivo delle spese', emoji: 'Pie' },
-        ]
-    },
-    {
-        title: 'Andamento & Patrimonio',
-        reports: [
-            { id: 'trend', label: 'Andamento Patrimoniale', description: 'Evoluzione del saldo e dei budget nel tempo', emoji: '📈' },
-            { id: 'goals', label: 'Obiettivi di Risparmio', description: 'Stato di avanzamento dei tuoi salvadanai', emoji: '🎯' },
-        ]
-    },
-    {
-        title: 'Intelligenza & Budget',
-        reports: [
-            { id: 'insights', label: 'Budget & Insights', description: 'Analisi automatica e suggerimenti AI', emoji: '💡' },
-        ]
-    }
+// Flat list of all reports for carousel navigation
+const ALL_REPORTS: ReportItem[] = [
+    { id: 'summary', label: 'Riepilogo Categorie', description: 'Dettaglio testuale delle uscite per categoria', emoji: '📊' },
+    { id: 'categoryPie', label: 'Distribuzione Categorie', description: 'Grafico a torta interattivo delle spese', emoji: '🥧' },
+    { id: 'trend', label: 'Andamento Patrimoniale', description: 'Evoluzione del saldo e dei budget nel tempo', emoji: '📈' },
+    { id: 'goals', label: 'Obiettivi di Risparmio', description: 'Stato di avanzamento dei tuoi salvadanai', emoji: '🎯' },
+    { id: 'insights', label: 'Budget & Insights', description: 'Analisi automatica e suggerimenti AI', emoji: '💡' },
 ];
 
 interface CardManagerScreenProps {
@@ -67,8 +50,15 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
     budgets,
     onOpenBudgetSettings
 }) => {
-    const [selectedReportId, setSelectedReportId] = useState<DashboardCardId | null>(null);
-    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [selectedPieIndex, setSelectedPieIndex] = useState<number | null>(null);
+
+    // Swipe handling
+    const touchStartX = useRef<number | null>(null);
+    const touchEndX = useRef<number | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [swipeOffset, setSwipeOffset] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Calculate generic metrics for the "current month" by default
     const metrics = useMemo(() => {
@@ -82,37 +72,100 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
 
     const totalBalance = useMemo(() => calculateTotalBalance(accounts, expenses), [accounts, expenses]);
 
+    const currentReport = ALL_REPORTS[currentIndex];
+    const isPinned = items.includes(currentReport.id);
+
+    // Navigation functions
+    const goToNext = useCallback(() => {
+        if (currentIndex < ALL_REPORTS.length - 1 && !isTransitioning) {
+            setIsTransitioning(true);
+            setCurrentIndex(prev => prev + 1);
+            setTimeout(() => setIsTransitioning(false), 300);
+        }
+    }, [currentIndex, isTransitioning]);
+
+    const goToPrev = useCallback(() => {
+        if (currentIndex > 0 && !isTransitioning) {
+            setIsTransitioning(true);
+            setCurrentIndex(prev => prev - 1);
+            setTimeout(() => setIsTransitioning(false), 300);
+        }
+    }, [currentIndex, isTransitioning]);
+
+    // Touch handlers for swipe
+    const handleTouchStart = (e: React.TouchEvent) => {
+        touchStartX.current = e.touches[0].clientX;
+        touchEndX.current = null;
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (touchStartX.current === null) return;
+        touchEndX.current = e.touches[0].clientX;
+        const diff = touchEndX.current - touchStartX.current;
+
+        // Limit swipe offset at edges
+        if ((currentIndex === 0 && diff > 0) || (currentIndex === ALL_REPORTS.length - 1 && diff < 0)) {
+            setSwipeOffset(diff * 0.3); // Resistance at edges
+        } else {
+            setSwipeOffset(diff);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (touchStartX.current === null || touchEndX.current === null) {
+            setSwipeOffset(0);
+            return;
+        }
+
+        const diff = touchEndX.current - touchStartX.current;
+        const threshold = 80;
+
+        if (Math.abs(diff) > threshold) {
+            if (diff < 0) {
+                goToNext();
+            } else {
+                goToPrev();
+            }
+        }
+
+        touchStartX.current = null;
+        touchEndX.current = null;
+        setSwipeOffset(0);
+    };
+
+    // Reset index when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setCurrentIndex(0);
+            setSwipeOffset(0);
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
-    const renderDetailView = () => {
-        if (!selectedReportId) return null;
-
-        let content = null;
-        const isPinned = items.includes(selectedReportId);
-
-        switch (selectedReportId) {
+    // Render the content for the current report
+    const renderCardContent = (report: ReportItem) => {
+        switch (report.id) {
             case 'summary':
-                content = (
+                return (
                     <CategorySummaryCard
                         categoryData={metrics.categoryData}
                         totalExpenses={metrics.totalExpenses}
                         dateRangeLabel={metrics.dateRangeLabel}
                     />
                 );
-                break;
             case 'categoryPie':
-                content = (
+                return (
                     <CategoryPieCard
                         categoryData={metrics.categoryData}
                         totalExpenses={metrics.totalExpenses}
                         dateRangeLabel={metrics.dateRangeLabel}
-                        selectedIndex={selectedIndex}
-                        onSelectedIndexChange={setSelectedIndex}
+                        selectedIndex={selectedPieIndex}
+                        onSelectedIndexChange={setSelectedPieIndex}
                     />
                 );
-                break;
             case 'trend':
-                content = (
+                return (
                     <BudgetTrendChart
                         expenses={expenses}
                         accounts={accounts}
@@ -123,77 +176,33 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                         customRange={{ start: null, end: null }}
                     />
                 );
-                break;
             case 'goals':
-                content = (
+                return (
                     <SavingsGoalsCard totalBalance={totalBalance} />
                 );
-                break;
             case 'insights':
-                content = (
+                return (
                     <AIInsightsWidget
                         expenses={expenses}
                         budgets={budgets}
                         onOpenBudgetSettings={onOpenBudgetSettings}
                     />
                 );
-                break;
+            default:
+                return null;
         }
-
-        return (
-            <div className="absolute inset-0 bg-sunset-cream dark:bg-midnight z-[8600] flex flex-col animate-slide-in-right">
-                {/* Detail Header */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-midnight" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setSelectedReportId(null)} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-                            <ArrowLeftIcon className="w-6 h-6 text-slate-500" />
-                        </button>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                            {REPORT_GROUPS.flatMap(g => g.reports).find(r => r.id === selectedReportId)?.label}
-                        </h2>
-                    </div>
-
-                    {/* Pin Toggle */}
-                    <button
-                        onClick={() => onToggleCard(selectedReportId)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${isPinned
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200'
-                            : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200'
-                            }`}
-                    >
-                        {isPinned ? <XMarkIcon className="w-4 h-4" /> : <CheckIcon className="w-4 h-4" />}
-                        {isPinned ? 'Rimuovi dalla Home' : 'Aggiungi alla Home'}
-                    </button>
-                </div>
-
-                {/* Detail Content */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-8">
-                    <div className="max-w-2xl mx-auto">
-                        <div className="midnight-card p-6 rounded-3xl shadow-xl bg-white dark:bg-midnight-card min-h-[400px]">
-                            {content}
-                        </div>
-
-                        <div className="mt-8 text-center px-6">
-                            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed italic">
-                                Questa card è interattiva e visualizza i dati in tempo reale. Puoi decidere se fissarla nella tua pagina principale per averla sempre sott'occhio.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
     };
 
     return createPortal(
         <div className="fixed inset-0 z-[8500] flex flex-col bg-slate-50 dark:bg-midnight transition-colors">
-            {/* Header */}
+            {/* Header with Title */}
             <div
                 className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-midnight shadow-sm"
                 style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
             >
-                <div>
+                <div className="flex-1">
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white leading-tight">Centro Report</h2>
-                    <p className="text-xs text-slate-500 font-medium">{items.length} card attive nella home</p>
+                    <p className="text-xs text-slate-500 font-medium">{currentIndex + 1} di {ALL_REPORTS.length}</p>
                 </div>
                 <button
                     onClick={onClose}
@@ -203,72 +212,105 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                 </button>
             </div>
 
-            {/* List Container */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-12">
-                <div className="max-w-2xl mx-auto space-y-8">
-                    {REPORT_GROUPS.map((group, gIdx) => (
-                        <div key={gIdx} className="space-y-3">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 pl-2">
-                                {group.title}
-                            </h3>
-                            <div className="grid grid-cols-1 gap-3">
-                                {group.reports.map((report) => {
-                                    const isPinned = items.includes(report.id);
-                                    return (
-                                        <div
-                                            key={report.id}
-                                            onClick={() => setSelectedReportId(report.id)}
-                                            className="midnight-card p-4 rounded-2xl flex items-center justify-between cursor-pointer group active:scale-[0.98] transition-all bg-white dark:bg-midnight-card hover:border-indigo-500 dark:hover:border-electric-violet"
-                                        >
-                                            <div className="flex items-center gap-4 flex-1">
-                                                <div className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl text-2xl group-hover:scale-110 transition-transform">
-                                                    {report.emoji === 'Pie' ? '🥧' : report.emoji}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="font-bold text-slate-800 dark:text-white truncate">
-                                                        {report.label}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                                                        {report.description}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                {isPinned && (
-                                                    <span className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black px-2 py-1 rounded uppercase tracking-tighter shadow-sm border border-indigo-200 dark:border-indigo-500/20">
-                                                        🏠 Home
-                                                    </span>
-                                                )}
-                                                <ChevronRightIcon className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Quick Config Hint */}
-                    <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-center">
-                        <p className="text-sm text-slate-400 dark:text-slate-500 italic">
-                            Tocca una voce per visualizzare l'anteprima dinamica e personalizzare la tua dashboard.
-                        </p>
+            {/* Card Title Bar */}
+            <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-electric-violet dark:to-indigo-600">
+                <div className="flex items-center gap-3">
+                    <span className="text-3xl">{currentReport.emoji}</span>
+                    <div>
+                        <h3 className="text-lg font-bold text-white">{currentReport.label}</h3>
+                        <p className="text-xs text-white/70">{currentReport.description}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Detail View Overlay */}
-            {renderDetailView()}
+            {/* Carousel Container */}
+            <div
+                ref={containerRef}
+                className="flex-1 overflow-hidden relative"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+            >
+                {/* Slides */}
+                <div
+                    className="absolute inset-0 flex transition-transform duration-300 ease-out"
+                    style={{
+                        transform: `translateX(calc(-${currentIndex * 100}% + ${swipeOffset}px))`,
+                        transition: swipeOffset !== 0 ? 'none' : 'transform 0.3s ease-out'
+                    }}
+                >
+                    {ALL_REPORTS.map((report, index) => (
+                        <div
+                            key={report.id}
+                            className="min-w-full h-full overflow-y-auto p-4 md:p-6"
+                        >
+                            <div className="max-w-2xl mx-auto h-full">
+                                <div className="midnight-card p-4 md:p-6 rounded-3xl shadow-xl bg-white dark:bg-midnight-card min-h-[60vh]">
+                                    {renderCardContent(report)}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
-            <style>{`
-                @keyframes slide-in-right {
-                    from { transform: translateX(100%); }
-                    to { transform: translateX(0); }
-                }
-                .animate-slide-in-right {
-                    animation: slide-in-right 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-                }
-            `}</style>
+                {/* Navigation Arrows (Desktop) */}
+                {currentIndex > 0 && (
+                    <button
+                        onClick={goToPrev}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 dark:bg-midnight-card/90 shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-10 hidden md:flex"
+                    >
+                        <ChevronLeftIcon className="w-6 h-6 text-slate-600 dark:text-slate-300" />
+                    </button>
+                )}
+                {currentIndex < ALL_REPORTS.length - 1 && (
+                    <button
+                        onClick={goToNext}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 dark:bg-midnight-card/90 shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-10 hidden md:flex"
+                    >
+                        <ChevronRightIcon className="w-6 h-6 text-slate-600 dark:text-slate-300" />
+                    </button>
+                )}
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-midnight">
+                {/* Page Indicators */}
+                <div className="flex justify-center gap-2 mb-4">
+                    {ALL_REPORTS.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => {
+                                if (!isTransitioning) {
+                                    setIsTransitioning(true);
+                                    setCurrentIndex(index);
+                                    setTimeout(() => setIsTransitioning(false), 300);
+                                }
+                            }}
+                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${index === currentIndex
+                                    ? 'bg-indigo-500 dark:bg-electric-violet w-8'
+                                    : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
+                                }`}
+                        />
+                    ))}
+                </div>
+
+                {/* Pin/Unpin Button */}
+                <button
+                    onClick={() => onToggleCard(currentReport.id)}
+                    className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-base font-bold transition-all ${isPinned
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200'
+                        : 'bg-indigo-500 dark:bg-electric-violet text-white hover:bg-indigo-600 dark:hover:bg-indigo-500'
+                        }`}
+                >
+                    {isPinned ? <XMarkIcon className="w-5 h-5" /> : <CheckIcon className="w-5 h-5" />}
+                    {isPinned ? 'Rimuovi dalla Home' : 'Aggiungi alla Home'}
+                </button>
+
+                {/* Swipe Hint */}
+                <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-3">
+                    ← Scorri per vedere altre card →
+                </p>
+            </div>
         </div>,
         document.body
     );
