@@ -172,6 +172,15 @@ export class NotificationListenerService {
       return;
     }
 
+    // 1. Save Raw Data (Offline-First / Re-parsing Support)
+    let rawEventId: string | null = null;
+    try {
+      const { RawDataService } = await import('./raw-data-service');
+      rawEventId = await RawDataService.saveRawNotification(notification);
+    } catch (e) {
+      console.error('Failed to save raw event (continuing processing anyway):', e);
+    }
+
     try {
       // Parser handles logic: parsing -> checking transfer -> saving to DB -> dispatching events
       const transaction = await NotificationTransactionParser.parseNotification(
@@ -185,14 +194,23 @@ export class NotificationListenerService {
       // Even if it returned null (no regex match), we don't want to retry it endlessly.
       this.markAsProcessed(rawHash);
 
-      if (transaction) {
-        console.log('✅ Transaction processed:', transaction.id);
-        // Note: NotificationTransactionParser already dispatches 'auto-transaction-added' 
-        // or 'auto-transaction-confirmation-needed' via AutoTransactionService/Parser
+      if (rawEventId) {
+        const { RawDataService } = await import('./raw-data-service');
+        if (transaction) {
+          await RawDataService.markAsProcessed(rawEventId, transaction.id);
+          console.log('✅ Transaction processed & Raw Event linked:', transaction.id);
+        } else {
+          // Parsed but no regex match -> Ignored/Invalid content
+          await RawDataService.markAsIgnored(rawEventId, 'No regex match found');
+        }
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error handling notification:', error);
+      if (rawEventId) {
+        const { RawDataService } = await import('./raw-data-service');
+        await RawDataService.markAsError(rawEventId, error.message || 'Unknown error');
+      }
     }
   }
 

@@ -12,6 +12,7 @@ import { AutoTransaction } from '../types/transaction';
 import { md5, normalizeForHash } from '../utils/hash';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Expense } from '../types';
+import { ValidatorService } from './validator-service';
 
 export class AutoTransactionService {
   private static readonly IGNORED_HASHES_KEY = 'auto_transactions_ignored_hashes';
@@ -141,12 +142,21 @@ export class AutoTransactionService {
       }
     }
 
+
+
+    // Validate
+    const warnings = ValidatorService.validate(data);
+    if (warnings.length > 0) {
+      console.warn('⚠️ Transaction validation warnings:', warnings);
+    }
+
     const transaction: AutoTransaction = {
       ...data,
       id: crypto.randomUUID(),
       sourceHash: hash,
-      status: 'pending',
-      createdAt: Date.now()
+      status: 'pending', // could force 'review_needed' if we had that status
+      createdAt: Date.now(),
+      validationWarnings: warnings
     };
 
     await dbAddAutoTransaction(transaction);

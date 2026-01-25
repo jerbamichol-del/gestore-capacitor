@@ -35,6 +35,7 @@ export interface AutoTransaction {
   status: TransactionStatus;
   createdAt: number;
   confirmedAt?: number;
+  validationWarnings?: string[]; // Array di warning generati dal validatore
 }
 
 export interface BankConfig {
