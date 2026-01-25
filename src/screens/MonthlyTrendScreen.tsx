@@ -152,8 +152,8 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
                     );
                 })
             ) : (
-                <div className="text-center py-10 text-slate-500 dark:text-slate-400">
-                    Nessuna spesa questo mese.
+                <div className="flex-grow flex items-center justify-center p-10">
+                    <p className="text-center text-slate-500 dark:text-slate-400">Nessuna spesa registrata in questo periodo.</p>
                 </div>
             )}
         </div>
@@ -206,66 +206,60 @@ const MonthlyTrendScreen: React.FC<MonthlyTrendScreenProps> = ({ expenses }) => 
                     </div>
                 </>
             ) : (
-                <div className="text-center py-10 text-slate-500 dark:text-slate-400">
-                    Nessuna spesa questo mese.
+                <div className="flex-grow flex items-center justify-center p-10">
+                    <p className="text-center text-slate-500 dark:text-slate-400">Nessuna spesa registrata in questo periodo.</p>
                 </div>
             )}
         </div>
     );
 
     return (
-        <div className="animate-fade-in-up pb-20">
-            <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-1 px-1">Centro Report</h1>
-
-            <div className="flex overflow-x-auto no-scrollbar gap-6 px-1 mb-6 border-b border-slate-200 dark:border-slate-800/50 pb-2">
-                {Pages.map((page, index) => (
-                    <button
-                        key={page.id}
-                        onClick={() => setActivePageIndex(index)}
-                        className={`whitespace-nowrap pb-1 font-bold text-sm transition-colors relative ${activePageIndex === index
-                                ? 'text-indigo-600 dark:text-electric-violet'
-                                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                            }`}
-                    >
-                        {page.title}
-                        {activePageIndex === index && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-electric-violet rounded-full layout-id-underline" />
-                        )}
-                    </button>
-                ))}
-            </div>
+        <div className="animate-fade-in-up pb-20 px-2 lg:px-0">
+            <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-6 px-1">Centro Report</h1>
 
             <div
                 ref={containerRef}
-                className="midnight-card rounded-3xl shadow-xl border border-transparent dark:border-electric-violet/20 bg-white dark:bg-midnight-card min-h-[500px] overflow-hidden relative"
+                className="midnight-card rounded-3xl shadow-xl border border-transparent dark:border-electric-violet/20 bg-white dark:bg-midnight-card min-h-[600px] flex flex-col overflow-hidden"
             >
-                {/* Header of the card (Dynamic based on page) */}
-                <div className="p-6 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{Pages[activePageIndex].title}</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">{currentMonthName}</p>
-                    </div>
-                    {/* Pagination Dots */}
-                    <div className="flex gap-1.5">
-                        {Pages.map((_, i) => (
-                            <div
-                                key={i}
-                                className={`w-2 h-2 rounded-full transition-all ${i === activePageIndex ? 'bg-indigo-500 w-4' : 'bg-slate-300 dark:bg-slate-700'}`}
-                            />
+                {/* Header with Tabs */}
+                <div className="border-b border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/20">
+                    <div className="flex overflow-x-auto no-scrollbar">
+                        {Pages.map((page, index) => (
+                            <button
+                                key={page.id}
+                                onClick={() => setActivePageIndex(index)}
+                                className={`flex-1 py-4 px-4 text-center text-sm font-bold whitespace-nowrap transition-colors relative outline-none ${activePageIndex === index
+                                        ? 'text-indigo-600 dark:text-electric-violet'
+                                        : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                                    }`}
+                            >
+                                {page.title}
+                                {activePageIndex === index && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-electric-violet" />
+                                )}
+                            </button>
                         ))}
                     </div>
                 </div>
 
+                {/* Sub-header (Date) */}
+                <div className="py-2 text-center bg-slate-50/30 dark:bg-slate-800/10 border-b border-slate-50 dark:border-slate-800/50">
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{currentMonthName}</p>
+                </div>
+
                 {/* Swipeable View Container */}
-                <div className="relative overflow-hidden w-full">
+                <div className="relative flex-grow w-full overflow-hidden">
                     <div
-                        className="flex transition-transform duration-300 ease-out w-full"
+                        className="flex transition-transform duration-300 ease-out h-full w-full"
                         style={{ transform: `translateX(-${activePageIndex * 100}%)` }}
                     >
-                        <div className="w-full flex-shrink-0">
+                        {/* Page 1: Summary List */}
+                        <div className="w-full flex-shrink-0 h-full overflow-y-auto custom-scrollbar">
                             {renderSummaryPage()}
                         </div>
-                        <div className="w-full flex-shrink-0">
+
+                        {/* Page 2: Distribution Pie */}
+                        <div className="w-full flex-shrink-0 h-full overflow-y-auto custom-scrollbar">
                             {renderDistributionPage()}
                         </div>
                     </div>
