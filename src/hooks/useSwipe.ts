@@ -6,6 +6,8 @@ type SwipeOpts = {
   threshold?: number;
   ignoreSelector?: string;
   disableDrag?: (intent: 'left' | 'right') => boolean;
+  minStartX?: number;
+  maxStartX?: number;
 };
 
 type SwipeState = {
@@ -29,6 +31,8 @@ export function useSwipe(
     threshold = 80,
     ignoreSelector,
     disableDrag,
+    minStartX,
+    maxStartX,
   } = opts;
 
   const [progress, setProgress] = React.useState(0);
@@ -73,6 +77,11 @@ export function useSwipe(
       if (s.pointerId !== null) return; // already a gesture in progress
 
       const target = ev.target as HTMLElement | null;
+
+      // Edge/Region check
+      if (minStartX !== undefined && ev.clientX < minStartX) return;
+      if (maxStartX !== undefined && ev.clientX > maxStartX) return;
+
       if (ignoreSelector && target && target.closest(ignoreSelector)) {
         s.pointerId = ev.pointerId;
         s.blockedByIgnore = true;
@@ -124,7 +133,7 @@ export function useSwipe(
       }
 
       if (!s.isSwiping) return;
-      
+
       const containerWidth = ref.current?.offsetWidth || window.innerWidth;
       if (containerWidth > 0) {
         const currentDx = ev.clientX - s.startX;
@@ -143,11 +152,11 @@ export function useSwipe(
       if (canTrigger) {
         const dx = ev.clientX - s.startX;
         if (Math.abs(dx) >= threshold) {
-            if (dx < 0 && handlers.onSwipeLeft) {
-                handlers.onSwipeLeft();
-            } else if (dx > 0 && handlers.onSwipeRight) {
-                handlers.onSwipeRight();
-            }
+          if (dx < 0 && handlers.onSwipeLeft) {
+            handlers.onSwipeLeft();
+          } else if (dx > 0 && handlers.onSwipeRight) {
+            handlers.onSwipeRight();
+          }
         }
       }
 

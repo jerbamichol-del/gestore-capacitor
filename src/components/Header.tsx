@@ -4,6 +4,7 @@ import { ArrowDownOnSquareIcon } from './icons/ArrowDownOnSquareIcon';
 import { Cog6ToothIcon } from './icons/Cog6ToothIcon';
 import { NotificationSettingsButton } from './NotificationSettingsButton';
 import { useTheme } from '../hooks/useTheme';
+import { LockClosedIcon } from './icons/LockClosedIcon';
 
 const ThemeToggle = () => {
   const { toggleTheme, isDark } = useTheme();
@@ -36,6 +37,7 @@ interface HeaderProps {
   onInstallClick: () => void;
   installPromptEvent: any;
   onOpenSettings: () => void;
+  onLogout?: () => void;
   isNotificationListenerEnabled?: boolean;
   requestNotificationPermission?: () => void;
 }
@@ -46,6 +48,7 @@ const Header: React.FC<HeaderProps> = ({
   onInstallClick,
   installPromptEvent,
   onOpenSettings,
+  onLogout,
   isNotificationListenerEnabled = false,
   requestNotificationPermission = () => { }
 }) => {
@@ -103,6 +106,17 @@ const Header: React.FC<HeaderProps> = ({
             />
 
             <ThemeToggle />
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
+                aria-label="Logout"
+                title="Logout"
+              >
+                <LockClosedIcon className="w-6 h-6" />
+              </button>
+            )}
           </div>
         </div>
       </div>

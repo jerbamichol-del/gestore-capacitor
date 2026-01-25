@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { OfflineImage, deleteImageFromQueue, addImageToQueue, getQueuedImages } from './utils/db';
 import { Expense } from './types';
 
@@ -55,6 +55,8 @@ import { useCloudSync } from './hooks/useCloudSync';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
 import { usePrivacyGate } from './hooks/usePrivacyGate';
 import { useUpdateChecker } from './hooks/useUpdateChecker';
+import { useDashboardConfig } from './hooks/useDashboardConfig';
+import { useSwipe } from './hooks/useSwipe';
 import { App as CapApp } from '@capacitor/app';
 
 const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogout, currentEmail }) => {
@@ -83,6 +85,20 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const [isCardManagerOpen, setIsCardManagerOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isForgotPasswordScreenOpen, setIsForgotPasswordScreenOpen] = useState(false);
+
+  // 6. Dashboard Config (Visible Cards & Order)
+  const dashboardConfig = useDashboardConfig();
+
+  // 7. Global Edge Swipe to Open Sidebar
+  const mainLayoutRef = useRef<HTMLDivElement>(null);
+  useSwipe(mainLayoutRef, {
+    onSwipeRight: () => {
+      if (!isSettingsSidebarOpen) setIsSettingsSidebarOpen(true);
+    }
+  }, {
+    maxStartX: 40, // Only trigger if swipe starts at the very left edge
+    enabled: !ui.nav.isHistoryFilterOpen && !ui.nav.isCalculatorContainerOpen
+  });
 
 
   useEffect(() => {
@@ -278,6 +294,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   return (
     <MainLayout
+      ref={mainLayoutRef}
       header={
         <Header
           pendingSyncs={ui.pendingImages.length}
@@ -285,6 +302,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           onInstallClick={handleInstallClick}
           installPromptEvent={installPromptEvent}
           onOpenSettings={() => setIsSettingsSidebarOpen(true)}
+          onLogout={onLogout}
           isNotificationListenerEnabled={auto.isNotificationListenerEnabled}
           requestNotificationPermission={auto.requestNotificationPermission}
         />
@@ -462,6 +480,9 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       }
     >
       <Dashboard
+        items={dashboardConfig.items}
+        onOrderChange={dashboardConfig.saveOrder}
+        onRemoveCard={dashboardConfig.toggleCard}
         accounts={data.accounts}
         expenses={data.expenses || []}
         recurringExpenses={data.recurringExpenses || []}
@@ -603,6 +624,15 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       <CardManagerScreen
         isOpen={isCardManagerOpen}
         onClose={() => setIsCardManagerOpen(false)}
+        items={dashboardConfig.items}
+        onToggleCard={dashboardConfig.toggleCard}
+        expenses={data.expenses}
+        accounts={data.accounts}
+        budgets={budgets}
+        onOpenBudgetSettings={() => {
+          setIsCardManagerOpen(false);
+          setTimeout(() => ui.nav.setIsBudgetModalOpen(true), 150);
+        }}
       />
 
       <ImportExportModal

@@ -34,6 +34,9 @@ import { useTheme } from '../hooks/useTheme';
 import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { CategorySummaryCard } from './dashboard/CategorySummaryCard';
+import { CategoryPieCard } from './dashboard/CategoryPieCard';
+import { DashboardCardWrapper } from './dashboard/DashboardCardWrapper';
 
 const categoryHexColors: Record<string, string> = {
     'Trasporti': '#64748b',
@@ -104,6 +107,9 @@ interface DashboardProps {
     isDraggingDisabled?: boolean;
     budgets?: Budgets;
     onOpenBudgetSettings?: () => void;
+    items: string[];
+    onOrderChange: (newOrder: string[]) => void;
+    onRemoveCard: (id: string) => void;
 }
 
 const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null => {
@@ -177,24 +183,11 @@ const Dashboard: React.FC<DashboardProps> = ({
     isDraggingDisabled = false,
     budgets = {},
     onOpenBudgetSettings,
+    items,
+    onOrderChange,
+    onRemoveCard,
 }) => {
 
-
-    // --- State & DnD Logic ---
-    const [items, setItems] = useState<string[]>(() => {
-        const saved = localStorage.getItem('dashboard_order_safe');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            // Ensure 'goals' and 'insights' are included
-            let modified = false;
-            if (!parsed.includes('goals')) { parsed.push('goals'); modified = true; }
-            if (!parsed.includes('insights')) { parsed.splice(1, 0, 'insights'); modified = true; } // Insert near top
-
-            if (modified) localStorage.setItem('dashboard_order_safe', JSON.stringify(parsed));
-            return parsed;
-        }
-        return ['summary', 'insights', 'categoryPie', 'trend', 'goals'];
-    });
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -224,13 +217,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         setActiveId(null);
 
         if (active.id !== over?.id) {
-            setItems((items) => {
-                const oldIndex = items.indexOf(active.id as string);
-                const newIndex = items.indexOf(over?.id as string);
-                const newOrder = arrayMove(items, oldIndex, newIndex);
-                localStorage.setItem('dashboard_order_safe', JSON.stringify(newOrder));
-                return newOrder;
-            });
+            const oldIndex = items.indexOf(active.id as string);
+            const newIndex = items.indexOf(over?.id as string);
+            const newOrder = arrayMove(items, oldIndex, newIndex);
+            onOrderChange(newOrder);
         }
     };
 
@@ -473,118 +463,28 @@ const Dashboard: React.FC<DashboardProps> = ({
     const listTx = -activeViewIndex * (100 / 3);
 
     const renderCard = (id: string, isOverlay: boolean = false) => {
-        let content = null;
+        let cardContent = null;
 
         if (id === 'summary') {
-            content = (
-                <div className="midnight-card p-6 md:rounded-2xl shadow-xl flex flex-col transition-all duration-300">
-                    <div className="mb-4">
-                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Riepilogo Categorie</h3>
-                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
-                    </div>
-
-                    {categoryData.length > 0 ? (
-                        <div className="space-y-4 flex-grow">
-                            {categoryData.map(cat => {
-                                const style = getCategoryStyle(cat.name);
-                                const percentage = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
-                                return (
-                                    <div key={cat.name} className="flex items-center gap-4 text-base">
-                                        <style.Icon className="w-10 h-10 flex-shrink-0" />
-                                        <div className="flex-grow">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="font-semibold text-slate-700 dark:text-slate-300">{style.label}</span>
-                                                <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(cat.value)}</span>
-                                            </div>
-                                            <div className="w-full bg-sunset-cream/90 dark:bg-slate-700 rounded-full h-2.5">
-                                                <div className="bg-indigo-500 dark:bg-electric-violet h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    ) : <p className="text-center text-slate-500 dark:text-slate-400 flex-grow flex items-center justify-center">Nessuna spesa registrata in questo periodo.</p>}
-                </div>
+            cardContent = (
+                <CategorySummaryCard
+                    categoryData={categoryData}
+                    totalExpenses={totalExpenses}
+                    dateRangeLabel={dateRangeLabel}
+                />
             );
         } else if (id === 'categoryPie') {
-            content = (
-                <div className="midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
-                    <div className="mb-2 text-center">
-                        <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
-                        <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>
-                    </div>
-
-                    {categoryData.length > 0 ? (
-                        <div className="relative cursor-pointer" onClick={handleChartBackgroundClick}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie
-                                        data={categoryData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={68}
-                                        outerRadius={102}
-                                        cornerRadius={6}
-                                        fill="#8884d8"
-                                        paddingAngle={4}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        {...({ activeIndex: activeIndex ?? undefined } as any)}
-                                        activeShape={renderActiveShape}
-                                    >
-                                        {categoryData.map((entry) => {
-                                            const color = categoryHexColors[entry.name] || DEFAULT_COLOR;
-                                            return (
-                                                <Cell
-                                                    key={`cell-${entry.name}`}
-                                                    fill={color}
-                                                    fillOpacity={isDark ? 0.15 : 1}
-                                                    stroke={isDark ? color : "none"}
-                                                    strokeWidth={isDark ? 2 : 0}
-                                                    style={isDark ? { filter: `drop-shadow(0 0 3px ${color})` } as React.CSSProperties : {}}
-                                                />
-                                            );
-                                        })}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                            {activeIndex === null && (
-                                <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
-                                    <span className="text-slate-800 dark:text-slate-200 text-base font-bold">Totale</span>
-                                    <span className="text-2xl font-extrabold text-slate-800 dark:text-white mt-1">
-                                        {formatCurrency(totalExpenses)}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    ) : <p className="text-center text-slate-500 py-16">Nessun dato da visualizzare.</p>}
-
-                    {categoryData.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-3">
-                                {categoryData.map((entry, index) => {
-                                    const style = getCategoryStyle(entry.name);
-                                    return (
-                                        <button
-                                            key={`item-${index}`}
-                                            onClick={(e) => handleLegendItemClick(index, e)}
-                                            className={`flex items-center gap-3 p-2 rounded-full text-left transition-all duration-200 bg-sunset-cream/60 dark:bg-midnight-card hover:bg-sunset-peach/50 dark:hover:bg-midnight-card/80`}
-                                        >
-                                            <style.Icon className="w-8 h-8 flex-shrink-0" />
-                                            <div className="min-w-0 pr-2">
-                                                <p className={`font-semibold text-sm truncate text-slate-700 dark:text-slate-300`}>{style.label}</p>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </div>
+            cardContent = (
+                <CategoryPieCard
+                    categoryData={categoryData}
+                    totalExpenses={totalExpenses}
+                    dateRangeLabel={dateRangeLabel}
+                    selectedIndex={selectedIndex}
+                    onSelectedIndexChange={setSelectedIndex}
+                />
             );
         } else if (id === 'trend') {
-            content = (
+            cardContent = (
                 <BudgetTrendChart
                     expenses={expenses}
                     accounts={accounts}
@@ -596,11 +496,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                 />
             );
         } else if (id === 'goals') {
-            content = (
+            cardContent = (
                 <SavingsGoalsCard totalBalance={totalAccountsBalance} />
             );
         } else if (id === 'insights') {
-            content = (
+            cardContent = (
                 <AIInsightsWidget
                     expenses={expenses}
                     budgets={budgets}
@@ -612,14 +512,16 @@ const Dashboard: React.FC<DashboardProps> = ({
         if (isOverlay) {
             return (
                 <div className="cursor-grabbing scale-[0.65] shadow-2xl z-50">
-                    {content}
+                    <DashboardCardWrapper>{cardContent}</DashboardCardWrapper>
                 </div>
             );
         }
 
         return (
             <SortableItem key={id} id={id}>
-                {content}
+                <DashboardCardWrapper onRemove={() => onRemoveCard(id)}>
+                    {cardContent}
+                </DashboardCardWrapper>
             </SortableItem>
         );
     };
@@ -635,9 +537,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                                 <p className="text-sm font-medium text-slate-400 dark:text-slate-500 capitalize mb-1">{dateRangeLabel}</p>
                                 <div className="relative flex justify-center items-center text-indigo-600 dark:text-electric-violet mt-1">
                                     <div className="relative flex items-baseline">
-                                        <span className="absolute right-full mr-2 text-3xl font-semibold opacity-80 top-1/2 -translate-y-1/2">â‚¬</span>
+                                        <span className="absolute right-full mr-2 text-3xl font-semibold opacity-80 top-1/2 -translate-y-1/2">{"\u20AC"}</span>
                                         <span className="text-5xl font-extrabold tracking-tight dark:text-white">
-                                            {formatCurrency(totalExpenses).replace('â‚¬', '').trim()}
+                                            {formatCurrency(totalExpenses).replace("\u20AC", "").trim()}
                                         </span>
                                     </div>
                                     {recurringCountInPeriod > 0 && (

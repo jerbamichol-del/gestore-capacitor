@@ -18,7 +18,7 @@ export const formatCurrency = (amount: number): string => {
   }
 
   const formattedAmount = new Intl.NumberFormat('it-IT', options).format(numericAmount);
-  return `€ ${formattedAmount}`;
+  return `\u20AC ${formattedAmount}`;
 };
 
 export const formatDate = (date: Date): string => {

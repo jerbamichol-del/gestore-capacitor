@@ -8,9 +8,9 @@ interface MainLayoutProps {
     badges?: React.ReactNode;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ header, children, fab, modals, badges }) => {
+export const MainLayout = React.forwardRef<HTMLDivElement, MainLayoutProps>(({ header, children, fab, modals, badges }, ref) => {
     return (
-        <div className="h-full w-full bg-sunset-cream dark:bg-midnight flex flex-col font-sans" style={{ touchAction: 'pan-y' }}>
+        <div ref={ref} className="h-full w-full bg-sunset-cream dark:bg-midnight flex flex-col font-sans" style={{ touchAction: 'pan-y' }}>
             <div className="flex-shrink-0 z-20">
                 {header}
             </div>
@@ -21,7 +21,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ header, children, fab, m
                 </div>
             )}
 
-            <main className="flex-grow">
+            <main className="flex-grow overflow-hidden">
                 <div className="w-full h-full overflow-y-auto space-y-6" style={{ touchAction: 'pan-y' }}>
                     {children}
                 </div>
@@ -33,4 +33,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ header, children, fab, m
             {modals}
         </div>
     );
-};
+});
+
+MainLayout.displayName = 'MainLayout';
