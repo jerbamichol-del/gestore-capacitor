@@ -157,7 +157,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             {/* Sidebar */}
             <div
                 ref={sidebarRef}
-                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white/95 dark:bg-midnight/95 backdrop-blur-xl shadow-2xl flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'animate-slide-in-left' : ''}`}
+                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'animate-slide-in-left' : ''}`}
                 style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
             >
                 {/* Header */}
