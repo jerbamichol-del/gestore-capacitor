@@ -30,7 +30,9 @@ import GlobalSearchModal from './components/GlobalSearchModal';
 import AIChatModal from './components/AIChatModal';
 import BudgetSettingsModal from './components/BudgetSettingsModal';
 import { BankSyncService } from './services/bank-sync-service';
-import { Budgets } from './types';
+import { Budgets } from './types'; // Added Expense
+import { LocalNotifications } from '@capacitor/local-notifications'; // Import Notifs
+import { useRecurringNotifications } from './hooks/useRecurringNotifications';
 
 // Screens
 import HistoryScreen from './screens/HistoryScreen';
@@ -58,7 +60,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const data = useTransactionsCore(ui.showToast);
 
   // 3. Auto Flow (Notifications, SMS, Confirmations)
-  const auto = useAutoFlow(data.accounts, data.handleAddExpense, ui.showToast);
+  const auto = useAutoFlow(data.accounts, (e) => { data.handleAddExpense(e); checkBudgetAndNotify(e); }, ui.showToast);
+
+  // 4. Recurring Notifications
+  useRecurringNotifications(data.recurringExpenses);
 
   // 4. Update Checker
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -109,6 +114,54 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     localStorage.setItem('monthly_budgets_v1', JSON.stringify(newBudgets));
     ui.showToast({ message: 'Budget aggiornati!', type: 'success' });
   };
+
+  const checkBudgetAndNotify = async (newExpense: Omit<Expense, 'id'> | Expense) => {
+    if (newExpense.type !== 'expense') return;
+
+    // Check Global
+    const globalLimit = budgets['total'] || 0;
+    const catLimit = budgets[newExpense.category] || 0;
+
+    if (globalLimit <= 0 && catLimit <= 0) return;
+
+    const now = new Date(newExpense.date || new Date());
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Calculate current totals locally to include the new expense immediately
+    const relevantExpenses = data.expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear && e.type === 'expense';
+    });
+
+    // Add new expense amount
+    const newAmount = Number(newExpense.amount);
+
+    // Check Category Budget
+    if (catLimit > 0) {
+      const catSpent = relevantExpenses
+        .filter(e => e.category === newExpense.category)
+        .reduce((sum, e) => sum + Number(e.amount), 0) + newAmount;
+
+      if (catSpent > catLimit) {
+        await LocalNotifications.schedule({
+          notifications: [{
+            title: '⚠️ Budget Superato!',
+            body: `Hai superato il budget per ${newExpense.category}. Speso: ${catSpent.toFixed(2)}€ / ${catLimit}€`,
+            id: Date.now(), // Unique ID
+            schedule: { at: new Date(Date.now() + 1000) } // 1 sec delay
+          }]
+        });
+      }
+    }
+  };
+
+  // Wrapper for Add Expense to include checks
+  const handleAddExpenseWithChecks = (expense: Omit<Expense, 'id'> | Expense, callback?: () => void) => {
+    data.handleAddExpense(expense, callback);
+    checkBudgetAndNotify(expense);
+  };
+
 
   const handleSkipUpdate = () => {
     skipVersion();
@@ -250,7 +303,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             isOpen={ui.nav.isCalculatorContainerOpen}
             onClose={ui.nav.closeModalWithHistory}
             onSubmit={(d) => {
-              data.handleAddExpense(d);
+              handleAddExpenseWithChecks(d);
               ui.nav.closeModalWithHistory();
             }}
             accounts={data.accounts}
@@ -269,7 +322,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
             isOpen={ui.nav.isFormOpen}
             onClose={ui.nav.closeModalWithHistory}
             onSubmit={(d) => {
-              data.handleAddExpense(d, () => {
+              handleAddExpenseWithChecks(d, () => {
                 if (ui.nav.isFormOpen) {
                   if (ui.formOpenedFromCalculatorRef.current) {
                     ui.formOpenedFromCalculatorRef.current = false;
