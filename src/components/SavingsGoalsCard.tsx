@@ -323,7 +323,7 @@ const SavingsGoalsCard: React.FC<SavingsGoalsCardProps> = ({ totalBalance }) => 
 
     return (
         <>
-            <div className="midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
+            <div className="midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4 mb-4 pr-8">
                     <button
                         onClick={openAddModal}
