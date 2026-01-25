@@ -46,6 +46,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#FFFFFF',
         '--accent-border': 'rgba(45, 90, 39, 0.08)',
         '--accent-shadow': 'rgba(45, 90, 39, 0.05)',
+        '--pie-text-primary': '#1B3B1A',
+        '--pie-text-secondary': '#4A5D4A',
     },
     'ocean-breeze': {
         '--accent-primary': '#0284c7',
@@ -54,6 +56,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#FFFFFF',
         '--accent-border': 'rgba(2, 132, 199, 0.08)',
         '--accent-shadow': 'rgba(2, 132, 199, 0.05)',
+        '--pie-text-primary': '#0c4a6e', // Sky 900
+        '--pie-text-secondary': '#0369a1', // Sky 700
     },
     'sunset-coral': {
         '--accent-primary': '#f97316',
@@ -62,6 +66,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#FFFFFF',
         '--accent-border': 'rgba(249, 115, 22, 0.08)',
         '--accent-shadow': 'rgba(249, 115, 22, 0.05)',
+        '--pie-text-primary': '#7c2d12', // Orange 900
+        '--pie-text-secondary': '#c2410c', // Orange 700
     },
     'royal-gold': {
         '--accent-primary': '#ca8a04',
@@ -70,6 +76,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#FFFFFF',
         '--accent-border': 'rgba(202, 138, 4, 0.08)',
         '--accent-shadow': 'rgba(202, 138, 4, 0.05)',
+        '--pie-text-primary': '#713f12', // Yellow 900 (Amber)
+        '--pie-text-secondary': '#a16207', // Yellow 700
     },
     // Dark Themes
     'midnight-electric': {
@@ -79,6 +87,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#1E293B',
         '--accent-border': 'rgba(168, 85, 247, 0.3)',
         '--accent-shadow': 'rgba(0, 0, 0, 0.37)',
+        '--pie-text-primary': '#ffffff',
+        '--pie-text-secondary': '#e2e8f0',
     },
     'cyber-neon': {
         '--accent-primary': '#22d3ee',
@@ -87,6 +97,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#1c1917',
         '--accent-border': 'rgba(34, 211, 238, 0.3)',
         '--accent-shadow': 'rgba(0, 0, 0, 0.4)',
+        '--pie-text-primary': '#ffffff',
+        '--pie-text-secondary': '#94a3b8',
     },
     'deep-ocean': {
         '--accent-primary': '#3b82f6',
@@ -95,6 +107,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#0f172a',
         '--accent-border': 'rgba(59, 130, 246, 0.3)',
         '--accent-shadow': 'rgba(0, 0, 0, 0.4)',
+        '--pie-text-primary': '#ffffff',
+        '--pie-text-secondary': '#94a3b8',
     },
     'dark-forest': {
         '--accent-primary': '#22c55e',
@@ -103,6 +117,8 @@ const ACCENT_CSS_VARS: Record<AccentTheme, Record<string, string>> = {
         '--accent-card': '#14532d',
         '--accent-border': 'rgba(34, 197, 94, 0.3)',
         '--accent-shadow': 'rgba(0, 0, 0, 0.4)',
+        '--pie-text-primary': '#ffffff',
+        '--pie-text-secondary': '#86efac',
     },
 };
 

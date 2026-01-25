@@ -20,20 +20,20 @@
         extend: {
           colors: {
             midnight: {
-              DEFAULT: '#0F172A',
-              card: '#1E293B',
-              border: '#334155',
+              DEFAULT: 'var(--accent-bg)',
+              card: 'var(--accent-card)',
+              border: 'var(--accent-border)',
             },
             electric: {
-              violet: '#A855F7',
+              violet: 'var(--accent-primary)',
               pink: '#EC4899',
             },
-            sunset: { // Keeping key 'sunset' temporarily to minimize component breakage during step-by-step migration, but values are MINT
-              cream: '#F2F4F2',    // Sage Off-White
-              peach: '#E8EBE8',    // Light Sage (Hover)
-              coral: '#C89F65',    // Earthy Gold (Accent)
-              pink: '#2D5A27',     // Forest Green (Primary)
-              text: '#1B3B1A',     // Dark Forest Green (Text)
+            sunset: {
+              cream: 'var(--accent-bg)',
+              peach: 'var(--accent-shadow)', // Maps to light hover/shadow
+              coral: 'var(--accent-primary)',
+              pink: 'var(--accent-primary)',
+              text: 'var(--pie-text-primary)',
             }
           }
         }
