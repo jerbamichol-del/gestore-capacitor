@@ -85,10 +85,34 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onOpenSecurity,
     onLogout,
 }) => {
+    const [isClosing, setIsClosing] = React.useState(false);
     const { isDark } = useTheme();
     const sidebarRef = useRef<HTMLDivElement>(null);
     const startXRef = useRef<number>(0);
     const currentXRef = useRef<number>(0);
+
+    const handleClose = () => {
+        setIsClosing(true);
+    };
+
+    const handleAnimationEnd = (e: React.AnimationEvent) => {
+        if (isClosing && e.target === sidebarRef.current) {
+            setIsClosing(false);
+            onClose();
+        }
+    };
+
+    // Close logic specifically designed for "instant" unmounts (like item clicks) vs animated closes
+    const handleInstantClose = (action: () => void) => {
+        // For item clicks, we usually want to close + navigate immediately or after a short delay
+        // But for visual consistency we can animate out too.
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            setIsClosing(false);
+            action();
+        }, 300); // Match animation duration
+    };
 
     // Handle swipe to close
     useEffect(() => {
@@ -113,9 +137,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         const handleTouchEnd = () => {
             const diff = startXRef.current - currentXRef.current;
             if (diff > 100) {
-                onClose();
+                handleClose();
+            } else {
+                sidebar.style.transform = '';
             }
-            sidebar.style.transform = '';
         };
 
         sidebar.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -127,37 +152,34 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             sidebar.removeEventListener('touchmove', handleTouchMove);
             sidebar.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     // Handle escape key
     useEffect(() => {
         if (!isOpen) return;
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') handleClose();
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
-    if (!isOpen) return null;
-
-    const handleItemClick = (action: () => void) => {
-        onClose();
-        setTimeout(action, 150);
-    };
+    // Only render if open or closing
+    if (!isOpen && !isClosing) return null;
 
     return createPortal(
         <div className="fixed inset-0 z-[8000]">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
-                onClick={onClose}
+                className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+                onClick={handleClose}
             />
 
             {/* Sidebar */}
             <div
                 ref={sidebarRef}
-                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'animate-slide-in-left' : ''}`}
+                onAnimationEnd={handleAnimationEnd}
+                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : 'animate-slide-in-left'}`}
                 style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
             >
                 {/* Header */}
@@ -165,7 +187,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-bold text-slate-800 dark:text-white">Impostazioni</h2>
                         <button
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                         >
                             <XMarkIcon className="w-6 h-6 text-slate-500" />
@@ -192,7 +214,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             icon={<ChartBarIcon className="w-5 h-5" />}
                             label="Andamento"
                             description="Gestisci le card della home"
-                            onClick={() => handleItemClick(onOpenCardManager)}
+                            onClick={() => handleInstantClose(onOpenCardManager)}
                         />
                     </div>
 
@@ -203,7 +225,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             icon={<PaletteIcon className="w-5 h-5" />}
                             label="Tema"
                             description={isDark ? 'Midnight Electric' : 'Mint Garden'}
-                            onClick={() => handleItemClick(onOpenThemePicker)}
+                            onClick={() => handleInstantClose(onOpenThemePicker)}
                         />
                     </div>
 
@@ -214,7 +236,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             icon={<ShieldCheckIcon className="w-5 h-5" />}
                             label="PIN & Password"
                             description="Cambia PIN, reset password"
-                            onClick={() => handleItemClick(onOpenSecurity)}
+                            onClick={() => handleInstantClose(onOpenSecurity)}
                         />
                     </div>
 
@@ -225,7 +247,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             icon={<ArrowsUpDownIcon className="w-5 h-5" />}
                             label="Importa / Esporta"
                             description="Backup, sync, banche"
-                            onClick={() => handleItemClick(onOpenImportExport)}
+                            onClick={() => handleInstantClose(onOpenImportExport)}
                         />
                     </div>
 
@@ -236,7 +258,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             icon={<QrCodeIcon className="w-5 h-5" />}
                             label="Mostra QR"
                             description="Condividi l'app con altri"
-                            onClick={() => handleItemClick(onShowQr)}
+                            onClick={() => handleInstantClose(onShowQr)}
                         />
                     </div>
                 </div>
@@ -246,7 +268,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     <MenuItem
                         icon={<ArrowRightOnRectangleIcon className="w-5 h-5" />}
                         label="Esci"
-                        onClick={() => handleItemClick(onLogout)}
+                        onClick={() => handleInstantClose(onLogout)}
                         variant="danger"
                     />
                 </div>
@@ -258,15 +280,29 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
           from { transform: translateX(-100%); }
           to { transform: translateX(0); }
         }
+        @keyframes slide-out-left {
+          from { transform: translateX(0); }
+          to { transform: translateX(-100%); }
+        }
         .animate-slide-in-left {
           animation: slide-in-left 0.3s ease-out forwards;
+        }
+        .animate-slide-out-left {
+          animation: slide-out-left 0.3s ease-in forwards;
         }
         @keyframes fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
         }
+        @keyframes fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
         .animate-fade-in {
-          animation: fade-in 0.2s ease-out forwards;
+          animation: fade-in 0.3s ease-out forwards;
+        }
+        .animate-fade-out {
+          animation: fade-out 0.3s ease-in forwards;
         }
       `}</style>
         </div>,
