@@ -77,7 +77,7 @@ export const CategoryPieCard: React.FC<CategoryPieCardProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-full w-full">
+        <div className="midnight-card p-6 md:rounded-2xl shadow-xl h-full w-full flex flex-col">
             <div className="mb-2 text-center">
                 <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Spese per Categoria</h3>
                 <p className="text-sm text-slate-500 font-medium capitalize">{dateRangeLabel}</p>

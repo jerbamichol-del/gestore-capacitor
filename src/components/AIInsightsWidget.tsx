@@ -118,18 +118,8 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses, budgets =
         <div className="midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/30 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-midnight-card">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-full text-indigo-600 dark:text-indigo-400">
-                        <LightBulbIcon className="w-5 h-5" />
-                    </div>
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white">Insights & Budget</h3>
                 </div>
-                <button
-                    onClick={onOpenBudgetSettings}
-                    className="p-2 text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
-                >
-                    <ArrowsUpDownIcon className="w-4 h-4" />
-                    Budget
-                </button>
             </div>
 
             <div className="space-y-4">
@@ -211,6 +201,16 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses, budgets =
                         </div>
                     </div>
                 )}
+                {/* Budget Management Button */}
+                <div className="pt-2">
+                    <button
+                        onClick={onOpenBudgetSettings}
+                        className="w-full py-3 text-sm font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <ArrowsUpDownIcon className="w-4 h-4" />
+                        Gestisci Budget
+                    </button>
+                </div>
             </div>
         </div>
     );
