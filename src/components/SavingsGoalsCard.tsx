@@ -324,7 +324,14 @@ const SavingsGoalsCard: React.FC<SavingsGoalsCardProps> = ({ totalBalance }) => 
     return (
         <>
             <div className="midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-4 mb-4 pr-8">
+                    <button
+                        onClick={openAddModal}
+                        className="p-2 rounded-full bg-indigo-100 dark:bg-electric-violet/20 text-indigo-600 dark:text-electric-violet hover:bg-indigo-200 dark:hover:bg-electric-violet/30 transition-colors flex-shrink-0"
+                        aria-label="Aggiungi obiettivo"
+                    >
+                        <PlusIcon className="w-5 h-5" />
+                    </button>
                     <div>
                         <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">Obiettivi di Risparmio</h3>
                         {goals.length > 0 && (
@@ -333,13 +340,6 @@ const SavingsGoalsCard: React.FC<SavingsGoalsCardProps> = ({ totalBalance }) => 
                             </p>
                         )}
                     </div>
-                    <button
-                        onClick={openAddModal}
-                        className="p-2 rounded-full bg-indigo-100 dark:bg-electric-violet/20 text-indigo-600 dark:text-electric-violet hover:bg-indigo-200 dark:hover:bg-electric-violet/30 transition-colors"
-                        aria-label="Aggiungi obiettivo"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                    </button>
                 </div>
 
                 {goals.length === 0 ? (
