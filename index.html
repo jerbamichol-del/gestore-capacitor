@@ -61,9 +61,22 @@
 
   <style>
     :root {
-      --sunset-cream: #F2F4F2;
-      --midnight: #0F172A;
-      --midnight-card: #1E293B;
+      /* Default variables (overridden by JS) */
+      --accent-primary: #2D5A27;
+      --accent-gradient: linear-gradient(135deg, #2D5A27 0%, #3A7D34 100%);
+      --accent-bg: #F2F4F2;
+      --accent-card: #FFFFFF;
+      --accent-border: rgba(45, 90, 39, 0.08);
+      --accent-shadow: rgba(45, 90, 39, 0.05);
+
+      --pie-text-primary: #1B3B1A;
+      --pie-text-secondary: #4A5D4A;
+    }
+
+    /* Dark Mode Defaults */
+    .dark {
+      --pie-text-primary: #ffffff;
+      --pie-text-secondary: #e2e8f0;
     }
 
     html,
@@ -82,66 +95,38 @@
       overscroll-behavior-y: contain;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      /* Modern Mint Background */
-      background: #F2F4F2;
-      color: #1B3B1A;
+
+      background-color: var(--accent-bg);
+      color: var(--pie-text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .dark body {
-      background: #0F172A;
-      color: white;
-    }
-
-    /* Modern Mint Card Effect (Light Mode Default) */
+    /* Dynamic Card Style */
     .midnight-card {
-      background: #FFFFFF;
-      border: 1px solid rgba(45, 90, 39, 0.08);
-      /* Organic Green Border */
-      box-shadow: 0 4px 20px -2px rgba(45, 90, 39, 0.05);
-      /* Soft Organic Shadow */
+      background: var(--accent-card);
+      border: 1px solid var(--accent-border);
+      box-shadow: 0 4px 20px -2px var(--accent-shadow);
       transition: all 0.3s ease;
       border-radius: 20px;
-      /* More rounded */
     }
 
     .midnight-card:hover {
-      border-color: rgba(45, 90, 39, 0.15);
-      box-shadow: 0 8px 25px -5px rgba(45, 90, 39, 0.1);
+      /* Slightly more opaque border/shadow on hover if needed, or rely on JS changing var */
+      border-color: var(--accent-primary);
+      opacity: 0.98;
     }
 
-    /* Midnight Electric Card Effect (Dark Mode Override) */
-    .dark .midnight-card {
-      background: #1E293B;
-      border: 1px solid rgba(168, 85, 247, 0.3);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      border-radius: 16px;
-    }
-
-    .dark .midnight-card:hover {
-      border-color: rgba(168, 85, 247, 0.4);
-      box-shadow: 0 8px 32px 0 rgba(168, 85, 247, 0.1);
-    }
-
-    /* Button Styles */
-
-    /* Modern Mint Gradient (Light Mode) */
+    /* Dynamic Button Style */
     .btn-electric {
-      background: linear-gradient(135deg, #2D5A27 0%, #3A7D34 100%);
-      /* Forest Green */
+      background: var(--accent-gradient);
       color: white;
-      box-shadow: 0 4px 15px rgba(45, 90, 39, 0.25);
+      box-shadow: 0 4px 15px var(--accent-shadow);
       transition: all 0.2s ease;
     }
 
     .btn-electric:active {
       transform: scale(0.95);
       opacity: 0.9;
-    }
-
-    /* Electric Gradient (Dark Mode) */
-    .dark .btn-electric {
-      background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
-      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
     }
 
     /* Animations */
@@ -179,19 +164,6 @@
 
     .recharts-pie-sector:focus {
       outline: none !important;
-    }
-
-    /* Pie chart text colors */
-    :root {
-      --pie-text-primary: #1B3B1A;
-      /* Dark Forest */
-      --pie-text-secondary: #4A5D4A;
-      /* Soft Sage Text */
-    }
-
-    .dark {
-      --pie-text-primary: #ffffff;
-      --pie-text-secondary: #e2e8f0;
     }
   </style>
 </head>

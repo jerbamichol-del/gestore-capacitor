@@ -1,13 +1,12 @@
 import React from 'react';
 import { PhotoIcon } from './icons/PhotoIcon';
 import { ArrowDownOnSquareIcon } from './icons/ArrowDownOnSquareIcon';
-import { LockClosedIcon } from './icons/LockClosedIcon';
-import { QrCodeIcon } from './icons/QrCodeIcon';
+import { Cog6ToothIcon } from './icons/Cog6ToothIcon';
 import { NotificationSettingsButton } from './NotificationSettingsButton';
 import { useTheme } from '../hooks/useTheme';
 
 const ThemeToggle = () => {
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
   return (
     <button
@@ -36,8 +35,7 @@ interface HeaderProps {
   isOnline: boolean;
   onInstallClick: () => void;
   installPromptEvent: any;
-  onLogout: () => void;
-  onShowQr: () => void;
+  onOpenSettings: () => void;
   isNotificationListenerEnabled?: boolean;
   requestNotificationPermission?: () => void;
 }
@@ -47,16 +45,28 @@ const Header: React.FC<HeaderProps> = ({
   isOnline,
   onInstallClick,
   installPromptEvent,
-  onLogout,
-  onShowQr,
+  onOpenSettings,
   isNotificationListenerEnabled = false,
   requestNotificationPermission = () => { }
 }) => {
   return (
-    <header className="bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight shadow-md sticky top-0 z-20 transition-colors duration-300">
+    <header className="bg-[var(--accent-bg,var(--sunset-cream,#F2F4F2))] dark:bg-[var(--accent-bg,#0F172A)] shadow-md sticky top-0 z-20 transition-colors duration-300">
       <div className="mx-auto">
         <div className="py-2 flex items-center justify-between gap-3 px-4 md:px-8 h-[58px]">
-          <h1 className="text-xl font-bold text-slate-800 dark:text-white transition-colors">Gestore Spese</h1>
+          {/* Left: Settings + Title */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenSettings}
+              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
+              aria-label="Impostazioni"
+              title="Impostazioni"
+            >
+              <Cog6ToothIcon className="w-6 h-6" />
+            </button>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white transition-colors">Gestore Spese</h1>
+          </div>
+
+          {/* Right: Status indicators and controls */}
           <div className="flex items-center gap-2 sm:gap-4">
             {!isOnline && (
               <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 bg-amber-100 px-3 py-1.5 rounded-full">
@@ -93,24 +103,6 @@ const Header: React.FC<HeaderProps> = ({
             />
 
             <ThemeToggle />
-
-            <button
-              onClick={onShowQr}
-              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
-              aria-label="Mostra QR Code"
-              title="Condividi via QR"
-            >
-              <QrCodeIcon className="w-6 h-6" />
-            </button>
-
-            <button
-              onClick={onLogout}
-              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 rounded-full transition-colors dark:text-slate-400 dark:hover:text-electric-violet dark:hover:bg-midnight-card"
-              aria-label="Logout"
-              title="Logout"
-            >
-              <LockClosedIcon className="w-6 h-6" />
-            </button>
           </div>
         </div>
       </div>

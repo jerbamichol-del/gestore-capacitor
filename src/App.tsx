@@ -38,6 +38,13 @@ import { useRecurringNotifications } from './hooks/useRecurringNotifications';
 import HistoryScreen from './screens/HistoryScreen';
 import RecurringExpensesScreen from './screens/RecurringExpensesScreen';
 import AccountsScreen from './screens/AccountsScreen';
+import SecuritySettingsScreen from './screens/SecuritySettingsScreen';
+import CardManagerScreen from './screens/CardManagerScreen';
+
+// Settings Components
+import SettingsSidebar from './components/SettingsSidebar';
+import ThemePicker from './components/ThemePicker';
+import ImportExportModal from './components/ImportExportModal';
 
 // Hooks
 import { useTransactionsCore } from './hooks/useTransactionsCore';
@@ -68,6 +75,14 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   // 4. Update Checker
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const { updateInfo, isChecking: isCheckingUpdate, skipVersion } = useUpdateChecker();
+
+  // 5. Settings Sidebar & Screens
+  const [isSettingsSidebarOpen, setIsSettingsSidebarOpen] = useState(false);
+  const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
+  const [isSecurityScreenOpen, setIsSecurityScreenOpen] = useState(false);
+  const [isCardManagerOpen, setIsCardManagerOpen] = useState(false);
+  const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
+  const [isForgotPasswordScreenOpen, setIsForgotPasswordScreenOpen] = useState(false);
 
 
   useEffect(() => {
@@ -269,8 +284,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           isOnline={isOnline}
           onInstallClick={handleInstallClick}
           installPromptEvent={installPromptEvent}
-          onLogout={onLogout}
-          onShowQr={() => { window.history.pushState({ modal: 'qr' }, ''); ui.nav.setIsQrModalOpen(true); }}
+          onOpenSettings={() => setIsSettingsSidebarOpen(true)}
           isNotificationListenerEnabled={auto.isNotificationListenerEnabled}
           requestNotificationPermission={auto.requestNotificationPermission}
         />
@@ -550,6 +564,62 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         onClose={() => ui.nav.closeModalWithHistory()}
         currentBudgets={budgets}
         onSave={handleSaveBudgets}
+      />
+
+      {/* Settings Sidebar */}
+      <SettingsSidebar
+        isOpen={isSettingsSidebarOpen}
+        onClose={() => setIsSettingsSidebarOpen(false)}
+        email={currentEmail}
+        onShowQr={() => { window.history.pushState({ modal: 'qr' }, ''); ui.nav.setIsQrModalOpen(true); }}
+        onOpenImportExport={() => {
+          // window.history.pushState({ modal: 'import_export_main' }, ''); // Optional history support
+          setIsImportExportModalOpen(true);
+        }}
+        onOpenCardManager={() => setIsCardManagerOpen(true)}
+        onOpenThemePicker={() => setIsThemePickerOpen(true)}
+        onOpenSecurity={() => setIsSecurityScreenOpen(true)}
+        onLogout={onLogout}
+      />
+
+      {/* Theme Picker */}
+      <ThemePicker
+        isOpen={isThemePickerOpen}
+        onClose={() => setIsThemePickerOpen(false)}
+      />
+
+      {/* Security Settings */}
+      <SecuritySettingsScreen
+        isOpen={isSecurityScreenOpen}
+        onClose={() => setIsSecurityScreenOpen(false)}
+        email={currentEmail}
+        onForgotPassword={() => {
+          // Navigate to forgot password - this would need integration with AuthGate
+          ui.showToast({ message: 'Apri l\'app e usa "Password dimenticata" dal login', type: 'info' });
+        }}
+      />
+
+      {/* Card Manager */}
+      <CardManagerScreen
+        isOpen={isCardManagerOpen}
+        onClose={() => setIsCardManagerOpen(false)}
+      />
+
+      <ImportExportModal
+        isOpen={isImportExportModalOpen}
+        onClose={() => setIsImportExportModalOpen(false)}
+        onImportFile={(file) => {
+          const reader = new FileReader();
+          reader.onload = (e) => handleImportFile(e.target?.result as string);
+          reader.readAsText(file);
+        }}
+        onSync={handleSyncFromCloud}
+        onOpenBankSyncSettings={() => {
+          setIsImportExportModalOpen(false);
+          setTimeout(() => ui.nav.setIsBankSyncModalOpen(true), 150);
+        }}
+        expenses={data.expenses}
+        showToast={ui.showToast}
       />
 
     </MainLayout>
