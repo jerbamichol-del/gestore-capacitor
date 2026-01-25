@@ -245,7 +245,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                             className="min-w-full h-full overflow-y-auto p-4 md:p-6"
                         >
                             <div className="max-w-2xl mx-auto h-full">
-                                <div className="midnight-card p-4 md:p-6 rounded-3xl shadow-xl bg-white dark:bg-midnight-card min-h-[60vh]">
+                                <div className="p-4 md:p-6 rounded-3xl shadow-xl bg-white dark:bg-midnight-card min-h-[60vh]">
                                     {renderCardContent(report)}
                                 </div>
                             </div>
@@ -287,8 +287,8 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                                 }
                             }}
                             className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${index === currentIndex
-                                    ? 'bg-indigo-500 dark:bg-electric-violet w-8'
-                                    : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
+                                ? 'bg-indigo-500 dark:bg-electric-violet w-8'
+                                : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
                                 }`}
                         />
                     ))}
