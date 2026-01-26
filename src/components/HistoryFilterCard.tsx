@@ -92,7 +92,7 @@ export const QuickFilterControl: React.FC<{
     <div
       className={
         `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors ` +
-        (isActive ? 'border-indigo-600 dark:border-electric-violet/50' : 'border-indigo-600 dark:border-electric-violet/50')
+        (isActive ? 'border-indigo-500/30 dark:border-electric-violet/50 shadow-sm' : 'border-slate-200 dark:border-electric-violet/20')
       }
     >
       {filters.map((f, i) => {
@@ -107,9 +107,8 @@ export const QuickFilterControl: React.FC<{
               `flex-1 flex items-center justify-center px-2 text-center font-semibold ${compact ? 'text-xs' : 'text-sm'} transition-colors duration-200 focus:outline-none ` +
               (i > 0 ? 'border-l ' : '') +
               (active
-                ? 'btn-electric text-white border-sunset-coral/50'
-                : `bg-sunset-cream/40 dark:bg-midnight-card/50 text-sunset-text dark:text-slate-200 hover:bg-sunset-peach/40 dark:hover:bg-midnight-card/80 ${isActive ? 'border-sunset-coral/30 dark:border-electric-violet/30' : 'border-slate-200 dark:border-slate-800'
-                }`)
+                ? 'bg-indigo-600 dark:bg-electric-violet text-white'
+                : `bg-white dark:bg-midnight-card/50 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-midnight-card/80`)
             }
             {...tapBridge}
           >
@@ -161,11 +160,12 @@ export const CustomDateRangeInputs: React.FC<{
   return (
     <div
       className={
-        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative border-sunset-pink/20 dark:border-electric-violet/50 bg-emerald-50 dark:bg-midnight-card text-black dark:text-electric-violet`
+        `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative ` +
+        (isActive ? 'border-indigo-500/30 dark:border-electric-violet/50 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-200 dark:border-electric-violet/20 bg-white dark:bg-midnight-card')
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
-        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor}`}>
+        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} text-slate-700 dark:text-slate-200`}>
           {range.start ? formatDate(range.start) : 'Dal'}
         </div>
         <input
@@ -179,9 +179,9 @@ export const CustomDateRangeInputs: React.FC<{
           {...tapBridge}
         />
       </label>
-      <div className="w-px my-1 bg-sunset-pink/30 dark:bg-electric-violet/30" />
+      <div className="w-px my-1 bg-slate-100 dark:bg-electric-violet/20" />
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
-        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} ${textColor}`}>
+        <div className={`absolute inset-0 flex items-center justify-center z-0 pointer-events-none ${textSize} text-slate-700 dark:text-slate-200`}>
           {range.end ? formatDate(range.end) : 'Al'}
         </div>
         <input
@@ -331,7 +331,8 @@ export const PeriodNavigator: React.FC<{
       <div
         ref={wrapperRef}
         className={
-          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg border-sunset-pink/20 dark:border-electric-violet/50 bg-white dark:bg-midnight-card`
+          `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg transition-colors ` +
+          (isActive ? 'border-indigo-500/30 dark:border-electric-violet/50 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-200 dark:border-electric-violet/20 bg-white dark:bg-midnight-card')
         }
       >
         <button
@@ -348,8 +349,8 @@ export const PeriodNavigator: React.FC<{
           onClick={() => onMenuToggle(!isMenuOpen)}
           type="button"
           className={
-            `flex-1 h-full text-sm font-semibold bg-emerald-50 dark:bg-midnight-card text-black dark:text-electric-violet ` +
-            (compact ? '' : ' hover:bg-emerald-100 dark:hover:bg-slate-700 transition-colors')
+            `flex-1 h-full text-sm font-semibold bg-white dark:bg-midnight-card text-slate-700 dark:text-slate-200 ` +
+            (compact ? '' : ' hover:bg-slate-50 dark:hover:bg-midnight-card/80 transition-colors')
           }
           data-no-drag
           {...tapBridge}
@@ -478,14 +479,14 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" style={{ stroke: 'var(--accent-border)' }} strokeWidth="1" />
+          <path d={unifiedPath} className="fill-white pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" className="stroke-slate-200" strokeWidth="1" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" style={{ stroke: 'var(--accent-border)' }} strokeWidth="1" />
+          <path d={unifiedPath} className="fill-midnight pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" className="stroke-electric-violet/30" strokeWidth="1" />
         </g>
       </svg>
 

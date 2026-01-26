@@ -196,11 +196,16 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
     // Transform logic: 
     // - If just swiping to open, map progress to translateX
-    // - If fully open, standard positioning (handled by classes or reset)
-    // - If closing, handled by animation classes
-    const interactiveStyle: React.CSSProperties = (isSwiping && !isOpen) ? {
+    // - If release and open, animate smoothly to 0 from current pos
+    const interactiveStyle: React.CSSProperties = isSwiping ? {
         transform: `translateX(calc(-100% + ${currentProgressPercent * sidebarWidth}px))`,
         transition: 'none'
+    } : (isOpen && !isClosing && !openedBySwipe) ? {
+        // This handles cases NOT opened by swipe but standard button click
+        // classes take care of this via animate-slide-in-left
+    } : (isOpen && !isClosing && openedBySwipe) ? {
+        transform: 'translateX(0)',
+        transition: 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)'
     } : {};
 
     const backdropOpacity = (isSwiping && !isOpen) ? currentProgressPercent : 1;
@@ -209,8 +214,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         <div className="fixed inset-0 z-[8000]">
             {/* Backdrop */}
             <div
-                className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
-                style={isSwiping && !isOpen ? { opacity: backdropOpacity, transition: 'none' } : {}}
+                className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : isOpen && !isSwiping && !openedBySwipe ? 'animate-fade-in' : ''}`}
+                style={isSwiping && !isOpen ? { opacity: backdropOpacity, transition: 'none' } : (isOpen && openedBySwipe) ? { opacity: 1, transition: 'opacity 0.25s ease-out' } : {}}
                 onClick={handleClose}
             />
 
@@ -218,7 +223,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             <div
                 ref={sidebarRef}
                 onAnimationEnd={handleAnimationEnd}
-                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : isOpen ? (isSwiping || openedBySwipe ? '' : 'animate-slide-in-left') : ''}`}
+                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : isOpen && !isSwiping && !openedBySwipe ? 'animate-slide-in-left' : ''}`}
                 style={{
                     paddingTop: 'env(safe-area-inset-top, 0px)',
                     ...interactiveStyle
