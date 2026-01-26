@@ -203,6 +203,17 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     };
   }, []);
 
+  // Handle Web Shortcuts (PWA Query Params)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'quick_add') {
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => {
+        ui.nav.setIsCalculatorContainerOpen(true);
+      }, 500);
+    }
+  }, [ui.nav]);
+
   // Handle Quick Actions (Deep Links)
   useEffect(() => {
     CapApp.addListener('appUrlOpen', (data) => {
@@ -657,7 +668,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           ui.nav.setIsBudgetModalOpen(true);
         }}
         onOpenEventBudgets={() => setIsEventBudgetsOpen(true)}
-        onOpenBankSync={() => setIsBankSyncModalOpen(true)}
+        onOpenBankSync={() => ui.nav.setIsBankSyncModalOpen(true)}
         onLogout={onLogout}
         isSwiping={isDraggingSidebar}
         openProgress={swipeProgress}

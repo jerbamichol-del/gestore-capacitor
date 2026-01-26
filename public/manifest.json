@@ -27,10 +27,25 @@
       "files": [
         {
           "name": "screenshot",
-          "accept": ["image/*"]
+          "accept": [
+            "image/*"
+          ]
         }
       ]
     }
-  }
-
+  },
+  "shortcuts": [
+    {
+      "name": "Aggiungi Spesa",
+      "short_name": "Aggiungi",
+      "description": "Inserisci rapidamente una nuova spesa",
+      "url": "./?action=quick_add",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

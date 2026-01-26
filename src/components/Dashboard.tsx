@@ -112,6 +112,7 @@ interface DashboardProps {
     items: string[];
     onOrderChange: (newOrder: string[]) => void;
     onRemoveCard: (id: string) => void;
+    onOpenCardManager: () => void;
 }
 
 const calculateNextDueDate = (template: Expense, fromDate: Date): Date | null => {
@@ -190,6 +191,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     items,
     onOrderChange,
     onRemoveCard,
+    onOpenCardManager,
 }) => {
 
 
