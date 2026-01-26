@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { XMarkIcon } from './icons/XMarkIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
@@ -46,7 +46,7 @@ interface SettingsSidebarProps {
     onOpenBankSync: () => void;
     onLogout: () => void;
     isSwiping?: boolean;
-    openProgress?: number;
+    openProgress?: number; // 0 to ~300 (pixels dragged)
 }
 
 interface MenuItemProps {
@@ -92,115 +92,74 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onOpenEventBudgets,
     onOpenBankSync,
     onLogout,
-    isSwiping = false,
-    openProgress = 0,
+    isSwiping: isExternalSwiping = false,
+    openProgress: externalOpenProgress = 0,
 }) => {
-    const [isClosing, setIsClosing] = React.useState(false);
-    const [openedBySwipe, setOpenedBySwipe] = React.useState(false);
     const { isDark } = useTheme();
     const sidebarRef = useRef<HTMLDivElement>(null);
-    const startXRef = useRef<number>(0);
-    const currentXRef = useRef<number>(0);
+    const overlayRef = useRef<HTMLDivElement>(null);
 
-    // Track if menu was opened via swipe to skip slide-in animation
+    // Internal state for closing animation
+    const [isVisible, setIsVisible] = useState(false);
+
+    // Local swipe state (for closing gesture)
+    const [localSwipeX, setLocalSwipeX] = useState(0);
+    const [isLocalSwiping, setIsLocalSwiping] = useState(false);
+
+    // Combined state interpretation
+    // We are "active" if props.isOpen is true OR if we have valid local content to show (closing animation)
+    // or if an external swipe is pushing us into view.
+
     useEffect(() => {
-        if (isOpen && isSwiping) {
-            // Menu just opened while swiping - mark it
-            setOpenedBySwipe(true);
+        if (isOpen || isExternalSwiping) {
+            setIsVisible(true);
+        } else {
+            // Delay unmounting to allow close animation
+            const timer = setTimeout(() => {
+                if (!isOpen && !isExternalSwiping) setIsVisible(false);
+            }, 300);
+            return () => clearTimeout(timer);
         }
-        if (!isOpen && !isSwiping) {
-            // Menu fully closed - reset the flag
-            setOpenedBySwipe(false);
-        }
-    }, [isOpen, isSwiping]);
+    }, [isOpen, isExternalSwiping]);
 
-    const handleClose = () => {
-        setIsClosing(true);
-    };
-
-    const handleAnimationEnd = (e: React.AnimationEvent) => {
-        if (isClosing && e.target === sidebarRef.current) {
-            setIsClosing(false);
-            onClose();
-        }
-    };
-
-    // Close logic specifically designed for "instant" unmounts (like item clicks) vs animated closes
-    const handleInstantClose = (action: () => void) => {
-        setIsClosing(true);
-        setTimeout(() => {
-            onClose();
-            setIsClosing(false);
-            action();
-        }, 200); // Faster duration matched with CSS
-    };
-
-    // Local state for drag-to-close
-    const [dragTx, setDragTx] = React.useState(0);
-    const [isDragging, setIsDragging] = React.useState(false);
-
-    // Handle swipe to close
+    // Handle internal closing swipe
     useEffect(() => {
-        // If it's being opened by parent swipe, or not open, don't interfere
-        if (!isOpen || isSwiping) {
-            setDragTx(0);
-            setIsDragging(false);
-            return;
-        }
-
+        if (!isOpen) return;
         const sidebar = sidebarRef.current;
         if (!sidebar) return;
 
         let startX = 0;
         let currentX = 0;
-        let isActive = false;
 
         const handleTouchStart = (e: TouchEvent) => {
-            // Only start if we are essentially fully open (dragTx is near 0)
-            if (Math.abs(dragTx) > 5) return;
-
             startX = e.touches[0].clientX;
-            currentX = startX;
-            isActive = true;
-            setIsDragging(true);
+            currentX = e.touches[0].clientX;
+            setIsLocalSwiping(true);
+            setLocalSwipeX(0); // Reset
         };
 
         const handleTouchMove = (e: TouchEvent) => {
-            if (!isActive) return;
             currentX = e.touches[0].clientX;
-            const diff = currentX - startX; // negative if dragging left
+            const diff = startX - currentX;
+            // Only allow dragging left (positive diff means moving left, negative means dragging right which is invalid if full open)
+            // But here sidebar is on Left. Closing means dragging Left (negative translateX).
+            // Wait, Sidebar is on Left. To close, we drag Left.
+            // X goes from 0 to negative.
 
-            // We only allow dragging left (closing)
-            // So if diff is positive (dragging right), we clamp to 0
-            // If diff is negative (dragging left), we use it up to sidebarWidth
-            if (diff > 0) {
-                setDragTx(0);
-            } else {
-                setDragTx(Math.max(diff, -320));
+            const rawDiff = currentX - startX; // If dragging left, rawDiff is negative.
+
+            if (rawDiff < 0) {
+                setLocalSwipeX(rawDiff);
             }
         };
 
         const handleTouchEnd = () => {
-            if (!isActive) return;
-            isActive = false;
-            setIsDragging(false);
-
-            const diff = currentX - startX;
-            // threshold to close: 80px
-            if (diff < -80) {
-                handleClose();
-                // Keep the visual state "closed" (dragged away) until unmount/animation
-                // But since unmount happens via onClose -> isClosing -> animation... 
-                // effectively we let CSS take over or we could explicitly animate out.
-                // However, handleClose sets isClosing=true, which triggers 'animate-slide-out-left'.
-                // That animation starts from 0. We are currently at `dragTx`.
-                // Ideally we let the pure CSS animation take over, but it might jump.
-                // For now, let's reset dragTx because 'animate-slide-out-left' handles it globally properly 
-                // or we rely on the fact that isClosing will render with null interactiveStyle if we are careful.
-                setDragTx(0);
+            setIsLocalSwiping(false);
+            const rawDiff = currentX - startX;
+            if (rawDiff < -80) { // Dragged enough left
+                onClose();
             } else {
-                // Snap back to open
-                setDragTx(0);
+                setLocalSwipeX(0); // Snap back to open
             }
         };
 
@@ -213,80 +172,77 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             sidebar.removeEventListener('touchmove', handleTouchMove);
             sidebar.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [isOpen, isSwiping]);
+    }, [isOpen, onClose]);
 
-    // Handle escape key
-    useEffect(() => {
-        if (!isOpen) return;
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') handleClose();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen]);
+    // --- CALCULATION OF TRANSFORM AND OPACITY ---
+    const SIDEBAR_WIDTH = 320; // Must match CSS max-w
+    let translateX = -100; // Default closed (percentage)
+    let opacity = 0;
+    let transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease';
 
-    // Only render if open, closing, or swiping (to follow finger)
-    const shouldRender = isOpen || isClosing || (isSwiping && openProgress > 0);
-    if (!shouldRender) return null;
-
-    // Calculation for interactive open (opening gesture)
-    const sidebarWidth = 320;
-    const maxProgress = 0.85; // Matches the sidebar width percentage
-    const currentProgressPercent = Math.min(openProgress / maxProgress, 1);
-
-    // Transform logic: 
-    // - If just swiping to open (isSwiping=true), map progress to translateX
-    // - If dragging to close (isDragging=true, !isSwiping), use dragTx
-    // - If open and stationary, 0
-    // - If closing (isClosing=true), let CSS animation handle it (or use dragTx if we want seamless, but CSS is easier for "slide-out")
-
-    let transformStyle = '';
-    let transitionStyle = '';
-
-    if (isSwiping) {
-        // Opening Swipe
-        transformStyle = `translateX(calc(-100% + ${currentProgressPercent * sidebarWidth}px))`;
-        transitionStyle = 'none';
-    } else if (isDragging) {
-        // Closing Swipe (Local)
-        transformStyle = `translateX(${dragTx}px)`;
-        transitionStyle = 'none';
-        // Note: dragTx is negative
-    } else if (isOpen && !isClosing) {
-        // Static Open or Snapping back from failed close
-        transformStyle = 'translateX(0)';
-        // If we just released a drag, we want smooth snap. 
-        // We can't easily detect "just released" here without more state, 
-        // but adding a transition to "normal open" is generally 
-        // safe unless we are in the middle of a gesture.
-        // Since isDragging is false here, we are not gesturing.
-        transitionStyle = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    if (isOpen) {
+        if (isLocalSwiping) {
+            // Dragging to close
+            // localSwipeX is negative pixels (e.g. -50).
+            const px = Math.max(localSwipeX, -SIDEBAR_WIDTH);
+            const pct = (px / SIDEBAR_WIDTH) * 100; // e.g. -50 / 320 * 100 = -15%
+            translateX = pct;
+            opacity = 1 + (pct / 100);
+            transition = 'none';
+        } else {
+            // Fully open
+            translateX = 0;
+            opacity = 1;
+            // Uses default transition
+        }
+    } else {
+        if (isExternalSwiping) {
+            // Dragging to open (from parent)
+            // externalOpenProgress is positive pixels (0 to 320+)
+            const px = Math.min(externalOpenProgress, SIDEBAR_WIDTH);
+            const pct = (px / SIDEBAR_WIDTH) * 100; // 0 to 100%
+            // translateX needs to go from -100% to 0%.
+            // If pct is 100%, tx should be 0. If pct is 0%, tx should be -100.
+            translateX = -100 + pct;
+            opacity = pct / 100;
+            transition = 'none';
+        } else {
+            // Fully closed
+            translateX = -100;
+            opacity = 0;
+            // Uses default transition
+        }
     }
 
-    const interactiveStyle: React.CSSProperties = transformStyle ? {
-        transform: transformStyle,
-        transition: transitionStyle
-    } : {};
+    if (!isVisible && translateX === -100) return null;
 
-    const backdropOpacity = (isSwiping && !isOpen) ? currentProgressPercent : 1;
+    const handleInstantClose = (action: () => void) => {
+        onClose(); // Trigger close animation
+        setTimeout(action, 300); // Execute action after animation
+    };
 
     return createPortal(
-        <div className="fixed inset-0 z-[8000]">
-            {/* Backdrop */}
+        <div className="fixed inset-0 z-[8000] pointer-events-none">
+            {/* Backdrop - pointer-events-auto ensures clicks on backdrop close it */}
             <div
-                className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : isOpen && !isSwiping && !openedBySwipe ? 'animate-fade-in' : ''}`}
-                style={isSwiping && !isOpen ? { opacity: backdropOpacity, transition: 'none' } : (isOpen && openedBySwipe) ? { opacity: 1, transition: 'opacity 0.25s ease-out' } : {}}
-                onClick={handleClose}
+                ref={overlayRef}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
+                style={{
+                    opacity: opacity,
+                    transition: transition.includes('none') ? 'none' : 'opacity 0.3s ease',
+                    pointerEvents: opacity > 0 ? 'auto' : 'none'
+                }}
+                onClick={() => { if (isOpen) onClose(); }}
             />
 
             {/* Sidebar */}
             <div
                 ref={sidebarRef}
-                onAnimationEnd={handleAnimationEnd}
-                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : isOpen && !isSwiping && !openedBySwipe ? 'animate-slide-in-left' : ''}`}
+                className="absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col pointer-events-auto"
                 style={{
                     paddingTop: 'env(safe-area-inset-top, 0px)',
-                    ...interactiveStyle
+                    transform: `translateX(${translateX}%)`,
+                    transition: transition
                 }}
             >
                 {/* Header */}
@@ -294,7 +250,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-bold text-slate-800 dark:text-white">Impostazioni</h2>
                         <button
-                            onClick={handleClose}
+                            onClick={onClose}
                             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                         >
                             <XMarkIcon className="w-6 h-6 text-slate-500" />
@@ -415,38 +371,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     />
                 </div>
             </div>
-
-            {/* Animation keyframes */}
-            <style>{`
-        @keyframes slide-in-left {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(0); }
-        }
-        @keyframes slide-out-left {
-          from { transform: translateX(0); }
-          to { transform: translateX(-100%); }
-        }
-        .animate-slide-in-left {
-          animation: slide-in-left 0.2s ease-out forwards;
-        }
-        .animate-slide-out-left {
-          animation: slide-out-left 0.2s ease-in forwards;
-        }
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes fade-out {
-          from { opacity: 1; }
-          to { opacity: 0; }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out forwards;
-        }
-        .animate-fade-out {
-          animation: fade-out 0.2s ease-in forwards;
-        }
-      `}</style>
         </div>,
         document.body
     );
