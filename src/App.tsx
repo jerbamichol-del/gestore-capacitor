@@ -108,6 +108,18 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     }
   }, [updateInfo, isCheckingUpdate]);
 
+  // Handle back button for CardManagerScreen
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const modal = event.state?.modal;
+      if (modal !== 'card_manager' && isCardManagerOpen) {
+        setIsCardManagerOpen(false);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isCardManagerOpen]);
+
   // Handle bank sync on resume
   useEffect(() => {
     const handleResume = async () => {
@@ -372,7 +384,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
           {ui.nav.isImageSourceModalOpen && (
             <div className="fixed inset-0 z-[5200] flex justify-center items-center p-4 bg-midnight/60 backdrop-blur-md" onClick={ui.nav.closeModalWithHistory}>
-              <div className="bg-white dark:midnight-card rounded-lg shadow-xl w-full max-w-lg border border-transparent dark:border-electric-violet/30" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white dark:bg-midnight-card rounded-lg shadow-xl w-full max-w-lg border border-transparent dark:border-electric-violet/30" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <ImageSourceCard icon={<CameraIcon className="w-8 h-8" />} title="Scatta Foto" description="Usa la fotocamera." onClick={() => { ui.nav.setIsImageSourceModalOpen(false); ui.handleImagePick('camera'); }} />
                   <ImageSourceCard icon={<ComputerDesktopIcon className="w-8 h-8" />} title="Galleria" description="Carica da file." onClick={() => { ui.nav.setIsImageSourceModalOpen(false); ui.handleImagePick('gallery'); }} />
@@ -597,7 +609,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           // window.history.pushState({ modal: 'import_export_main' }, ''); // Optional history support
           setIsImportExportModalOpen(true);
         }}
-        onOpenCardManager={() => setIsCardManagerOpen(true)}
+        onOpenCardManager={() => { window.history.pushState({ modal: 'card_manager' }, ''); setIsCardManagerOpen(true); }}
         onOpenThemePicker={() => setIsThemePickerOpen(true)}
         onOpenSecurity={() => setIsSecurityScreenOpen(true)}
         onLogout={onLogout}
@@ -623,7 +635,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
       {/* Card Manager */}
       <CardManagerScreen
         isOpen={isCardManagerOpen}
-        onClose={() => setIsCardManagerOpen(false)}
+        onClose={() => { if (window.history.state?.modal === 'card_manager') window.history.back(); setIsCardManagerOpen(false); }}
         items={dashboardConfig.items}
         onToggleCard={dashboardConfig.toggleCard}
         expenses={data.expenses}
