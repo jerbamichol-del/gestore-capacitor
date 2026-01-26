@@ -4,7 +4,4 @@
     <string name="title_activity_main">Gestore Spese</string>
     <string name="package_name">com.gestore.spese</string>
     <string name="custom_url_scheme">com.gestore.spese</string>
-    <string name="short_label_add">Aggiungi</string>
-    <string name="long_label_add">Aggiungi Spesa</string>
-    <string name="disabled_message_add">Funzione non disponibile</string>
 </resources>
