@@ -197,13 +197,17 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         }
     } else {
         if (isExternalSwiping) {
-            // Dragging to open (from parent)
-            // externalOpenProgress is positive pixels (0 to 320+)
-            const px = Math.min(externalOpenProgress, SIDEBAR_WIDTH);
-            const pct = (px / SIDEBAR_WIDTH) * 100; // 0 to 100%
-            // translateX needs to go from -100% to 0%.
-            // If pct is 100%, tx should be 0. If pct is 0%, tx should be -100.
-            translateX = -100 + pct;
+            // Dragging to open
+            let px = externalOpenProgress;
+            // Handle normalized progress (0-1) from useSwipe
+            if (px <= 1 && px >= 0) {
+                px = px * (typeof window !== 'undefined' ? window.innerWidth : 360);
+            }
+
+            const clampedPx = Math.min(px, SIDEBAR_WIDTH);
+            const pct = (clampedPx / SIDEBAR_WIDTH) * 100; // 0 to 100%
+
+            translateX = -100 + pct; // -100% to 0%
             opacity = pct / 100;
             transition = 'none';
         } else {
