@@ -44,3 +44,15 @@ export const CATEGORIES: Record<string, string[]> = {
 };
 
 export type Budgets = Record<string, number>; // e.g., { 'Alimentari': 500, 'total': 2000 }
+
+export interface EventBudget {
+  id: string;
+  name: string;
+  totalBudget: number;
+  startDate: string;
+  endDate: string;
+  // Opzionale: filtrare per categorie specifiche. Se vuoto, include tutte le spese nel range temporale.
+  categories?: string[];
+  icon?: string;
+  color?: string;
+}

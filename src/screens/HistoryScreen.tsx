@@ -12,6 +12,8 @@ import { ArrowsUpDownIcon } from '../components/icons/ArrowsUpDownIcon';
 import { parseLocalYYYYMMDD } from '../utils/date';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { useTapBridge } from '../hooks/useTapBridge';
+import { EmptyState } from '../components/EmptyState';
+import { MagnifyingGlassIcon } from '../components/icons/MagnifyingGlassIcon';
 
 type DateFilter = 'all' | '7d' | '30d' | '6m' | '1y';
 type PeriodType = 'day' | 'week' | 'month' | 'year';
@@ -404,8 +406,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
       <main className="overflow-y-auto h-[calc(100%-60px)]" style={{ touchAction: 'pan-y' }}>
         <div className="flex-1 overflow-y-auto pb-36" style={{ touchAction: 'pan-y' }}>
           {expenseGroups.length > 0 ? (
-            expenseGroups.map((group) => (
-              <div key={group.label} className="mb-6 last:mb-0">
+            expenseGroups.map((group, index) => (
+              <div key={group.label} className="mb-6 last:mb-0 animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
                 <div className="flex items-center justify-between font-bold text-sunset-text dark:text-white text-lg px-4 py-2 sticky top-0 bg-sunset-cream dark:bg-midnight z-10 transition-colors duration-300">
                   <h2 className="flex items-baseline flex-wrap gap-x-2"><span>{group.label}{group.label.startsWith('Settimana') && /\d/.test(group.label) ? ',' : ''}</span><span className="text-sm font-normal text-slate-500 dark:text-slate-400">{group.dateRange}</span></h2>
                   <p className={`font-bold text-xl ${isIncomeMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-electric-violet'}`}>{formatCurrency(group.total)}</p>
@@ -421,10 +423,11 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
               </div>
             ))
           ) : (
-            <div className="text-center text-slate-500 dark:text-slate-400 pt-20 px-6">
-              <p className="text-lg font-semibold">{isIncomeMode ? 'Nessuna entrata trovata' : 'Nessuna spesa trovata'}</p>
-              <p className="mt-2">Prova a modificare i filtri o aggiungi una nuova {isIncomeMode ? 'entrata' : 'spesa'} dalla schermata Home.</p>
-            </div>
+            <EmptyState
+              title={isIncomeMode ? 'Nessuna entrata trovata' : 'Nessuna spesa trovata'}
+              description={isIncomeMode ? 'Non sono presenti entrate per questo periodo.' : 'Non ci sono spese che corrispondono ai tuoi filtri.'}
+              icon={MagnifyingGlassIcon}
+            />
           )}
         </div>
       </main>

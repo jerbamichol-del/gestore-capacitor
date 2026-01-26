@@ -10,6 +10,7 @@ import { CheckIcon } from '../components/icons/CheckIcon';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { useTapBridge } from '../hooks/useTapBridge';
 import { parseLocalYYYYMMDD } from '../utils/date';
+import { EmptyState } from '../components/EmptyState';
 
 const ACTION_WIDTH = 72;
 
@@ -184,18 +185,18 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
         {sortedExpenses.length > 0 ? (
           <div className="midnight-card rounded-xl shadow-md overflow-hidden my-4 border border-slate-200 dark:border-electric-violet/20">
             {sortedExpenses.map((expense, index) => (
-              <React.Fragment key={expense.id}>
+              <div key={expense.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
                 {index > 0 && <hr className="border-t border-slate-200 dark:border-electric-violet/10 ml-16" />}
                 <RecurringExpenseItem expense={expense} accounts={accounts} onEdit={onEdit} onDeleteRequest={handleDeleteRequest} isOpen={openItemId === expense.id} onOpen={setOpenItemId} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isFinished={expense.isFinished} />
-              </React.Fragment>
+              </div>
             ))}
           </div>
         ) : (
-          <div className="text-center text-slate-500 dark:text-slate-400 pt-20 px-6">
-            <CalendarDaysIcon className="w-16 h-16 mx-auto text-slate-400 dark:text-slate-600" />
-            <p className="text-lg font-semibold mt-4">Nessuna spesa programmata attiva</p>
-            <p className="mt-2">Puoi creare una spesa ricorrente quando aggiungi una nuova spesa.</p>
-          </div>
+          <EmptyState
+            title="Nessuna spesa programmata"
+            description="Le spese programmate appariranno qui. Puoi crearne una quando aggiungi una nuova spesa selezionando 'Ricorrente'."
+            icon={CalendarDaysIcon}
+          />
         )}
       </main>
       <ConfirmationModal isOpen={isBulkDeleteModalOpen} onClose={() => setIsBulkDeleteModalOpen(false)} onConfirm={handleConfirmBulkDelete} title="Elimina Selezionati" message={`Sei sicuro di voler eliminare ${selectedIds.size} elementi?`} variant="danger" confirmButtonText="Elimina" cancelButtonText="Annulla" />

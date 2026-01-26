@@ -41,6 +41,9 @@ interface SettingsSidebarProps {
     onOpenCardManager: () => void;
     onOpenThemePicker: () => void;
     onOpenSecurity: () => void;
+    onOpenBudgetSettings: () => void;
+    onOpenEventBudgets: () => void;
+    onOpenBankSync: () => void;
     onLogout: () => void;
     isSwiping?: boolean;
     openProgress?: number;
@@ -85,6 +88,9 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onOpenCardManager,
     onOpenThemePicker,
     onOpenSecurity,
+    onOpenBudgetSettings,
+    onOpenEventBudgets,
+    onOpenBankSync,
     onLogout,
     isSwiping = false,
     openProgress = 0,
@@ -248,9 +254,44 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Dashboard</p>
                         <MenuItem
                             icon={<ChartBarIcon className="w-5 h-5" />}
-                            label="Andamento"
-                            description="Gestisci le card della home"
+                            label="Card Home"
+                            description="Personalizza la dashboard"
                             onClick={() => handleInstantClose(onOpenCardManager)}
+                        />
+                    </div>
+
+                    {/* Finance Section */}
+                    <div className="mb-4">
+                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Finanze</p>
+                        <MenuItem
+                            icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                            }
+                            label="Budget Mensili"
+                            description="Imposta limiti per categoria"
+                            onClick={() => handleInstantClose(onOpenBudgetSettings)}
+                        />
+                        <MenuItem
+                            icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                                </svg>
+                            }
+                            label="Pianificazione Eventi"
+                            description="Viaggi, progetti e budget extra"
+                            onClick={() => handleInstantClose(onOpenEventBudgets)}
+                        />
+                        <MenuItem
+                            icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                </svg>
+                            }
+                            label="Sincronizzazione Banca"
+                            description="Connetti conti correnti"
+                            onClick={() => handleInstantClose(onOpenBankSync)}
                         />
                     </div>
 

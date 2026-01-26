@@ -1,6 +1,6 @@
 ﻿import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
-import { Expense, Account, Budgets } from '../types';
+import { Expense, Account, Budgets, EventBudget } from '../types';
 import { formatCurrency } from './icons/formatters';
 import { getCategoryStyle } from '../utils/categoryStyles';
 import { ArrowsUpDownIcon } from './icons/ArrowsUpDownIcon';
@@ -107,6 +107,8 @@ interface DashboardProps {
     isDraggingDisabled?: boolean;
     budgets?: Budgets;
     onOpenBudgetSettings?: () => void;
+    eventBudgets?: EventBudget[];
+    onOpenEventBudgets?: () => void;
     items: string[];
     onOrderChange: (newOrder: string[]) => void;
     onRemoveCard: (id: string) => void;
@@ -183,6 +185,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     isDraggingDisabled = false,
     budgets = {},
     onOpenBudgetSettings,
+    eventBudgets,
+    onOpenEventBudgets,
     items,
     onOrderChange,
     onRemoveCard,

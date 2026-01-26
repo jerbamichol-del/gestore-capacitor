@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Expense, Account, CATEGORIES } from '../types';
+import { Expense, Account, CATEGORIES, EventBudget } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 import { DEFAULT_ACCOUNTS } from '../utils/defaults';
 import { toYYYYMMDD } from '../utils/date';
@@ -11,6 +11,7 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
     // --- Data State ---
     const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses_v2', []);
     const [recurringExpenses, setRecurringExpenses] = useLocalStorage<Expense[]>('recurring_expenses_v1', []);
+    const [eventBudgets, setEventBudgets] = useLocalStorage<EventBudget[]>('event_budgets_v1', []);
     const [accounts, setAccounts] = useLocalStorage<Account[]>('accounts_v1', DEFAULT_ACCOUNTS);
 
     const safeAccounts = accounts || [];
@@ -135,6 +136,7 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
         // State
         expenses,
         recurringExpenses,
+        eventBudgets,
         accounts: safeAccounts,
         isConfirmDeleteModalOpen,
         setIsConfirmDeleteModalOpen,
@@ -143,6 +145,7 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
         // Setters (exposed for other hooks like useCloudSync)
         setExpenses,
         setRecurringExpenses,
+        setEventBudgets,
         setAccounts,
 
         // Actions

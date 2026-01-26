@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { OfflineImage, deleteImageFromQueue, addImageToQueue, getQueuedImages } from './utils/db';
-import { Expense } from './types';
+import { Expense, EventBudget } from './types';
 
 // Components
 import Header from './components/Header';
@@ -21,7 +21,7 @@ import SuccessIndicator from './components/SuccessIndicator';
 import PinVerifierModal from './components/PinVerifierModal';
 import { PendingTransactionsModal, PendingTransactionsBadge } from './components/PendingTransactionsModal';
 import { NotificationPermissionModal } from './components/NotificationPermissionModal';
-import MultipleExpensesModal from './components/MultipleExpensesModal'; // Restored import
+import MultipleExpensesModal from './components/MultipleExpensesModal';
 import { MainLayout } from './components/MainLayout';
 import LoadingOverlay from './components/LoadingOverlay';
 import ShareQrModal from './components/ShareQrModal';
@@ -30,9 +30,10 @@ import GlobalSearchModal from './components/GlobalSearchModal';
 import AIChatModal from './components/AIChatModal';
 import BudgetSettingsModal from './components/BudgetSettingsModal';
 import { BankSyncService } from './services/bank-sync-service';
-import { Budgets } from './types'; // Added Expense
-import { LocalNotifications } from '@capacitor/local-notifications'; // Import Notifs
+import { Budgets } from './types';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { useRecurringNotifications } from './hooks/useRecurringNotifications';
+import { EventBudgetsModal } from './components/EventBudgetsModal';
 
 // Screens
 import HistoryScreen from './screens/HistoryScreen';
@@ -65,8 +66,61 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   // 1. UI State Manager (Navigation, Toasts, Forms, Image Parsing)
   const ui = useAppUI(isOnline);
 
-  // 2. Data Core (Expenses, Accounts, Recurring)
+  // 2. Data Core (Expenses, Accounts, Recurring, Events)
   const data = useTransactionsCore(ui.showToast);
+
+  // 5. Budget State Local (Monthly)
+  const [budgets, setBudgets] = useState<Budgets>(() => {
+    const saved = localStorage.getItem('monthly_budgets_v1');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const handleSaveBudgets = (newBudgets: Budgets) => {
+    setBudgets(newBudgets);
+    localStorage.setItem('monthly_budgets_v1', JSON.stringify(newBudgets));
+    ui.showToast({ message: 'Budget aggiornati!', type: 'success' });
+  };
+
+  const checkBudgetAndNotify = async (newExpense: Omit<Expense, 'id'> | Expense) => {
+    if (newExpense.type !== 'expense') return;
+
+    // Check Global
+    const globalLimit = budgets['total'] || 0;
+    const catLimit = budgets[newExpense.category] || 0;
+
+    if (globalLimit <= 0 && catLimit <= 0) return;
+
+    const now = new Date(newExpense.date || new Date());
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Calculate current totals locally to include the new expense immediately
+    const relevantExpenses = data.expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear && e.type === 'expense';
+    });
+
+    // Add new expense amount
+    const newAmount = Number(newExpense.amount);
+
+    // Check Category Budget
+    if (catLimit > 0) {
+      const catSpent = relevantExpenses
+        .filter(e => e.category === newExpense.category)
+        .reduce((sum, e) => sum + Number(e.amount), 0) + newAmount;
+
+      if (catSpent > catLimit) {
+        await LocalNotifications.schedule({
+          notifications: [{
+            title: '⚠️ Budget Superato!',
+            body: `Hai superato il budget per ${newExpense.category}. Speso: ${catSpent.toFixed(2)}€ / ${catLimit}€`,
+            id: Date.now(), // Unique ID
+            schedule: { at: new Date(Date.now() + 1000) } // 1 sec delay
+          }]
+        });
+      }
+    }
+  };
 
   // 3. Auto Flow (Notifications, SMS, Confirmations)
   const auto = useAutoFlow(data.accounts, (e) => { data.handleAddExpense(e); checkBudgetAndNotify(e); }, ui.showToast);
@@ -85,6 +139,9 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   const [isCardManagerOpen, setIsCardManagerOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isForgotPasswordScreenOpen, setIsForgotPasswordScreenOpen] = useState(false);
+
+  // Event Budgets Modal State
+  const [isEventBudgetsOpen, setIsEventBudgetsOpen] = useState(false);
 
   // 6. Dashboard Config (Visible Cards & Order)
   const dashboardConfig = useDashboardConfig();
@@ -146,58 +203,18 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     };
   }, []);
 
-  // 5. Budget State
-  const [budgets, setBudgets] = useState<Budgets>(() => {
-    const saved = localStorage.getItem('monthly_budgets_v1');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const handleSaveBudgets = (newBudgets: Budgets) => {
-    setBudgets(newBudgets);
-    localStorage.setItem('monthly_budgets_v1', JSON.stringify(newBudgets));
-    ui.showToast({ message: 'Budget aggiornati!', type: 'success' });
-  };
-
-  const checkBudgetAndNotify = async (newExpense: Omit<Expense, 'id'> | Expense) => {
-    if (newExpense.type !== 'expense') return;
-
-    // Check Global
-    const globalLimit = budgets['total'] || 0;
-    const catLimit = budgets[newExpense.category] || 0;
-
-    if (globalLimit <= 0 && catLimit <= 0) return;
-
-    const now = new Date(newExpense.date || new Date());
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    // Calculate current totals locally to include the new expense immediately
-    const relevantExpenses = data.expenses.filter(e => {
-      const d = new Date(e.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear && e.type === 'expense';
-    });
-
-    // Add new expense amount
-    const newAmount = Number(newExpense.amount);
-
-    // Check Category Budget
-    if (catLimit > 0) {
-      const catSpent = relevantExpenses
-        .filter(e => e.category === newExpense.category)
-        .reduce((sum, e) => sum + Number(e.amount), 0) + newAmount;
-
-      if (catSpent > catLimit) {
-        await LocalNotifications.schedule({
-          notifications: [{
-            title: '⚠️ Budget Superato!',
-            body: `Hai superato il budget per ${newExpense.category}. Speso: ${catSpent.toFixed(2)}€ / ${catLimit}€`,
-            id: Date.now(), // Unique ID
-            schedule: { at: new Date(Date.now() + 1000) } // 1 sec delay
-          }]
-        });
+  // Handle Quick Actions (Deep Links)
+  useEffect(() => {
+    CapApp.addListener('appUrlOpen', (data) => {
+      if (data.url.includes('quick') || data.url.includes('add')) {
+        console.log('🚀 Quick Add triggered via Deep Link');
+        // Small delay to ensure UI is ready if cold start
+        setTimeout(() => {
+          ui.nav.setIsCalculatorContainerOpen(true);
+        }, 300);
       }
-    }
-  };
+    });
+  }, [ui.nav]);
 
   // Wrapper for Add Expense to include checks
   const handleAddExpenseWithChecks = (expense: Omit<Expense, 'id'> | Expense, callback?: () => void) => {
@@ -239,8 +256,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
   useEffect(() => {
     if (ui.imageForAnalysis) {
       handleAnalyzeImage(ui.imageForAnalysis);
-      // Reset after triggering analysis (handleAnalyzeImage also nulls it, but safe to be sure)
-      // ui.setImageForAnalysis(null); // Let handleAnalyzeImage do it after processing
     }
   }, [ui.imageForAnalysis]);
 
@@ -299,6 +314,19 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
     } catch (e) {
       ui.showToast({ message: 'Errore importazione file', type: 'error' });
     }
+  };
+
+  // Event Budget Handlers
+  const handleSaveEventBudget = (budget: EventBudget) => {
+    data.setEventBudgets(prev => {
+      const exists = prev.find(p => p.id === budget.id);
+      if (exists) return prev.map(p => p.id === budget.id ? budget : p);
+      return [...prev, budget];
+    });
+  };
+
+  const handleDeleteEventBudget = (id: string) => {
+    data.setEventBudgets(prev => prev.filter(p => p.id !== id));
   };
 
 
@@ -488,6 +516,15 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
               onDeleteTransactions={data.deleteExpenses}
             />
           )}
+
+          <EventBudgetsModal
+            isOpen={isEventBudgetsOpen}
+            onClose={() => setIsEventBudgetsOpen(false)}
+            eventBudgets={data.eventBudgets}
+            onSaveEventBudget={handleSaveEventBudget}
+            onDeleteEventBudget={handleDeleteEventBudget}
+            expenses={data.expenses}
+          />
         </>
       }
     >
@@ -498,6 +535,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         accounts={data.accounts}
         expenses={data.expenses || []}
         recurringExpenses={data.recurringExpenses || []}
+        eventBudgets={data.eventBudgets} // Pass new event budgets
         onNavigateToRecurring={() => { window.history.pushState({ modal: 'recurring' }, ''); ui.nav.setIsRecurringScreenOpen(true); }}
         onNavigateToHistory={() => { window.history.pushState({ modal: 'history' }, ''); ui.nav.setIsHistoryClosing(false); ui.nav.setIsHistoryScreenOpen(true); }}
         onNavigateToIncomes={() => {
@@ -539,11 +577,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         isBalanceVisible={isBalanceVisible}
         onToggleBalanceVisibility={handleToggleBalanceVisibility}
         showToast={ui.showToast}
-        budgets={budgets}
+        budgets={budgets} // Pass budgets
         onOpenBudgetSettings={() => {
           window.history.pushState({ modal: 'budget' }, '');
           ui.nav.setIsBudgetModalOpen(true);
         }}
+        onOpenEventBudgets={() => setIsEventBudgetsOpen(true)} // Open event budgets
         isDraggingDisabled={
           ui.nav.isHistoryScreenOpen ||
           ui.nav.isIncomeHistoryOpen ||
@@ -554,6 +593,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           ui.nav.isBankSyncModalOpen ||
           isPinVerifierOpen
         }
+        onOpenCardManager={() => setIsCardManagerOpen(true)}
       />
       <PendingImages images={ui.pendingImages} onAnalyze={handleAnalyzeImage} onDelete={async (id) => { await deleteImageFromQueue(id); ui.refreshPendingImages(); }} isOnline={isOnline} syncingImageId={ui.syncingImageId} />
 
@@ -612,6 +652,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         onOpenCardManager={() => { window.history.pushState({ modal: 'card_manager' }, ''); setIsCardManagerOpen(true); }}
         onOpenThemePicker={() => setIsThemePickerOpen(true)}
         onOpenSecurity={() => setIsSecurityScreenOpen(true)}
+        onOpenBudgetSettings={() => {
+          window.history.pushState({ modal: 'budget' }, '');
+          ui.nav.setIsBudgetModalOpen(true);
+        }}
+        onOpenEventBudgets={() => setIsEventBudgetsOpen(true)}
+        onOpenBankSync={() => setIsBankSyncModalOpen(true)}
         onLogout={onLogout}
         isSwiping={isDraggingSidebar}
         openProgress={swipeProgress}
