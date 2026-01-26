@@ -56,6 +56,9 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
     // Swipe handling
     const touchStartX = useRef<number | null>(null);
     const touchEndX = useRef<number | null>(null);
+    const touchStartY = useRef<number | null>(null);
+    const touchEndY = useRef<number | null>(null);
+    const scrollLock = useRef<'none' | 'vertical' | 'horizontal'>('none');
     const containerRef = useRef<HTMLDivElement>(null);
     const [swipeOffset, setSwipeOffset] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -95,25 +98,55 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
     // Touch handlers for swipe
     const handleTouchStart = (e: React.TouchEvent) => {
         touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
         touchEndX.current = null;
+        touchEndY.current = null;
+        scrollLock.current = 'none';
+        setSwipeOffset(0);
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
         if (touchStartX.current === null) return;
-        touchEndX.current = e.touches[0].clientX;
-        const diff = touchEndX.current - touchStartX.current;
 
-        // Limit swipe offset at edges
-        if ((currentIndex === 0 && diff > 0) || (currentIndex === ALL_REPORTS.length - 1 && diff < 0)) {
-            setSwipeOffset(diff * 0.3);
-        } else {
-            setSwipeOffset(diff);
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const diffX = currentX - touchStartX.current;
+        const diffY = currentY - (touchStartY.current || 0);
+
+        // Lock direction if not already locked
+        if (scrollLock.current === 'none') {
+            if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+                scrollLock.current = 'horizontal';
+            } else if (Math.abs(diffY) > 10) {
+                scrollLock.current = 'vertical';
+            }
+        }
+
+        if (scrollLock.current === 'vertical') {
+            setSwipeOffset(0);
+            return; // Allow native vertical scroll
+        }
+
+        if (scrollLock.current === 'horizontal') {
+            // Prevent native vertical scroll when swiping horizontally
+            if (e.cancelable) e.preventDefault();
+
+            touchEndX.current = currentX;
+            const diff = currentX - touchStartX.current;
+
+            // Limit swipe offset at edges
+            if ((currentIndex === 0 && diff > 0) || (currentIndex === ALL_REPORTS.length - 1 && diff < 0)) {
+                setSwipeOffset(diff * 0.3);
+            } else {
+                setSwipeOffset(diff);
+            }
         }
     };
 
     const handleTouchEnd = () => {
-        if (touchStartX.current === null || touchEndX.current === null) {
+        if (touchStartX.current === null || touchEndX.current === null || scrollLock.current !== 'horizontal') {
             setSwipeOffset(0);
+            scrollLock.current = 'none';
             return;
         }
 
@@ -130,6 +163,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
 
         touchStartX.current = null;
         touchEndX.current = null;
+        scrollLock.current = 'none';
         setSwipeOffset(0);
     };
 
@@ -152,6 +186,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                         categoryData={metrics.categoryData}
                         totalExpenses={metrics.totalExpenses}
                         dateRangeLabel={metrics.dateRangeLabel}
+                        noBorder={true}
                     />
                 );
             case 'categoryPie':
@@ -162,6 +197,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                         dateRangeLabel={metrics.dateRangeLabel}
                         selectedIndex={selectedPieIndex}
                         onSelectedIndexChange={setSelectedPieIndex}
+                        noBorder={true}
                     />
                 );
             case 'trend':
@@ -174,11 +210,12 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                         activeViewIndex={1}
                         quickFilter="30d"
                         customRange={{ start: null, end: null }}
+                        noBorder={true}
                     />
                 );
             case 'goals':
                 return (
-                    <SavingsGoalsCard totalBalance={totalBalance} />
+                    <SavingsGoalsCard totalBalance={totalBalance} noBorder={true} />
                 );
             case 'insights':
                 return (
@@ -186,6 +223,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                         expenses={expenses}
                         budgets={budgets}
                         onOpenBudgetSettings={onOpenBudgetSettings}
+                        noBorder={true}
                     />
                 );
             default:
@@ -194,14 +232,14 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[8500] flex flex-col bg-slate-100 dark:bg-midnight transition-colors">
+        <div className="fixed inset-0 z-[8500] flex flex-col bg-slate-50 dark:bg-midnight transition-colors">
             {/* Header */}
             <div
-                className="bg-indigo-600 dark:bg-midnight-card border-b border-indigo-700 dark:border-slate-800"
+                className="bg-indigo-600 dark:bg-midnight-card px-2"
                 style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
             >
                 {/* Title Row */}
-                <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center justify-between px-2 py-3">
                     <button
                         onClick={onClose}
                         className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
@@ -223,8 +261,8 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                             ref={(el) => { tabRefs.current[index] = el; }}
                             onClick={() => goToTab(index)}
                             className={`flex-shrink-0 px-5 py-3 text-sm font-semibold whitespace-nowrap transition-all relative ${index === currentIndex
-                                    ? 'text-white'
-                                    : 'text-white/60 hover:text-white/80'
+                                ? 'text-white'
+                                : 'text-white/60 hover:text-white/80'
                                 }`}
                         >
                             {report.shortLabel}
@@ -257,20 +295,38 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                             key={report.id}
                             className="min-w-full h-full overflow-y-auto"
                         >
-                            {/* Card Content - Full Width, No Double Border */}
-                            <div className="bg-white dark:bg-midnight-card min-h-full">
+                            {/* Card Content - Full Width, No Borders */}
+                            <div className="bg-transparent min-h-full">
                                 {/* Card Header */}
-                                <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800">
-                                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">
-                                        {report.label}
-                                    </h2>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                                        {report.description}
-                                    </p>
+                                <div className="px-5 py-6 flex justify-between items-start">
+                                    <div className="flex-1 pr-4">
+                                        <h2 className="text-2xl font-black text-slate-800 dark:text-white leading-tight">
+                                            {report.label}
+                                        </h2>
+                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                                            {report.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Action Toggle (Icon version) */}
+                                    <button
+                                        onClick={() => onToggleCard(report.id)}
+                                        className={`p-3 rounded-2xl transition-all shadow-sm ${items.includes(report.id)
+                                            ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
+                                            : 'bg-indigo-100 dark:bg-emerald-900/30 text-indigo-600 dark:text-emerald-400'
+                                            }`}
+                                        title={items.includes(report.id) ? "Rimuovi dalla Home" : "Aggiungi alla Home"}
+                                    >
+                                        {items.includes(report.id) ? (
+                                            <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
+                                        ) : (
+                                            <CheckIcon className="w-6 h-6" strokeWidth={2.5} />
+                                        )}
+                                    </button>
                                 </div>
 
-                                {/* Card Body */}
-                                <div className="p-4">
+                                {/* Card Body - No padding-x so content is full width if desired */}
+                                <div className="pb-10">
                                     {renderCardContent(report)}
                                 </div>
                             </div>
@@ -279,21 +335,15 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                 </div>
             </div>
 
-            {/* Bottom Action Bar */}
+            {/* Bottom Info Row (Optional, instead of big button) */}
             <div
-                className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-midnight-card p-4"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
+                className="bg-white/50 dark:bg-midnight/50 backdrop-blur-sm px-6 py-4 text-center"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}
             >
-                <button
-                    onClick={() => onToggleCard(currentReport.id)}
-                    className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-bold transition-all ${isPinned
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:bg-red-200'
-                            : 'bg-indigo-600 dark:bg-electric-violet text-white active:bg-indigo-700 dark:active:bg-indigo-500'
-                        }`}
-                >
-                    {isPinned ? <XMarkIcon className="w-5 h-5" /> : <CheckIcon className="w-5 h-5" />}
-                    {isPinned ? 'Rimuovi dalla Home' : 'Aggiungi alla Home'}
-                </button>
+                <div className="h-1.5 w-12 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2 opacity-50" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    Scorri per altri report • Usa l'icona per gestire la Home
+                </p>
             </div>
         </div>,
         document.body

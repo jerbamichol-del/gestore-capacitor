@@ -18,6 +18,7 @@ export interface SavingsGoal {
 
 interface SavingsGoalsCardProps {
     totalBalance: number; // Current total balance from accounts
+    noBorder?: boolean;
 }
 
 const STORAGE_KEY = 'savings_goals';
@@ -43,7 +44,7 @@ const saveGoals = (goals: SavingsGoal[]) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
 };
 
-const SavingsGoalsCard: React.FC<SavingsGoalsCardProps> = ({ totalBalance }) => {
+const SavingsGoalsCard: React.FC<SavingsGoalsCardProps> = ({ totalBalance, noBorder = false }) => {
     const [goals, setGoals] = useState<SavingsGoal[]>(loadGoals);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isModalAnimating, setIsModalAnimating] = useState(false);
@@ -323,7 +324,7 @@ const SavingsGoalsCard: React.FC<SavingsGoalsCardProps> = ({ totalBalance }) => 
 
     return (
         <>
-            <div className="midnight-card p-6 md:rounded-2xl shadow-xl transition-all duration-300 border border-slate-100 dark:border-electric-violet/20">
+            <div className={`${noBorder ? '' : 'midnight-card p-6 md:rounded-2xl shadow-xl'} transition-all duration-300`}>
                 <div className="flex items-center gap-4 mb-4 pr-8">
                     <button
                         onClick={openAddModal}

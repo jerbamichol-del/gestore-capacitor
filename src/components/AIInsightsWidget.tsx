@@ -8,9 +8,10 @@ interface AIInsightsWidgetProps {
     expenses: Expense[];
     budgets?: Budgets;
     onOpenBudgetSettings?: () => void;
+    noBorder?: boolean;
 }
 
-const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses, budgets = {}, onOpenBudgetSettings }) => {
+const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses, budgets = {}, onOpenBudgetSettings, noBorder = false }) => {
     const insights = useMemo(() => {
         const list = expenses.filter(e => e.type === 'expense');
         const now = new Date();
@@ -115,7 +116,7 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ expenses, budgets =
     if (expenses.length === 0) return null;
 
     return (
-        <div className="midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/20 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-midnight-card">
+        <div className={`${noBorder ? '' : 'midnight-card p-5 md:rounded-3xl shadow-lg'} bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-midnight-card`}>
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white">Insights & Budget</h3>

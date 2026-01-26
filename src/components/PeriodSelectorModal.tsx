@@ -165,7 +165,7 @@ const PeriodSelectorModal: React.FC<PeriodSelectorModalProps> = ({
 
             {activeTab === 'monthly' && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Seleziona Mese</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Seleziona Mese</label>
                 <input
                   type="month"
                   value={selectedDate}

@@ -21,6 +21,7 @@ interface BudgetTrendChartProps {
     activeViewIndex: number; // 0: Quick, 1: Period, 2: Custom
     quickFilter: string;
     customRange: { start: string | null; end: string | null };
+    noBorder?: boolean;
 }
 
 const parseLocalYYYYMMDD = (s: string) => {
@@ -111,7 +112,8 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     periodDate,
     activeViewIndex,
     quickFilter,
-    customRange
+    customRange,
+    noBorder = false
 }) => {
     const chartData = useMemo<ChartPoint[]>(() => {
         // 1) Determine date range (stessa logica attuale)
@@ -324,7 +326,7 @@ export const BudgetTrendChart: React.FC<BudgetTrendChartProps> = ({
     if (chartData.length === 0) return null;
 
     return (
-        <div className="midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/20 transition-colors">
+        <div className={`${noBorder ? '' : 'midnight-card p-5 md:rounded-3xl shadow-lg border border-slate-100 dark:border-electric-violet/20'} transition-colors`}>
             <div className="mb-6 flex justify-between items-end">
                 <div>
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white">Andamento Patrimonio</h3>

@@ -386,8 +386,8 @@ export const PeriodNavigator: React.FC<{
                 className={
                   'w-full text-left px-4 py-2 text-sm font-semibold rounded-lg ' +
                   (isActive && periodType === v
-                    ? 'bg-sunset-peach/40 dark:bg-electric-violet/20 text-slate-900 dark:text-electric-violet'
-                    : 'bg-slate-50 dark:bg-midnight-card/50 text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-midnight-card')
+                    ? 'bg-sunset-peach/40 dark:bg-electric-violet/40 text-slate-900 dark:text-white'
+                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700')
                 }
                 {...tapBridge}
               >
