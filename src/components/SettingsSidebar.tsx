@@ -90,10 +90,23 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     openProgress = 0,
 }) => {
     const [isClosing, setIsClosing] = React.useState(false);
+    const [openedBySwipe, setOpenedBySwipe] = React.useState(false);
     const { isDark } = useTheme();
     const sidebarRef = useRef<HTMLDivElement>(null);
     const startXRef = useRef<number>(0);
     const currentXRef = useRef<number>(0);
+
+    // Track if menu was opened via swipe to skip slide-in animation
+    useEffect(() => {
+        if (isOpen && isSwiping) {
+            // Menu just opened while swiping - mark it
+            setOpenedBySwipe(true);
+        }
+        if (!isOpen && !isSwiping) {
+            // Menu fully closed - reset the flag
+            setOpenedBySwipe(false);
+        }
+    }, [isOpen, isSwiping]);
 
     const handleClose = () => {
         setIsClosing(true);
@@ -199,7 +212,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             <div
                 ref={sidebarRef}
                 onAnimationEnd={handleAnimationEnd}
-                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : isOpen ? (isSwiping ? '' : 'animate-slide-in-left') : ''}`}
+                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : isOpen ? (isSwiping || openedBySwipe ? '' : 'animate-slide-in-left') : ''}`}
                 style={{
                     paddingTop: 'env(safe-area-inset-top, 0px)',
                     ...interactiveStyle

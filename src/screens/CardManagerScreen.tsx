@@ -335,16 +335,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                 </div>
             </div>
 
-            {/* Bottom Info Row (Optional, instead of big button) */}
-            <div
-                className="bg-white/50 dark:bg-midnight/50 backdrop-blur-sm px-6 py-4 text-center"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}
-            >
-                <div className="h-1.5 w-12 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2 opacity-50" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                    Scorri per altri report • Usa l'icona per gestire la Home
-                </p>
-            </div>
+
         </div>,
         document.body
     );
