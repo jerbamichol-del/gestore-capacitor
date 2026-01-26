@@ -71,10 +71,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
         await onSync();
     };
 
-    const handleOpenBankSyncSettings = () => {
-        onClose();
-        setTimeout(onOpenBankSyncSettings, 150);
-    };
+
 
     return createPortal(
         <div className="fixed inset-0 z-[6000] flex justify-center items-end md:items-center p-0 md:p-4 bg-midnight/60 backdrop-blur-md animate-fade-in" onClick={onClose}>
@@ -145,18 +142,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
                                 </div>
                             </button>
 
-                            <button
-                                onClick={handleOpenBankSyncSettings}
-                                className="flex items-center gap-4 p-4 rounded-xl border-2 border-slate-100 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500/50 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all text-left group"
-                            >
-                                <div className="w-12 h-12 flex items-center justify-center bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg group-hover:scale-110 transition-transform">
-                                    <span className="text-2xl">🏦</span>
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-800 dark:text-white text-lg">Configura Banche</p>
-                                    <p className="text-sm text-slate-500">Collega Revolut e altri conti bancari.</p>
-                                </div>
-                            </button>
+
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -479,14 +479,12 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" style={{ stroke: 'var(--accent-border)' }} strokeWidth="1" />
+          <path d={unifiedPath} style={{ fill: 'var(--accent-bg)' }} className="pointer-events-auto cursor-grab" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" style={{ stroke: 'var(--accent-border)' }} strokeWidth="1" />
+          <path d={unifiedPath} style={{ fill: 'var(--accent-bg)' }} className="pointer-events-auto cursor-grab" />
         </g>
       </svg>
 
