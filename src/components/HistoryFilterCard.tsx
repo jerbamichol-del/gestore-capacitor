@@ -92,7 +92,7 @@ export const QuickFilterControl: React.FC<{
     <div
       className={
         `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors ` +
-        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 shadow-sm' : 'border-slate-300 dark:border-white/10')
+        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 shadow-sm' : 'border-slate-300 dark:border-white/20')
       }
     >
       {filters.map((f, i) => {
@@ -108,7 +108,7 @@ export const QuickFilterControl: React.FC<{
               (i > 0 ? 'border-l ' : '') +
               (active
                 ? 'bg-indigo-600 dark:bg-electric-violet text-white'
-                : `bg-white dark:bg-midnight-card text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-WHITE/5 ${isActive ? 'border-indigo-500/50 dark:border-electric-violet/50' : 'border-slate-300 dark:border-white/10'}`)
+                : `bg-white dark:bg-midnight-card text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-WHITE/5 ${isActive ? 'border-indigo-500/50 dark:border-electric-violet/50' : 'border-slate-300 dark:border-white/20'}`)
             }
             {...tapBridge}
           >
@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
     <div
       className={
         `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative ` +
-        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/10 bg-white dark:bg-midnight-card')
+        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/20 bg-white dark:bg-midnight-card')
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -332,7 +332,7 @@ export const PeriodNavigator: React.FC<{
         ref={wrapperRef}
         className={
           `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg transition-colors ` +
-          (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/10 bg-white dark:bg-midnight-card')
+          (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/20 bg-white dark:bg-midnight-card')
         }
       >
         <button
@@ -479,14 +479,14 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={unifiedPath} className="fill-[var(--sunset-cream,#F2F4F2)] pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" className="stroke-slate-200" strokeWidth="1" />
+          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" style={{ stroke: 'var(--accent-border)' }} strokeWidth="1" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={unifiedPath} className="fill-midnight-card pointer-events-auto cursor-grab" />
-          <path d={strokePath} fill="none" className="stroke-white/10" strokeWidth="1" />
+          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
+          <path d={strokePath} fill="none" style={{ stroke: 'var(--accent-border)' }} strokeWidth="1" />
         </g>
       </svg>
 

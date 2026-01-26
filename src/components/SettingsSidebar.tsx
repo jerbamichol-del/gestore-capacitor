@@ -214,7 +214,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         }
     }
 
-    if (!isVisible && translateX === -100) return null;
+    // Force render if external swipe is active, bypassing the effect delay
+    const shouldRender = isOpen || isVisible || isExternalSwiping;
+
+    if (!shouldRender) return null;
 
     const handleInstantClose = (action: () => void) => {
         onClose(); // Trigger close animation
@@ -275,8 +278,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Dashboard</p>
                         <MenuItem
                             icon={<ChartBarIcon className="w-5 h-5" />}
-                            label="Card Home"
-                            description="Personalizza la dashboard"
+                            label="Statistiche"
+                            description="Report statistiche"
                             onClick={() => handleInstantClose(onOpenCardManager)}
                         />
                     </div>
