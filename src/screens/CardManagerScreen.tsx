@@ -2,8 +2,6 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import { XMarkIcon } from '../components/icons/XMarkIcon';
 import { CheckIcon } from '../components/icons/CheckIcon';
-import { ChevronLeftIcon } from '../components/icons/ChevronLeftIcon';
-import { ChevronRightIcon } from '../components/icons/ChevronRightIcon';
 import { Expense, Account, Budgets } from '../types';
 import { CategorySummaryCard } from '../components/dashboard/CategorySummaryCard';
 import { CategoryPieCard } from '../components/dashboard/CategoryPieCard';
@@ -16,17 +14,17 @@ import { DashboardCardId } from '../hooks/useDashboardConfig';
 interface ReportItem {
     id: DashboardCardId;
     label: string;
+    shortLabel: string;
     description: string;
-    emoji: string;
 }
 
-// Flat list of all reports for carousel navigation
+// Flat list of all reports
 const ALL_REPORTS: ReportItem[] = [
-    { id: 'summary', label: 'Riepilogo Categorie', description: 'Dettaglio testuale delle uscite per categoria', emoji: '📊' },
-    { id: 'categoryPie', label: 'Distribuzione Categorie', description: 'Grafico a torta interattivo delle spese', emoji: '🥧' },
-    { id: 'trend', label: 'Andamento Patrimoniale', description: 'Evoluzione del saldo e dei budget nel tempo', emoji: '📈' },
-    { id: 'goals', label: 'Obiettivi di Risparmio', description: 'Stato di avanzamento dei tuoi salvadanai', emoji: '🎯' },
-    { id: 'insights', label: 'Budget & Insights', description: 'Analisi automatica e suggerimenti AI', emoji: '💡' },
+    { id: 'summary', label: 'Riepilogo Categorie', shortLabel: 'Riepilogo', description: 'Dettaglio testuale delle uscite per categoria' },
+    { id: 'categoryPie', label: 'Distribuzione', shortLabel: 'Distribuzione', description: 'Grafico a torta interattivo delle spese' },
+    { id: 'trend', label: 'Andamento', shortLabel: 'Andamento', description: 'Evoluzione del saldo e dei budget nel tempo' },
+    { id: 'goals', label: 'Obiettivi', shortLabel: 'Obiettivi', description: 'Stato di avanzamento dei tuoi salvadanai' },
+    { id: 'insights', label: 'Insights', shortLabel: 'Insights', description: 'Analisi automatica e suggerimenti AI' },
 ];
 
 interface CardManagerScreenProps {
@@ -52,6 +50,8 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
 }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedPieIndex, setSelectedPieIndex] = useState<number | null>(null);
+    const tabsRef = useRef<HTMLDivElement>(null);
+    const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     // Swipe handling
     const touchStartX = useRef<number | null>(null);
@@ -75,19 +75,19 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
     const currentReport = ALL_REPORTS[currentIndex];
     const isPinned = items.includes(currentReport.id);
 
-    // Navigation functions
-    const goToNext = useCallback(() => {
-        if (currentIndex < ALL_REPORTS.length - 1 && !isTransitioning) {
-            setIsTransitioning(true);
-            setCurrentIndex(prev => prev + 1);
-            setTimeout(() => setIsTransitioning(false), 300);
+    // Scroll active tab into view
+    useEffect(() => {
+        const activeTab = tabRefs.current[currentIndex];
+        if (activeTab && tabsRef.current) {
+            activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
-    }, [currentIndex, isTransitioning]);
+    }, [currentIndex]);
 
-    const goToPrev = useCallback(() => {
-        if (currentIndex > 0 && !isTransitioning) {
+    // Navigate to specific tab
+    const goToTab = useCallback((index: number) => {
+        if (!isTransitioning && index !== currentIndex) {
             setIsTransitioning(true);
-            setCurrentIndex(prev => prev - 1);
+            setCurrentIndex(index);
             setTimeout(() => setIsTransitioning(false), 300);
         }
     }, [currentIndex, isTransitioning]);
@@ -105,7 +105,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
 
         // Limit swipe offset at edges
         if ((currentIndex === 0 && diff > 0) || (currentIndex === ALL_REPORTS.length - 1 && diff < 0)) {
-            setSwipeOffset(diff * 0.3); // Resistance at edges
+            setSwipeOffset(diff * 0.3);
         } else {
             setSwipeOffset(diff);
         }
@@ -121,10 +121,10 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
         const threshold = 80;
 
         if (Math.abs(diff) > threshold) {
-            if (diff < 0) {
-                goToNext();
-            } else {
-                goToPrev();
+            if (diff < 0 && currentIndex < ALL_REPORTS.length - 1) {
+                goToTab(currentIndex + 1);
+            } else if (diff > 0 && currentIndex > 0) {
+                goToTab(currentIndex - 1);
             }
         }
 
@@ -194,36 +194,49 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[8500] flex flex-col bg-slate-50 dark:bg-midnight transition-colors">
-            {/* Header with Title */}
+        <div className="fixed inset-0 z-[8500] flex flex-col bg-slate-100 dark:bg-midnight transition-colors">
+            {/* Header */}
             <div
-                className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-midnight shadow-sm"
-                style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
+                className="bg-indigo-600 dark:bg-midnight-card border-b border-indigo-700 dark:border-slate-800"
+                style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
             >
-                <div className="flex-1">
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white leading-tight">Centro Report</h2>
-                    <p className="text-xs text-slate-500 font-medium">{currentIndex + 1} di {ALL_REPORTS.length}</p>
+                {/* Title Row */}
+                <div className="flex items-center justify-between px-4 py-3">
+                    <button
+                        onClick={onClose}
+                        className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
+                    >
+                        <XMarkIcon className="w-6 h-6 text-white" />
+                    </button>
+                    <h1 className="text-xl font-bold text-white">Centro Report</h1>
+                    <div className="w-10" /> {/* Spacer for centering */}
                 </div>
-                <button
-                    onClick={onClose}
-                    className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+
+                {/* Scrollable Tabs */}
+                <div
+                    ref={tabsRef}
+                    className="flex overflow-x-auto no-scrollbar"
                 >
-                    <XMarkIcon className="w-7 h-7 text-slate-500" />
-                </button>
-            </div>
-
-            {/* Card Title Bar */}
-            <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-electric-violet dark:to-indigo-600">
-                <div className="flex items-center gap-3">
-                    <span className="text-3xl">{currentReport.emoji}</span>
-                    <div>
-                        <h3 className="text-lg font-bold text-white">{currentReport.label}</h3>
-                        <p className="text-xs text-white/70">{currentReport.description}</p>
-                    </div>
+                    {ALL_REPORTS.map((report, index) => (
+                        <button
+                            key={report.id}
+                            ref={(el) => { tabRefs.current[index] = el; }}
+                            onClick={() => goToTab(index)}
+                            className={`flex-shrink-0 px-5 py-3 text-sm font-semibold whitespace-nowrap transition-all relative ${index === currentIndex
+                                    ? 'text-white'
+                                    : 'text-white/60 hover:text-white/80'
+                                }`}
+                        >
+                            {report.shortLabel}
+                            {index === currentIndex && (
+                                <div className="absolute bottom-0 left-2 right-2 h-[3px] bg-white rounded-full" />
+                            )}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Carousel Container */}
+            {/* Content Container */}
             <div
                 ref={containerRef}
                 className="flex-1 overflow-hidden relative"
@@ -233,83 +246,54 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
             >
                 {/* Slides */}
                 <div
-                    className="absolute inset-0 flex transition-transform duration-300 ease-out"
+                    className="absolute inset-0 flex"
                     style={{
                         transform: `translateX(calc(-${currentIndex * 100}% + ${swipeOffset}px))`,
                         transition: swipeOffset !== 0 ? 'none' : 'transform 0.3s ease-out'
                     }}
                 >
-                    {ALL_REPORTS.map((report, index) => (
+                    {ALL_REPORTS.map((report) => (
                         <div
                             key={report.id}
-                            className="min-w-full h-full overflow-y-auto p-4 md:p-6"
+                            className="min-w-full h-full overflow-y-auto"
                         >
-                            <div className="max-w-2xl mx-auto h-full">
-                                <div className="p-4 md:p-6 rounded-3xl shadow-xl bg-white dark:bg-midnight-card min-h-[60vh]">
+                            {/* Card Content - Full Width, No Double Border */}
+                            <div className="bg-white dark:bg-midnight-card min-h-full">
+                                {/* Card Header */}
+                                <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800">
+                                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+                                        {report.label}
+                                    </h2>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                                        {report.description}
+                                    </p>
+                                </div>
+
+                                {/* Card Body */}
+                                <div className="p-4">
                                     {renderCardContent(report)}
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
-
-                {/* Navigation Arrows (Desktop) */}
-                {currentIndex > 0 && (
-                    <button
-                        onClick={goToPrev}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 dark:bg-midnight-card/90 shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-10 hidden md:flex"
-                    >
-                        <ChevronLeftIcon className="w-6 h-6 text-slate-600 dark:text-slate-300" />
-                    </button>
-                )}
-                {currentIndex < ALL_REPORTS.length - 1 && (
-                    <button
-                        onClick={goToNext}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 dark:bg-midnight-card/90 shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-10 hidden md:flex"
-                    >
-                        <ChevronRightIcon className="w-6 h-6 text-slate-600 dark:text-slate-300" />
-                    </button>
-                )}
             </div>
 
-            {/* Bottom Controls */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-midnight">
-                {/* Page Indicators */}
-                <div className="flex justify-center gap-2 mb-4">
-                    {ALL_REPORTS.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => {
-                                if (!isTransitioning) {
-                                    setIsTransitioning(true);
-                                    setCurrentIndex(index);
-                                    setTimeout(() => setIsTransitioning(false), 300);
-                                }
-                            }}
-                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${index === currentIndex
-                                ? 'bg-indigo-500 dark:bg-electric-violet w-8'
-                                : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400'
-                                }`}
-                        />
-                    ))}
-                </div>
-
-                {/* Pin/Unpin Button */}
+            {/* Bottom Action Bar */}
+            <div
+                className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-midnight-card p-4"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
+            >
                 <button
                     onClick={() => onToggleCard(currentReport.id)}
-                    className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-base font-bold transition-all ${isPinned
-                        ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200'
-                        : 'bg-indigo-500 dark:bg-electric-violet text-white hover:bg-indigo-600 dark:hover:bg-indigo-500'
+                    className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-bold transition-all ${isPinned
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 active:bg-red-200'
+                            : 'bg-indigo-600 dark:bg-electric-violet text-white active:bg-indigo-700 dark:active:bg-indigo-500'
                         }`}
                 >
                     {isPinned ? <XMarkIcon className="w-5 h-5" /> : <CheckIcon className="w-5 h-5" />}
                     {isPinned ? 'Rimuovi dalla Home' : 'Aggiungi alla Home'}
                 </button>
-
-                {/* Swipe Hint */}
-                <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-3">
-                    ← Scorri per vedere altre card →
-                </p>
             </div>
         </div>,
         document.body
