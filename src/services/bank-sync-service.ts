@@ -426,9 +426,10 @@ export class BankSyncService {
     }
 
     /**
-     * Fetch transactions for a specific account
+     * Fetch RAW transactions for a specific account (not mapped)
+     * Returns the raw API response for mapping in syncAll with correct local account ID
      */
-    static async fetchTransactions(accountUid: string): Promise<AutoTransaction[]> {
+    static async fetchRawTransactions(accountUid: string): Promise<any[]> {
         const creds = this.getCredentials();
         if (!creds) throw new Error('Credentials not set');
 
@@ -453,9 +454,9 @@ export class BankSyncService {
         const data = await response.json();
         console.log('Transactions API response:', JSON.stringify(data, null, 2));
         const transactions = data.transactions || [];
-        console.log(`Found ${transactions.length} transactions for account ${accountUid}`);
+        console.log(`Found ${transactions.length} raw transactions for account ${accountUid}`);
 
-        return transactions.map((tx: any) => this.mapToAutoTransaction(tx, accountUid));
+        return transactions; // Return RAW data, not mapped
     }
 
     /**
@@ -651,12 +652,12 @@ export class BankSyncService {
                 if (acc.display_name) activeProviders.add(acc.display_name);
                 if (acc.displayName) activeProviders.add(acc.displayName);
 
-                // 1. Sync Transactions
-                const txs = await this.fetchTransactions(acc.uid);
-                console.log(`Account ${acc.uid}: ${txs.length} transactions fetched`);
-                for (const tx of txs) {
-                    // Inject the resolved local account ID into the mapped transaction
-                    const mappedTx = this.mapToAutoTransaction(tx, localAccountId);
+                // 1. Sync Transactions - fetch RAW data and map with correct local account ID
+                const rawTxs = await this.fetchRawTransactions(acc.uid);
+                console.log(`Account ${acc.uid}: ${rawTxs.length} raw transactions fetched`);
+                for (const rawTx of rawTxs) {
+                    // Map RAW API data with resolved local account ID (single mapping, correct account)
+                    const mappedTx = this.mapToAutoTransaction(rawTx, localAccountId);
                     const added = await AutoTransactionService.addAutoTransaction(mappedTx);
                     if (added) totalAdded++;
                 }
