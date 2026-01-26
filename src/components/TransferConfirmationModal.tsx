@@ -75,15 +75,15 @@ const TransferConfirmationModal: React.FC<Props> = ({
       onClick={onClose}
     >
       <div
-        className="midnight-card rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transition-colors duration-300"
+        className="midnight-card rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[85vh] flex flex-col shadow-2xl transition-colors duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <span className="text-4xl">🤔</span>
+            <span className="text-2xl">🤔</span>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Trasferimento o Spesa?</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Trasferimento o Spesa?</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Questa transazione potrebbe essere un trasferimento tra i tuoi conti</p>
             </div>
           </div>
@@ -97,7 +97,7 @@ const TransferConfirmationModal: React.FC<Props> = ({
         </div>
 
         {/* Transaction Info */}
-        <div className="p-6 border-b border-slate-200 dark:border-electric-violet/20 bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight-card/50">
+        <div className="p-4 border-b border-slate-200 dark:border-electric-violet/20 bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight-card/50">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Da</div>
@@ -109,9 +109,9 @@ const TransferConfirmationModal: React.FC<Props> = ({
             </div>
           </div>
 
-          <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-4">
+          <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-3">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">🏦</span>
+              <span className="text-xl">🏦</span>
               <div>
                 <div className="font-semibold text-yellow-900 dark:text-yellow-400 mb-1">Possibile trasferimento rilevato</div>
                 <div className="text-sm text-yellow-700 dark:text-yellow-500">Il beneficiario “<span className="font-medium">{transaction.description}</span>” sembra essere un altro tuo conto.</div>
@@ -121,13 +121,13 @@ const TransferConfirmationModal: React.FC<Props> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Option 1: Transfer */}
-          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border-2 border-indigo-200 dark:border-indigo-800/50 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border-2 border-indigo-200 dark:border-indigo-800/50 rounded-xl p-4">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">🔄</span>
+              <span className="text-2xl">🔄</span>
               <div>
-                <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-300">Trasferimento tra conti</h3>
+                <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-300">Trasferimento tra conti</h3>
                 <p className="text-sm text-indigo-700 dark:text-indigo-400">Hai spostato denaro tra i tuoi conti</p>
               </div>
             </div>
@@ -183,11 +183,11 @@ const TransferConfirmationModal: React.FC<Props> = ({
           </div>
 
           {/* Option 2: Normal Expense */}
-          <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-5">
+          <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">💸</span>
+              <span className="text-2xl">💸</span>
               <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Spesa normale</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Spesa normale</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">Hai pagato un servizio/prodotto</p>
               </div>
             </div>
