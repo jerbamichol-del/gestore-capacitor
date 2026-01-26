@@ -135,32 +135,72 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         }, 200); // Faster duration matched with CSS
     };
 
+    // Local state for drag-to-close
+    const [dragTx, setDragTx] = React.useState(0);
+    const [isDragging, setIsDragging] = React.useState(false);
+
     // Handle swipe to close
     useEffect(() => {
-        if (!isOpen || isSwiping) return;
+        // If it's being opened by parent swipe, or not open, don't interfere
+        if (!isOpen || isSwiping) {
+            setDragTx(0);
+            setIsDragging(false);
+            return;
+        }
 
         const sidebar = sidebarRef.current;
         if (!sidebar) return;
 
+        let startX = 0;
+        let currentX = 0;
+        let isActive = false;
+
         const handleTouchStart = (e: TouchEvent) => {
-            startXRef.current = e.touches[0].clientX;
-            currentXRef.current = e.touches[0].clientX;
+            // Only start if we are essentially fully open (dragTx is near 0)
+            if (Math.abs(dragTx) > 5) return;
+
+            startX = e.touches[0].clientX;
+            currentX = startX;
+            isActive = true;
+            setIsDragging(true);
         };
 
         const handleTouchMove = (e: TouchEvent) => {
-            currentXRef.current = e.touches[0].clientX;
-            const diff = startXRef.current - currentXRef.current;
+            if (!isActive) return;
+            currentX = e.touches[0].clientX;
+            const diff = currentX - startX; // negative if dragging left
+
+            // We only allow dragging left (closing)
+            // So if diff is positive (dragging right), we clamp to 0
+            // If diff is negative (dragging left), we use it up to sidebarWidth
             if (diff > 0) {
-                sidebar.style.transform = `translateX(-${Math.min(diff, 320)}px)`;
+                setDragTx(0);
+            } else {
+                setDragTx(Math.max(diff, -320));
             }
         };
 
         const handleTouchEnd = () => {
-            const diff = startXRef.current - currentXRef.current;
-            if (diff > 80) {
+            if (!isActive) return;
+            isActive = false;
+            setIsDragging(false);
+
+            const diff = currentX - startX;
+            // threshold to close: 80px
+            if (diff < -80) {
                 handleClose();
+                // Keep the visual state "closed" (dragged away) until unmount/animation
+                // But since unmount happens via onClose -> isClosing -> animation... 
+                // effectively we let CSS take over or we could explicitly animate out.
+                // However, handleClose sets isClosing=true, which triggers 'animate-slide-out-left'.
+                // That animation starts from 0. We are currently at `dragTx`.
+                // Ideally we let the pure CSS animation take over, but it might jump.
+                // For now, let's reset dragTx because 'animate-slide-out-left' handles it globally properly 
+                // or we rely on the fact that isClosing will render with null interactiveStyle if we are careful.
+                setDragTx(0);
             } else {
-                sidebar.style.transform = '';
+                // Snap back to open
+                setDragTx(0);
             }
         };
 
@@ -195,17 +235,37 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     const currentProgressPercent = Math.min(openProgress / maxProgress, 1);
 
     // Transform logic: 
-    // - If just swiping to open, map progress to translateX
-    // - If release and open, animate smoothly to 0 from current pos
-    const interactiveStyle: React.CSSProperties = isSwiping ? {
-        transform: `translateX(calc(-100% + ${currentProgressPercent * sidebarWidth}px))`,
-        transition: 'none'
-    } : (isOpen && !isClosing && !openedBySwipe) ? {
-        // This handles cases NOT opened by swipe but standard button click
-        // classes take care of this via animate-slide-in-left
-    } : (isOpen && !isClosing && openedBySwipe) ? {
-        transform: 'translateX(0)',
-        transition: 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)'
+    // - If just swiping to open (isSwiping=true), map progress to translateX
+    // - If dragging to close (isDragging=true, !isSwiping), use dragTx
+    // - If open and stationary, 0
+    // - If closing (isClosing=true), let CSS animation handle it (or use dragTx if we want seamless, but CSS is easier for "slide-out")
+
+    let transformStyle = '';
+    let transitionStyle = '';
+
+    if (isSwiping) {
+        // Opening Swipe
+        transformStyle = `translateX(calc(-100% + ${currentProgressPercent * sidebarWidth}px))`;
+        transitionStyle = 'none';
+    } else if (isDragging) {
+        // Closing Swipe (Local)
+        transformStyle = `translateX(${dragTx}px)`;
+        transitionStyle = 'none';
+        // Note: dragTx is negative
+    } else if (isOpen && !isClosing) {
+        // Static Open or Snapping back from failed close
+        transformStyle = 'translateX(0)';
+        // If we just released a drag, we want smooth snap. 
+        // We can't easily detect "just released" here without more state, 
+        // but adding a transition to "normal open" is generally 
+        // safe unless we are in the middle of a gesture.
+        // Since isDragging is false here, we are not gesturing.
+        transitionStyle = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    }
+
+    const interactiveStyle: React.CSSProperties = transformStyle ? {
+        transform: transformStyle,
+        transition: transitionStyle
     } : {};
 
     const backdropOpacity = (isSwiping && !isOpen) ? currentProgressPercent : 1;

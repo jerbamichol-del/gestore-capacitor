@@ -108,7 +108,7 @@ export const QuickFilterControl: React.FC<{
               (i > 0 ? 'border-l ' : '') +
               (active
                 ? 'bg-indigo-600 dark:bg-electric-violet text-white'
-                : `bg-white dark:bg-midnight-card/50 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-midnight-card/80`)
+                : `bg-white dark:bg-midnight-card text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-midnight-card/80`)
             }
             {...tapBridge}
           >
@@ -479,7 +479,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={unifiedPath} className="fill-white pointer-events-auto cursor-grab" />
+          <path d={unifiedPath} className="fill-[var(--sunset-cream,#F2F4F2)] pointer-events-auto cursor-grab" />
           <path d={strokePath} fill="none" className="stroke-slate-200" strokeWidth="1" />
         </g>
 
