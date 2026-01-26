@@ -42,6 +42,8 @@ interface SettingsSidebarProps {
     onOpenThemePicker: () => void;
     onOpenSecurity: () => void;
     onLogout: () => void;
+    isSwiping?: boolean;
+    openProgress?: number;
 }
 
 interface MenuItemProps {
@@ -84,6 +86,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onOpenThemePicker,
     onOpenSecurity,
     onLogout,
+    isSwiping = false,
+    openProgress = 0,
 }) => {
     const [isClosing, setIsClosing] = React.useState(false);
     const { isDark } = useTheme();
@@ -104,19 +108,17 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
     // Close logic specifically designed for "instant" unmounts (like item clicks) vs animated closes
     const handleInstantClose = (action: () => void) => {
-        // For item clicks, we usually want to close + navigate immediately or after a short delay
-        // But for visual consistency we can animate out too.
         setIsClosing(true);
         setTimeout(() => {
             onClose();
             setIsClosing(false);
             action();
-        }, 300); // Match animation duration
+        }, 200); // Faster duration matched with CSS
     };
 
     // Handle swipe to close
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || isSwiping) return;
 
         const sidebar = sidebarRef.current;
         if (!sidebar) return;
@@ -130,13 +132,13 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             currentXRef.current = e.touches[0].clientX;
             const diff = startXRef.current - currentXRef.current;
             if (diff > 0) {
-                sidebar.style.transform = `translateX(-${Math.min(diff, 300)}px)`;
+                sidebar.style.transform = `translateX(-${Math.min(diff, 320)}px)`;
             }
         };
 
         const handleTouchEnd = () => {
             const diff = startXRef.current - currentXRef.current;
-            if (diff > 100) {
+            if (diff > 80) {
                 handleClose();
             } else {
                 sidebar.style.transform = '';
@@ -152,7 +154,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             sidebar.removeEventListener('touchmove', handleTouchMove);
             sidebar.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [isOpen]);
+    }, [isOpen, isSwiping]);
 
     // Handle escape key
     useEffect(() => {
@@ -164,14 +166,32 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
 
-    // Only render if open or closing
-    if (!isOpen && !isClosing) return null;
+    // Only render if open, closing, or swiping (to follow finger)
+    const shouldRender = isOpen || isClosing || (isSwiping && openProgress > 0);
+    if (!shouldRender) return null;
+
+    // Calculation for interactive open (opening gesture)
+    const sidebarWidth = 320;
+    const maxProgress = 0.85; // Matches the sidebar width percentage
+    const currentProgressPercent = Math.min(openProgress / maxProgress, 1);
+
+    // Transform logic: 
+    // - If just swiping to open, map progress to translateX
+    // - If fully open, standard positioning (handled by classes or reset)
+    // - If closing, handled by animation classes
+    const interactiveStyle: React.CSSProperties = (isSwiping && !isOpen) ? {
+        transform: `translateX(calc(-100% + ${currentProgressPercent * sidebarWidth}px))`,
+        transition: 'none'
+    } : {};
+
+    const backdropOpacity = (isSwiping && !isOpen) ? currentProgressPercent : 1;
 
     return createPortal(
         <div className="fixed inset-0 z-[8000]">
             {/* Backdrop */}
             <div
                 className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+                style={isSwiping && !isOpen ? { opacity: backdropOpacity, transition: 'none' } : {}}
                 onClick={handleClose}
             />
 
@@ -179,8 +199,11 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             <div
                 ref={sidebarRef}
                 onAnimationEnd={handleAnimationEnd}
-                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : 'animate-slide-in-left'}`}
-                style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+                className={`absolute left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-white dark:bg-midnight backdrop-blur-xl shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-left' : isOpen ? (isSwiping ? '' : 'animate-slide-in-left') : ''}`}
+                style={{
+                    paddingTop: 'env(safe-area-inset-top, 0px)',
+                    ...interactiveStyle
+                }}
             >
                 {/* Header */}
                 <div className="p-6 border-b border-slate-200 dark:border-slate-800">
@@ -285,10 +308,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
           to { transform: translateX(-100%); }
         }
         .animate-slide-in-left {
-          animation: slide-in-left 0.3s ease-out forwards;
+          animation: slide-in-left 0.2s ease-out forwards;
         }
         .animate-slide-out-left {
-          animation: slide-out-left 0.3s ease-in forwards;
+          animation: slide-out-left 0.2s ease-in forwards;
         }
         @keyframes fade-in {
           from { opacity: 0; }
@@ -299,10 +322,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
           to { opacity: 0; }
         }
         .animate-fade-in {
-          animation: fade-in 0.3s ease-out forwards;
+          animation: fade-in 0.2s ease-out forwards;
         }
         .animate-fade-out {
-          animation: fade-out 0.3s ease-in forwards;
+          animation: fade-out 0.2s ease-in forwards;
         }
       `}</style>
         </div>,

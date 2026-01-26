@@ -325,8 +325,8 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                                     </button>
                                 </div>
 
-                                {/* Card Body - No padding-x so content is full width if desired */}
-                                <div className="pb-10">
+                                {/* Card Body - Added padding-x to prevent overflow/too-wide feeling */}
+                                <div className="pb-10 px-4">
                                     {renderCardContent(report)}
                                 </div>
                             </div>

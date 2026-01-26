@@ -91,13 +91,13 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
 
   // 7. Global Edge Swipe to Open Sidebar
   const mainLayoutRef = useRef<HTMLDivElement>(null);
-  useSwipe(mainLayoutRef, {
+  const { progress: swipeProgress, isSwiping: isDraggingSidebar } = useSwipe(mainLayoutRef, {
     onSwipeRight: () => {
       if (!isSettingsSidebarOpen) setIsSettingsSidebarOpen(true);
     }
   }, {
     maxStartX: 40, // Only trigger if swipe starts at the very left edge
-    enabled: !ui.nav.isHistoryFilterOpen && !ui.nav.isCalculatorContainerOpen
+    enabled: !ui.nav.isHistoryFilterOpen && !ui.nav.isCalculatorContainerOpen && !isCardManagerOpen && !ui.nav.isAccountsScreenOpen && !ui.nav.isRecurringScreenOpen && !ui.nav.isHistoryScreenOpen
   });
 
 
@@ -613,6 +613,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
         onOpenThemePicker={() => setIsThemePickerOpen(true)}
         onOpenSecurity={() => setIsSecurityScreenOpen(true)}
         onLogout={onLogout}
+        isSwiping={isDraggingSidebar}
+        openProgress={swipeProgress}
       />
 
       {/* Theme Picker */}
