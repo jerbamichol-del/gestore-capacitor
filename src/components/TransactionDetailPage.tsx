@@ -747,7 +747,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsFrequencyModalOpen(true)}
-                  className={`w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${isFrequencySet
+                  className={`w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sunset-coral dark:focus:ring-electric-violet transition-colors ${isFrequencySet
                     ? 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
                     : 'btn-field dark:bg-midnight-card/30 text-sunset-text dark:text-slate-400 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
                     }`}
@@ -767,7 +767,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsRecurrenceModalOpen(true)}
-                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card"
+                    className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sunset-coral dark:focus:ring-electric-violet transition-colors bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card"
                   >
                     <span className="truncate flex-1">{getRecurrenceSummary(formData)}</span>
                     <ChevronDownIcon className="w-5 h-5 text-slate-500" />
@@ -884,7 +884,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           <div className="relative">
             <button
               onClick={() => { setIsRecurrenceOptionsOpen(v => !v); setIsRecurrenceEndOptionsOpen(false); }}
-              className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 bg-sunset-cream/60 dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-sunset-text dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card"
+              className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sunset-coral dark:focus:ring-electric-violet bg-sunset-cream/60 dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-sunset-text dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card"
             >
               <span className="truncate flex-1 capitalize">
                 {recurrenceLabels[(tempRecurrence || 'monthly') as keyof typeof recurrenceLabels]}
@@ -964,7 +964,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 onClick={() => setTempMonthlyRecurrenceType('dayOfMonth')}
                 className="flex items-center gap-3 p-2 cursor-pointer rounded-lg hover:bg-sunset-cream/50 dark:hover:bg-midnight-card"
               >
-                <div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center flex-shrink-0">{tempMonthlyRecurrenceType === 'dayOfMonth' && <div className="w-2.5 h-2.5 bg-indigo-600 dark:bg-electric-violet rounded-full" />}</div>
+                <div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center flex-shrink-0">{tempMonthlyRecurrenceType === 'dayOfMonth' && <div className="w-2.5 h-2.5 bg-sunset-coral dark:bg-electric-violet rounded-full" />}</div>
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Lo stesso giorno di ogni mese</span>
               </div>
 
@@ -972,10 +972,10 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 role="radio"
                 aria-checked={tempMonthlyRecurrenceType === 'dayOfWeek'}
                 onClick={() => setTempMonthlyRecurrenceType('dayOfWeek')}
-                className="flex items-center gap-3 p-2 cursor-pointer rounded-lg hover:bg-sunset-cream"
+                className="flex items-center gap-3 p-2 cursor-pointer rounded-lg hover:bg-sunset-cream/50 dark:hover:bg-midnight-card"
               >
-                <div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center flex-shrink-0">{tempMonthlyRecurrenceType === 'dayOfWeek' && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full" />}</div>
-                <span className="text-sm font-medium text-slate-700">{dynamicMonthlyDayOfWeekLabel}</span>
+                <div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center flex-shrink-0">{tempMonthlyRecurrenceType === 'dayOfWeek' && <div className="w-2.5 h-2.5 bg-indigo-600 dark:bg-electric-violet rounded-full" />}</div>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{dynamicMonthlyDayOfWeekLabel}</span>
               </div>
             </div>
           )}
@@ -986,7 +986,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => { setIsRecurrenceEndOptionsOpen(v => !v); setIsRecurrenceOptionsOpen(false); }}
-                  className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-electric-violet bg-sunset-cream/60 dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-sunset-text dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80"
+                  className="w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sunset-coral dark:focus:ring-electric-violet bg-sunset-cream/60 dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30 text-sunset-text dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/80"
                 >
                   <span className="truncate flex-1 capitalize">
                     {getRecurrenceEndLabel()}
@@ -1016,7 +1016,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
 
               {formData.recurrenceEndType === 'date' && (
                 <div>
-                  <label htmlFor="recurrence-end-date" className="relative w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 dark:focus-within:ring-electric-violet text-indigo-600 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/20 font-semibold cursor-pointer h-[46.5px]">
+                  <label htmlFor="recurrence-end-date" className="relative w-full flex items-center justify-center gap-2 px-3 py-2.5 text-base rounded-lg focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sunset-coral dark:focus-within:ring-electric-violet text-sunset-coral dark:text-electric-violet hover:bg-sunset-peach/20 dark:hover:bg-electric-violet/20 font-semibold cursor-pointer h-[46.5px]">
                     <CalendarIcon className="w-5 h-5" />
                     <span>{formData.recurrenceEndDate ? formatShortDate(formData.recurrenceEndDate) : 'Seleziona'}</span>
                     <input
@@ -1055,7 +1055,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
           <button
             type="button"
             onClick={handleApplyRecurrence}
-            className="px-4 py-2 text-sm font-bold text-white btn-electric rounded-xl shadow-lg transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="px-4 py-2 text-sm font-bold text-white btn-electric rounded-xl shadow-lg transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-sunset-coral dark:focus:ring-electric-violet focus:ring-offset-2"
           >
             Applica
           </button>
