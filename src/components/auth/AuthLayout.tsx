@@ -86,7 +86,9 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   const containerStyle = {
     ...heightStyle,
-    ...(isStudio ? { position: 'fixed', inset: 0 } : {})
+    position: 'fixed',
+    inset: 0,
+    zIndex: 9000
   } as React.CSSProperties;
 
   return (

@@ -18,6 +18,7 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
     const [loading, setLoading] = useState(false);
 
     const [isWaitingForVerification, setIsWaitingForVerification] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [verificationCode, setVerificationCode] = useState('');
     const [verifyError, setVerifyError] = useState<string | null>(null);
 
@@ -58,8 +59,8 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
             saveUsers(users);
             localStorage.removeItem('pending_email_change');
 
-            // Successo
-            onSuccess(newEmailFinal);
+            // Mostra successo invece di chiamare subito onSuccess
+            setIsSuccess(true);
         } catch (err) {
             console.error(err);
             setVerifyError("Errore durante il salvataggio.");
@@ -122,6 +123,35 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
         }
     };
 
+    if (isSuccess) {
+        return (
+            <AuthLayout>
+                <div className="text-center">
+                    <div className="mb-6 flex justify-center">
+                        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-10 h-10">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Email Cambiata!</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mb-8">
+                        Il tuo indirizzo email è stato aggiornato correttamente.<br />
+                        Usa la nuova email per i prossimi accessi.
+                    </p>
+
+                    <button
+                        onClick={() => onSuccess(newEmail.toLowerCase())}
+                        className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-lg shadow-indigo-500/30"
+                    >
+                        Finito
+                    </button>
+                </div>
+            </AuthLayout>
+        );
+    }
+
     if (isWaitingForVerification) {
         return (
             <AuthLayout>
@@ -143,6 +173,7 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
                                 onChange={(e) => setVerificationCode(e.target.value)}
                                 className="w-40 text-center text-2xl tracking-widest px-4 py-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-white dark:bg-midnight-card focus:outline-none focus:ring-4 focus:ring-indigo-500/20 font-mono font-bold text-slate-800 dark:text-white"
                                 placeholder="00000"
+                                autoFocus
                             />
                         </div>
 
@@ -152,13 +183,13 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
                             <button
                                 type="button"
                                 onClick={onCancel} // Chiude tutto
-                                className="px-4 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                className="px-4 py-3 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                             >
                                 Annulla
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-colors shadow-lg shadow-indigo-500/30"
+                                className="px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-colors shadow-lg shadow-indigo-500/30"
                             >
                                 Conferma
                             </button>
@@ -191,7 +222,7 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
                             type="email"
                             value={newEmail}
                             onChange={(e) => setNewEmail(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="nome@esempio.com"
                             required
                         />
@@ -203,7 +234,7 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
                             type="email"
                             value={confirmEmail}
                             onChange={(e) => setConfirmEmail(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="nome@esempio.com"
                             required
                         />
@@ -215,17 +246,17 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="px-4 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                            className="px-4 py-3 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                         >
                             Annulla
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                            className="px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-70 shadow-lg shadow-indigo-500/20"
                         >
                             {loading && <SpinnerIcon className="w-4 h-4 animate-spin" />}
-                            <span>Salva</span>
+                            <span>Invia Codice</span>
                         </button>
                     </div>
                 </form>

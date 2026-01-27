@@ -16,6 +16,7 @@ type Step = 'current' | 'new' | 'confirm';
 
 const ChangePinScreen: React.FC<ChangePinScreenProps> = ({ email, onSuccess, onCancel }) => {
   const [step, setStep] = useState<Step>('current');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -122,8 +123,7 @@ const ChangePinScreen: React.FC<ChangePinScreenProps> = ({ email, onSuccess, onC
       users[normalizedEmail] = u;
       saveUsers(users);
 
-      note('PIN aggiornato con successo.');
-      setTimeout(() => onSuccess(), 800);
+      setIsSuccess(true);
     } catch {
       fail('Errore durante il salvataggio del nuovo PIN.');
       resetTo('new');
@@ -136,37 +136,65 @@ const ChangePinScreen: React.FC<ChangePinScreenProps> = ({ email, onSuccess, onC
     step === 'current'
       ? 'Inserisci il PIN attuale'
       : step === 'new'
-      ? 'Nuovo PIN'
-      : 'Conferma nuovo PIN';
+        ? 'Nuovo PIN'
+        : 'Conferma nuovo PIN';
 
   const hint =
     step === 'current'
       ? 'Per continuare, verifica il PIN attuale.'
       : step === 'new'
-      ? 'Scegli un nuovo PIN di 4 cifre.'
-      : 'Reinserisci il nuovo PIN.';
+        ? 'Scegli un nuovo PIN di 4 cifre.'
+        : 'Reinserisci il nuovo PIN.';
 
   const pinValue = step === 'current' ? currentPin : step === 'new' ? newPin : confirmPin;
   const setPin =
     step === 'current' ? setCurrentPin : step === 'new' ? setNewPin : setConfirmPin;
 
+  if (isSuccess) {
+    return (
+      <AuthLayout>
+        <div className="text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-10 h-10">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+              </svg>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">PIN Aggiornato!</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">
+            Il tuo PIN di accesso è stato modificato con successo.<br />
+            Usalo al prossimo accesso.
+          </p>
+
+          <button
+            onClick={() => onSuccess()}
+            className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-lg shadow-indigo-500/30"
+          >
+            Finito
+          </button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout>
       <div className="text-center">
-        <h2 className="text-xl font-bold text-slate-800 mb-2">{headline}</h2>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{headline}</h2>
 
         <p
-          className={`min-h-[2.5rem] text-sm flex items-center justify-center ${
-            error ? 'text-red-500' : 'text-slate-500'
-          }`}
+          className={`min-h-[2.5rem] text-sm flex items-center justify-center ${error ? 'text-red-500' : 'text-slate-500 dark:text-slate-400'
+            }`}
         >
           {error || info || hint}
         </p>
 
         {loading ? (
           <div className="min-h-[220px] flex flex-col items-center justify-center">
-            <SpinnerIcon className="w-12 h-12 text-indigo-600" />
-            <p className="mt-3 text-slate-500">Attendere…</p>
+            <SpinnerIcon className="w-12 h-12 text-indigo-600 animate-spin" />
+            <p className="mt-3 text-slate-500 dark:text-slate-400">Attendere…</p>
           </div>
         ) : (
           <div className="mt-2">
@@ -174,10 +202,10 @@ const ChangePinScreen: React.FC<ChangePinScreenProps> = ({ email, onSuccess, onC
           </div>
         )}
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className="mt-8 grid grid-cols-2 gap-3">
           <button
             onClick={() => (onCancel ? onCancel() : onSuccess())}
-            className="px-4 py-3 text-sm font-semibold rounded-lg bg-slate-200 text-slate-800 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400"
+            className="px-4 py-3 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           >
             Annulla
           </button>
@@ -191,7 +219,7 @@ const ChangePinScreen: React.FC<ChangePinScreenProps> = ({ email, onSuccess, onC
                 void saveNewPin();
               }
             }}
-            className="px-4 py-3 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+            className="px-4 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50"
             disabled={
               loading ||
               (step === 'current' && currentPin.length < 4) ||
