@@ -108,7 +108,7 @@ export const QuickFilterControl: React.FC<{
               (i > 0 ? 'border-l ' : '') +
               (active
                 ? 'bg-indigo-600 dark:bg-electric-violet text-white'
-                : `bg-white dark:bg-midnight-card text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-WHITE/5 ${isActive ? 'border-indigo-500/50 dark:border-electric-violet/50' : 'border-slate-300 dark:border-white/20'}`)
+                : `bg-white dark:bg-midnight-card text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-WHITE/5 ${isActive ? 'border-indigo-500/50 dark:border-electric-violet/50' : 'border-slate-300 dark:border-electric-violet/30'}`)
             }
             {...tapBridge}
           >
@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
     <div
       className={
         `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative ` +
-        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/20 bg-white dark:bg-midnight-card')
+        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card')
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -332,7 +332,7 @@ export const PeriodNavigator: React.FC<{
         ref={wrapperRef}
         className={
           `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg transition-colors ` +
-          (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/20 bg-white dark:bg-midnight-card')
+          (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card')
         }
       >
         <button
@@ -479,12 +479,12 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
+          <path d={unifiedPath} className="fill-slate-100 pointer-events-auto cursor-grab" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
+          <path d={unifiedPath} className="fill-slate-800 pointer-events-auto cursor-grab" />
         </g>
       </svg>
 
@@ -907,7 +907,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           onChange={(e) => props.onDescriptionChange(e.target.value)}
           onFocus={handleInputFocus}
           placeholder="Descrizione..."
-          className="w-full rounded-lg border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
+          className="w-full rounded-lg border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
           onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
           {...tapBridge}
         />
@@ -926,7 +926,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
             onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, min: e.target.value })}
             onFocus={handleInputFocus}
             placeholder="Da"
-            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.min ? 'bg-sunset-peach/40 dark:bg-electric-violet/20 border-sunset-coral/50 dark:border-electric-violet/50 text-sunset-coral dark:text-electric-violet font-medium' : 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30'}`}
+            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.min ? 'bg-sunset-peach/40 dark:bg-electric-violet/20 border-sunset-coral/50 dark:border-electric-violet/50 text-sunset-coral dark:text-electric-violet font-medium' : 'bg-white dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30'}`}
             onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
             {...tapBridge}
           />
@@ -942,7 +942,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
             onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, max: e.target.value })}
             onFocus={handleInputFocus}
             placeholder="A"
-            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.max ? 'bg-sunset-peach/40 dark:bg-electric-violet/20 border-sunset-coral/50 dark:border-electric-violet/50 text-sunset-coral dark:text-electric-violet font-medium' : 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30'}`}
+            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.max ? 'bg-sunset-peach/40 dark:bg-electric-violet/20 border-sunset-coral/50 dark:border-electric-violet/50 text-sunset-coral dark:text-electric-violet font-medium' : 'bg-white dark:bg-midnight-card border-slate-300 dark:border-electric-violet/30'}`}
             onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
             {...tapBridge}
           />
