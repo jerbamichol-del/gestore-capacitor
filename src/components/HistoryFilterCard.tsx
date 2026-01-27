@@ -432,28 +432,21 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   const tx1 = mid - plateau / 2;
   const tx2 = mid + plateau / 2;
 
-  // Separate the card top (corners) from the tab (linguetta)
-  const cardTopPath = [
-    `M 0 10`,
-    `L 0 ${R}`,
+  // Una singola forma continua per fill e shadow, così non c'è linea di giunzione.
+  // Notare i punti di controllo fissati per evitare l'effetto "tagliato".
+  const unifiedPath = [
+    `M 0 ${R}`,
     `Q 0 0 ${R} 0`,
     `L ${x1} 0`,
-    `L ${x2} 0`,
-    `L ${width - R} 0`,
-    `Q ${width} 0 ${width} ${R}`,
-    `L ${width} 10`,
-    `Z`
-  ].join(' ');
-
-  const linguettaPath = [
-    `M ${x1} 0`,
     `C ${x1 + bulge} 0, ${tx1 - bulge} -${tabH}, ${tx1} -${tabH}`,
     `L ${tx2} -${tabH}`,
     `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
+    `L ${width - R} 0`,
+    `Q ${width} 0 ${width} ${R}`,
+    `L ${width} 10`,
+    `L 0 10`,
     `Z`
   ].join(' ');
-
-  const unifiedPath = cardTopPath + ' ' + linguettaPath;
 
   const strokePath = [
     `M 0 ${R}`,
@@ -486,14 +479,12 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={cardTopPath} className="fill-sunset-cream" />
-          <path d={linguettaPath} className="fill-sunset-cream pointer-events-auto cursor-grab" />
+          <path d={unifiedPath} className="fill-sunset-cream pointer-events-auto cursor-grab" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={cardTopPath} className="fill-midnight" />
-          <path d={linguettaPath} className="fill-midnight pointer-events-auto cursor-grab" />
+          <path d={unifiedPath} className="fill-midnight pointer-events-auto cursor-grab" />
         </g>
       </svg>
 
@@ -905,59 +896,56 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
   const renderHeaderInputs = () => (
     <div className="px-4 pb-2 space-y-3">
       {/* Search Description */}
-      <div className="p-3 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 space-y-2">
-        <label htmlFor="filter-desc" className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
-          <MagnifyingGlassIcon className="w-3.5 h-3.5" />
-          Descrizione
-        </label>
-        <div className="relative">
-          <input
-            id="filter-desc"
-            type="text"
-            value={props.descriptionQuery}
-            onChange={(e) => props.onDescriptionChange(e.target.value)}
-            onFocus={handleInputFocus}
-            placeholder="Cerca per descrizione..."
-            className="w-full rounded-lg border border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight py-2 px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
-            onPointerDown={(e) => e.stopPropagation()}
-            {...tapBridge}
-          />
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
         </div>
+        <input
+          id="filter-desc"
+          type="text"
+          value={props.descriptionQuery}
+          onChange={(e) => props.onDescriptionChange(e.target.value)}
+          onFocus={handleInputFocus}
+          placeholder="Descrizione..."
+          className="w-full rounded-lg border border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet"
+          onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
+          {...tapBridge}
+        />
       </div>
 
       {/* Amount Range Inputs - Min & Max */}
-      <div className="p-3 rounded-xl bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 space-y-2">
-        <label className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
-          <CurrencyEuroIcon className="w-3.5 h-3.5" />
-          Importo Range
-        </label>
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <input
-              id="filter-amount-min"
-              type="number"
-              value={props.amountRange.min}
-              onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, min: e.target.value })}
-              onFocus={handleInputFocus}
-              placeholder="Min"
-              className={`w-full rounded-lg border py-2 px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.min ? 'bg-indigo-50 dark:bg-electric-violet/20 border-indigo-200 dark:border-electric-violet/50 text-indigo-700 dark:text-electric-violet font-medium' : 'bg-white dark:bg-midnight border-slate-300 dark:border-electric-violet/30'}`}
-              onPointerDown={(e) => e.stopPropagation()}
-              {...tapBridge}
-            />
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <CurrencyEuroIcon className={`h-5 w-5 ${props.amountRange.min ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
           </div>
-          <div className="relative flex-1">
-            <input
-              id="filter-amount-max"
-              type="number"
-              value={props.amountRange.max}
-              onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, max: e.target.value })}
-              onFocus={handleInputFocus}
-              placeholder="Max"
-              className={`w-full rounded-lg border py-2 px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.max ? 'bg-indigo-50 dark:bg-electric-violet/20 border-indigo-200 dark:border-electric-violet/50 text-indigo-700 dark:text-electric-violet font-medium' : 'bg-white dark:bg-midnight border-slate-300 dark:border-electric-violet/30'}`}
-              onPointerDown={(e) => e.stopPropagation()}
-              {...tapBridge}
-            />
+          <input
+            id="filter-amount-min"
+            type="number"
+            value={props.amountRange.min}
+            onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, min: e.target.value })}
+            onFocus={handleInputFocus}
+            placeholder="Da"
+            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.min ? 'bg-indigo-50 dark:bg-electric-violet/20 border-indigo-200 dark:border-electric-violet/50 text-indigo-700 dark:text-electric-violet font-medium' : 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30'}`}
+            onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
+            {...tapBridge}
+          />
+        </div>
+        <div className="relative flex-1">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <CurrencyEuroIcon className={`h-5 w-5 ${props.amountRange.max ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
           </div>
+          <input
+            id="filter-amount-max"
+            type="number"
+            value={props.amountRange.max}
+            onChange={(e) => props.onAmountRangeChange({ ...props.amountRange, max: e.target.value })}
+            onFocus={handleInputFocus}
+            placeholder="A"
+            className={`w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet focus:ring-1 focus:ring-indigo-500 dark:focus:ring-electric-violet ${props.amountRange.max ? 'bg-indigo-50 dark:bg-electric-violet/20 border-indigo-200 dark:border-electric-violet/50 text-indigo-700 dark:text-electric-violet font-medium' : 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30'}`}
+            onPointerDown={(e) => e.stopPropagation()} // Stop drag propagation on input
+            {...tapBridge}
+          />
         </div>
       </div>
     </div>
