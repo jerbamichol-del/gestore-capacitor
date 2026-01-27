@@ -26,77 +26,8 @@ const AuthGate: React.FC = () => {
   const applyResetFromUrl = useCallback((url: string) => {
     try {
       const u = new URL(url);
-      const action = u.searchParams.get('action');
 
-      // Handle Email Change Verification
-      if (action === 'verify_email') {
-        const token = u.searchParams.get('token');
-        const email = u.searchParams.get('email'); // new email
-
-        // DEBUG: Rimuovere dopo il fix
-        // alert(`Debug: action=${action}, email=${email}, token=${token}`);
-
-        if (token && email) {
-          const pendingRaw = localStorage.getItem('pending_email_change');
-          if (!pendingRaw) {
-            alert('Errore: Nessuna richiesta di cambio email trovata nel dispositivo.');
-            return;
-          }
-
-          const pending = JSON.parse(pendingRaw);
-          // Check token matching
-          if (pending.token !== token) {
-            alert('Errore: Token di verifica non valido o scaduto.');
-            return;
-          }
-
-          if (pending.newEmail !== email.toLowerCase()) {
-            alert('Errore: Indirizzo email non corrispondente.');
-            return;
-          }
-
-          // Proceed with update
-          const users = getUsers();
-          const oldEmail = localStorage.getItem('last_active_user_email');
-
-          // alert(`Debug: oldEmailRaw=${oldEmail}`);
-
-          if (oldEmail) {
-            let normalizedOld = oldEmail;
-            try {
-              normalizedOld = JSON.parse(oldEmail);
-            } catch {
-              // Fallback se non è JSON valido (es. salvato come raw string)
-            }
-
-            if (users[normalizedOld]) {
-              const userData = { ...users[normalizedOld] };
-              userData.email = email.toLowerCase();
-
-              users[email.toLowerCase()] = userData;
-              delete users[normalizedOld];
-
-              saveUsers(users);
-              setLastActiveUser(email.toLowerCase());
-              localStorage.removeItem('pending_email_change');
-
-              alert('Email aggiornata con successo! Effettua il login con la nuova email.');
-            } else {
-              alert('Errore: Impossibile trovare l\'utente originale nel database.');
-            }
-          } else {
-            alert('Errore: Nessun utente attivo trovato per il cambio email.');
-          }
-        } else {
-          alert('Errore: Link di verifica incompleto.');
-        }
-
-        // Clean URL
-        try { window.history.replaceState({}, document.title, window.location.pathname); } catch (e) { }
-        return;
-      }
-
-      // Handle Password Reset
+      // Handle Password Reset (Pin Reset)
       const token = u.searchParams.get('resetToken');
       const email = u.searchParams.get('email');
 
@@ -113,7 +44,7 @@ const AuthGate: React.FC = () => {
     } catch (e) {
       // URL non valido / non assoluto: ignora
     }
-  }, [setLastActiveUser]);
+  }, []);
 
   // Controlla se esiste un database di utenti per decidere la schermata iniziale.
   const hasUsers = () => {

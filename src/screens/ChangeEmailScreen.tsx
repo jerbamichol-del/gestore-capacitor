@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import AuthLayout from '../components/auth/AuthLayout';
 import { EnvelopeIcon } from '../components/icons/EnvelopeIcon';
-import { getUsers, sendEmailChangeVerification } from '../utils/api';
+import { getUsers, saveUsers, sendEmailChangeVerification } from '../utils/api';
 import { SpinnerIcon } from '../components/icons/SpinnerIcon';
 
 interface ChangeEmailScreenProps {
@@ -18,6 +18,53 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
     const [loading, setLoading] = useState(false);
 
     const [isWaitingForVerification, setIsWaitingForVerification] = useState(false);
+    const [verificationCode, setVerificationCode] = useState('');
+    const [verifyError, setVerifyError] = useState<string | null>(null);
+
+    const handleVerifyCode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setVerifyError(null);
+
+        const pendingRaw = localStorage.getItem('pending_email_change');
+        if (!pendingRaw) {
+            setVerifyError("Richiesta scaduta o non trovata.");
+            return;
+        }
+
+        const pending = JSON.parse(pendingRaw);
+        if (pending.token !== verificationCode.trim()) {
+            setVerifyError("Codice errato.");
+            return;
+        }
+
+        // Apply Change
+        try {
+            const users = getUsers();
+            const normalizedCurrentEmail = currentEmail.trim().toLowerCase();
+            const newEmailFinal = pending.newEmail;
+
+            // Rileggiamo utente corrente per sicurezza
+            if (!users[normalizedCurrentEmail]) {
+                setVerifyError("Utente originale non trovato. Riprova.");
+                return;
+            }
+
+            const userData = { ...users[normalizedCurrentEmail] };
+            userData.email = newEmailFinal;
+
+            users[newEmailFinal] = userData;
+            delete users[normalizedCurrentEmail];
+
+            saveUsers(users);
+            localStorage.removeItem('pending_email_change');
+
+            // Successo
+            onSuccess(newEmailFinal);
+        } catch (err) {
+            console.error(err);
+            setVerifyError("Errore durante il salvataggio.");
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,8 +98,8 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
                 return;
             }
 
-            // Genera token di verifica
-            const token = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+            // Genera codice OTP numerico a 5 cifre
+            const token = Math.floor(10000 + Math.random() * 90000).toString();
 
             // Salva richiesta pendente
             const pendingChange = {
@@ -79,26 +126,44 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
         return (
             <AuthLayout>
                 <div className="text-center">
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Verifica Email Inviata</h2>
-
-                    <div className="mb-6 flex justify-center">
-                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">
-                            <EnvelopeIcon className="w-8 h-8" />
-                        </div>
-                    </div>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Verifica Email</h2>
 
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                        Abbiamo inviato un link di conferma a <strong>{newEmail}</strong>.<br /><br />
-                        Clicca il link nell'email per completare il cambio.
+                        Abbiamo inviato un codice a <strong>{newEmail}</strong>.<br />
+                        Inseriscilo qui sotto per confermare.
                     </p>
 
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-6 py-3 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                    >
-                        Chiudi
-                    </button>
+                    <form onSubmit={handleVerifyCode} className="space-y-4">
+                        <div className="flex justify-center">
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={5}
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value)}
+                                className="w-40 text-center text-2xl tracking-widest px-4 py-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-white dark:bg-midnight-card focus:outline-none focus:ring-4 focus:ring-indigo-500/20 font-mono font-bold text-slate-800 dark:text-white"
+                                placeholder="00000"
+                            />
+                        </div>
+
+                        {verifyError && <p className="text-red-500 text-sm font-medium">{verifyError}</p>}
+
+                        <div className="grid grid-cols-2 gap-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={onCancel} // Chiude tutto
+                                className="px-4 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                            >
+                                Annulla
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-colors shadow-lg shadow-indigo-500/30"
+                            >
+                                Conferma
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </AuthLayout>
         );
