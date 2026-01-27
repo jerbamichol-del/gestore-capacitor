@@ -184,6 +184,37 @@ export const forgotPassword = async (
   };
 };
 
+export const sendEmailChangeVerification = async (
+  newEmail: string,
+  token: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const redirect = 'https://jerbamichol-del.github.io/gestore/';
+    const url =
+      `${SCRIPT_URL}?action=verify_email_change` +
+      `&new_email=${encodeURIComponent(newEmail)}` +
+      `&token=${encodeURIComponent(token)}` +
+      `&redirect=${encodeURIComponent(redirect)}`;
+
+    await fetch(url, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
+    });
+
+    return {
+      success: true,
+      message: 'Link di conferma inviato.',
+    };
+  } catch (err) {
+    console.error(err);
+    return {
+      success: false,
+      message: 'Errore durante l\'invio della richiesta.',
+    };
+  }
+};
+
 // =====================
 // Reset PIN locale
 // =====================

@@ -60,7 +60,7 @@ import { useDashboardConfig } from './hooks/useDashboardConfig';
 import { useSwipe } from './hooks/useSwipe';
 import { App as CapApp } from '@capacitor/app';
 
-const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogout, currentEmail }) => {
+const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged: (newEmail: string) => void }> = ({ onLogout, currentEmail, onEmailChanged }) => {
   const isOnline = useOnlineStatus();
 
   // 1. UI State Manager (Navigation, Toasts, Forms, Image Parsing)
@@ -689,6 +689,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string }> = ({ onLogou
           // Navigate to forgot password - this would need integration with AuthGate
           ui.showToast({ message: 'Apri l\'app e usa "Password dimenticata" dal login', type: 'info' });
         }}
+        onEmailChanged={onEmailChanged}
       />
 
       {/* Card Manager */}

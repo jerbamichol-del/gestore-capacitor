@@ -129,42 +129,75 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         if (!sidebar) return;
 
         let startX = 0;
+        let startY = 0;
         let currentX = 0;
+        let directionLock: 'horizontal' | 'vertical' | null = null;
 
         const handleTouchStart = (e: TouchEvent) => {
             startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
             currentX = e.touches[0].clientX;
-            setIsLocalSwiping(true);
-            setLocalSwipeX(0); // Reset
+            directionLock = null; // Reset lock
+            setLocalSwipeX(0);
         };
 
         const handleTouchMove = (e: TouchEvent) => {
             currentX = e.touches[0].clientX;
-            const diff = startX - currentX;
-            // Only allow dragging left (positive diff means moving left, negative means dragging right which is invalid if full open)
-            // But here sidebar is on Left. Closing means dragging Left (negative translateX).
-            // Wait, Sidebar is on Left. To close, we drag Left.
-            // X goes from 0 to negative.
+            const currentY = e.touches[0].clientY;
 
-            const rawDiff = currentX - startX; // If dragging left, rawDiff is negative.
+            const diffX = startX - currentX;
+            const absDiffX = Math.abs(diffX);
+            const absDiffY = Math.abs(startY - currentY);
 
-            if (rawDiff < 0) {
-                setLocalSwipeX(rawDiff);
+            // Determine direction if not yet locked
+            if (!directionLock) {
+                if (absDiffX > 5 || absDiffY > 5) {
+                    if (absDiffY > absDiffX) {
+                        directionLock = 'vertical';
+                    } else {
+                        directionLock = 'horizontal';
+                        setIsLocalSwiping(true);
+                    }
+                }
+            }
+
+            // Perform action based on lock
+            if (directionLock === 'vertical') {
+                // Allow native vertical scroll, do not update swipe
+                return;
+            }
+
+            if (directionLock === 'horizontal') {
+                // Prevent vertical scroll if needed (though sidebar has overflow-y-auto, 
+                // preventing default might block scroll but here we want to block scroll so swipe works cleanly)
+                if (e.cancelable) e.preventDefault();
+
+                // Only allow dragging left (closing)
+                if (diffX > 0) { // Dragging left means currentX < startX
+                    setLocalSwipeX(-diffX);
+                }
             }
         };
 
         const handleTouchEnd = () => {
             setIsLocalSwiping(false);
-            const rawDiff = currentX - startX;
-            if (rawDiff < -80) { // Dragged enough left
-                onClose();
+            if (directionLock === 'horizontal') {
+                const rawDiff = currentX - startX;
+                // If dragged left significantly (rawDiff is negative)
+                if (rawDiff < -80) {
+                    onClose();
+                } else {
+                    setLocalSwipeX(0); // Snap back
+                }
             } else {
-                setLocalSwipeX(0); // Snap back to open
+                setLocalSwipeX(0);
             }
+            directionLock = null;
         };
 
         sidebar.addEventListener('touchstart', handleTouchStart, { passive: true });
-        sidebar.addEventListener('touchmove', handleTouchMove, { passive: true });
+        // Active listener to allow preventDefault
+        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
         sidebar.addEventListener('touchend', handleTouchEnd, { passive: true });
 
         return () => {

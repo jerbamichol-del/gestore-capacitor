@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { XMarkIcon } from '../components/icons/XMarkIcon';
 import { ChevronRightIcon } from '../components/icons/ChevronRightIcon';
 import ChangePinScreen from './ChangePinScreen';
+import ChangeEmailScreen from './ChangeEmailScreen';
+import { EnvelopeIcon } from '../components/icons/EnvelopeIcon';
 
 // Icons
 const KeyIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -22,6 +24,7 @@ interface SecuritySettingsScreenProps {
     onClose: () => void;
     email: string;
     onForgotPassword: () => void;
+    onEmailChanged?: (newEmail: string) => void;
 }
 
 interface MenuItemProps {
@@ -54,14 +57,15 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({
     onClose,
     email,
     onForgotPassword,
+    onEmailChanged,
 }) => {
     const [showChangePinScreen, setShowChangePinScreen] = useState(false);
+    const [showChangeEmailScreen, setShowChangeEmailScreen] = useState(false);
 
     if (!isOpen) return null;
 
-    // Show ChangePinScreen if active
     if (showChangePinScreen) {
-        return (
+        return createPortal(
             <ChangePinScreen
                 email={email}
                 onSuccess={() => {
@@ -69,7 +73,23 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({
                     onClose();
                 }}
                 onCancel={() => setShowChangePinScreen(false)}
-            />
+            />,
+            document.body
+        );
+    }
+
+    if (showChangeEmailScreen) {
+        return createPortal(
+            <ChangeEmailScreen
+                currentEmail={email}
+                onSuccess={(newEmail) => {
+                    if (onEmailChanged) onEmailChanged(newEmail);
+                    setShowChangeEmailScreen(false);
+                    onClose();
+                }}
+                onCancel={() => setShowChangeEmailScreen(false)}
+            />,
+            document.body
         );
     }
 
@@ -99,11 +119,10 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({
                 {/* Info Card */}
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-500/20">
                     <p className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
-                        🔐 La tua sicurezza è importante. Cambia regolarmente il PIN e usa una password forte.
+                        🔐 La tua sicurezza è importante. Cambia regolarmente il PIN.
                     </p>
                 </div>
 
-                {/* Menu Items */}
                 <MenuItem
                     icon={<KeyIcon className="w-6 h-6" />}
                     label="Cambia PIN"
@@ -112,10 +131,10 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({
                 />
 
                 <MenuItem
-                    icon={<QuestionMarkCircleIcon className="w-6 h-6" />}
-                    label="Password Dimenticata"
-                    description="Recupera l'accesso al tuo account"
-                    onClick={handleForgotPassword}
+                    icon={<EnvelopeIcon className="w-6 h-6" />}
+                    label="Cambia Email"
+                    description="Aggiorna il tuo indirizzo email"
+                    onClick={() => setShowChangeEmailScreen(true)}
                 />
             </div>
 

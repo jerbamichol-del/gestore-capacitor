@@ -432,8 +432,8 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   const tx1 = mid - plateau / 2;
   const tx2 = mid + plateau / 2;
 
-  // Una singola forma continua per fill e shadow, così non c'è linea di giunzione.
-  // Notare i punti di controllo fissati per evitare l'effetto "tagliato".
+  // Una singola forma continua per fill e shadow.
+  // ESTESA verso il basso (L ${width} 50) per nascondere il bordo inferiore dietro al contenuto della card.
   const unifiedPath = [
     `M 0 ${R}`,
     `Q 0 0 ${R} 0`,
@@ -443,8 +443,8 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
     `C ${tx2 + bulge} -${tabH}, ${x2 - bulge} 0, ${x2} 0`,
     `L ${width - R} 0`,
     `Q ${width} 0 ${width} ${R}`,
-    `L ${width} 10`,
-    `L 0 10`,
+    `L ${width} 50`, // Estensione verso il basso
+    `L 0 50`,      // Estensione verso il basso
     `Z`
   ].join(' ');
 
@@ -460,7 +460,7 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
   ].join(' ');
 
   return (
-    <div className="absolute top-0 left-0 w-full h-0 pointer-events-none z-50">
+    <div className="absolute top-0 left-0 w-full h-0 pointer-events-none z-0">
       <svg
         width={width}
         height={tabH}
