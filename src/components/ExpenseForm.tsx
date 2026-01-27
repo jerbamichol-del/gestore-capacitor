@@ -317,12 +317,15 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
       formData.recurrenceEndDate !== originalExpenseState.recurrenceEndDate ||
       formData.recurrenceCount !== originalExpenseState.recurrenceCount;
     const receiptsChanged = JSON.stringify(formData.receipts) !== JSON.stringify(originalExpenseState.receipts);
+    const tagsChanged = JSON.stringify(formData.tags) !== JSON.stringify(originalExpenseState.tags);
+    const splitActiveChanged = isSplitActive !== !!(originalExpenseState as any).isSplitActive;
+    const splitParticipantsChanged = splitParticipants !== ((originalExpenseState as any).splitParticipants || 2);
 
-    const changed = amountChanged || descriptionChanged || dateChanged || timeChanged || categoryChanged || subcategoryChanged || accountIdChanged || toAccountIdChanged || frequencyChanged || recurrenceChanged || receiptsChanged;
+    const changed = amountChanged || descriptionChanged || dateChanged || timeChanged || categoryChanged || subcategoryChanged || accountIdChanged || toAccountIdChanged || frequencyChanged || recurrenceChanged || receiptsChanged || tagsChanged || splitActiveChanged || splitParticipantsChanged;
 
     setHasChanges(changed);
 
-  }, [formData, originalExpenseState, isEditing, isForRecurringTemplate]);
+  }, [formData, originalExpenseState, isEditing, isForRecurringTemplate, isSplitActive, splitParticipants]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

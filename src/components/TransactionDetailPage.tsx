@@ -635,7 +635,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveMenu('toAccount')}
-                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
                 >
                   <CreditCardIcon className="h-7 w-7 text-slate-400" />
                   <span className="truncate flex-1">{selectedToAccountLabel || 'Seleziona'}</span>
@@ -650,7 +650,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveMenu('account')}
-                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
+                  className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
                 >
                   <CreditCardIcon className="h-7 w-7 text-slate-400" />
                   <span className="truncate flex-1">{selectedAccountLabel || 'Seleziona'}</span>
@@ -665,7 +665,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                     <button
                       type="button"
                       onClick={() => setActiveMenu('category')}
-                      className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
+                      className="w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white"
                     >
                       <TagIcon className="h-6 w-6 text-slate-400" />
                       <span className="truncate flex-1">{formData.category ? getCategoryStyle(formData.category).label : 'Seleziona'}</span>
@@ -678,7 +678,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                       type="button"
                       onClick={() => setActiveMenu('subcategory')}
                       disabled={!formData.category}
-                      className={`w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors btn-field hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white ${!formData.category ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                      className={`w-full flex items-center text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-sunset-text dark:text-white ${!formData.category ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                     >
                       <TagIcon className="h-6 w-6 text-slate-400" />
                       <span className="truncate flex-1">{formData.subcategory || 'Seleziona'}</span>
@@ -749,7 +749,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
                   onClick={() => setIsFrequencyModalOpen(true)}
                   className={`w-full flex items-center justify-between text-left gap-2 px-3 py-2.5 text-base rounded-lg border shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sunset-coral dark:focus:ring-electric-violet transition-colors ${isFrequencySet
                     ? 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-slate-800 dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
-                    : 'btn-field dark:bg-midnight-card/30 text-sunset-text dark:text-slate-400 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
+                    : 'bg-sunset-cream/60 dark:bg-midnight-card/50 border-slate-300 dark:border-electric-violet/30 text-sunset-text dark:text-white hover:bg-sunset-peach/30 dark:hover:bg-midnight-card'
                     }`}
                 >
                   <span className="truncate flex-1 capitalize">

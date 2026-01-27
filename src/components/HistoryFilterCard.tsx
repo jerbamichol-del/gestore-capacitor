@@ -388,7 +388,7 @@ export const PeriodNavigator: React.FC<{
                   'w-full text-left px-4 py-2 text-sm font-semibold rounded-lg ' +
                   (isActive && periodType === v
                     ? 'bg-sunset-peach/40 dark:bg-electric-violet/40 text-slate-900 dark:text-white'
-                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700')
+                    : 'bg-[var(--accent-card)] dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700')
                 }
                 {...tapBridge}
               >
@@ -479,12 +479,12 @@ const IntegratedFilterHeader: React.FC<{ isPanelOpen: boolean }> = ({ isPanelOpe
 
         {/* Light Mode */}
         <g className="dark:hidden" filter="url(#header-shadow-light)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-bg)' }} className="pointer-events-auto cursor-grab" />
+          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
         </g>
 
         {/* Dark Mode */}
         <g className="hidden dark:block" filter="url(#header-shadow-dark)">
-          <path d={unifiedPath} style={{ fill: 'var(--accent-bg)' }} className="pointer-events-auto cursor-grab" />
+          <path d={unifiedPath} style={{ fill: 'var(--accent-card)' }} className="pointer-events-auto cursor-grab" />
         </g>
       </svg>
 
