@@ -33,52 +33,64 @@ const AuthGate: React.FC = () => {
         const token = u.searchParams.get('token');
         const email = u.searchParams.get('email'); // new email
 
+        // DEBUG: Rimuovere dopo il fix
+        // alert(`Debug: action=${action}, email=${email}, token=${token}`);
+
         if (token && email) {
           const pendingRaw = localStorage.getItem('pending_email_change');
-          if (pendingRaw) {
-            const pending = JSON.parse(pendingRaw);
-            // Check token matching and approximate timestamp validity (e.g. 1 hour)
-            if (pending.token === token && pending.newEmail === email.toLowerCase()) {
-
-              // Proceed with update
-              const users = getUsers();
-              // Locate the *old* user? We don't have old email in param easily unless we look for session or pending had it.
-              // Actually, ChangeEmailScreen logic copied old data to new email key in memory but didn't save. 
-              // Wait, ChangeEmailScreen logic was: 
-              // "Clone user data to new email key... saveUsers(users)".
-              // But in the NEW logic (verification), we did NOT save yet. We only saved 'pending_email_change'.
-              // So we must find the OLD user. 
-              // 'pending_email_change' should have stored oldEmail too if we want to be safe, or we use `lastActiveUser`.
-              // Let's assume `lastActiveUser` is valid. If not (logged out), we might have an issue identifying which user to rename if we have multiple.
-              // BUT, `getUsers()` has keys. We can't guess which one to rename to `newEmail`.
-              // FIX: `ChangeEmailScreen` should have stored `oldEmail` in `pending_email_change`.
-
-              // Since I cannot change ChangeEmailScreen right now in this step comfortably without breaking flow, 
-              // I will check if `lastActiveUser` is available.
-              // If multiple users exist and we are logged out, this link might fail to find source.
-              // However, for this user context (single user mostly), `lastActiveUser` is key.
-
-              const oldEmail = localStorage.getItem('last_active_user_email');
-              if (oldEmail) {
-                const normalizedOld = JSON.parse(oldEmail); // useLocalStorage stores JSON string
-
-                if (users[normalizedOld]) {
-                  const userData = { ...users[normalizedOld] };
-                  userData.email = email.toLowerCase();
-
-                  users[email.toLowerCase()] = userData;
-                  delete users[normalizedOld];
-
-                  saveUsers(users);
-                  setLastActiveUser(email.toLowerCase());
-                  localStorage.removeItem('pending_email_change');
-
-                  alert('Email aggiornata con successo!');
-                }
-              }
-            }
+          if (!pendingRaw) {
+            alert('Errore: Nessuna richiesta di cambio email trovata nel dispositivo.');
+            return;
           }
+
+          const pending = JSON.parse(pendingRaw);
+          // Check token matching
+          if (pending.token !== token) {
+            alert('Errore: Token di verifica non valido o scaduto.');
+            return;
+          }
+
+          if (pending.newEmail !== email.toLowerCase()) {
+            alert('Errore: Indirizzo email non corrispondente.');
+            return;
+          }
+
+          // Proceed with update
+          const users = getUsers();
+          const oldEmail = localStorage.getItem('last_active_user_email');
+
+          // alert(`Debug: oldEmailRaw=${oldEmail}`);
+
+          if (oldEmail) {
+            let normalizedOld = oldEmail;
+            try {
+              normalizedOld = JSON.parse(oldEmail);
+            } catch {
+              // Fallback se non è JSON valido (es. salvato come raw string)
+            }
+
+            if (users[normalizedOld]) {
+              const userData = { ...users[normalizedOld] };
+              userData.email = email.toLowerCase();
+
+              users[email.toLowerCase()] = userData;
+              delete users[normalizedOld];
+
+              saveUsers(users);
+              setLastActiveUser(email.toLowerCase());
+              localStorage.removeItem('pending_email_change');
+
+              alert('Email aggiornata con successo! Effettua il login con la nuova email.');
+            } else {
+              alert('Errore: Impossibile trovare l\'utente originale nel database.');
+            }
+          } else {
+            alert('Errore: Nessun utente attivo trovato per il cambio email.');
+          }
+        } else {
+          alert('Errore: Link di verifica incompleto.');
         }
+
         // Clean URL
         try { window.history.replaceState({}, document.title, window.location.pathname); } catch (e) { }
         return;

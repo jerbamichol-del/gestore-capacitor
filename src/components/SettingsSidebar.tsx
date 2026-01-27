@@ -372,8 +372,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Sicurezza</p>
                         <MenuItem
                             icon={<ShieldCheckIcon className="w-5 h-5" />}
-                            label="PIN & Password"
-                            description="Cambia PIN, reset password"
+                            label="PIN & Mail"
+                            description="Cambia PIN o Email"
                             onClick={() => handleInstantClose(onOpenSecurity)}
                         />
                     </div>
