@@ -294,6 +294,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                         noBorder={true}
                     />
                 );
+            case 'trend':
                 return (
                     <BudgetTrendChart
                         expenses={baseFilteredExpenses}
@@ -419,7 +420,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                                 </div>
 
                                 {/* Card Body - Added padding-x to prevent overflow/too-wide feeling */}
-                                <div className="pb-10 px-4">
+                                <div className="pb-44 px-4">
                                     {renderCardContent(report)}
                                 </div>
                             </div>
