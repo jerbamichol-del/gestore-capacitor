@@ -161,7 +161,7 @@ export const CustomDateRangeInputs: React.FC<{
     <div
       className={
         `w-full ${compact ? 'h-8' : 'h-10'} flex border rounded-lg overflow-hidden transition-colors relative ` +
-        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card')
+        (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/20 bg-white dark:bg-midnight-card')
       }
     >
       <label className="relative flex-1 h-full group cursor-pointer block" data-no-drag>
@@ -332,7 +332,7 @@ export const PeriodNavigator: React.FC<{
         ref={wrapperRef}
         className={
           `relative w-full ${compact ? 'h-8' : 'h-10'} flex items-center justify-between border rounded-lg transition-colors ` +
-          (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-electric-violet/30 bg-white dark:bg-midnight-card')
+          (isActive ? 'border-indigo-500 dark:border-electric-violet/70 bg-white dark:bg-midnight-card shadow-sm' : 'border-slate-300 dark:border-white/20 bg-white dark:bg-midnight-card')
         }
       >
         <button
