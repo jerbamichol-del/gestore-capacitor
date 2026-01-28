@@ -261,6 +261,9 @@ export function PendingTransactionsModal({
 
   if (!isOpen || transactions.length === 0) return null;
 
+  // Ensure currentIndex is within valid range
+  if (currentIndex >= transactions.length) return null;
+
   const currentTransaction = transactions[currentIndex];
 
   const formatDate = (timestamp: number) => {

@@ -230,6 +230,21 @@ class SMSListenerService {
   async ignoreTransaction(id: string): Promise<void> {
     console.log('🚫 Ignoring SMS transaction:', id);
 
+    // Find the transaction to get its data for hash generation
+    const transactionToIgnore = this.pendingTransactions.find(t => t.id === id);
+
+    if (transactionToIgnore) {
+      // Generate hash and add to permanent ignored list
+      const hash = AutoTransactionService.generateTransactionHash(
+        transactionToIgnore.transaction.amount,
+        transactionToIgnore.transaction.date,
+        transactionToIgnore.transaction.account,
+        transactionToIgnore.transaction.description
+      );
+      AutoTransactionService.addIgnoredHash(hash);
+      console.log('📌 Transaction hash added to permanent ignore list:', hash);
+    }
+
     // Remove from pending
     this.pendingTransactions = this.pendingTransactions.filter(t => t.id !== id);
     await this.savePendingTransactions();
