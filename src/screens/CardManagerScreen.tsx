@@ -10,6 +10,10 @@ import AIInsightsWidget from '../components/AIInsightsWidget';
 import SavingsGoalsCard from '../components/SavingsGoalsCard';
 import { calculateDashboardMetrics, calculateTotalBalance } from '../utils/dashboardMetrics';
 import { DashboardCardId } from '../hooks/useDashboardConfig';
+import { HistoryFilterCard, DateFilter, PeriodType } from '../components/HistoryFilterCard';
+import { parseLocalYYYYMMDD } from '../utils/date';
+
+
 
 interface ReportItem {
     id: DashboardCardId;
@@ -63,15 +67,105 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
     const [swipeOffset, setSwipeOffset] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
-    // Calculate generic metrics for the "current month" by default
-    const metrics = useMemo(() => {
-        const start = new Date();
-        start.setDate(1);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date();
+    const [activeFilterMode, setActiveFilterMode] = useState<'quick' | 'period' | 'custom'>('quick');
+    const [dateFilter, setDateFilter] = useState<DateFilter>('30d');
+    const [customRange, setCustomRange] = useState<{ start: string | null; end: string | null; }>({ start: null, end: null });
+    const [periodType, setPeriodType] = useState<PeriodType>('month');
+    const [periodDate, setPeriodDate] = useState<Date>(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
+    const [filterAccount, setFilterAccount] = useState<string | null>(null);
+    const [filterCategories, setFilterCategories] = useState<Set<string>>(new Set());
+    const [filterDescription, setFilterDescription] = useState('');
+    const [filterAmountRange, setFilterAmountRange] = useState<{ min: string; max: string }>({ min: '', max: '' });
+    const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+    const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+
+    // Initial default: Standard to 'Period: Month' to match original behavior? 
+    // The user wants it identical to "Entrate". Entrate defaults to '30d' quick usually, or 'All'. 
+    // Let's default to Quick 30d which is very standard for reports.
+    // Actually, originally CardManager used "current month".
+    // I will initialize logic to mimic current month via Period Filter if I want to be 100% faithful, 
+    // but '30d' is often better. Let's stick to 30d as default or Period Month current.
+    // Let's use Period Month Current to be safe.
+    useEffect(() => {
+        setActiveFilterMode('period');
+        setPeriodType('month');
+        setPeriodDate(new Date());
+    }, [isOpen]);
+
+    const handleToggleCategoryFilter = (key: string) => { setFilterCategories(prev => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; }); };
+    const handleClearCategoryFilters = () => setFilterCategories(new Set());
+
+    // 1. Base Filtered Expenses (Account, Category, Description, Amount) - NO DATE YET
+    const baseFilteredExpenses = useMemo(() => {
+        let result = expenses;
+
+        if (filterAccount) result = result.filter(e => e.accountId === filterAccount);
+        if (filterCategories.size > 0) result = result.filter(e => { const whole = e.category; const sub = `${e.category}:${e.subcategory || ''}`; return filterCategories.has(whole) || (e.subcategory && filterCategories.has(sub)); });
+        if (filterDescription.trim()) { const q = filterDescription.toLowerCase(); result = result.filter(e => (e.description || '').toLowerCase().includes(q)); }
+        if (filterAmountRange.min) { const min = parseFloat(filterAmountRange.min); if (!isNaN(min)) result = result.filter(e => Math.abs(e.amount) >= min); }
+        if (filterAmountRange.max) { const max = parseFloat(filterAmountRange.max); if (!isNaN(max)) result = result.filter(e => Math.abs(e.amount) <= max); }
+
+        // Ensure we typically show Expenses in Report Center, unless user wants to manage that?
+        // CardManager originally didn't filter type in calculateDashboardMetrics, but calculateDashboardMetrics might handle it.
+        // Let's check calculateDashboardMetrics usage... it usually filters 'expense' type.
+        // So we just pass potentially mixed data to metrics, and metrics util filters expense?
+        // Yes, likely.
+
+        return result;
+    }, [expenses, filterAccount, filterCategories, filterDescription, filterAmountRange]);
+
+    // 2. Date Range Calculation
+    const { startDate, endDate } = useMemo(() => {
+        let start = new Date();
+        let end = new Date();
         end.setHours(23, 59, 59, 999);
-        return calculateDashboardMetrics(expenses, start, end);
-    }, [expenses]);
+        start.setHours(0, 0, 0, 0);
+
+        if (activeFilterMode === 'quick') {
+            switch (dateFilter) {
+                case '7d': start.setDate(start.getDate() - 6); break;
+                case '30d': start.setDate(start.getDate() - 29); break;
+                case '6m': start.setMonth(start.getMonth() - 6); break;
+                case '1y': start.setFullYear(start.getFullYear() - 1); break;
+                default: start = new Date(0); break; // All
+            }
+        } else if (activeFilterMode === 'period') {
+            start = new Date(periodDate);
+            end = new Date(periodDate);
+            if (periodType === 'day') {
+                // Single day
+            } else if (periodType === 'week') {
+                const day = start.getDay();
+                const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+                start.setDate(diff);
+                end = new Date(start);
+                end.setDate(start.getDate() + 6);
+            } else if (periodType === 'month') {
+                start.setDate(1);
+                end.setMonth(end.getMonth() + 1);
+                end.setDate(0);
+            } else { // year
+                start.setMonth(0, 1);
+                end.setFullYear(end.getFullYear() + 1);
+                end.setMonth(0, 0);
+            }
+        } else if (activeFilterMode === 'custom' && customRange.start && customRange.end) {
+            start = parseLocalYYYYMMDD(customRange.start);
+            end = parseLocalYYYYMMDD(customRange.end);
+        }
+
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+
+        return { startDate: start, endDate: end };
+    }, [activeFilterMode, dateFilter, periodType, periodDate, customRange]);
+
+    const metrics = useMemo(() => {
+        // use baseFilteredExpenses and apply date range for metrics
+        // calculateDashboardMetrics expects expenses list and filters them by date range internally? 
+        // No, it expects 'expenses', 'start', 'end'. It filters within range.
+        return calculateDashboardMetrics(baseFilteredExpenses, startDate, endDate);
+    }, [baseFilteredExpenses, startDate, endDate]);
 
     const totalBalance = useMemo(() => calculateTotalBalance(accounts, expenses), [accounts, expenses]);
 
@@ -200,16 +294,15 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
                         noBorder={true}
                     />
                 );
-            case 'trend':
                 return (
                     <BudgetTrendChart
-                        expenses={expenses}
+                        expenses={baseFilteredExpenses}
                         accounts={accounts}
-                        periodType="month"
-                        periodDate={new Date()}
-                        activeViewIndex={1}
-                        quickFilter="30d"
-                        customRange={{ start: null, end: null }}
+                        periodType={periodType}
+                        periodDate={periodDate}
+                        activeViewIndex={activeFilterMode === 'quick' ? 0 : activeFilterMode === 'period' ? 1 : 2}
+                        quickFilter={dateFilter}
+                        customRange={customRange}
                         noBorder={true}
                     />
                 );
@@ -277,7 +370,7 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
             {/* Content Container */}
             <div
                 ref={containerRef}
-                className="flex-1 overflow-hidden relative"
+                className="flex-1 overflow-hidden relative pb-32" // Added padding bottom for filters
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
@@ -336,7 +429,34 @@ const CardManagerScreen: React.FC<CardManagerScreenProps> = ({
             </div>
 
 
-        </div>,
+            <HistoryFilterCard
+                zIndex={9000}
+                isActive={true}
+                onSelectQuickFilter={(value) => { setDateFilter(value); setActiveFilterMode('quick'); }}
+                currentQuickFilter={dateFilter}
+                onCustomRangeChange={(range) => { setCustomRange(range); setActiveFilterMode('custom'); }}
+                currentCustomRange={customRange}
+                isCustomRangeActive={activeFilterMode === 'custom'}
+                onDateModalStateChange={setIsDateModalOpen}
+                periodType={periodType}
+                periodDate={periodDate}
+                onSelectPeriodType={(type) => { setPeriodType(type); setPeriodDate(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }); setActiveFilterMode('period'); }}
+                onSetPeriodDate={setPeriodDate}
+                isPeriodFilterActive={activeFilterMode === 'period'}
+                onActivatePeriodFilter={() => setActiveFilterMode('period')}
+                onOpenStateChange={setIsFilterPanelOpen}
+                accounts={accounts}
+                selectedAccountId={filterAccount}
+                onSelectAccount={setFilterAccount}
+                selectedCategoryFilters={filterCategories}
+                onToggleCategoryFilter={handleToggleCategoryFilter}
+                onClearCategoryFilters={handleClearCategoryFilters}
+                descriptionQuery={filterDescription}
+                onDescriptionChange={setFilterDescription}
+                amountRange={filterAmountRange}
+                onAmountRangeChange={setFilterAmountRange}
+            />
+        </div >,
         document.body
     );
 };

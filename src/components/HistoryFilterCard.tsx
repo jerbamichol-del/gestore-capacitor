@@ -59,6 +59,7 @@ interface HistoryFilterCardProps {
   onDescriptionChange: (text: string) => void;
   amountRange: { min: string; max: string };
   onAmountRangeChange: (range: { min: string; max: string }) => void;
+  zIndex?: number;
 }
 
 /* -------------------- Checkbox Component -------------------- */
@@ -1123,7 +1124,8 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         opacity: laidOut ? 1 : 0,
         pointerEvents: laidOut ? 'auto' : 'none',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        zIndex: props.zIndex || 1000,
       }}
       onTransitionEnd={() => setAnim(false)}
     >
