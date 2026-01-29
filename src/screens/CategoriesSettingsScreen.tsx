@@ -1,7 +1,5 @@
-// screens/CategoriesSettingsScreen.tsx
-// Pagina per gestire categorie e sottocategorie personalizzabili
-
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { CategoryService, Category, AVAILABLE_COLORS, AVAILABLE_ICONS } from '../services/category-service';
 import { getCategoryIcon, getCategoryColor } from '../utils/categoryStyles';
 import '../styles/CategoriesSettingsScreen.css';
@@ -12,6 +10,7 @@ interface CategoriesSettingsScreenProps {
 
 export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> = ({ onBack }) => {
     const [categories, setCategories] = useState<Category[]>([]);
+    const [isAnimating, setIsAnimating] = useState(false);
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -20,6 +19,16 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string; count: number } | null>(null);
     const [showRestoreModal, setShowRestoreModal] = useState(false);
     const [deletedDefaults, setDeletedDefaults] = useState<Category[]>([]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsAnimating(true), 10);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleBack = () => {
+        setIsAnimating(false);
+        setTimeout(onBack, 300);
+    };
 
     // Form state for add/edit
     const [formData, setFormData] = useState({
@@ -126,22 +135,24 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
         );
     };
 
-    return (
-        <div className="categories-settings-screen">
+    return createPortal(
+        <div className={`categories-settings-screen ${isAnimating ? 'active' : ''}`}>
             {/* Header */}
-            <header className="categories-header">
-                <button className="back-button" onClick={onBack}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <h1>Categorie</h1>
-                <button className="add-button" onClick={handleAddCategory}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                </button>
-            </header>
+            <div className="categories-header-container">
+                <header className="categories-header">
+                    <button className="back-button" onClick={handleBack}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1>Categorie</h1>
+                    <button className="add-button" onClick={handleAddCategory}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
+                </header>
+            </div>
 
             {/* Content */}
             <div className="categories-content">
@@ -387,7 +398,8 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
                     </div>
                 </div>
             )}
-        </div>
+        </div>,
+        document.body
     );
 };
 
