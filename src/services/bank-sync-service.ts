@@ -428,6 +428,7 @@ export class BankSyncService {
     /**
      * Fetch RAW transactions for a specific account (not mapped)
      * Returns the raw API response for mapping in syncAll with correct local account ID
+     * ✅ Requests BOTH booked AND pending transactions for real-time visibility
      */
     static async fetchRawTransactions(accountUid: string): Promise<any[]> {
         const creds = this.getCredentials();
@@ -435,7 +436,10 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions`, {
+        // ✅ Request both booked and pending transactions
+        // This ensures users see transactions immediately (pending) and when finalized (booked)
+        // The bankTransactionId-based hash prevents duplicates when status changes
+        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions?status=both`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -707,8 +711,12 @@ export class BankSyncService {
 
     /**
      * Map Enable Banking transaction to our AutoTransaction format
+     * ✅ Now handles both booked and pending transactions
      */
     private static mapToAutoTransaction(tx: any, accountUid: string): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> {
+        // ✅ Log transaction status for debugging
+        const txStatus = tx.status || tx.entryStatus || tx.entry_status || 'unknown';
+        console.log(`📊 Transaction status: ${txStatus}`);
         console.log('Mapping transaction:', JSON.stringify(tx, null, 2));
 
         // Handle multiple possible amount formats from Enable Banking API
