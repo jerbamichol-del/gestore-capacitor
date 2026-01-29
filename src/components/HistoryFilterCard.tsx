@@ -17,7 +17,8 @@ import { CurrencyEuroIcon } from './icons/CurrencyEuroIcon';
 import { MagnifyingGlassIcon } from './icons/MagnifyingGlassIcon';
 import { useTapBridge } from '../hooks/useTapBridge';
 import SmoothPullTab from './SmoothPullTab';
-import { Account, CATEGORIES } from '../types';
+import { Account } from '../types';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 import { getCategoryStyle } from '../utils/categoryStyles';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { CheckIcon } from './icons/CheckIcon';
@@ -523,6 +524,15 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
   const [laidOut, setLaidOut] = useState(false);
   const [anim, setAnim] = useState(false);
 
+  // Dynamic Categories
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  useEffect(() => {
+    const load = () => setCategoriesList(CategoryService.getCategories());
+    load();
+    window.addEventListener('categories-updated', load);
+    return () => window.removeEventListener('categories-updated', load);
+  }, []);
+
   // Track if panel is open for resize logic
   const isPanelOpenRef = useRef(false);
 
@@ -548,11 +558,12 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
     if (currentView === 'category_selection' && props.selectedCategoryFilters.size === 1 && expandedCategory === null) {
       const selected = Array.from(props.selectedCategoryFilters)[0] as string;
       const [cat] = selected.split(':');
-      if (CATEGORIES[cat] && CATEGORIES[cat].length > 0) {
+      const catObj = categoriesList.find(c => c.name === cat);
+      if (catObj && catObj.subcategories && catObj.subcategories.length > 0) {
         setExpandedCategory(cat);
       }
     }
-  }, [currentView, props.selectedCategoryFilters, expandedCategory]);
+  }, [currentView, props.selectedCategoryFilters, expandedCategory, categoriesList]);
 
   // Focus Handlers
   const handlePanelFocus = (e: React.FocusEvent) => {
@@ -1039,7 +1050,8 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
         )}
       </div>
       <div className="space-y-1 pb-4">
-        {Object.keys(CATEGORIES).map(cat => {
+        {categoriesList.map(catData => {
+          const cat = catData.name;
           const style = getCategoryStyle(cat);
           const isExpanded = expandedCategory === cat;
 
@@ -1047,7 +1059,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
           const hasAnySubcategorySelected = Array.from(props.selectedCategoryFilters).some(k => (k as string).startsWith(cat + ':'));
           const isParentVisuallyChecked = isParentExplicitlySelected || hasAnySubcategorySelected;
 
-          const subcategories = CATEGORIES[cat] || [];
+          const subcategories: string[] = catData.subcategories || [];
 
           return (
             <div key={cat} className="rounded-lg overflow-hidden border border-transparent hover:border-slate-100 dark:hover:border-electric-violet/20">

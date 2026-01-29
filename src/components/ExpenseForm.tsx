@@ -2,7 +2,8 @@
 // components/ExpenseForm.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Expense, Account, CATEGORIES } from '../types';
+import { Expense, Account } from '../types';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 import { XMarkIcon } from './icons/XMarkIcon';
 import { DocumentTextIcon } from './icons/DocumentTextIcon';
 import { CurrencyEuroIcon } from './icons/CurrencyEuroIcon';
@@ -586,20 +587,37 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
 
   if (!isOpen) return null;
 
-  const categoryOptions = Object.keys(CATEGORIES).map(cat => {
-    const style = getCategoryStyle(cat);
+  // Load categories from service
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadCats = () => {
+      setCategoriesList(CategoryService.getCategories());
+    };
+    loadCats();
+    window.addEventListener('categories-updated', loadCats);
+    return () => window.removeEventListener('categories-updated', loadCats);
+  }, []);
+
+  const categoryOptions = categoriesList.map(cat => {
+    // Style is now handled by getCategoryStyle which uses CategoryService internally or falls back
+    // However, since we have the full category object here, we can extract icon/color directly if needed,
+    // but getCategoryStyle is safer for consistent UI
+    const style = getCategoryStyle(cat.name);
     return {
-      value: cat,
-      label: style.label,
+      value: cat.name,
+      label: cat.name,
       Icon: style.Icon,
       color: style.color,
       bgColor: style.bgColor,
     };
   });
 
-  const subcategoryOptions = formData.category && CATEGORIES[formData.category]
-    ? CATEGORIES[formData.category].map(sub => ({ value: sub, label: sub }))
-    : [];
+  const subcategoryOptions = useMemo(() => {
+    if (!formData.category) return [];
+    const cat = categoriesList.find(c => c.name === formData.category);
+    return cat ? cat.subcategories.map((sub: string) => ({ value: sub, label: sub })) : [];
+  }, [formData.category, categoriesList]);
 
   const accountOptions = safeAccounts.map(acc => ({
     value: acc.id,

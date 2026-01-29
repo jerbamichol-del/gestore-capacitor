@@ -41,6 +41,7 @@ import RecurringExpensesScreen from './screens/RecurringExpensesScreen';
 import AccountsScreen from './screens/AccountsScreen';
 import SecuritySettingsScreen from './screens/SecuritySettingsScreen';
 import CardManagerScreen from './screens/CardManagerScreen';
+import CategoriesSettingsScreen from './screens/CategoriesSettingsScreen'; // ✅ Import
 
 // Settings Components
 import SettingsSidebar from './components/SettingsSidebar';
@@ -650,6 +651,16 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
         onSave={handleSaveBudgets}
       />
 
+      {/* Categories Settings Screen */}
+      {ui.nav.isCategoriesScreenOpen && (
+        <CategoriesSettingsScreen
+          onBack={() => {
+            window.history.back();
+            ui.nav.setIsCategoriesScreenOpen(false);
+          }}
+        />
+      )}
+
       {/* Settings Sidebar */}
       <SettingsSidebar
         isOpen={isSettingsSidebarOpen}
@@ -668,6 +679,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
           ui.nav.setIsBudgetModalOpen(true);
         }}
         onOpenEventBudgets={() => setIsEventBudgetsOpen(true)}
+        onOpenCategories={() => {
+          window.history.pushState({ modal: 'categories' }, '');
+          ui.nav.setIsCategoriesScreenOpen(true);
+        }}
         onOpenBankSync={() => ui.nav.setIsBankSyncModalOpen(true)}
         onLogout={onLogout}
         isSwiping={isDraggingSidebar}

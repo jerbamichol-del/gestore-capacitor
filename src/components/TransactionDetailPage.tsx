@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
-import { Expense, Account, CATEGORIES } from '../types';
+import { Expense, Account } from '../types';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { DocumentTextIcon } from './icons/DocumentTextIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
@@ -177,6 +178,14 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
   onMenuStateChange,
   dateError,
 }) => {
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  useEffect(() => {
+    const load = () => setCategoriesList(CategoryService.getCategories());
+    load();
+    window.addEventListener('categories-updated', load);
+    return () => window.removeEventListener('categories-updated', load);
+  }, []);
+
   const rootRef = useRef<HTMLDivElement | null>(null);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
 
@@ -492,20 +501,24 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
   );
 
   const categoryOptions = useMemo(() =>
-    Object.keys(CATEGORIES).map(cat => ({
-      value: cat,
-      label: getCategoryStyle(cat).label,
-      Icon: getCategoryStyle(cat).Icon,
-      color: getCategoryStyle(cat).color,
-      bgColor: getCategoryStyle(cat).bgColor,
-    })),
-    []
+    categoriesList.map(cat => {
+      const style = getCategoryStyle(cat.name);
+      return {
+        value: cat.name,
+        label: style.label,
+        Icon: style.Icon,
+        color: style.color,
+        bgColor: style.bgColor,
+      };
+    }),
+    [categoriesList]
   );
 
-  const subcategoryOptions = useMemo(() =>
-    formData.category ? (CATEGORIES[formData.category]?.map(sub => ({ value: sub, label: sub })) || []) : [],
-    [formData.category]
-  );
+  const subcategoryOptions = useMemo(() => {
+    if (!formData.category) return [];
+    const catObj = categoriesList.find(c => c.name === formData.category);
+    return catObj ? catObj.subcategories.map((sub: string) => ({ value: sub, label: sub })) : [];
+  }, [formData.category, categoriesList]);
 
   const DateTimeInputs = (
     <div className={`grid ${!formData.frequency ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>

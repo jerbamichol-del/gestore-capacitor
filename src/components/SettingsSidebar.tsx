@@ -43,6 +43,7 @@ interface SettingsSidebarProps {
     onOpenSecurity: () => void;
     onOpenBudgetSettings: () => void;
     onOpenEventBudgets: () => void;
+    onOpenCategories: () => void; // ✅ New prop
     onOpenBankSync: () => void;
     onLogout: () => void;
     isSwiping?: boolean;
@@ -90,6 +91,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onOpenSecurity,
     onOpenBudgetSettings,
     onOpenEventBudgets,
+    onOpenCategories, // ✅ Destructure new prop
     onOpenBankSync,
     onLogout,
     isSwiping: isExternalSwiping = false,
@@ -333,6 +335,17 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             label="Budget Mensili"
                             description="Imposta limiti per categoria"
                             onClick={() => handleInstantClose(onOpenBudgetSettings)}
+                        />
+                        <MenuItem
+                            icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+                                </svg>
+                            }
+                            label="Categorie"
+                            description="Gestisci categorie personalizzate"
+                            onClick={() => handleInstantClose(onOpenCategories)}
                         />
                         <MenuItem
                             icon={

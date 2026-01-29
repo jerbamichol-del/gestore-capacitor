@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Expense, Account, CATEGORIES, EventBudget } from '../types';
+import { Expense, Account, EventBudget } from '../types';
+import { CategoryService } from '../services/category-service';
 import { useLocalStorage } from './useLocalStorage';
 import { DEFAULT_ACCOUNTS } from '../utils/defaults';
 import { toYYYYMMDD } from '../utils/date';
@@ -45,7 +46,7 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
     const sanitizeExpenseData = useCallback((data: any, imageBase64?: string): Partial<Omit<Expense, 'id'>> => {
         if (!data) return {};
         let category = data.category || 'Altro';
-        if (!CATEGORIES[category]) category = 'Altro';
+        if (!CategoryService.getCategoryByName(category)) category = 'Altro';
         let amount = data.amount;
         if (typeof amount === 'string') amount = parseFloat(amount.replace(',', '.'));
         if (typeof amount !== 'number' || isNaN(amount)) amount = 0;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Expense, Account, CATEGORIES } from '../types';
+import { Expense, Account } from '../types';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 import { XMarkIcon, PaperAirplaneIcon } from './icons';
 import { formatCurrency } from './icons/formatters';
 import { parseLocalYYYYMMDD } from '../utils/date';
@@ -22,6 +23,14 @@ type Message = {
 };
 
 const AIChatModal: React.FC<AIChatModalProps> = ({ isOpen, onClose, expenses, accounts }) => {
+    const [categoriesList, setCategoriesList] = useState<any[]>([]);
+    useEffect(() => {
+        const load = () => setCategoriesList(CategoryService.getCategories());
+        load();
+        window.addEventListener('categories-updated', load);
+        return () => window.removeEventListener('categories-updated', load);
+    }, []);
+
     const [messages, setMessages] = useState<Message[]>([
         { id: '1', role: 'assistant', text: 'Ciao! Sono il tuo assistente finanziario. Chiedimi cose come "Quanto ho speso in sushi?" o "Totale trasporti mese scorso".' }
     ]);
@@ -85,7 +94,7 @@ const AIChatModal: React.FC<AIChatModalProps> = ({ isOpen, onClose, expenses, ac
             timeFilter = 'year';
         }
 
-        const allCats = Object.keys(CATEGORIES);
+        const allCats = categoriesList.map(c => c.name);
         let foundCat = allCats.find(c => q.includes(c.toLowerCase()));
 
         if (!foundCat) {

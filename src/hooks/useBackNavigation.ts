@@ -33,6 +33,7 @@ export const useBackNavigation = (
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [isCategoriesScreenOpen, setIsCategoriesScreenOpen] = useState(false); // ✅ New State
 
   const lastBackPressTime = useRef(0);
 
@@ -42,7 +43,7 @@ export const useBackNavigation = (
     setIsHistoryScreenOpen(false); setIsHistoryFilterOpen(false); setIsRecurringScreenOpen(false);
     setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); setIsAccountsScreenOpen(false);
     setIsBankSyncModalOpen(false); setIsSearchModalOpen(false); setIsChatModalOpen(false);
-    setIsBudgetModalOpen(false);
+    setIsBudgetModalOpen(false); setIsCategoriesScreenOpen(false);
     setAnalysisImage(null);
   };
 
@@ -57,20 +58,19 @@ export const useBackNavigation = (
     if (window.history.state?.modal === 'recurring') { setIsRecurringScreenOpen(false); setIsRecurringClosing(false); }
     if (window.history.state?.modal === 'accounts') { setIsAccountsScreenOpen(false); }
     if (window.history.state?.modal === 'bank_sync') { setIsBankSyncModalOpen(false); }
+    if (window.history.state?.modal === 'categories') { setIsCategoriesScreenOpen(false); }
 
     if (window.history.state?.modal && window.history.state.modal !== 'home' && window.history.state.modal !== 'exit_guard') window.history.back();
     else forceNavigateHome();
   };
 
-  // Setup Exit Guard (Web-only). On Android native we rely on Capacitor backButton + App.exitApp.
+  // Setup Exit Guard...
   useEffect(() => {
     if (!window.history.state?.modal) {
       if (Capacitor.getPlatform() === 'android') {
-        // Ensure a stable baseline state without introducing an extra history entry that can break exit logic.
         try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) { }
         return;
       }
-
       window.history.replaceState({ modal: 'exit_guard' }, '');
       window.history.pushState({ modal: 'home' }, '');
     }
@@ -84,13 +84,11 @@ export const useBackNavigation = (
         const state = window.history.state;
         const modal = state?.modal;
 
-        // If a modal is open, let popstate handle closing it (via history.back)
         if (modal && modal !== 'home' && modal !== 'exit_guard') {
           window.history.back();
           return;
         }
 
-        // If we are at Home (or no modal), handle Double Tap to Exit
         const now = Date.now();
         if (now - lastBackPressTime.current < 2000) {
           CapacitorApp.exitApp();
@@ -106,11 +104,9 @@ export const useBackNavigation = (
     }
 
     const handlePopState = (event: PopStateEvent) => {
-      // ... (Rest of existing popstate logic for Web/iOS mainly, or fallback)
       const modal = event.state?.modal as ModalType | undefined;
 
       if (modal === 'exit_guard') {
-        // If we reach this state via software navigation, pushing back to home keeps us consistent
         window.history.pushState({ modal: 'home' }, '');
         return;
       }
@@ -125,6 +121,7 @@ export const useBackNavigation = (
       if (modal !== 'search') setIsSearchModalOpen(false);
       if (modal !== 'chat') setIsChatModalOpen(false);
       if (modal !== 'budget') setIsBudgetModalOpen(false);
+      if (modal !== 'categories') setIsCategoriesScreenOpen(false);
       if (modal !== 'calculator' && modal !== 'calculator_details') setIsCalculatorContainerOpen(false);
 
       // Handle Screen Navigation
@@ -137,6 +134,7 @@ export const useBackNavigation = (
         setIsRecurringScreenOpen(false);
         setIsRecurringClosing(false);
         setIsAccountsScreenOpen(false);
+        setIsCategoriesScreenOpen(false);
         setAnalysisImage(null);
       } else if (modal === 'history') {
         setIsHistoryScreenOpen(true);
@@ -145,28 +143,38 @@ export const useBackNavigation = (
         setIsRecurringClosing(false);
         setIsIncomeHistoryOpen(false);
         setIsAccountsScreenOpen(false);
+        setIsCategoriesScreenOpen(false);
       } else if (modal === 'income_history') {
         setIsIncomeHistoryOpen(true);
         if (isIncomeHistoryClosing) setIsIncomeHistoryClosing(false);
         setIsHistoryScreenOpen(false);
         setIsRecurringScreenOpen(false);
         setIsAccountsScreenOpen(false);
+        setIsCategoriesScreenOpen(false);
       } else if (modal === 'recurring') {
         setIsRecurringScreenOpen(true);
         if (isRecurringClosing) setIsRecurringClosing(false);
         setIsHistoryScreenOpen(false);
         setIsIncomeHistoryOpen(false);
         setIsAccountsScreenOpen(false);
+        setIsCategoriesScreenOpen(false);
       } else if (modal === 'accounts') {
         setIsAccountsScreenOpen(true);
         setIsHistoryScreenOpen(false);
         setIsIncomeHistoryOpen(false);
         setIsRecurringScreenOpen(false);
+        setIsCategoriesScreenOpen(false);
       } else if (modal === 'bank_sync') {
         setIsBankSyncModalOpen(true);
         setIsHistoryScreenOpen(false);
         setIsIncomeHistoryOpen(false);
         setIsRecurringScreenOpen(false);
+      } else if (modal === 'categories') {
+        setIsCategoriesScreenOpen(true);
+        setIsHistoryScreenOpen(false);
+        setIsIncomeHistoryOpen(false);
+        setIsRecurringScreenOpen(false);
+        setIsAccountsScreenOpen(false);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -197,6 +205,7 @@ export const useBackNavigation = (
     isSearchModalOpen, setIsSearchModalOpen,
     isChatModalOpen, setIsChatModalOpen,
     isBudgetModalOpen, setIsBudgetModalOpen,
+    isCategoriesScreenOpen, setIsCategoriesScreenOpen, // ✅ Export
     closeModalWithHistory,
     forceNavigateHome,
     closeAllModals

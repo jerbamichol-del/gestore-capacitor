@@ -18,4 +18,6 @@ export type ModalType =
   | 'bank_sync'
   | 'search'
   | 'chat'
-  | 'budget';
+  | 'budget'
+  | 'categories'
+  | 'card_manager';

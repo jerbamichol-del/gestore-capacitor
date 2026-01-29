@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Expense, Account, CATEGORIES } from '../types';
+import { Expense, Account } from '../types';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 import { XMarkIcon } from './icons/XMarkIcon';
 import { formatCurrency } from './icons/formatters';
 import { getCategoryStyle } from '../utils/categoryStyles';
@@ -71,6 +72,15 @@ const SelectionButton = ({ label, value, onClick, placeholder, ariaLabel, disabl
 
 
 const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, onClose, expenses, accounts, onConfirm }) => {
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const load = () => setCategoriesList(CategoryService.getCategories());
+    load();
+    window.addEventListener('categories-updated', load);
+    return () => window.removeEventListener('categories-updated', load);
+  }, []);
+
   const [isAnimating, setIsAnimating] = useState(false);
   const [editableExpenses, setEditableExpenses] = useState<(Partial<Omit<Expense, 'id'>> & { accountId: string })[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -187,13 +197,16 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
   const areAllSelected = selectedIndices.size === editableExpenses.length && editableExpenses.length > 0;
   const today = toYYYYMMDD(new Date());
 
-  const categoryOptions = Object.keys(CATEGORIES).map(cat => ({
-    value: cat,
-    label: getCategoryStyle(cat).label,
-    Icon: getCategoryStyle(cat).Icon,
-    color: getCategoryStyle(cat).color,
-    bgColor: getCategoryStyle(cat).bgColor,
-  }));
+  const categoryOptions = categoriesList.map(cat => {
+    const style = getCategoryStyle(cat.name);
+    return {
+      value: cat.name,
+      label: style.label,
+      Icon: style.Icon,
+      color: style.color,
+      bgColor: style.bgColor,
+    };
+  });
 
   const accountOptions = accounts.map(acc => ({
     value: acc.id,
@@ -201,8 +214,13 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
   }));
 
   const activeExpense = activeMenu ? editableExpenses[activeMenu.index] : null;
-  const subcategoryOptionsForActive = activeExpense?.category
-    ? (CATEGORIES[activeExpense.category as keyof typeof CATEGORIES]?.map(sub => ({ value: sub, label: sub })) || [])
+
+  const activeCategoryObj = activeExpense?.category
+    ? categoriesList.find(c => c.name === activeExpense.category)
+    : null;
+
+  const subcategoryOptionsForActive = activeCategoryObj
+    ? (activeCategoryObj.subcategories || []).map((sub: string) => ({ value: sub, label: sub }))
     : [];
 
   return (
@@ -249,7 +267,8 @@ const MultipleExpensesModal: React.FC<MultipleExpensesModalProps> = ({ isOpen, o
               const isSelected = selectedIndices.has(index);
               const isExpanded = expandedIndex === index;
 
-              const subcategoriesForCategory = (expense.category && CATEGORIES[expense.category as keyof typeof CATEGORIES]) || [];
+              const expenseCatObj = expense.category ? categoriesList.find(c => c.name === expense.category) : null;
+              const subcategoriesForCategory = expenseCatObj ? expenseCatObj.subcategories : [];
 
               const selectedAccountLabel = accounts.find(a => a.id === expense.accountId)?.name;
               const selectedCategoryLabel = expense.category ? getCategoryStyle(expense.category).label : undefined;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Budgets, CATEGORIES } from '../types';
+import { Budgets } from '../types';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 import { XMarkIcon, CheckCircleIcon } from './icons';
 import { getCategoryStyle } from '../utils/categoryStyles';
 
@@ -18,6 +19,15 @@ const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
     currentBudgets,
 }) => {
     const [localBudgets, setLocalBudgets] = useState<Budgets>(currentBudgets);
+    const [categoriesList, setCategoriesList] = useState<any[]>([]);
+
+    useEffect(() => {
+        const load = () => setCategoriesList(CategoryService.getCategories());
+        load();
+        window.addEventListener('categories-updated', load);
+        return () => window.removeEventListener('categories-updated', load);
+    }, []);
+
     const [isAnimating, setIsAnimating] = useState(false);
 
     useEffect(() => {
@@ -44,7 +54,7 @@ const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
 
     if (!isOpen) return null;
 
-    const categories = Object.keys(CATEGORIES);
+    const categories = categoriesList.map(c => c.name);
 
     return createPortal(
         <div

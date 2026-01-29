@@ -1,6 +1,7 @@
 // CalculatorInputScreen.tsx
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { Expense, Account, CATEGORIES } from '../types';
+import { Expense, Account } from '../types';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { ArrowRightIcon } from './icons/ArrowRightIcon';
 import { XMarkIcon } from './icons/XMarkIcon';
@@ -104,6 +105,14 @@ const OperatorButton: React.FC<{ children: React.ReactNode; onClick: () => void 
 const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputScreenProps>(({ onClose, onSubmit, accounts,
   formData, onFormChange, onMenuStateChange, isDesktop, onNavigateToDetails
 }, ref) => {
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  useEffect(() => {
+    const load = () => setCategoriesList(CategoryService.getCategories());
+    load();
+    window.addEventListener('categories-updated', load);
+    return () => window.removeEventListener('categories-updated', load);
+  }, []);
+
   const [currentValue, setCurrentValue] = useState('0');
   const [previousValue, setPreviousValue] = useState<string | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
@@ -332,20 +341,24 @@ const CalculatorInputScreen = React.forwardRef<HTMLDivElement, CalculatorInputSc
   };
 
   const categoryOptions = useMemo(() =>
-    Object.keys(CATEGORIES).map(cat => ({
-      value: cat,
-      label: getCategoryStyle(cat).label,
-      Icon: getCategoryStyle(cat).Icon,
-      color: getCategoryStyle(cat).color,
-      bgColor: getCategoryStyle(cat).bgColor,
-    })),
-    []
+    categoriesList.map(cat => {
+      const style = getCategoryStyle(cat.name);
+      return {
+        value: cat.name,
+        label: style.label,
+        Icon: style.Icon,
+        color: style.color,
+        bgColor: style.bgColor,
+      };
+    }),
+    [categoriesList]
   );
 
-  const subcategoryOptions = useMemo(() =>
-    formData.category ? (CATEGORIES[formData.category]?.map(sub => ({ value: sub, label: sub })) || []) : [],
-    [formData.category]
-  );
+  const subcategoryOptions = useMemo(() => {
+    if (!formData.category) return [];
+    const catObj = categoriesList.find(c => c.name === formData.category);
+    return catObj ? catObj.subcategories.map((sub: string) => ({ value: sub, label: sub })) : [];
+  }, [formData.category, categoriesList]);
 
   const accountOptions = useMemo(() =>
     accounts.map(acc => ({ value: acc.id, label: acc.name })),

@@ -30,19 +30,6 @@ export interface Expense {
   lastGeneratedDate?: string;
 }
 
-export const CATEGORIES: Record<string, string[]> = {
-  'Alimentari': ['Ristorante', 'Bar', 'Autogrill'],
-  'Trasporti': ['Mezzi Pubblici', 'Carburante', 'Taxi', 'Assicurazione', 'Manutenzione Auto', 'Pedaggio'],
-  'Casa': ['Affitto/Mutuo', 'Bollette', 'Manutenzione', 'Arredamento'],
-  'Shopping': ['Supermercato', 'Abbigliamento', 'Elettronica', 'Libri', 'Regali', 'Tabacco/Svapo', 'Abbonamenti'],
-  'Tempo Libero': ['Cinema', 'Concerti', 'Sport', 'Viaggi'],
-  'Salute': ['Farmacia', 'Visite Mediche', 'Assicurazione'],
-  'Istruzione': ['Corsi', 'Libri', 'Tasse Scolastiche'],
-  'Lavoro': ['Pasti', 'Materiale Ufficio'],
-  'Beneficienza': ['Donazione', 'Adozione a distanza', 'Elemosina'],
-  'Altro': [],
-};
-
 export type Budgets = Record<string, number>; // e.g., { 'Alimentari': 500, 'total': 2000 }
 
 export interface EventBudget {

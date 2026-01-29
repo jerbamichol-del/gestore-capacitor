@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PendingTransaction } from '../services/notification-listener-service';
-import { Account, CATEGORIES, Expense } from '../types';
+import { Account, Expense } from '../types';
 import { pickImage, processImageFile } from '../utils/fileHelper';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 
 // Type for pending transaction types (excludes 'adjustment' which is system-only)
 type PendingTransactionType = 'expense' | 'income' | 'transfer';
@@ -140,6 +141,15 @@ export function PendingTransactionsModal({
   onIgnoreAll,
 }: PendingTransactionsModalProps) {
   const [savedRules, setSavedRules] = useState<SavedRule[]>([]);
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+
+  // Load categories
+  useEffect(() => {
+    const load = () => setCategoriesList(CategoryService.getCategories());
+    load();
+    window.addEventListener('categories-updated', load);
+    return () => window.removeEventListener('categories-updated', load);
+  }, []);
 
   // Selected type per transaction
   const [selectedTypes, setSelectedTypes] = useState<Record<string, 'expense' | 'income' | 'transfer'>>({});
@@ -464,9 +474,10 @@ export function PendingTransactionsModal({
   const currentAccountId = accountByTx[currentTransaction.id] || accounts[0]?.id || '';
   const expenseMeta = expenseMetaByTx[currentTransaction.id] || { category: '', subcategory: '', receipts: [] };
 
-  const categoryOptions = Object.keys(CATEGORIES);
-  const subcategoryOptions = expenseMeta.category && CATEGORIES[expenseMeta.category] ? CATEGORIES[expenseMeta.category] : [];
-  const isSubcategoryDisabled = !expenseMeta.category || expenseMeta.category === 'Altro' || subcategoryOptions.length === 0;
+  const categoryOptions = categoriesList.map(c => c.name);
+  const selectedCatObj = categoriesList.find(c => c.name === expenseMeta.category);
+  const subcategoryOptions = selectedCatObj ? selectedCatObj.subcategories : [];
+  const isSubcategoryDisabled = !expenseMeta.category || subcategoryOptions.length === 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
