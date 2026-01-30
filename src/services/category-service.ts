@@ -33,7 +33,16 @@ export const AVAILABLE_ICONS = [
     'art', 'garden', 'baby', 'insurance', 'taxes', 'investment',
     'finanza1', 'finanza2', 'finanza3', 'finanza4', 'finanza5', 'finanza6',
     'finanza7', 'finanza8', 'finanza9', 'finanza10', 'finanza11', 'finanza12',
-    'finanza13', 'finanza14', 'finanza15', 'finanza16'
+    'finanza13', 'finanza14', 'finanza15', 'finanza16',
+    'svago1', 'svago2', 'svago3', 'svago4', 'svago5', 'svago6',
+    'svago7', 'svago8', 'svago9', 'svago10', 'svago11', 'svago12',
+    'svago13', 'svago14', 'svago15', 'svago16', 'svago17', 'svago18',
+    'svago19', 'svago20', 'svago21', 'svago22', 'svago23', 'svago24',
+    'svago25', 'svago26',
+    'shopping1', 'shopping2', 'shopping3', 'shopping4', 'shopping5',
+    'shopping6', 'shopping7', 'shopping8', 'shopping9', 'shopping10',
+    'shopping11', 'shopping12', 'shopping13', 'shopping14', 'shopping15',
+    'shopping16', 'shopping17', 'shopping18', 'shopping19', 'shopping20'
 ];
 
 // Colori disponibili per le categorie

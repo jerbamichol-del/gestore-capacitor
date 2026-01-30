@@ -46,6 +46,52 @@ import { Finanza13Icon } from '../components/icons/categories/finanza/Finanza13I
 import { Finanza14Icon } from '../components/icons/categories/finanza/Finanza14Icon';
 import { Finanza15Icon } from '../components/icons/categories/finanza/Finanza15Icon';
 import { Finanza16Icon } from '../components/icons/categories/finanza/Finanza16Icon';
+import { Svago1Icon } from '../components/icons/categories/svago/Svago1Icon';
+import { Svago2Icon } from '../components/icons/categories/svago/Svago2Icon';
+import { Svago3Icon } from '../components/icons/categories/svago/Svago3Icon';
+import { Svago4Icon } from '../components/icons/categories/svago/Svago4Icon';
+import { Svago5Icon } from '../components/icons/categories/svago/Svago5Icon';
+import { Svago6Icon } from '../components/icons/categories/svago/Svago6Icon';
+import { Svago7Icon } from '../components/icons/categories/svago/Svago7Icon';
+import { Svago8Icon } from '../components/icons/categories/svago/Svago8Icon';
+import { Svago9Icon } from '../components/icons/categories/svago/Svago9Icon';
+import { Svago10Icon } from '../components/icons/categories/svago/Svago10Icon';
+import { Svago11Icon } from '../components/icons/categories/svago/Svago11Icon';
+import { Svago12Icon } from '../components/icons/categories/svago/Svago12Icon';
+import { Svago13Icon } from '../components/icons/categories/svago/Svago13Icon';
+import { Svago14Icon } from '../components/icons/categories/svago/Svago14Icon';
+import { Svago15Icon } from '../components/icons/categories/svago/Svago15Icon';
+import { Svago16Icon } from '../components/icons/categories/svago/Svago16Icon';
+import { Svago17Icon } from '../components/icons/categories/svago/Svago17Icon';
+import { Svago18Icon } from '../components/icons/categories/svago/Svago18Icon';
+import { Svago19Icon } from '../components/icons/categories/svago/Svago19Icon';
+import { Svago20Icon } from '../components/icons/categories/svago/Svago20Icon';
+import { Svago21Icon } from '../components/icons/categories/svago/Svago21Icon';
+import { Svago22Icon } from '../components/icons/categories/svago/Svago22Icon';
+import { Svago23Icon } from '../components/icons/categories/svago/Svago23Icon';
+import { Svago24Icon } from '../components/icons/categories/svago/Svago24Icon';
+import { Svago25Icon } from '../components/icons/categories/svago/Svago25Icon';
+import { Svago26Icon } from '../components/icons/categories/svago/Svago26Icon';
+import { Shopping1Icon } from '../components/icons/categories/shopping/Shopping1Icon';
+import { Shopping2Icon } from '../components/icons/categories/shopping/Shopping2Icon';
+import { Shopping3Icon } from '../components/icons/categories/shopping/Shopping3Icon';
+import { Shopping4Icon } from '../components/icons/categories/shopping/Shopping4Icon';
+import { Shopping5Icon } from '../components/icons/categories/shopping/Shopping5Icon';
+import { Shopping6Icon } from '../components/icons/categories/shopping/Shopping6Icon';
+import { Shopping7Icon } from '../components/icons/categories/shopping/Shopping7Icon';
+import { Shopping8Icon } from '../components/icons/categories/shopping/Shopping8Icon';
+import { Shopping9Icon } from '../components/icons/categories/shopping/Shopping9Icon';
+import { Shopping10Icon } from '../components/icons/categories/shopping/Shopping10Icon';
+import { Shopping11Icon } from '../components/icons/categories/shopping/Shopping11Icon';
+import { Shopping12Icon } from '../components/icons/categories/shopping/Shopping12Icon';
+import { Shopping13Icon } from '../components/icons/categories/shopping/Shopping13Icon';
+import { Shopping14Icon } from '../components/icons/categories/shopping/Shopping14Icon';
+import { Shopping15Icon } from '../components/icons/categories/shopping/Shopping15Icon';
+import { Shopping16Icon } from '../components/icons/categories/shopping/Shopping16Icon';
+import { Shopping17Icon } from '../components/icons/categories/shopping/Shopping17Icon';
+import { Shopping18Icon } from '../components/icons/categories/shopping/Shopping18Icon';
+import { Shopping19Icon } from '../components/icons/categories/shopping/Shopping19Icon';
+import { Shopping20Icon } from '../components/icons/categories/shopping/Shopping20Icon';
 
 interface CategoryStyle {
     label: string;
@@ -97,7 +143,53 @@ export const ICON_MAP: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> =
     'finanza13': Finanza13Icon,
     'finanza14': Finanza14Icon,
     'finanza15': Finanza15Icon,
-    'finanza16': Finanza16Icon
+    'finanza16': Finanza16Icon,
+    'svago1': Svago1Icon,
+    'svago2': Svago2Icon,
+    'svago3': Svago3Icon,
+    'svago4': Svago4Icon,
+    'svago5': Svago5Icon,
+    'svago6': Svago6Icon,
+    'svago7': Svago7Icon,
+    'svago8': Svago8Icon,
+    'svago9': Svago9Icon,
+    'svago10': Svago10Icon,
+    'svago11': Svago11Icon,
+    'svago12': Svago12Icon,
+    'svago13': Svago13Icon,
+    'svago14': Svago14Icon,
+    'svago15': Svago15Icon,
+    'svago16': Svago16Icon,
+    'svago17': Svago17Icon,
+    'svago18': Svago18Icon,
+    'svago19': Svago19Icon,
+    'svago20': Svago20Icon,
+    'svago21': Svago21Icon,
+    'svago22': Svago22Icon,
+    'svago23': Svago23Icon,
+    'svago24': Svago24Icon,
+    'svago25': Svago25Icon,
+    'svago26': Svago26Icon,
+    'shopping1': Shopping1Icon,
+    'shopping2': Shopping2Icon,
+    'shopping3': Shopping3Icon,
+    'shopping4': Shopping4Icon,
+    'shopping5': Shopping5Icon,
+    'shopping6': Shopping6Icon,
+    'shopping7': Shopping7Icon,
+    'shopping8': Shopping8Icon,
+    'shopping9': Shopping9Icon,
+    'shopping10': Shopping10Icon,
+    'shopping11': Shopping11Icon,
+    'shopping12': Shopping12Icon,
+    'shopping13': Shopping13Icon,
+    'shopping14': Shopping14Icon,
+    'shopping15': Shopping15Icon,
+    'shopping16': Shopping16Icon,
+    'shopping17': Shopping17Icon,
+    'shopping18': Shopping18Icon,
+    'shopping19': Shopping19Icon,
+    'shopping20': Shopping20Icon
 };
 
 // Legacy styles map (keep for backward compatibility if needed)

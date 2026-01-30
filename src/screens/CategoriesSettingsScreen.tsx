@@ -12,11 +12,19 @@ interface CategoriesSettingsScreenProps {
 const ICON_GROUPS = [
     {
         name: 'Generali',
-        icons: AVAILABLE_ICONS.filter(icon => !icon.startsWith('finanza'))
+        icons: AVAILABLE_ICONS.filter(icon => !icon.startsWith('finanza') && !icon.startsWith('svago'))
     },
     {
         name: 'Finanza',
         icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('finanza'))
+    },
+    {
+        name: 'Svago',
+        icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('svago'))
+    },
+    {
+        name: 'Shopping',
+        icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('shopping'))
     }
 ];
 
