@@ -85,15 +85,15 @@ export const categoryStyles: Record<string, CategoryStyle> = {
  * Get category icon compatible with both legacy and custom categories
  */
 export const getCategoryIcon = (categoryNameOrIconId: string): React.FC<any> => {
-    // 1. Try if it's a direct icon ID (e.g., 'food', 'transport')
-    if (ICON_MAP[categoryNameOrIconId]) {
-        return ICON_MAP[categoryNameOrIconId];
-    }
-
-    // 2. Try to find category in service
+    // 1. First try to find custom category by name (MOST IMPORTANT for custom categories)
     const customCat = CategoryService.getCategoryByName(categoryNameOrIconId);
     if (customCat && customCat.icon && ICON_MAP[customCat.icon]) {
         return ICON_MAP[customCat.icon];
+    }
+
+    // 2. Try if it's a direct icon ID (e.g., 'food', 'transport')
+    if (ICON_MAP[categoryNameOrIconId]) {
+        return ICON_MAP[categoryNameOrIconId];
     }
 
     // 3. Fallback to legacy map using name

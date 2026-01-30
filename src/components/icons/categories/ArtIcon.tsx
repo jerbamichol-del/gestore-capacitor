@@ -5,7 +5,7 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
     color?: string;
 }
 
-export const ArtIcon: React.FC<IconProps> = ({ size = 24, color = 'currentColor', ...props }) => (
+export const ArtIcon: React.FC<IconProps> = ({ size = 24, color = '#64748b', ...props }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
         <circle cx="7" cy="8" r="2" fill={color} />
         <circle cx="17" cy="8" r="2" fill={color} />

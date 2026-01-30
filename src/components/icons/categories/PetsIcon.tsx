@@ -5,7 +5,7 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
     color?: string;
 }
 
-export const PetsIcon: React.FC<IconProps> = ({ size = 24, color = 'currentColor', ...props }) => (
+export const PetsIcon: React.FC<IconProps> = ({ size = 24, color = '#64748b', ...props }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
         <ellipse cx="12" cy="17" rx="5" ry="4" stroke={color} strokeWidth="2" />
         <ellipse cx="6" cy="9" rx="2" ry="3" fill={color} />
