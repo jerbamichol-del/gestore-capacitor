@@ -217,8 +217,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
       if (initialData) {
         const dataWithTime = {
           ...initialData,
+          type: initialData.type || 'expense',
           time: initialData.time || getCurrentTime(),
-          frequency: isForRecurringTemplate ? 'recurring' : (initialData.frequency || 'single')
+          frequency: isForRecurringTemplate ? 'recurring' : (initialData.frequency || 'single'),
+          accountId: initialData.accountId || (safeAccounts.length > 0 ? safeAccounts[0].id : ''),
+          toAccountId: initialData.toAccountId || '',
+          category: initialData.category || '',
+          subcategory: initialData.subcategory || '',
+          description: initialData.description || '',
+          amount: initialData.amount || '',
+          date: initialData.date || getTodayString(),
+          tags: initialData.tags || [],
+          receipts: initialData.receipts || [],
         };
         setFormData(dataWithTime);
         setOriginalExpenseState(dataWithTime);
