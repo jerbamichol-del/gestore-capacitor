@@ -136,5 +136,27 @@ export const getCategoryColor = (categoryName: string): string => {
 };
 
 export const getCategoryStyle = (category: string | 'all'): CategoryStyle => {
-    return categoryStyles[category] || categoryStyles['Altro'];
+    // 1. Check legacy styles first for built-in categories
+    if (categoryStyles[category]) {
+        return categoryStyles[category];
+    }
+
+    // 2. Check for custom category
+    const customCat = CategoryService.getCategoryByName(category);
+    if (customCat) {
+        const icon = customCat.icon && ICON_MAP[customCat.icon]
+            ? ICON_MAP[customCat.icon]
+            : OtherIcon;
+        const color = customCat.color || '#94A3B8';
+
+        return {
+            label: customCat.name,
+            Icon: icon,
+            color: color,
+            bgColor: `${color}20`  // translucent background
+        };
+    }
+
+    // 3. Fallback to 'Altro'
+    return categoryStyles['Altro'];
 };
