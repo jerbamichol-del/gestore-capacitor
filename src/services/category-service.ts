@@ -42,7 +42,11 @@ export const AVAILABLE_ICONS = [
     'shopping1', 'shopping2', 'shopping3', 'shopping4', 'shopping5',
     'shopping6', 'shopping7', 'shopping8', 'shopping9', 'shopping10',
     'shopping11', 'shopping12', 'shopping13', 'shopping14', 'shopping15',
-    'shopping16', 'shopping17', 'shopping18', 'shopping19', 'shopping20'
+    'shopping16', 'shopping17', 'shopping18', 'shopping19', 'shopping20',
+    'salute1', 'salute2', 'salute3', 'salute4', 'salute5',
+    'salute6', 'salute7', 'salute8', 'salute9', 'salute10',
+    'salute11', 'salute12', 'salute13', 'salute14', 'salute15',
+    'salute16', 'salute17', 'salute18', 'salute19', 'salute20'
 ];
 
 // Colori disponibili per le categorie
