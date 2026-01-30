@@ -613,7 +613,7 @@ export function PendingTransactionsModal({
                 <select
                   value={currentAccountId}
                   onChange={(e) => handleAccountChange(currentTransaction.id, e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-electric-violet/30 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
                 >
                   <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                   {accounts.map((account) => (
@@ -637,7 +637,7 @@ export function PendingTransactionsModal({
                       onChange={(e) =>
                         handleTransferAccountChange(currentTransaction.id, 'from', e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-sunset-coral/30 dark:border-sky-500/30 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
                     >
                       <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                       {accounts.map((account) => (
@@ -655,7 +655,7 @@ export function PendingTransactionsModal({
                       onChange={(e) =>
                         handleTransferAccountChange(currentTransaction.id, 'to', e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-sunset-coral/30 dark:border-sky-500/30 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
                     >
                       <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                       {accounts.map((account) => (
@@ -684,7 +684,7 @@ export function PendingTransactionsModal({
                     <select
                       value={expenseMeta.category || ''}
                       onChange={(e) => handleExpenseCategoryChange(currentTransaction.id, e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-electric-violet/30 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
                     >
                       <option value="" className="dark:bg-midnight">-- Seleziona categoria --</option>
                       {categoryOptions.map((cat) => (
@@ -703,7 +703,9 @@ export function PendingTransactionsModal({
                       value={expenseMeta.subcategory || ''}
                       disabled={isSubcategoryDisabled}
                       onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-slate-200 dark:border-electric-violet/10 bg-slate-100 dark:bg-midnight-card/30 text-slate-400 dark:text-slate-400' : 'border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white'
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled
+                          ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-600'
+                          : 'border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white'
                         }`}
                     >
                       <option value="" className="dark:bg-midnight">-- Seleziona sottocategoria --</option>
