@@ -696,14 +696,14 @@ export function PendingTransactionsModal({
                   </div>
 
                   <div>
-                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-slate-400 dark:text-slate-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>
                       Sottocategoria (opzionale)
                     </label>
                     <select
                       value={expenseMeta.subcategory || ''}
                       disabled={isSubcategoryDisabled}
                       onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-slate-200 dark:border-electric-violet/10 bg-slate-100 dark:bg-midnight-card/20 text-slate-400 dark:text-slate-600' : 'border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white'
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled ? 'border-slate-200 dark:border-electric-violet/10 bg-slate-100 dark:bg-midnight-card/30 text-slate-400 dark:text-slate-400' : 'border-slate-300 dark:border-electric-violet/30 bg-sunset-cream/60 dark:bg-midnight-card/50 text-slate-900 dark:text-white'
                         }`}
                     >
                       <option value="" className="dark:bg-midnight">-- Seleziona sottocategoria --</option>

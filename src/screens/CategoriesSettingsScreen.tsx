@@ -128,6 +128,7 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
     const renderCategoryIcon = (cat: Category) => {
         const IconComponent = getCategoryIcon(cat.name);
         const color = cat.color || getCategoryColor(cat.name);
+
         return (
             <div className="category-icon-wrapper" style={{ backgroundColor: `${color}20` }}>
                 <IconComponent size={24} color={color} />
@@ -308,14 +309,16 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
                             <div className="icon-picker">
                                 {AVAILABLE_ICONS.map(icon => {
                                     const IconComponent = getCategoryIcon(icon);
+                                    const isSelected = formData.icon === icon;
+
                                     return (
                                         <button
                                             key={icon}
-                                            className={`icon-option ${formData.icon === icon ? 'selected' : ''}`}
+                                            className={`icon-option ${isSelected ? 'selected' : ''}`}
                                             onClick={() => setFormData({ ...formData, icon })}
-                                            style={{ borderColor: formData.icon === icon ? formData.color : 'transparent' }}
+                                            style={{ borderColor: isSelected ? formData.color : 'transparent' }}
                                         >
-                                            <IconComponent size={24} color={formData.icon === icon ? formData.color : 'var(--text-secondary)'} />
+                                            <IconComponent size={24} color={isSelected ? formData.color : undefined} />
                                         </button>
                                     );
                                 })}
