@@ -8,6 +8,18 @@ interface CategoriesSettingsScreenProps {
     onBack: () => void;
 }
 
+// Icon groups for categorization in picker
+const ICON_GROUPS = [
+    {
+        name: 'Generali',
+        icons: AVAILABLE_ICONS.filter(icon => !icon.startsWith('finanza'))
+    },
+    {
+        name: 'Finanza',
+        icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('finanza'))
+    }
+];
+
 export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> = ({ onBack }) => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [isAnimating, setIsAnimating] = useState(false);
@@ -306,22 +318,29 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
 
                         <div className="form-group">
                             <label>Icona</label>
-                            <div className="icon-picker">
-                                {AVAILABLE_ICONS.map(icon => {
-                                    const IconComponent = getCategoryIcon(icon);
-                                    const isSelected = formData.icon === icon;
+                            <div className="icon-picker-container">
+                                {ICON_GROUPS.map(group => (
+                                    <div key={group.name} className="icon-group">
+                                        <h3 className="icon-group-title">{group.name}</h3>
+                                        <div className="icon-picker">
+                                            {group.icons.map(icon => {
+                                                const IconComponent = getCategoryIcon(icon);
+                                                const isSelected = formData.icon === icon;
 
-                                    return (
-                                        <button
-                                            key={icon}
-                                            className={`icon-option ${isSelected ? 'selected' : ''}`}
-                                            onClick={() => setFormData({ ...formData, icon })}
-                                            style={{ borderColor: isSelected ? formData.color : 'transparent' }}
-                                        >
-                                            <IconComponent size={24} color={isSelected ? formData.color : undefined} />
-                                        </button>
-                                    );
-                                })}
+                                                return (
+                                                    <button
+                                                        key={icon}
+                                                        className={`icon-option ${isSelected ? 'selected' : ''}`}
+                                                        onClick={() => setFormData({ ...formData, icon })}
+                                                        style={{ borderColor: isSelected ? formData.color : 'transparent' }}
+                                                    >
+                                                        <IconComponent size={24} color={isSelected ? formData.color : undefined} />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 

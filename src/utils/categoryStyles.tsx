@@ -29,6 +29,24 @@ import { TaxesIcon } from '../components/icons/categories/TaxesIcon';
 import { InvestmentIcon } from '../components/icons/categories/InvestmentIcon';
 import { SolidCircleIcon } from '../components/icons/categories/SolidCircleIcon';
 
+// Import Finanza icons
+import { Finanza1Icon } from '../components/icons/categories/finanza/Finanza1Icon';
+import { Finanza2Icon } from '../components/icons/categories/finanza/Finanza2Icon';
+import { Finanza3Icon } from '../components/icons/categories/finanza/Finanza3Icon';
+import { Finanza4Icon } from '../components/icons/categories/finanza/Finanza4Icon';
+import { Finanza5Icon } from '../components/icons/categories/finanza/Finanza5Icon';
+import { Finanza6Icon } from '../components/icons/categories/finanza/Finanza6Icon';
+import { Finanza7Icon } from '../components/icons/categories/finanza/Finanza7Icon';
+import { Finanza8Icon } from '../components/icons/categories/finanza/Finanza8Icon';
+import { Finanza9Icon } from '../components/icons/categories/finanza/Finanza9Icon';
+import { Finanza10Icon } from '../components/icons/categories/finanza/Finanza10Icon';
+import { Finanza11Icon } from '../components/icons/categories/finanza/Finanza11Icon';
+import { Finanza12Icon } from '../components/icons/categories/finanza/Finanza12Icon';
+import { Finanza13Icon } from '../components/icons/categories/finanza/Finanza13Icon';
+import { Finanza14Icon } from '../components/icons/categories/finanza/Finanza14Icon';
+import { Finanza15Icon } from '../components/icons/categories/finanza/Finanza15Icon';
+import { Finanza16Icon } from '../components/icons/categories/finanza/Finanza16Icon';
+
 interface CategoryStyle {
     label: string;
     Icon: React.FC<React.SVGProps<SVGSVGElement>>;
@@ -63,7 +81,23 @@ export const ICON_MAP: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> =
     'insurance': InsuranceIcon,
     'taxes': TaxesIcon,
     'investment': InvestmentIcon,
-    'all': AllIcon
+    'all': AllIcon,
+    'finanza1': Finanza1Icon,
+    'finanza2': Finanza2Icon,
+    'finanza3': Finanza3Icon,
+    'finanza4': Finanza4Icon,
+    'finanza5': Finanza5Icon,
+    'finanza6': Finanza6Icon,
+    'finanza7': Finanza7Icon,
+    'finanza8': Finanza8Icon,
+    'finanza9': Finanza9Icon,
+    'finanza10': Finanza10Icon,
+    'finanza11': Finanza11Icon,
+    'finanza12': Finanza12Icon,
+    'finanza13': Finanza13Icon,
+    'finanza14': Finanza14Icon,
+    'finanza15': Finanza15Icon,
+    'finanza16': Finanza16Icon
 };
 
 // Legacy styles map (keep for backward compatibility if needed)

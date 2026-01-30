@@ -424,11 +424,32 @@
 }
 
 /* Icon picker */
+.icon-picker-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.icon-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.icon-group-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--pie-text-primary);
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--accent-border);
+}
+
 .icon-picker {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .icon-option {

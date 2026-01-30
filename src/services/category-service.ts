@@ -30,7 +30,10 @@ export const AVAILABLE_ICONS = [
     'food', 'transport', 'home', 'shopping', 'leisure', 'health',
     'education', 'work', 'charity', 'other', 'solid', 'gift', 'travel',
     'entertainment', 'pets', 'beauty', 'fitness', 'tech', 'music',
-    'art', 'garden', 'baby', 'insurance', 'taxes', 'investment'
+    'art', 'garden', 'baby', 'insurance', 'taxes', 'investment',
+    'finanza1', 'finanza2', 'finanza3', 'finanza4', 'finanza5', 'finanza6',
+    'finanza7', 'finanza8', 'finanza9', 'finanza10', 'finanza11', 'finanza12',
+    'finanza13', 'finanza14', 'finanza15', 'finanza16'
 ];
 
 // Colori disponibili per le categorie
