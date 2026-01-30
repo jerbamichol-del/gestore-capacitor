@@ -92,26 +92,26 @@ import { Shopping17Icon } from '../components/icons/categories/shopping/Shopping
 import { Shopping18Icon } from '../components/icons/categories/shopping/Shopping18Icon';
 import { Shopping19Icon } from '../components/icons/categories/shopping/Shopping19Icon';
 import { Shopping20Icon } from '../components/icons/categories/shopping/Shopping20Icon';
-import { Salute1Icon } from '../components/icons/categories/salute/Salute1Icon';
-import { Salute2Icon } from '../components/icons/categories/salute/Salute2Icon';
-import { Salute3Icon } from '../components/icons/categories/salute/Salute3Icon';
-import { Salute4Icon } from '../components/icons/categories/salute/Salute4Icon';
-import { Salute5Icon } from '../components/icons/categories/salute/Salute5Icon';
-import { Salute6Icon } from '../components/icons/categories/salute/Salute6Icon';
-import { Salute7Icon } from '../components/icons/categories/salute/Salute7Icon';
-import { Salute8Icon } from '../components/icons/categories/salute/Salute8Icon';
-import { Salute9Icon } from '../components/icons/categories/salute/Salute9Icon';
-import { Salute10Icon } from '../components/icons/categories/salute/Salute10Icon';
-import { Salute11Icon } from '../components/icons/categories/salute/Salute11Icon';
-import { Salute12Icon } from '../components/icons/categories/salute/Salute12Icon';
-import { Salute13Icon } from '../components/icons/categories/salute/Salute13Icon';
-import { Salute14Icon } from '../components/icons/categories/salute/Salute14Icon';
-import { Salute15Icon } from '../components/icons/categories/salute/Salute15Icon';
-import { Salute16Icon } from '../components/icons/categories/salute/Salute16Icon';
-import { Salute17Icon } from '../components/icons/categories/salute/Salute17Icon';
-import { Salute18Icon } from '../components/icons/categories/salute/Salute18Icon';
-import { Salute19Icon } from '../components/icons/categories/salute/Salute19Icon';
-import { Salute20Icon } from '../components/icons/categories/salute/Salute20Icon';
+// import { Salute1Icon } from '../components/icons/categories/salute/Salute1Icon';
+// import { Salute2Icon } from '../components/icons/categories/salute/Salute2Icon';
+// import { Salute3Icon } from '../components/icons/categories/salute/Salute3Icon';
+// import { Salute4Icon } from '../components/icons/categories/salute/Salute4Icon';
+// import { Salute5Icon } from '../components/icons/categories/salute/Salute5Icon';
+// import { Salute6Icon } from '../components/icons/categories/salute/Salute6Icon';
+// import { Salute7Icon } from '../components/icons/categories/salute/Salute7Icon';
+// import { Salute8Icon } from '../components/icons/categories/salute/Salute8Icon';
+// import { Salute9Icon } from '../components/icons/categories/salute/Salute9Icon';
+// import { Salute10Icon } from '../components/icons/categories/salute/Salute10Icon';
+// import { Salute11Icon } from '../components/icons/categories/salute/Salute11Icon';
+// import { Salute12Icon } from '../components/icons/categories/salute/Salute12Icon';
+// import { Salute13Icon } from '../components/icons/categories/salute/Salute13Icon';
+// import { Salute14Icon } from '../components/icons/categories/salute/Salute14Icon';
+// import { Salute15Icon } from '../components/icons/categories/salute/Salute15Icon';
+// import { Salute16Icon } from '../components/icons/categories/salute/Salute16Icon';
+// import { Salute17Icon } from '../components/icons/categories/salute/Salute17Icon';
+// import { Salute18Icon } from '../components/icons/categories/salute/Salute18Icon';
+// import { Salute19Icon } from '../components/icons/categories/salute/Salute19Icon';
+// import { Salute20Icon } from '../components/icons/categories/salute/Salute20Icon';
 
 interface CategoryStyle {
     label: string;
@@ -210,26 +210,26 @@ export const ICON_MAP: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> =
     'shopping18': Shopping18Icon,
     'shopping19': Shopping19Icon,
     'shopping20': Shopping20Icon,
-    'salute1': Salute1Icon,
-    'salute2': Salute2Icon,
-    'salute3': Salute3Icon,
-    'salute4': Salute4Icon,
-    'salute5': Salute5Icon,
-    'salute6': Salute6Icon,
-    'salute7': Salute7Icon,
-    'salute8': Salute8Icon,
-    'salute9': Salute9Icon,
-    'salute10': Salute10Icon,
-    'salute11': Salute11Icon,
-    'salute12': Salute12Icon,
-    'salute13': Salute13Icon,
-    'salute14': Salute14Icon,
-    'salute15': Salute15Icon,
-    'salute16': Salute16Icon,
-    'salute17': Salute17Icon,
-    'salute18': Salute18Icon,
-    'salute19': Salute19Icon,
-    'salute20': Salute20Icon
+    // 'salute1': Salute1Icon,
+    // 'salute2': Salute2Icon,
+    // 'salute3': Salute3Icon,
+    // 'salute4': Salute4Icon,
+    // 'salute5': Salute5Icon,
+    // 'salute6': Salute6Icon,
+    // 'salute7': Salute7Icon,
+    // 'salute8': Salute8Icon,
+    // 'salute9': Salute9Icon,
+    // 'salute10': Salute10Icon,
+    // 'salute11': Salute11Icon,
+    // 'salute12': Salute12Icon,
+    // 'salute13': Salute13Icon,
+    // 'salute14': Salute14Icon,
+    // 'salute15': Salute15Icon,
+    // 'salute16': Salute16Icon,
+    // 'salute17': Salute17Icon,
+    // 'salute18': Salute18Icon,
+    // 'salute19': Salute19Icon,
+    // 'salute20': Salute20Icon
 };
 
 // Legacy styles map (keep for backward compatibility if needed)
