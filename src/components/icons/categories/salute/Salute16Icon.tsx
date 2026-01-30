@@ -3,7 +3,7 @@ import React from 'react';
 export const Salute16Icon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg id="Livello_2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" {...props}>
         <g id="Livello_1-2">
-            <g id="_Ñëîé_5">
+            <g id="layer_fixed">
                 <circle cx="50" cy="50" r="50" style={{ fill: '#ef4836' }} />
                 <path d="M74.06,74.43c1.1-1,1.8-2.42,1.8-4.02V29.58c0-3.01-2.44-5.44-5.44-5.44H29.58c-1.6,0-3.02.7-4.02,1.79L.04,51.47c.76,26.45,22.05,47.74,48.5,48.5l25.53-25.53Z" style={{ isolation: 'isolate', opacity: 0.3 }} />
                 <path d="M75.86,29.58c0-3.01-2.44-5.44-5.44-5.44H29.58c-3.01,0-5.44,2.44-5.44,5.44h0v40.83h0c0,3.01,2.44,5.44,5.44,5.44h40.83c3.01,0,5.44-2.44,5.44-5.44h0V29.58h0Z" style={{ fill: '#fde3a7' }} />
