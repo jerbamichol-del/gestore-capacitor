@@ -12,22 +12,22 @@ import { CharityIcon } from '../components/icons/categories/CharityIcon';
 import { OtherIcon } from '../components/icons/categories/OtherIcon';
 import { CategoryService } from '../services/category-service';
 
-// Import additional icons for custom categories
-// Reuse existing icons for now, mapped to generic names
-const GiftIcon = (props: React.SVGProps<SVGSVGElement>) => <ShoppingIcon {...props} />; // Placeholder
-const TravelIcon = (props: React.SVGProps<SVGSVGElement>) => <LeisureIcon {...props} />; // Placeholder
-const EntertainmentIcon = (props: React.SVGProps<SVGSVGElement>) => <LeisureIcon {...props} />; // Placeholder
-const PetsIcon = (props: React.SVGProps<SVGSVGElement>) => <AllIcon {...props} />; // Placeholder
-const BeautyIcon = (props: React.SVGProps<SVGSVGElement>) => <HealthIcon {...props} />; // Placeholder
-const FitnessIcon = (props: React.SVGProps<SVGSVGElement>) => <HealthIcon {...props} />; // Placeholder
-const TechIcon = (props: React.SVGProps<SVGSVGElement>) => <WorkIcon {...props} />; // Placeholder
-const MusicIcon = (props: React.SVGProps<SVGSVGElement>) => <LeisureIcon {...props} />; // Placeholder
-const ArtIcon = (props: React.SVGProps<SVGSVGElement>) => <EducationIcon {...props} />; // Placeholder
-const GardenIcon = (props: React.SVGProps<SVGSVGElement>) => <HomeIcon {...props} />; // Placeholder
-const BabyIcon = (props: React.SVGProps<SVGSVGElement>) => <HomeIcon {...props} />; // Placeholder
-const InsuranceIcon = (props: React.SVGProps<SVGSVGElement>) => <TransportIcon {...props} />; // Placeholder
-const TaxesIcon = (props: React.SVGProps<SVGSVGElement>) => <WorkIcon {...props} />; // Placeholder
-const InvestmentIcon = (props: React.SVGProps<SVGSVGElement>) => <WorkIcon {...props} />; // Placeholder
+// Import unique icons for custom categories
+import { GiftIcon } from '../components/icons/categories/GiftIcon';
+import { TravelIcon } from '../components/icons/categories/TravelIcon';
+import { EntertainmentIcon } from '../components/icons/categories/EntertainmentIcon';
+import { PetsIcon } from '../components/icons/categories/PetsIcon';
+import { BeautyIcon } from '../components/icons/categories/BeautyIcon';
+import { FitnessIcon } from '../components/icons/categories/FitnessIcon';
+import { TechIcon } from '../components/icons/categories/TechIcon';
+import { MusicIcon } from '../components/icons/categories/MusicIcon';
+import { ArtIcon } from '../components/icons/categories/ArtIcon';
+import { GardenIcon } from '../components/icons/categories/GardenIcon';
+import { BabyIcon } from '../components/icons/categories/BabyIcon';
+import { InsuranceIcon } from '../components/icons/categories/InsuranceIcon';
+import { TaxesIcon } from '../components/icons/categories/TaxesIcon';
+import { InvestmentIcon } from '../components/icons/categories/InvestmentIcon';
+import { SolidCircleIcon } from '../components/icons/categories/SolidCircleIcon';
 
 interface CategoryStyle {
     label: string;
@@ -48,6 +48,7 @@ export const ICON_MAP: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> =
     'work': WorkIcon,
     'charity': CharityIcon,
     'other': OtherIcon,
+    'solid': SolidCircleIcon,
     'gift': GiftIcon,
     'travel': TravelIcon,
     'entertainment': EntertainmentIcon,

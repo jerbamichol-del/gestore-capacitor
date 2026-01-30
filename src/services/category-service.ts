@@ -28,7 +28,7 @@ const DEFAULT_CATEGORIES: Category[] = [
 // Lista di icone disponibili per le categorie
 export const AVAILABLE_ICONS = [
     'food', 'transport', 'home', 'shopping', 'leisure', 'health',
-    'education', 'work', 'charity', 'other', 'gift', 'travel',
+    'education', 'work', 'charity', 'other', 'solid', 'gift', 'travel',
     'entertainment', 'pets', 'beauty', 'fitness', 'tech', 'music',
     'art', 'garden', 'baby', 'insurance', 'taxes', 'investment'
 ];
@@ -193,6 +193,13 @@ export class CategoryService {
         const custom = this.getCustomCategories();
         const defaultCat = DEFAULT_CATEGORIES.find(c => c.id === id);
 
+        // Get the category to be deleted (to know its name)
+        const categoryToDelete = this.getCategoryById(id);
+        if (categoryToDelete) {
+            // Migrate all expenses from the deleted category to "Altro"
+            this.migrateExpensesToAltro(categoryToDelete.name);
+        }
+
         if (defaultCat) {
             // Mark default as deleted
             const deletedDefaults = this.getDeletedDefaults();
@@ -211,6 +218,32 @@ export class CategoryService {
 
         console.log('✅ Category deleted:', id);
         this.dispatchUpdate();
+    }
+
+    /**
+     * Migrate expenses from a category to "Altro"
+     */
+    private static migrateExpensesToAltro(oldCategoryName: string): void {
+        const expensesKey = 'expenses_v2';
+        const expenses = JSON.parse(localStorage.getItem(expensesKey) || '[]');
+
+        let migratedCount = 0;
+        const updatedExpenses = expenses.map((expense: any) => {
+            if (expense.category === oldCategoryName) {
+                migratedCount++;
+                return {
+                    ...expense,
+                    category: 'Altro',
+                    subcategory: expense.subcategory || '' // Keep subcategory as-is or clear it
+                };
+            }
+            return expense;
+        });
+
+        if (migratedCount > 0) {
+            localStorage.setItem(expensesKey, JSON.stringify(updatedExpenses));
+            console.log(`✅ Migrated ${migratedCount} expenses from "${oldCategoryName}" to "Altro"`);
+        }
     }
 
     /**
