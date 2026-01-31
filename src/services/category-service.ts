@@ -84,12 +84,12 @@ export class CategoryService {
 
         // Merge custom modifications with defaults
         const merged = activeDefaults.map(def => {
-            const customized = custom.find(c => c.id === def.id);
+            const customized = custom.find(c => c && c.id === def.id);
             return customized || def;
         });
 
         // Add purely custom categories (not modifications of defaults)
-        const purelyCustom = custom.filter(c => !DEFAULT_CATEGORIES.some(d => d.id === c.id));
+        const purelyCustom = custom.filter(c => c && c.id && !DEFAULT_CATEGORIES.some(d => d.id === c.id));
 
         return [...merged, ...purelyCustom].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
     }
@@ -374,7 +374,14 @@ export class CategoryService {
 
     private static getCustomCategories(): Category[] {
         const stored = localStorage.getItem(this.STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
+        if (!stored) return [];
+        try {
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) ? parsed.filter((c: any) => c && typeof c === 'object' && c.id && c.name) : [];
+        } catch (e) {
+            console.error('Error parsing custom categories', e);
+            return [];
+        }
     }
 
     private static saveCustomCategories(categories: Category[]): void {

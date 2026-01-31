@@ -595,7 +595,6 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
     );
   };
 
-  if (!isOpen) return null;
 
   // Load categories from service
   const [categoriesList, setCategoriesList] = useState<any[]>([]);

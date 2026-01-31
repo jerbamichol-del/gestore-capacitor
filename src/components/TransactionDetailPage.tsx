@@ -463,36 +463,14 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     );
   };
 
-  if (typeof formData.amount !== 'number') {
-    return (
-      <div
-        ref={rootRef}
-        tabIndex={-1}
-        className="flex flex-col h-full dark:bg-midnight items-center justify-center p-4"
-        {...tapBridgeHandlers}
-      >
-        <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-white midnight-card shadow-sm absolute top-0 left-0 right-0 z-10 border-b border-transparent dark:border-electric-violet/20">
-          {!isDesktop && (
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Torna alla calcolatrice">
-              <ArrowLeftIcon className="w-6 h-6" />
-            </button>
-          )}
-          <h2 className="text-xl font-bold">Aggiungi Dettagli</h2>
-        </header>
-        <p className="text-slate-500 dark:text-slate-400 text-center">Nessun dato dall'importo. Torna indietro e inserisci una spesa.</p>
-      </div>
-    );
-  }
-
-  const isFrequencySet = !!formData.frequency;
-  const selectedAccountLabel = accounts.find(a => a.id === formData.accountId)?.name;
-
   const accountOptions = useMemo(() =>
     accounts.map(a => ({ value: a.id, label: a.name })),
     [accounts]
   );
 
+  const selectedAccountLabel = accounts.find(a => a.id === formData.accountId)?.name;
   const selectedToAccountLabel = accounts.find(a => a.id === formData.toAccountId)?.name;
+
   const toAccountOptions = useMemo(() =>
     accounts
       .filter(a => a.id !== formData.accountId)
@@ -519,6 +497,29 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
     const catObj = categoriesList.find(c => c.name === formData.category);
     return catObj ? catObj.subcategories.map((sub: string) => ({ value: sub, label: sub })) : [];
   }, [formData.category, categoriesList]);
+
+  if (typeof formData.amount !== 'number') {
+    return (
+      <div
+        ref={rootRef}
+        tabIndex={-1}
+        className="flex flex-col h-full dark:bg-midnight items-center justify-center p-4"
+        {...tapBridgeHandlers}
+      >
+        <header className="p-4 flex items-center gap-4 text-slate-800 dark:text-white midnight-card shadow-sm absolute top-0 left-0 right-0 z-10 border-b border-transparent dark:border-electric-violet/20">
+          {!isDesktop && (
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Torna alla calcolatrice">
+              <ArrowLeftIcon className="w-6 h-6" />
+            </button>
+          )}
+          <h2 className="text-xl font-bold">Aggiungi Dettagli</h2>
+        </header>
+        <p className="text-slate-500 dark:text-slate-400 text-center">Nessun dato dall'importo. Torna indietro e inserisci una spesa.</p>
+      </div>
+    );
+  }
+
+  const isFrequencySet = !!formData.frequency;
 
   const DateTimeInputs = (
     <div className={`grid ${!formData.frequency ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>

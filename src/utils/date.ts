@@ -1,9 +1,12 @@
 
-export const parseLocalYYYYMMDD = (s: string | null | undefined): Date => {
-  if (!s) return new Date(); // Fallback safe, anche se logicamente dovrebbe gestire il null chiamante
+export const parseLocalYYYYMMDD = (s: string | null | undefined): Date | undefined => {
+  if (!s) return undefined;
   const p = s.split('-').map(Number);
-  // Mese è 0-indexed in JS Date
-  return new Date(p[0], p[1] - 1, p[2]);
+  if (p.some(isNaN)) return undefined;
+  if (p.length !== 3) return undefined;
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  if (isNaN(d.getTime())) return undefined;
+  return d;
 };
 
 export const toYYYYMMDD = (date: Date): string => {
