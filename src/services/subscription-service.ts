@@ -1,11 +1,10 @@
 import { Subscription } from '../types';
-import { Storage } from '@capacitor/storage';
 
 const STORAGE_KEY = 'subscriptions';
 
 export class SubscriptionService {
     static async getSubscriptions(): Promise<Subscription[]> {
-        const { value } = await Storage.get({ key: STORAGE_KEY });
+        const value = localStorage.getItem(STORAGE_KEY);
         return value ? JSON.parse(value) : [];
     }
 
@@ -17,13 +16,13 @@ export class SubscriptionService {
         } else {
             subscriptions.push(subscription);
         }
-        await Storage.set({ key: STORAGE_KEY, value: JSON.stringify(subscriptions) });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions));
     }
 
     static async deleteSubscription(id: string): Promise<void> {
         const subscriptions = await this.getSubscriptions();
         const filtered = subscriptions.filter(s => s.id !== id);
-        await Storage.set({ key: STORAGE_KEY, value: JSON.stringify(filtered) });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
     }
 
     /**
