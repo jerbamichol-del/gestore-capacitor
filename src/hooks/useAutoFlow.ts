@@ -128,6 +128,50 @@ export function useAutoFlow(
                 };
 
                 handleAddExpense(newTx);
+
+                // --- 🚀 AUTO-DETECT INSTALLMENTS (RATE) ---
+                const installmentMatch = transaction.description.match(/(?:rata|rate)?\s*(\d+)\s*(?:\/|su|di)\s*(\d+)/i);
+                if (installmentMatch && selectedType === 'expense') {
+                    const current = parseInt(installmentMatch[1]);
+                    const total = parseInt(installmentMatch[2]);
+
+                    if (current < total && total > 1) {
+                        const remaining = total - current;
+                        // Calculate next month date
+                        const nextDate = new Date(dt);
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                        const nextDateStr = toYYYYMMDD(nextDate);
+
+                        const recurringTx: Omit<Expense, 'id'> = {
+                            description: transaction.description.replace(`${current}/${total}`, '').trim() || transaction.description,
+                            amount: transaction.amount,
+                            date: nextDateStr,
+                            time: '09:00', // Default morning time for scheduled
+                            category: options?.category || 'Altro',
+                            subcategory: options?.subcategory,
+                            accountId,
+                            type: 'expense',
+                            tags: ['auto-rata', transaction.sourceApp || 'auto'],
+                            frequency: 'recurring',
+                            recurrence: 'monthly',
+                            recurrenceInterval: 1,
+                            recurrenceEndType: 'count',
+                            recurrenceCount: remaining,
+                            monthlyRecurrenceType: 'dayOfMonth'
+                        };
+
+                        console.log('🔄 Auto-creating recurring installments plan:', recurringTx);
+                        // Small delay to ensure state updates don't clash
+                        setTimeout(() => {
+                            handleAddExpense(recurringTx);
+                            showToast({
+                                message: `Creata ricorrenza per le prossime ${remaining} rate!`,
+                                type: 'success'
+                            });
+                        }, 500);
+                    }
+                }
+
                 showToast({ message: 'Transazione confermata e aggiunta!', type: 'success' });
             }
 

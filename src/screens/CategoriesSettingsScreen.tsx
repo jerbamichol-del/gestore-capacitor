@@ -325,9 +325,14 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
                                 {AVAILABLE_COLORS.map(color => (
                                     <button
                                         key={color}
+                                        type="button"
                                         className={`color-option ${formData.color === color ? 'selected' : ''}`}
                                         style={{ backgroundColor: color }}
-                                        onClick={() => setFormData({ ...formData, color })}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setFormData({ ...formData, color });
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -347,8 +352,13 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
                                                 return (
                                                     <button
                                                         key={icon}
+                                                        type="button"
                                                         className={`icon-option ${isSelected ? 'selected' : ''}`}
-                                                        onClick={() => setFormData({ ...formData, icon })}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setFormData({ ...formData, icon });
+                                                        }}
                                                         style={{ borderColor: isSelected ? formData.color : 'transparent' }}
                                                     >
                                                         <IconComponent size={24} color={isSelected ? formData.color : undefined} />
