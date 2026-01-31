@@ -43,3 +43,16 @@ export interface EventBudget {
   icon?: string;
   color?: string;
 }
+
+export interface Subscription {
+  id: string;
+  name: string;
+  amount: number;
+  currency: string;
+  frequency: 'monthly' | 'yearly';
+  nextRenewalDate: string;
+  iconUrl?: string;
+  category: string;
+  linkedRecurringExpenseId?: string;
+  managementUrl?: string;
+}

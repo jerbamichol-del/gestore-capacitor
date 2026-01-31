@@ -42,6 +42,7 @@ import AccountsScreen from './screens/AccountsScreen';
 import SecuritySettingsScreen from './screens/SecuritySettingsScreen';
 import CardManagerScreen from './screens/CardManagerScreen';
 import CategoriesSettingsScreen from './screens/CategoriesSettingsScreen'; // ✅ Import
+import SubscriptionManagerScreen from './screens/SubscriptionManagerScreen';
 
 // Settings Components
 import SettingsSidebar from './components/SettingsSidebar';
@@ -140,6 +141,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
   const [isCardManagerOpen, setIsCardManagerOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isForgotPasswordScreenOpen, setIsForgotPasswordScreenOpen] = useState(false);
+  const [isSubscriptionManagerOpen, setIsSubscriptionManagerOpen] = useState(false);
+  const [pendingSubscriptionData, setPendingSubscriptionData] = useState<Partial<Expense> | null>(null);
 
   // Event Budgets Modal State
   const [isEventBudgetsOpen, setIsEventBudgetsOpen] = useState(false);
@@ -481,6 +484,24 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
               }}
               onDelete={data.handleDeleteRequest}
               onDeleteRecurringExpenses={data.deleteRecurringExpenses}
+              onLinkSubscription={(expense) => {
+                setPendingSubscriptionData(expense);
+                setIsSubscriptionManagerOpen(true);
+              }}
+            />
+          )}
+
+          {isSubscriptionManagerOpen && (
+            <SubscriptionManagerScreen
+              accounts={data.accounts}
+              onClose={() => setIsSubscriptionManagerOpen(false)}
+              initialSubscription={pendingSubscriptionData ? {
+                name: pendingSubscriptionData.description || pendingSubscriptionData.subcategory || '',
+                amount: Number(pendingSubscriptionData.amount),
+                category: pendingSubscriptionData.category,
+                linkedRecurringExpenseId: pendingSubscriptionData.id,
+                frequency: pendingSubscriptionData.recurrence === 'monthly' ? 'monthly' : 'yearly'
+              } : undefined}
             />
           )}
 
@@ -683,6 +704,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
           window.history.pushState({ modal: 'categories' }, '');
           ui.nav.setIsCategoriesScreenOpen(true);
         }}
+        onOpenSubscriptions={() => setIsSubscriptionManagerOpen(true)}
         onOpenBankSync={() => ui.nav.setIsBankSyncModalOpen(true)}
         onLogout={onLogout}
         isSwiping={isDraggingSidebar}

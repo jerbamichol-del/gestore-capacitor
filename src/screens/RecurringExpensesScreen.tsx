@@ -39,8 +39,8 @@ const getRecurrenceSummary = (expense: Expense): string => {
 };
 
 const RecurringExpenseItem: React.FC<{
-  expense: Expense; accounts: Account[]; onEdit: (expense: Expense) => void; onDeleteRequest: (id: string) => void; isOpen: boolean; onOpen: (id: string) => void; isSelectionMode: boolean; isSelected: boolean; onToggleSelection: (id: string) => void; onLongPress: (id: string) => void; isFinished: boolean;
-}> = ({ expense, accounts, onEdit, onDeleteRequest, isOpen, onOpen, isSelectionMode, isSelected, onToggleSelection, onLongPress, isFinished }) => {
+  expense: Expense; accounts: Account[]; onEdit: (expense: Expense) => void; onDeleteRequest: (id: string) => void; onLinkSubscription?: (expense: Expense) => void; isOpen: boolean; onOpen: (id: string) => void; isSelectionMode: boolean; isSelected: boolean; onToggleSelection: (id: string) => void; onLongPress: (id: string) => void; isFinished: boolean;
+}> = ({ expense, accounts, onEdit, onDeleteRequest, onLinkSubscription, isOpen, onOpen, isSelectionMode, isSelected, onToggleSelection, onLongPress, isFinished }) => {
   const style = getCategoryStyle(expense.category);
   const accountName = accounts.find(a => a.id === expense.accountId)?.name || 'Sconosciuto';
   const itemRef = useRef<HTMLDivElement>(null);
@@ -91,9 +91,19 @@ const RecurringExpenseItem: React.FC<{
           <p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isFinished ? 'text-slate-500 dark:text-slate-500 line-through' : 'text-slate-800 dark:text-white'}`}>
             {expense.description || (expense.subcategory || style.label)}
           </p>
-          <p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-electric-violet/80' : 'text-slate-500 dark:text-slate-400'}`}>
-            {getRecurrenceSummary(expense)} • {accountName}{expense.description ? ` • ${expense.subcategory || style.label}` : ''}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-electric-violet/80' : 'text-slate-500 dark:text-slate-400'}`}>
+              {getRecurrenceSummary(expense)} • {accountName}{expense.description ? ` • ${expense.subcategory || style.label}` : ''}
+            </p>
+            {!isFinished && !isSelectionMode && onLinkSubscription && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onLinkSubscription(expense); }}
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-electric-violet/20 text-indigo-600 dark:text-electric-violet-light border border-indigo-200 dark:border-electric-violet/30 active:scale-95 transition-all"
+              >
+                Collega Abbonamento
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex flex-col items-end shrink-0 min-w-[90px]"><p className={`font-bold text-lg text-right whitespace-nowrap ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isFinished ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>{formatCurrency(Number(expense.amount) || 0)}</p>{isFinished ? (<div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider bg-slate-200 dark:bg-midnight-card px-2 py-0.5 rounded-full">Completata</div>) : nextDueDate && (<div className={`text-sm font-medium mt-1 whitespace-nowrap ${isSelected ? 'text-indigo-600 dark:text-electric-violet' : 'text-slate-500 dark:text-slate-400'}`}>{formatDate(nextDueDate)}</div>)}</div>
       </div>
@@ -102,10 +112,10 @@ const RecurringExpenseItem: React.FC<{
 };
 
 interface RecurringExpensesScreenProps {
-  recurringExpenses: Expense[]; expenses: Expense[]; accounts: Account[]; onClose: () => void; onCloseStart?: () => void; onEdit: (expense: Expense) => void; onDelete: (id: string) => void; onDeleteRecurringExpenses: (ids: string[]) => void;
+  recurringExpenses: Expense[]; expenses: Expense[]; accounts: Account[]; onClose: () => void; onCloseStart?: () => void; onEdit: (expense: Expense) => void; onDelete: (id: string) => void; onDeleteRecurringExpenses: (ids: string[]) => void; onLinkSubscription?: (expense: Expense) => void;
 }
 
-const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recurringExpenses, expenses, accounts, onClose, onCloseStart, onEdit, onDelete, onDeleteRecurringExpenses }) => {
+const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recurringExpenses, expenses, accounts, onClose, onCloseStart, onEdit, onDelete, onDeleteRecurringExpenses, onLinkSubscription }) => {
   const [isAnimatingIn, setIsAnimatingIn] = useState(false);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const autoCloseRef = useRef<number | null>(null);
@@ -187,7 +197,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
             {sortedExpenses.map((expense, index) => (
               <div key={expense.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
                 {index > 0 && <hr className="border-t border-slate-200 dark:border-electric-violet/10 ml-16" />}
-                <RecurringExpenseItem expense={expense} accounts={accounts} onEdit={onEdit} onDeleteRequest={handleDeleteRequest} isOpen={openItemId === expense.id} onOpen={setOpenItemId} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isFinished={expense.isFinished} />
+                <RecurringExpenseItem expense={expense} accounts={accounts} onEdit={onEdit} onDeleteRequest={handleDeleteRequest} onLinkSubscription={onLinkSubscription} isOpen={openItemId === expense.id} onOpen={setOpenItemId} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isFinished={expense.isFinished} />
               </div>
             ))}
           </div>
