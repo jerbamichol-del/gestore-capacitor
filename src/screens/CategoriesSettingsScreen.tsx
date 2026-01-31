@@ -16,8 +16,13 @@ const ICON_GROUPS = [
             !icon.startsWith('finanza') &&
             !icon.startsWith('svago') &&
             !icon.startsWith('shopping') &&
-            !icon.startsWith('salute')
+            !icon.startsWith('salute') &&
+            !icon.startsWith('alimentari')
         )
+    },
+    {
+        name: 'Alimentari',
+        icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('alimentari'))
     },
     {
         name: 'Salute',
@@ -319,7 +324,7 @@ export const CategoriesSettingsScreen: React.FC<CategoriesSettingsScreenProps> =
                             />
                         </div>
 
-                        <div className="form-group">
+                        <div className="form-group color-group">
                             <label>Colore</label>
                             <div className="color-picker">
                                 {AVAILABLE_COLORS.map(color => (

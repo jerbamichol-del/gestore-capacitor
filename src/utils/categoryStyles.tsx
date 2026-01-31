@@ -92,26 +92,51 @@ import { Shopping17Icon } from '../components/icons/categories/shopping/Shopping
 import { Shopping18Icon } from '../components/icons/categories/shopping/Shopping18Icon';
 import { Shopping19Icon } from '../components/icons/categories/shopping/Shopping19Icon';
 import { Shopping20Icon } from '../components/icons/categories/shopping/Shopping20Icon';
-// import { Salute1Icon } from '../components/icons/categories/salute/Salute1Icon';
-// import { Salute2Icon } from '../components/icons/categories/salute/Salute2Icon';
-// import { Salute3Icon } from '../components/icons/categories/salute/Salute3Icon';
-// import { Salute4Icon } from '../components/icons/categories/salute/Salute4Icon';
-// import { Salute5Icon } from '../components/icons/categories/salute/Salute5Icon';
-// import { Salute6Icon } from '../components/icons/categories/salute/Salute6Icon';
-// import { Salute7Icon } from '../components/icons/categories/salute/Salute7Icon';
-// import { Salute8Icon } from '../components/icons/categories/salute/Salute8Icon';
-// import { Salute9Icon } from '../components/icons/categories/salute/Salute9Icon';
-// import { Salute10Icon } from '../components/icons/categories/salute/Salute10Icon';
-// import { Salute11Icon } from '../components/icons/categories/salute/Salute11Icon';
-// import { Salute12Icon } from '../components/icons/categories/salute/Salute12Icon';
-// import { Salute13Icon } from '../components/icons/categories/salute/Salute13Icon';
-// import { Salute14Icon } from '../components/icons/categories/salute/Salute14Icon';
-// import { Salute15Icon } from '../components/icons/categories/salute/Salute15Icon';
-// import { Salute16Icon } from '../components/icons/categories/salute/Salute16Icon';
-// import { Salute17Icon } from '../components/icons/categories/salute/Salute17Icon';
-// import { Salute18Icon } from '../components/icons/categories/salute/Salute18Icon';
-// import { Salute19Icon } from '../components/icons/categories/salute/Salute19Icon';
-// import { Salute20Icon } from '../components/icons/categories/salute/Salute20Icon';
+import { Alimentari1Icon } from '../components/icons/categories/alimentari/Alimentari1Icon';
+import { Alimentari2Icon } from '../components/icons/categories/alimentari/Alimentari2Icon';
+import { Alimentari3Icon } from '../components/icons/categories/alimentari/Alimentari3Icon';
+import { Alimentari4Icon } from '../components/icons/categories/alimentari/Alimentari4Icon';
+import { Alimentari5Icon } from '../components/icons/categories/alimentari/Alimentari5Icon';
+import { Alimentari6Icon } from '../components/icons/categories/alimentari/Alimentari6Icon';
+import { Alimentari7Icon } from '../components/icons/categories/alimentari/Alimentari7Icon';
+import { Alimentari8Icon } from '../components/icons/categories/alimentari/Alimentari8Icon';
+import { Alimentari9Icon } from '../components/icons/categories/alimentari/Alimentari9Icon';
+import { Alimentari22Icon } from '../components/icons/categories/alimentari/Alimentari22Icon';
+import { Alimentari23Icon } from '../components/icons/categories/alimentari/Alimentari23Icon';
+import { Alimentari24Icon } from '../components/icons/categories/alimentari/Alimentari24Icon';
+import { Alimentari25Icon } from '../components/icons/categories/alimentari/Alimentari25Icon';
+import { Alimentari26Icon } from '../components/icons/categories/alimentari/Alimentari26Icon';
+import { Alimentari27Icon } from '../components/icons/categories/alimentari/Alimentari27Icon';
+import { Alimentari28Icon } from '../components/icons/categories/alimentari/Alimentari28Icon';
+import { Alimentari29Icon } from '../components/icons/categories/alimentari/Alimentari29Icon';
+import { Alimentari30Icon } from '../components/icons/categories/alimentari/Alimentari30Icon';
+import { Alimentari31Icon } from '../components/icons/categories/alimentari/Alimentari31Icon';
+import { Alimentari32Icon } from '../components/icons/categories/alimentari/Alimentari32Icon';
+import { Alimentari33Icon } from '../components/icons/categories/alimentari/Alimentari33Icon';
+import { Alimentari34Icon } from '../components/icons/categories/alimentari/Alimentari34Icon';
+import { Alimentari35Icon } from '../components/icons/categories/alimentari/Alimentari35Icon';
+import { Alimentari36Icon } from '../components/icons/categories/alimentari/Alimentari36Icon';
+import { Alimentari37Icon } from '../components/icons/categories/alimentari/Alimentari37Icon';
+import { Salute1Icon } from '../components/icons/categories/salute/Salute1Icon';
+import { Salute2Icon } from '../components/icons/categories/salute/Salute2Icon';
+import { Salute3Icon } from '../components/icons/categories/salute/Salute3Icon';
+import { Salute4Icon } from '../components/icons/categories/salute/Salute4Icon';
+import { Salute5Icon } from '../components/icons/categories/salute/Salute5Icon';
+import { Salute6Icon } from '../components/icons/categories/salute/Salute6Icon';
+import { Salute7Icon } from '../components/icons/categories/salute/Salute7Icon';
+import { Salute8Icon } from '../components/icons/categories/salute/Salute8Icon';
+import { Salute9Icon } from '../components/icons/categories/salute/Salute9Icon';
+import { Salute10Icon } from '../components/icons/categories/salute/Salute10Icon';
+import { Salute11Icon } from '../components/icons/categories/salute/Salute11Icon';
+import { Salute12Icon } from '../components/icons/categories/salute/Salute12Icon';
+import { Salute13Icon } from '../components/icons/categories/salute/Salute13Icon';
+import { Salute14Icon } from '../components/icons/categories/salute/Salute14Icon';
+import { Salute15Icon } from '../components/icons/categories/salute/Salute15Icon';
+import { Salute16Icon } from '../components/icons/categories/salute/Salute16Icon';
+import { Salute17Icon } from '../components/icons/categories/salute/Salute17Icon';
+import { Salute18Icon } from '../components/icons/categories/salute/Salute18Icon';
+import { Salute19Icon } from '../components/icons/categories/salute/Salute19Icon';
+import { Salute20Icon } from '../components/icons/categories/salute/Salute20Icon';
 
 interface CategoryStyle {
     label: string;
@@ -210,26 +235,51 @@ export const ICON_MAP: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> =
     'shopping18': Shopping18Icon,
     'shopping19': Shopping19Icon,
     'shopping20': Shopping20Icon,
-    // 'salute1': Salute1Icon,
-    // 'salute2': Salute2Icon,
-    // 'salute3': Salute3Icon,
-    // 'salute4': Salute4Icon,
-    // 'salute5': Salute5Icon,
-    // 'salute6': Salute6Icon,
-    // 'salute7': Salute7Icon,
-    // 'salute8': Salute8Icon,
-    // 'salute9': Salute9Icon,
-    // 'salute10': Salute10Icon,
-    // 'salute11': Salute11Icon,
-    // 'salute12': Salute12Icon,
-    // 'salute13': Salute13Icon,
-    // 'salute14': Salute14Icon,
-    // 'salute15': Salute15Icon,
-    // 'salute16': Salute16Icon,
-    // 'salute17': Salute17Icon,
-    // 'salute18': Salute18Icon,
-    // 'salute19': Salute19Icon,
-    // 'salute20': Salute20Icon
+    'alimentari1': Alimentari1Icon,
+    'alimentari2': Alimentari2Icon,
+    'alimentari3': Alimentari3Icon,
+    'alimentari4': Alimentari4Icon,
+    'alimentari5': Alimentari5Icon,
+    'alimentari6': Alimentari6Icon,
+    'alimentari7': Alimentari7Icon,
+    'alimentari8': Alimentari8Icon,
+    'alimentari9': Alimentari9Icon,
+    'alimentari22': Alimentari22Icon,
+    'alimentari23': Alimentari23Icon,
+    'alimentari24': Alimentari24Icon,
+    'alimentari25': Alimentari25Icon,
+    'alimentari26': Alimentari26Icon,
+    'alimentari27': Alimentari27Icon,
+    'alimentari28': Alimentari28Icon,
+    'alimentari29': Alimentari29Icon,
+    'alimentari30': Alimentari30Icon,
+    'alimentari31': Alimentari31Icon,
+    'alimentari32': Alimentari32Icon,
+    'alimentari33': Alimentari33Icon,
+    'alimentari34': Alimentari34Icon,
+    'alimentari35': Alimentari35Icon,
+    'alimentari36': Alimentari36Icon,
+    'alimentari37': Alimentari37Icon,
+    'salute1': Salute1Icon,
+    'salute2': Salute2Icon,
+    'salute3': Salute3Icon,
+    'salute4': Salute4Icon,
+    'salute5': Salute5Icon,
+    'salute6': Salute6Icon,
+    'salute7': Salute7Icon,
+    'salute8': Salute8Icon,
+    'salute9': Salute9Icon,
+    'salute10': Salute10Icon,
+    'salute11': Salute11Icon,
+    'salute12': Salute12Icon,
+    'salute13': Salute13Icon,
+    'salute14': Salute14Icon,
+    'salute15': Salute15Icon,
+    'salute16': Salute16Icon,
+    'salute17': Salute17Icon,
+    'salute18': Salute18Icon,
+    'salute19': Salute19Icon,
+    'salute20': Salute20Icon
 };
 
 // Legacy styles map (keep for backward compatibility if needed)
