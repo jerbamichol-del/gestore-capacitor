@@ -26,19 +26,56 @@ export class SubscriptionService {
     }
 
     /**
-     * Fetches a company logo using Clearbit's autocomplete and logo API.
-     * @param name The name of the company/service (e.g., 'Netflix')
+     * Fetches a company logo using Clearbit's logo API.
+     * Includes a map for common services to ensure accuracy.
      */
     static getLogoUrl(name: string): string {
-        const domain = name.toLowerCase().replace(/\s+/g, '') + '.com';
-        return `https://logo.clearbit.com/${domain}?size=128`;
-    }
+        const cleanName = name.toLowerCase().trim();
 
-    /**
-     * Returns a fallback icon if the real logo fails to load.
-     */
-    static getFallbackIcon(category: string): string {
-        // This will be used by the UI to show a default category icon
-        return category || 'general';
+        // Map common services to their correct domains
+        const domainMap: Record<string, string> = {
+            'netflix': 'netflix.com',
+            'spotify': 'spotify.com',
+            'disney+': 'disneyplus.com',
+            'disney plus': 'disneyplus.com',
+            'amazon prime': 'amazon.com',
+            'prime video': 'primevideo.com',
+            'apple music': 'apple.com',
+            'apple tv': 'apple.com',
+            'icloud': 'apple.com',
+            'google one': 'google.com',
+            'youtube premium': 'youtube.com',
+            'dazn': 'dazn.com',
+            'sky': 'sky.it',
+            'now tv': 'nowtv.com',
+            'paramount+': 'paramountplus.com',
+            'hulu': 'hulu.com',
+            'adobe': 'adobe.com',
+            'microsoft 365': 'microsoft.com',
+            'office 365': 'microsoft.com',
+            'dropbox': 'dropbox.com',
+            'nintendo switch online': 'nintendo.com',
+            'playstation plus': 'playstation.com',
+            'xbox game pass': 'xbox.com',
+            'linkedin': 'linkedin.com',
+            'chatgpt': 'openai.com',
+            'midjourney': 'midjourney.com',
+            'canva': 'canva.com'
+        };
+
+        // Check map first
+        for (const [key, domain] of Object.entries(domainMap)) {
+            if (cleanName.includes(key)) return `https://logo.clearbit.com/${domain}?size=128`;
+        }
+
+        // Fallback: strip "abbonamento", "subscription", etc. and try .com
+        const wordsToStrip = ['abbonamento', 'subscription', 'piano', 'mensile', 'annuale', 'premium', 'family', 'studenti'];
+        let simplified = cleanName;
+        wordsToStrip.forEach(word => {
+            simplified = simplified.replace(word, '');
+        });
+
+        const domain = simplified.trim().replace(/\s+/g, '') + '.com';
+        return `https://logo.clearbit.com/${domain}?size=128`;
     }
 }

@@ -494,6 +494,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
           {isSubscriptionManagerOpen && (
             <SubscriptionManagerScreen
               accounts={data.accounts}
+              recurringExpenses={data.recurringExpenses}
               onClose={() => setIsSubscriptionManagerOpen(false)}
               initialSubscription={pendingSubscriptionData ? {
                 name: pendingSubscriptionData.description || pendingSubscriptionData.subcategory || '',

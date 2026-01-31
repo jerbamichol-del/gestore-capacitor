@@ -13,6 +13,7 @@ import { useTapBridge } from '../hooks/useTapBridge';
 
 interface SubscriptionManagerScreenProps {
     accounts: Account[];
+    recurringExpenses: any[]; // Changed to any[] to avoid strict type issues if Expense isn't imported localy
     onClose: () => void;
     onCloseStart?: () => void;
     initialSubscription?: Partial<Subscription>;
@@ -20,6 +21,7 @@ interface SubscriptionManagerScreenProps {
 
 const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
     accounts,
+    recurringExpenses,
     onClose,
     onCloseStart,
     initialSubscription
@@ -129,15 +131,16 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
                                 <div key={sub.id} className="relative group p-4 rounded-2xl bg-white dark:bg-midnight-card shadow-sm border border-slate-100 dark:border-electric-violet/10 transition-all hover:shadow-md">
                                     <div className="flex items-center gap-4">
                                         <div className="relative w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
-                                            {sub.iconUrl ? (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <CategoryIcon className="w-6 h-6" style={{ color }} />
+                                            </div>
+                                            {sub.iconUrl && (
                                                 <img
                                                     src={sub.iconUrl}
                                                     alt={sub.name}
-                                                    className="w-full h-full object-contain"
-                                                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                                                    className="relative z-10 w-full h-full object-contain bg-slate-100 dark:bg-slate-800"
+                                                    onError={(e) => (e.currentTarget.style.opacity = '0')}
                                                 />
-                                            ) : (
-                                                <CategoryIcon className="w-6 h-6" style={{ color }} />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -147,9 +150,9 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold text-slate-900 dark:text-white">{formatCurrency(sub.amount)}</p>
-                                            <p className={`text-[10px] font-bold uppercase tracking-tighter ${diffDays <= 3 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                                                {diffDays <= 0 ? 'Scaduto' : diffDays === 1 ? 'Domani' : `Tra ${diffDays} gg`}
+                                            <p className="font-bold text-slate-900 dark:text-white uppercase">{formatCurrency(sub.amount)}</p>
+                                            <p className={`text-[10px] font-bold uppercase tracking-widest ${diffDays < 0 ? 'text-red-500' : diffDays <= 3 ? 'text-orange-500 animate-pulse' : 'text-slate-400'}`}>
+                                                {diffDays < 0 ? 'Scaduto' : diffDays === 0 ? 'Oggi' : diffDays === 1 ? 'Domani' : `Tra ${diffDays} gg`}
                                             </p>
                                         </div>
                                     </div>
@@ -240,6 +243,38 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
                                         <option value="yearly">Annuale</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Collega a Spesa Ricorrente (Opzionale)</label>
+                                <select
+                                    value={editingSub?.linkedRecurringExpenseId || ''}
+                                    onChange={e => {
+                                        const expense = recurringExpenses.find(ex => ex.id === e.target.value);
+                                        if (expense) {
+                                            setEditingSub({
+                                                ...editingSub,
+                                                linkedRecurringExpenseId: expense.id,
+                                                name: editingSub.name || expense.description || expense.subcategory,
+                                                amount: Number(expense.amount),
+                                                category: expense.category,
+                                                frequency: expense.recurrence === 'yearly' ? 'yearly' : 'monthly'
+                                            });
+                                        } else {
+                                            setEditingSub({ ...editingSub, linkedRecurringExpenseId: undefined });
+                                        }
+                                    }}
+                                    className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white text-sm"
+                                >
+                                    <option value="">-- Non collegata --</option>
+                                    {recurringExpenses
+                                        .filter(ex => !subscriptions.some(s => s.linkedRecurringExpenseId === ex.id) || ex.id === editingSub?.linkedRecurringExpenseId)
+                                        .map(ex => (
+                                            <option key={ex.id} value={ex.id}>
+                                                {ex.description || ex.subcategory} ({formatCurrency(ex.amount)})
+                                            </option>
+                                        ))
+                                    }
+                                </select>
                             </div>
                             <div className="flex gap-3 pt-4">
                                 <button

@@ -39,8 +39,8 @@ const getRecurrenceSummary = (expense: Expense): string => {
 };
 
 const RecurringExpenseItem: React.FC<{
-  expense: Expense; accounts: Account[]; onEdit: (expense: Expense) => void; onDeleteRequest: (id: string) => void; onLinkSubscription?: (expense: Expense) => void; isOpen: boolean; onOpen: (id: string) => void; isSelectionMode: boolean; isSelected: boolean; onToggleSelection: (id: string) => void; onLongPress: (id: string) => void; isFinished: boolean;
-}> = ({ expense, accounts, onEdit, onDeleteRequest, onLinkSubscription, isOpen, onOpen, isSelectionMode, isSelected, onToggleSelection, onLongPress, isFinished }) => {
+  expense: Expense; accounts: Account[]; onEdit: (expense: Expense) => void; onDeleteRequest: (id: string) => void; onLinkSubscription?: (expense: Expense) => void; isOpen: boolean; onOpen: (id: string) => void; isSelectionMode: boolean; isLinkingMode: boolean; isSelected: boolean; onToggleSelection: (id: string) => void; onLongPress: (id: string) => void; isFinished: boolean;
+}> = ({ expense, accounts, onEdit, onDeleteRequest, onLinkSubscription, isOpen, onOpen, isSelectionMode, isLinkingMode, isSelected, onToggleSelection, onLongPress, isFinished }) => {
   const style = getCategoryStyle(expense.category);
   const accountName = accounts.find(a => a.id === expense.accountId)?.name || 'Sconosciuto';
   const itemRef = useRef<HTMLDivElement>(null);
@@ -80,7 +80,7 @@ const RecurringExpenseItem: React.FC<{
     if (ds.wasHorizontal) { const duration = performance.now() - ds.startTime; const dx = e.clientX - ds.startX; const endX = new DOMMatrixReadOnly(window.getComputedStyle(itemRef.current!).transform).m41; const velocity = dx / (duration || 1); const shouldOpen = (endX < -ACTION_WIDTH / 2) || (velocity < -0.3 && dx < -20); onOpen(shouldOpen ? expense.id : ''); setTranslateX(shouldOpen ? -ACTION_WIDTH : 0, true); } else { setTranslateX(isOpen ? -ACTION_WIDTH : 0, true); }
   };
   const handlePointerCancel = (e: React.PointerEvent) => { cancelLongPress(); const ds = dragState.current; if (ds.pointerId !== e.pointerId) return; if (ds.pointerId !== null) itemRef.current?.releasePointerCapture(ds.pointerId); ds.isDragging = false; ds.isLocked = false; ds.pointerId = null; setTranslateX(isOpen ? -ACTION_WIDTH : 0, true); };
-  const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); if (dragState.current.isDragging || dragState.current.wasHorizontal) return; if (isSelectionMode) { onToggleSelection(expense.id); } else if (isOpen) { onOpen(''); } else { onEdit(expense); } };
+  const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); if (dragState.current.isDragging || dragState.current.wasHorizontal) return; if (isSelectionMode) { onToggleSelection(expense.id); } else if (isLinkingMode) { onLinkSubscription?.(expense); } else if (isOpen) { onOpen(''); } else { onEdit(expense); } };
 
   return (
     <div className={`relative overflow-hidden transition-colors duration-200 select-none ${isSelected ? 'bg-sunset-peach/30 dark:bg-electric-violet/20 ring-1 ring-inset ring-sunset-coral/30 dark:ring-electric-violet/40' : isFinished ? 'bg-sunset-cream dark:bg-midnight-card opacity-75' : 'bg-sunset-cream dark:bg-midnight-card'}`} >
@@ -88,21 +88,13 @@ const RecurringExpenseItem: React.FC<{
       <div ref={itemRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${isSelected ? 'bg-sunset-peach/30 dark:bg-electric-violet/20' : isFinished ? 'bg-sunset-cream dark:bg-midnight-card' : 'bg-sunset-cream dark:bg-midnight-card'} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
         {isSelected ? (<span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-indigo-600 dark:bg-electric-violet text-white transition-transform duration-200 transform scale-100`}><CheckIcon className="w-6 h-6" strokeWidth={3} /></span>) : (<style.Icon className={`w-10 h-10 flex-shrink-0 transition-transform duration-200 ${isFinished ? 'grayscale' : ''}`} />)}
         <div className="flex-grow min-w-0">
-          <p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isFinished ? 'text-slate-500 dark:text-slate-500 line-through' : 'text-slate-800 dark:text-white'}`}>
+          <p className={`font-semibold truncate ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isLinkingMode ? 'text-indigo-600 dark:text-electric-violet' : isFinished ? 'text-slate-500 dark:text-slate-500 line-through' : 'text-slate-800 dark:text-white'}`}>
             {expense.description || (expense.subcategory || style.label)}
           </p>
           <div className="flex items-center gap-2">
             <p className={`text-sm truncate ${isSelected ? 'text-indigo-700 dark:text-electric-violet/80' : 'text-slate-500 dark:text-slate-400'}`}>
               {getRecurrenceSummary(expense)} • {accountName}{expense.description ? ` • ${expense.subcategory || style.label}` : ''}
             </p>
-            {!isFinished && !isSelectionMode && onLinkSubscription && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onLinkSubscription(expense); }}
-                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-electric-violet/20 text-indigo-600 dark:text-electric-violet-light border border-indigo-200 dark:border-electric-violet/30 active:scale-95 transition-all"
-              >
-                Collega Abbonamento
-              </button>
-            )}
           </div>
         </div>
         <div className="flex flex-col items-end shrink-0 min-w-[90px]"><p className={`font-bold text-lg text-right whitespace-nowrap ${isSelected ? 'text-indigo-900 dark:text-electric-violet' : isFinished ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>{formatCurrency(Number(expense.amount) || 0)}</p>{isFinished ? (<div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider bg-slate-200 dark:bg-midnight-card px-2 py-0.5 rounded-full">Completata</div>) : nextDueDate && (<div className={`text-sm font-medium mt-1 whitespace-nowrap ${isSelected ? 'text-indigo-600 dark:text-electric-violet' : 'text-slate-500 dark:text-slate-400'}`}>{formatDate(nextDueDate)}</div>)}</div>
@@ -122,6 +114,8 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
   const tapBridge = useTapBridge();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isLinkingMode, setIsLinkingMode] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isSelectionMode = selectedIds.size > 0;
 
   const activeRecurringExpenses = useMemo(() => {
@@ -170,7 +164,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
   const handleDeleteRequest = (id: string) => { onDelete(id); };
   const handleLongPress = (id: string) => { setSelectedIds(new Set([id])); if (navigator.vibrate) navigator.vibrate(50); };
   const handleToggleSelection = (id: string) => { setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
-  const handleCancelSelection = () => { setSelectedIds(new Set()); };
+  const handleCancelSelection = () => { setSelectedIds(new Set()); setIsLinkingMode(false); };
   const handleBulkDeleteClick = () => { if (selectedIds.size > 0) setIsBulkDeleteModalOpen(true); };
   const handleConfirmBulkDelete = () => { onDeleteRecurringExpenses(Array.from(selectedIds)); setIsBulkDeleteModalOpen(false); setSelectedIds(new Set()); };
   const sortedExpenses = [...activeRecurringExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -187,7 +181,43 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
         ) : (
           <>
             <button onClick={handleClose} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-300" /></button>
-            <h1 className="text-xl font-bold text-slate-800 dark:text-white flex-1">Spese Programmate</h1>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white flex-1">{isLinkingMode ? 'Seleziona spesa' : 'Spese Programmate'}</h1>
+
+            <div className="relative">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
+                className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-midnight-card transition-colors text-slate-600 dark:text-slate-300"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                </svg>
+              </button>
+
+              {isMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setIsMenuOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-56 p-1 bg-white dark:bg-midnight-card border border-slate-200 dark:border-electric-violet/20 rounded-xl shadow-xl z-40 transform animate-fade-in-down origin-top-right">
+                    <button
+                      onClick={() => { setIsLinkingMode(true); setIsMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-electric-violet/10 text-slate-700 dark:text-slate-200 transition-colors text-sm font-medium"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-indigo-500">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                      </svg>
+                      Collega Abbonamento
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+            {isLinkingMode && (
+              <button
+                onClick={() => setIsLinkingMode(false)}
+                className="ml-2 px-3 py-1 bg-indigo-100 dark:bg-electric-violet/20 text-indigo-600 dark:text-electric-violet-light rounded-lg text-xs font-bold uppercase tracking-tight"
+              >
+                Annulla
+              </button>
+            )}
           </>
         )}
       </header>
@@ -197,7 +227,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ recur
             {sortedExpenses.map((expense, index) => (
               <div key={expense.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
                 {index > 0 && <hr className="border-t border-slate-200 dark:border-electric-violet/10 ml-16" />}
-                <RecurringExpenseItem expense={expense} accounts={accounts} onEdit={onEdit} onDeleteRequest={handleDeleteRequest} onLinkSubscription={onLinkSubscription} isOpen={openItemId === expense.id} onOpen={setOpenItemId} isSelectionMode={isSelectionMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isFinished={expense.isFinished} />
+                <RecurringExpenseItem expense={expense} accounts={accounts} onEdit={onEdit} onDeleteRequest={handleDeleteRequest} onLinkSubscription={onLinkSubscription} isOpen={openItemId === expense.id} onOpen={setOpenItemId} isSelectionMode={isSelectionMode} isLinkingMode={isLinkingMode} isSelected={selectedIds.has(expense.id)} onToggleSelection={handleToggleSelection} onLongPress={handleLongPress} isFinished={expense.isFinished} />
               </div>
             ))}
           </div>
