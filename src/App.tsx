@@ -132,7 +132,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
 
   // 4. Update Checker
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const { updateInfo, isChecking: isCheckingUpdate, skipVersion } = useUpdateChecker();
+  const { updateInfo, isChecking: isCheckingUpdate, skipVersion, checkForUpdates, clearSkipped } = useUpdateChecker();
 
   // 5. Settings Sidebar & Screens
   const [isSettingsSidebarOpen, setIsSettingsSidebarOpen] = useState(false);
@@ -141,7 +141,6 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
   const [isCardManagerOpen, setIsCardManagerOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isForgotPasswordScreenOpen, setIsForgotPasswordScreenOpen] = useState(false);
-  const [isSubscriptionManagerOpen, setIsSubscriptionManagerOpen] = useState(false);
   const [pendingSubscriptionData, setPendingSubscriptionData] = useState<Partial<Expense> | null>(null);
 
   // Event Budgets Modal State
@@ -241,6 +240,16 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
   const handleSkipUpdate = () => {
     skipVersion();
     setIsUpdateModalOpen(false);
+  };
+
+  const handleManualUpdateCheck = async () => {
+    clearSkipped();
+    const info = await checkForUpdates(true);
+    if (info.available) {
+      setIsUpdateModalOpen(true);
+    } else {
+      ui.showToast({ message: 'L\'app è già aggiornata!', type: 'info' });
+    }
   };
 
   // 5. Install Prompt
@@ -486,16 +495,17 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
               onDeleteRecurringExpenses={data.deleteRecurringExpenses}
               onLinkSubscription={(expense) => {
                 setPendingSubscriptionData(expense);
-                setIsSubscriptionManagerOpen(true);
+                window.history.pushState({ modal: 'subscriptions' }, '');
+                ui.nav.setIsSubscriptionManagerOpen(true);
               }}
             />
           )}
 
-          {isSubscriptionManagerOpen && (
+          {ui.nav.isSubscriptionManagerOpen && (
             <SubscriptionManagerScreen
               accounts={data.accounts}
               recurringExpenses={data.recurringExpenses}
-              onClose={() => setIsSubscriptionManagerOpen(false)}
+              onClose={() => ui.nav.closeModalWithHistory()}
               initialSubscription={pendingSubscriptionData ? {
                 name: pendingSubscriptionData.description || pendingSubscriptionData.subcategory || '',
                 amount: Number(pendingSubscriptionData.amount),
@@ -622,6 +632,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
           ui.nav.isIncomeHistoryOpen ||
           ui.nav.isRecurringScreenOpen ||
           ui.nav.isAccountsScreenOpen ||
+          ui.nav.isSubscriptionManagerOpen ||
           ui.nav.isCalculatorContainerOpen ||
           ui.nav.isFormOpen ||
           ui.nav.isBankSyncModalOpen ||
@@ -705,8 +716,12 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
           window.history.pushState({ modal: 'categories' }, '');
           ui.nav.setIsCategoriesScreenOpen(true);
         }}
-        onOpenSubscriptions={() => setIsSubscriptionManagerOpen(true)}
+        onOpenSubscriptions={() => {
+          window.history.pushState({ modal: 'subscriptions' }, '');
+          ui.nav.setIsSubscriptionManagerOpen(true);
+        }}
         onOpenBankSync={() => ui.nav.setIsBankSyncModalOpen(true)}
+        onCheckUpdate={handleManualUpdateCheck}
         onLogout={onLogout}
         isSwiping={isDraggingSidebar}
         openProgress={swipeProgress}

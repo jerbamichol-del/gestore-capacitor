@@ -20,4 +20,5 @@ export type ModalType =
   | 'chat'
   | 'budget'
   | 'categories'
-  | 'card_manager';
+  | 'card_manager'
+  | 'subscriptions';

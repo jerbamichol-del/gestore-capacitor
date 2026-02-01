@@ -33,7 +33,8 @@ export const useBackNavigation = (
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
-  const [isCategoriesScreenOpen, setIsCategoriesScreenOpen] = useState(false); // ✅ New State
+  const [isCategoriesScreenOpen, setIsCategoriesScreenOpen] = useState(false);
+  const [isSubscriptionManagerOpen, setIsSubscriptionManagerOpen] = useState(false);
 
   const lastBackPressTime = useRef(0);
 
@@ -44,6 +45,7 @@ export const useBackNavigation = (
     setIsIncomeHistoryOpen(false); setIsIncomeHistoryClosing(false); setIsAccountsScreenOpen(false);
     setIsBankSyncModalOpen(false); setIsSearchModalOpen(false); setIsChatModalOpen(false);
     setIsBudgetModalOpen(false); setIsCategoriesScreenOpen(false);
+    setIsSubscriptionManagerOpen(false);
     setAnalysisImage(null);
   };
 
@@ -59,6 +61,7 @@ export const useBackNavigation = (
     if (window.history.state?.modal === 'accounts') { setIsAccountsScreenOpen(false); }
     if (window.history.state?.modal === 'bank_sync') { setIsBankSyncModalOpen(false); }
     if (window.history.state?.modal === 'categories') { setIsCategoriesScreenOpen(false); }
+    if (window.history.state?.modal === 'subscriptions') { setIsSubscriptionManagerOpen(false); }
 
     if (window.history.state?.modal && window.history.state.modal !== 'home' && window.history.state.modal !== 'exit_guard') window.history.back();
     else forceNavigateHome();
@@ -122,6 +125,7 @@ export const useBackNavigation = (
       if (modal !== 'chat') setIsChatModalOpen(false);
       if (modal !== 'budget') setIsBudgetModalOpen(false);
       if (modal !== 'categories') setIsCategoriesScreenOpen(false);
+      if (modal !== 'subscriptions') setIsSubscriptionManagerOpen(false);
       if (modal !== 'calculator' && modal !== 'calculator_details') setIsCalculatorContainerOpen(false);
 
       // Handle Screen Navigation
@@ -175,6 +179,12 @@ export const useBackNavigation = (
         setIsIncomeHistoryOpen(false);
         setIsRecurringScreenOpen(false);
         setIsAccountsScreenOpen(false);
+      } else if (modal === 'subscriptions') {
+        setIsSubscriptionManagerOpen(true);
+        setIsHistoryScreenOpen(false);
+        setIsIncomeHistoryOpen(false);
+        setIsRecurringScreenOpen(false);
+        setIsAccountsScreenOpen(false);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -205,7 +215,8 @@ export const useBackNavigation = (
     isSearchModalOpen, setIsSearchModalOpen,
     isChatModalOpen, setIsChatModalOpen,
     isBudgetModalOpen, setIsBudgetModalOpen,
-    isCategoriesScreenOpen, setIsCategoriesScreenOpen, // ✅ Export
+    isCategoriesScreenOpen, setIsCategoriesScreenOpen,
+    isSubscriptionManagerOpen, setIsSubscriptionManagerOpen,
     closeModalWithHistory,
     forceNavigateHome,
     closeAllModals

@@ -133,12 +133,15 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
 
             <main className="overflow-y-auto h-[calc(100%-60px)] p-4 pb-24">
                 {/* Hero Section - Total Spending */}
-                <div className="relative mb-8 p-6 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 bg-white/40 dark:bg-electric-violet/10 backdrop-blur-xl border border-white/20 dark:border-electric-violet/20">
-                    <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl animate-pulse"></div>
+                <div className="relative mb-8 p-6 rounded-3xl overflow-hidden shadow-xl transition-all duration-500 bg-white/70 dark:bg-midnight-card backdrop-blur-xl border border-white/20 dark:border-electric-violet/20">
+                    <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/10 dark:bg-electric-violet/20 rounded-full blur-3xl animate-pulse"></div>
                     <div className="relative z-10">
-                        <p className="text-indigo-600 dark:text-electric-violet font-medium uppercase tracking-wider text-xs mb-1">Spesa Totale Mensile</p>
-                        <h2 className="text-4xl font-black text-slate-900 dark:text-white">{formatCurrency(totalMonthly)}</h2>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Basato su {subscriptions.length} abbonamenti attivi</p>
+                        <p className="text-indigo-600 dark:text-electric-violet font-bold uppercase tracking-widest text-[10px] mb-2">Spesa Totale Mensile</p>
+                        <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{formatCurrency(totalMonthly)}</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-2 flex items-center gap-1.5 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            Basato su {subscriptions.length} abbonamenti attivi
+                        </p>
                     </div>
                 </div>
 
