@@ -52,7 +52,11 @@ export const AVAILABLE_ICONS = [
     'salute1', 'salute2', 'salute3', 'salute4', 'salute5',
     'salute6', 'salute7', 'salute8', 'salute9', 'salute10',
     'salute11', 'salute12', 'salute13', 'salute14', 'salute15',
-    'salute16', 'salute17', 'salute18', 'salute19', 'salute20'
+    'salute16', 'salute17', 'salute18', 'salute19', 'salute20',
+    'istruzione1', 'istruzione2', 'istruzione3', 'istruzione4', 'istruzione5',
+    'istruzione6', 'istruzione7', 'istruzione8', 'istruzione9', 'istruzione10',
+    'istruzione11', 'istruzione12', 'istruzione13', 'istruzione14', 'istruzione15',
+    'istruzione16'
 ];
 
 // Colori disponibili per le categorie

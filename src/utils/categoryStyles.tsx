@@ -137,6 +137,22 @@ import { Salute17Icon } from '../components/icons/categories/salute/Salute17Icon
 import { Salute18Icon } from '../components/icons/categories/salute/Salute18Icon';
 import { Salute19Icon } from '../components/icons/categories/salute/Salute19Icon';
 import { Salute20Icon } from '../components/icons/categories/salute/Salute20Icon';
+import { Istruzione1Icon } from '../components/icons/categories/istruzione/Istruzione1Icon';
+import { Istruzione2Icon } from '../components/icons/categories/istruzione/Istruzione2Icon';
+import { Istruzione3Icon } from '../components/icons/categories/istruzione/Istruzione3Icon';
+import { Istruzione4Icon } from '../components/icons/categories/istruzione/Istruzione4Icon';
+import { Istruzione5Icon } from '../components/icons/categories/istruzione/Istruzione5Icon';
+import { Istruzione6Icon } from '../components/icons/categories/istruzione/Istruzione6Icon';
+import { Istruzione7Icon } from '../components/icons/categories/istruzione/Istruzione7Icon';
+import { Istruzione8Icon } from '../components/icons/categories/istruzione/Istruzione8Icon';
+import { Istruzione9Icon } from '../components/icons/categories/istruzione/Istruzione9Icon';
+import { Istruzione10Icon } from '../components/icons/categories/istruzione/Istruzione10Icon';
+import { Istruzione11Icon } from '../components/icons/categories/istruzione/Istruzione11Icon';
+import { Istruzione12Icon } from '../components/icons/categories/istruzione/Istruzione12Icon';
+import { Istruzione13Icon } from '../components/icons/categories/istruzione/Istruzione13Icon';
+import { Istruzione14Icon } from '../components/icons/categories/istruzione/Istruzione14Icon';
+import { Istruzione15Icon } from '../components/icons/categories/istruzione/Istruzione15Icon';
+import { Istruzione16Icon } from '../components/icons/categories/istruzione/Istruzione16Icon';
 
 interface CategoryStyle {
     label: string;
@@ -279,7 +295,23 @@ export const ICON_MAP: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> =
     'salute17': Salute17Icon,
     'salute18': Salute18Icon,
     'salute19': Salute19Icon,
-    'salute20': Salute20Icon
+    'salute20': Salute20Icon,
+    'istruzione1': Istruzione1Icon,
+    'istruzione2': Istruzione2Icon,
+    'istruzione3': Istruzione3Icon,
+    'istruzione4': Istruzione4Icon,
+    'istruzione5': Istruzione5Icon,
+    'istruzione6': Istruzione6Icon,
+    'istruzione7': Istruzione7Icon,
+    'istruzione8': Istruzione8Icon,
+    'istruzione9': Istruzione9Icon,
+    'istruzione10': Istruzione10Icon,
+    'istruzione11': Istruzione11Icon,
+    'istruzione12': Istruzione12Icon,
+    'istruzione13': Istruzione13Icon,
+    'istruzione14': Istruzione14Icon,
+    'istruzione15': Istruzione15Icon,
+    'istruzione16': Istruzione16Icon
 };
 
 // Legacy styles map (keep for backward compatibility if needed)

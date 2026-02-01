@@ -31,6 +31,7 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
     const [isFormOpen, setIsFormOpen] = useState(!!initialSubscription);
     const [editingSub, setEditingSub] = useState<Partial<Subscription> | null>(initialSubscription || null);
     const tapBridge = useTapBridge();
+    const [failedLogoIds, setFailedLogoIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         loadSubscriptions();
@@ -65,6 +66,13 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
             linkedRecurringExpenseId: editingSub.linkedRecurringExpenseId,
         };
 
+        // Reset failed state for this ID if updating
+        if (failedLogoIds.has(newSub.id)) {
+            const newFailed = new Set(failedLogoIds);
+            newFailed.delete(newSub.id);
+            setFailedLogoIds(newFailed);
+        }
+
         await SubscriptionService.saveSubscription(newSub);
         await loadSubscriptions();
         setIsFormOpen(false);
@@ -74,6 +82,14 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
     const handleDelete = async (id: string) => {
         await SubscriptionService.deleteSubscription(id);
         await loadSubscriptions();
+    };
+
+    const handleImageError = (subId: string) => {
+        setFailedLogoIds(prev => {
+            const newSet = new Set(prev);
+            newSet.add(subId);
+            return newSet;
+        });
     };
 
     const totalMonthly = useMemo(() => {
@@ -90,6 +106,15 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
             return dateA - dateB;
         });
     }, [subscriptions]);
+
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .substring(0, 2)
+            .toUpperCase();
+    };
 
     return (
         <div className={`fixed inset-0 z-50 bg-sunset-cream dark:bg-midnight transform transition-transform duration-300 ease-in-out ${isAnimatingIn ? 'translate-y-0' : 'translate-y-full'}`} {...tapBridge}>
@@ -126,22 +151,31 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
                             const diffDays = nextDate ? Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                            const hasLogo = sub.iconUrl && !failedLogoIds.has(sub.id);
 
                             return (
                                 <div key={sub.id} className="relative group p-4 rounded-2xl bg-white dark:bg-midnight-card shadow-sm border border-slate-100 dark:border-electric-violet/10 transition-all hover:shadow-md">
                                     <div className="flex items-center gap-4">
-                                        <div className="relative w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <CategoryIcon className="w-6 h-6" style={{ color }} />
-                                            </div>
-                                            {sub.iconUrl && (
+                                        <div className="relative w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                                            {hasLogo ? (
                                                 <img
                                                     src={sub.iconUrl}
                                                     alt={sub.name}
-                                                    className="relative z-10 w-full h-full object-contain bg-slate-100 dark:bg-slate-800"
-                                                    onError={(e) => (e.currentTarget.style.opacity = '0')}
+                                                    className="w-full h-full object-contain"
+                                                    onError={() => handleImageError(sub.id)}
                                                 />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>
+                                                    <span className="text-sm font-bold" style={{ color: color }}>
+                                                        {getInitials(sub.name)}
+                                                    </span>
+                                                </div>
                                             )}
+
+                                            {/* Tiny category icon badge on bottom right */}
+                                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white dark:bg-midnight-card border border-slate-100 dark:border-slate-700 flex items-center justify-center shadow-sm z-10">
+                                                <CategoryIcon className="w-3 h-3" style={{ color }} />
+                                            </div>
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-bold text-slate-900 dark:text-white truncate">{sub.name}</h3>

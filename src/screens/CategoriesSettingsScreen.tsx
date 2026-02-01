@@ -17,7 +17,8 @@ const ICON_GROUPS = [
             !icon.startsWith('svago') &&
             !icon.startsWith('shopping') &&
             !icon.startsWith('salute') &&
-            !icon.startsWith('alimentari')
+            !icon.startsWith('alimentari') &&
+            !icon.startsWith('istruzione')
         )
     },
     {
@@ -27,6 +28,10 @@ const ICON_GROUPS = [
     {
         name: 'Salute',
         icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('salute'))
+    },
+    {
+        name: 'Istruzione',
+        icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('istruzione'))
     },
     {
         name: 'Finanza',
