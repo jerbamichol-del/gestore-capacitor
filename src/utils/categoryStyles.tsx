@@ -153,6 +153,22 @@ import { Istruzione13Icon } from '../components/icons/categories/istruzione/Istr
 import { Istruzione14Icon } from '../components/icons/categories/istruzione/Istruzione14Icon';
 import { Istruzione15Icon } from '../components/icons/categories/istruzione/Istruzione15Icon';
 import { Istruzione16Icon } from '../components/icons/categories/istruzione/Istruzione16Icon';
+import { Trasporti1Icon } from '../components/icons/categories/trasporti/Trasporti1Icon';
+import { Trasporti2Icon } from '../components/icons/categories/trasporti/Trasporti2Icon';
+import { Trasporti3Icon } from '../components/icons/categories/trasporti/Trasporti3Icon';
+import { Trasporti4Icon } from '../components/icons/categories/trasporti/Trasporti4Icon';
+import { Trasporti5Icon } from '../components/icons/categories/trasporti/Trasporti5Icon';
+import { Trasporti6Icon } from '../components/icons/categories/trasporti/Trasporti6Icon';
+import { Trasporti7Icon } from '../components/icons/categories/trasporti/Trasporti7Icon';
+import { Trasporti8Icon } from '../components/icons/categories/trasporti/Trasporti8Icon';
+import { Trasporti9Icon } from '../components/icons/categories/trasporti/Trasporti9Icon';
+import { Trasporti10Icon } from '../components/icons/categories/trasporti/Trasporti10Icon';
+import { Trasporti11Icon } from '../components/icons/categories/trasporti/Trasporti11Icon';
+import { Trasporti12Icon } from '../components/icons/categories/trasporti/Trasporti12Icon';
+import { Trasporti13Icon } from '../components/icons/categories/trasporti/Trasporti13Icon';
+import { Trasporti14Icon } from '../components/icons/categories/trasporti/Trasporti14Icon';
+import { Trasporti15Icon } from '../components/icons/categories/trasporti/Trasporti15Icon';
+import { Trasporti16Icon } from '../components/icons/categories/trasporti/Trasporti16Icon';
 
 interface CategoryStyle {
     label: string;
@@ -311,7 +327,23 @@ export const ICON_MAP: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> =
     'istruzione13': Istruzione13Icon,
     'istruzione14': Istruzione14Icon,
     'istruzione15': Istruzione15Icon,
-    'istruzione16': Istruzione16Icon
+    'istruzione16': Istruzione16Icon,
+    'trasporti1': Trasporti1Icon,
+    'trasporti2': Trasporti2Icon,
+    'trasporti3': Trasporti3Icon,
+    'trasporti4': Trasporti4Icon,
+    'trasporti5': Trasporti5Icon,
+    'trasporti6': Trasporti6Icon,
+    'trasporti7': Trasporti7Icon,
+    'trasporti8': Trasporti8Icon,
+    'trasporti9': Trasporti9Icon,
+    'trasporti10': Trasporti10Icon,
+    'trasporti11': Trasporti11Icon,
+    'trasporti12': Trasporti12Icon,
+    'trasporti13': Trasporti13Icon,
+    'trasporti14': Trasporti14Icon,
+    'trasporti15': Trasporti15Icon,
+    'trasporti16': Trasporti16Icon
 };
 
 // Legacy styles map (keep for backward compatibility if needed)

@@ -18,7 +18,8 @@ const ICON_GROUPS = [
             !icon.startsWith('shopping') &&
             !icon.startsWith('salute') &&
             !icon.startsWith('alimentari') &&
-            !icon.startsWith('istruzione')
+            !icon.startsWith('istruzione') &&
+            !icon.startsWith('trasporti')
         )
     },
     {
@@ -44,6 +45,10 @@ const ICON_GROUPS = [
     {
         name: 'Shopping',
         icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('shopping'))
+    },
+    {
+        name: 'Trasporti',
+        icons: AVAILABLE_ICONS.filter(icon => icon.startsWith('trasporti'))
     }
 ];
 

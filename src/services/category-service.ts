@@ -56,7 +56,11 @@ export const AVAILABLE_ICONS = [
     'istruzione1', 'istruzione2', 'istruzione3', 'istruzione4', 'istruzione5',
     'istruzione6', 'istruzione7', 'istruzione8', 'istruzione9', 'istruzione10',
     'istruzione11', 'istruzione12', 'istruzione13', 'istruzione14', 'istruzione15',
-    'istruzione16'
+    'istruzione16',
+    'trasporti1', 'trasporti2', 'trasporti3', 'trasporti4', 'trasporti5',
+    'trasporti6', 'trasporti7', 'trasporti8', 'trasporti9', 'trasporti10',
+    'trasporti11', 'trasporti12', 'trasporti13', 'trasporti14', 'trasporti15',
+    'trasporti16'
 ];
 
 // Colori disponibili per le categorie
