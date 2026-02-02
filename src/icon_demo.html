@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Style Proposals</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 40px;
+        }
+        .container {
+            display: flex;
+            gap: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .label {
+            font-weight: 600;
+            color: #555;
+            margin-top: 10px;
+        }
+        
+        /* Common Icon Base */
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            transition: transform 0.2s;
+        }
+        .icon-box:hover {
+            transform: scale(1.05);
+        }
+        svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        /* Style 1: Vivid Gradient (Playful/Material 3) */
+        .style-1 {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+        .style-1 svg {
+            color: white;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        /* Style 2: Glassmorphism (Premium) */
+        .style-2-bg {
+            position: relative;
+            background: #e0e5ec;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 30px;
+            width: 120px;
+            height: 120px;
+            /* Create a colorful background blobb underneath */
+            overflow: hidden;
+        }
+        .blob {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #4facfe 0%, #00f2fe 100%);
+            border-radius: 50%;
+            top: -10px;
+            left: -10px;
+        }
+        .blob2 {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #f093fb 0%, #f5576c 100%);
+            border-radius: 50%;
+            bottom: -5px;
+            right: -5px;
+        }
+        .style-2 {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            z-index: 10;
+        }
+        .style-2 svg {
+            color: #fff;
+        }
+
+        /* Style 3: Neo-Brutalism / Pop (Bold) */
+        .style-3 {
+            background: #FFE66D;
+            border: 3px solid #333;
+            box-shadow: 6px 6px 0px #333;
+            border-radius: 12px;
+        }
+        .style-3 svg {
+            color: #333;
+            stroke-width: 2;
+        }
+
+        /* Style 4: Soft Neumorphism (Clean) - Optional extra */
+        .style-4 {
+            background: #f0f2f5;
+            box-shadow:  9px 9px 18px #cecece,
+                        -9px -9px 18px #ffffff;
+            border-radius: 20px;
+        }
+        .style-4 svg {
+            color: #4A90E2;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Proposte Stile Icone</h1>
+
+    <div class="container">
+        <!-- Style 1 -->
+        <div class="card">
+            <div class="icon-box style-1">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                </svg>
+            </div>
+            <div class="label">1. Vivid Gradient</div>
+        </div>
+
+        <!-- Style 2 -->
+        <div class="card">
+            <div class="style-2-bg">
+                <div class="blob"></div>
+                <div class="blob2"></div>
+                <div class="style-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="label">2. Glassmorphism</div>
+        </div>
+
+        <!-- Style 3 -->
+        <div class="card">
+            <div class="icon-box style-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                </svg>
+            </div>
+            <div class="label">3. Neo-Pop / Bold</div>
+        </div>
+        
+    </div>
+
+</body>
+</html>

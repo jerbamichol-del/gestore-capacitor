@@ -316,6 +316,38 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
                 {/* Menu Items */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                    {/* --- ICON STYLE PREVIEW (TEMPORARY) --- */}
+                    <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">Proposte Nuovi Stili</p>
+                        <div className="flex justify-around items-end gap-2">
+                            {/* Style 1: Vivid Gradient */}
+                            <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/20 text-white transition-transform group-hover:scale-110">
+                                    <ChartBarIcon className="w-6 h-6" />
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Vivid</span>
+                            </div>
+
+                            {/* Style 2: Glassmorphism */}
+                            <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                                <div className="relative w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110">
+                                    <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-40 scale-75"></div>
+                                    <div className="relative w-full h-full flex items-center justify-center rounded-2xl bg-white/40 dark:bg-slate-700/40 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-sm text-blue-600 dark:text-blue-300">
+                                        <ChartBarIcon className="w-6 h-6" />
+                                    </div>
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Glass</span>
+                            </div>
+
+                            {/* Style 3: Neo-Pop */}
+                            <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-yellow-400 border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] text-slate-900 transition-transform group-hover:-translate-y-1 group-hover:shadow-[5px_5px_0px_0px_rgba(15,23,42,1)]">
+                                    <ChartBarIcon className="w-6 h-6 stroke-2" />
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Pop</span>
+                            </div>
+                        </div>
+                    </div>
                     {/* Dashboard Section */}
                     <div className="mb-4">
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Dashboard</p>
