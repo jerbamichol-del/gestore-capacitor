@@ -58,24 +58,46 @@ interface MenuItemProps {
     description?: string;
     onClick: () => void;
     variant?: 'default' | 'danger';
+    color?: 'indigo' | 'emerald' | 'amber' | 'blue' | 'purple' | 'rose' | 'slate' | 'cyan';
 }
 
-const MenuItem: React.FC<MenuItemProps> = ({ icon, label, description, onClick, variant = 'default' }) => {
-    const colorClasses = variant === 'danger'
+const MenuItem: React.FC<MenuItemProps> = ({ icon, label, description, onClick, variant = 'default', color = 'indigo' }) => {
+    const isDanger = variant === 'danger';
+    const colorClasses = isDanger
         ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20'
         : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50';
+
+    // Map colors to classes to avoid JIT issues
+    const colorMap = {
+        indigo: { glow: 'bg-indigo-400', icon: 'text-indigo-500 dark:text-indigo-400' },
+        emerald: { glow: 'bg-emerald-400', icon: 'text-emerald-500 dark:text-emerald-400' },
+        amber: { glow: 'bg-amber-400', icon: 'text-amber-500 dark:text-amber-400' },
+        blue: { glow: 'bg-blue-400', icon: 'text-blue-500 dark:text-blue-400' },
+        purple: { glow: 'bg-purple-400', icon: 'text-purple-500 dark:text-purple-400' },
+        rose: { glow: 'bg-rose-400', icon: 'text-rose-500 dark:text-rose-400' },
+        slate: { glow: 'bg-slate-400', icon: 'text-slate-500 dark:text-slate-400' },
+        cyan: { glow: 'bg-cyan-400', icon: 'text-cyan-500 dark:text-cyan-400' },
+        danger: { glow: 'bg-red-400', icon: 'text-red-500 dark:text-red-400' }
+    };
+
+    const styles = isDanger ? colorMap.danger : (colorMap[color] || colorMap.indigo);
 
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all ${colorClasses}`}
+            className={`w-full group flex items-center gap-4 p-3 rounded-xl transition-all ${colorClasses}`}
         >
-            <div className={`w-10 h-10 flex items-center justify-center rounded-xl ${variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                {icon}
+            <div className="relative w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <div className={`absolute inset-0 ${styles.glow} rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity`}></div>
+                <div className="relative w-full h-full flex items-center justify-center rounded-xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-inner">
+                    <div className={`${styles.icon}`}>
+                        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' }) : icon}
+                    </div>
+                </div>
             </div>
             <div className="flex-1 text-left">
                 <p className="font-semibold">{label}</p>
-                {description && <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>}
+                {description && <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{description}</p>}
             </div>
             <ChevronRightIcon className="w-5 h-5 text-slate-400" />
         </button>
@@ -316,45 +338,14 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
                 {/* Menu Items */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {/* --- ICON STYLE PREVIEW (TEMPORARY) --- */}
-                    <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800/50">
-                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 text-center">Proposte Nuovi Stili</p>
-                        <div className="flex justify-around items-end gap-2">
-                            {/* Style 1: Vivid Gradient */}
-                            <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/20 text-white transition-transform group-hover:scale-110">
-                                    <ChartBarIcon className="w-6 h-6" />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Vivid</span>
-                            </div>
-
-                            {/* Style 2: Glassmorphism */}
-                            <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                                <div className="relative w-12 h-12 flex items-center justify-center transition-transform group-hover:scale-110">
-                                    <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-40 scale-75"></div>
-                                    <div className="relative w-full h-full flex items-center justify-center rounded-2xl bg-white/40 dark:bg-slate-700/40 backdrop-blur-md border border-white/60 dark:border-white/10 shadow-sm text-blue-600 dark:text-blue-300">
-                                        <ChartBarIcon className="w-6 h-6" />
-                                    </div>
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Glass</span>
-                            </div>
-
-                            {/* Style 3: Neo-Pop */}
-                            <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-yellow-400 border-2 border-slate-900 shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] text-slate-900 transition-transform group-hover:-translate-y-1 group-hover:shadow-[5px_5px_0px_0px_rgba(15,23,42,1)]">
-                                    <ChartBarIcon className="w-6 h-6 stroke-2" />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Pop</span>
-                            </div>
-                        </div>
-                    </div>
                     {/* Dashboard Section */}
                     <div className="mb-4">
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Dashboard</p>
                         <MenuItem
-                            icon={<ChartBarIcon className="w-5 h-5" />}
+                            icon={<ChartBarIcon />}
                             label="Statistiche"
                             description="Report statistiche"
+                            color="indigo"
                             onClick={() => handleInstantClose(onOpenCardManager)}
                         />
                     </div>
@@ -364,53 +355,58 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Finanze</p>
                         <MenuItem
                             icon={
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                             }
                             label="Budget Mensili"
                             description="Imposta limiti per categoria"
+                            color="emerald"
                             onClick={() => handleInstantClose(onOpenBudgetSettings)}
                         />
                         <MenuItem
                             icon={
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
                                 </svg>
                             }
                             label="Categorie"
                             description="Gestisci categorie personalizzate"
+                            color="amber"
                             onClick={() => handleInstantClose(onOpenCategories)}
                         />
                         <MenuItem
                             icon={
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                                 </svg>
                             }
                             label="Pianificazione Eventi"
                             description="Viaggi, progetti e budget extra"
+                            color="purple"
                             onClick={() => handleInstantClose(onOpenEventBudgets)}
                         />
                         <MenuItem
                             icon={
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                                 </svg>
                             }
                             label="Sincronizzazione Banca"
                             description="Connetti conti correnti"
+                            color="cyan"
                             onClick={() => handleInstantClose(onOpenBankSync)}
                         />
                         <MenuItem
                             icon={
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
                                 </svg>
                             }
                             label="Abbonamenti"
                             description="Monitora Netflix, Spotify, ecc."
+                            color="rose"
                             onClick={() => handleInstantClose(onOpenSubscriptions)}
                         />
                     </div>
@@ -419,9 +415,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     <div className="mb-4">
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Aspetto</p>
                         <MenuItem
-                            icon={<PaletteIcon className="w-5 h-5" />}
+                            icon={<PaletteIcon />}
                             label="Tema"
                             description={isDark ? 'Midnight Electric' : 'Mint Garden'}
+                            color="amber"
                             onClick={() => handleInstantClose(onOpenThemePicker)}
                         />
                     </div>
@@ -430,9 +427,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     <div className="mb-4">
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Sicurezza</p>
                         <MenuItem
-                            icon={<ShieldCheckIcon className="w-5 h-5" />}
+                            icon={<ShieldCheckIcon />}
                             label="PIN & Mail"
                             description="Cambia PIN o Email"
+                            color="blue"
                             onClick={() => handleInstantClose(onOpenSecurity)}
                         />
                     </div>
@@ -441,9 +439,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     <div className="mb-4">
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Dati</p>
                         <MenuItem
-                            icon={<ArrowsUpDownIcon className="w-5 h-5" />}
+                            icon={<ArrowsUpDownIcon />}
                             label="Importa / Esporta"
                             description="Backup, sync, banche"
+                            color="slate"
                             onClick={() => handleInstantClose(onOpenImportExport)}
                         />
                     </div>
@@ -452,9 +451,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     <div className="mb-4">
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Condivisione</p>
                         <MenuItem
-                            icon={<QrCodeIcon className="w-5 h-5" />}
+                            icon={<QrCodeIcon />}
                             label="Mostra QR"
                             description="Condividi l'app con altri"
+                            color="purple"
                             onClick={() => handleInstantClose(onShowQr)}
                         />
                     </div>
@@ -464,21 +464,22 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-4">Sistema</p>
                         <MenuItem
                             icon={
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                                 </svg>
                             }
                             label="Verifica Aggiornamenti"
                             description="Controlla nuove versioni"
+                            color="slate"
                             onClick={() => handleInstantClose(onCheckUpdate)}
                         />
                     </div>
                 </div>
 
                 {/* Footer - Logout */}
-                <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+                <div className="p-3 border-t border-slate-200 dark:border-slate-800">
                     <MenuItem
-                        icon={<ArrowRightOnRectangleIcon className="w-5 h-5" />}
+                        icon={<ArrowRightOnRectangleIcon />}
                         label="Esci"
                         onClick={() => handleInstantClose(onLogout)}
                         variant="danger"
