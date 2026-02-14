@@ -53,13 +53,32 @@ const ResetPinScreen: React.FC<ResetPinScreenProps> = ({
     try {
       setIsLoading(true);
       const res = await resetPin(normalizedEmail, token || '', cleanPin);
-      setIsLoading(false);
 
       if (!res.success) {
+        setIsLoading(false);
         setError(res.message || 'Errore durante il reset del PIN.');
         return;
       }
 
+      // SUCCESSO: Aggiorniamo anche il DB locale!
+      // Altrimenti verifyPin fallisce perché controlla il vecchio hash locale
+      try {
+        const { hashPinWithSalt } = await import('../utils/auth');
+        const { getUsers, saveUsers } = await import('../utils/api');
+
+        const users = getUsers();
+        if (users[normalizedEmail]) {
+          const { hash, salt } = await hashPinWithSalt(cleanPin);
+          users[normalizedEmail].pinHash = hash;
+          users[normalizedEmail].pinSalt = salt;
+          saveUsers(users);
+        }
+      } catch (localErr) {
+        console.warn('Errore aggiornamento locale post-reset', localErr);
+        // Non blocchiamo, l'utente potrebbe dover fare sync manuale o login online
+      }
+
+      setIsLoading(false);
       setSuccessMessage('PIN aggiornato con successo.');
       // Mostra il messaggio per un attimo, poi torna al login
       setTimeout(() => {

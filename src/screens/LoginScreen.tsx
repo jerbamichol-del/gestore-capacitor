@@ -188,19 +188,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pin, activeEmail]);
 
-  const handleEmailSubmit = async (email: string) => {
+  const handleEmailSubmit = async (email: string, forceSync = false) => {
     if (email) {
       const normalized = email.toLowerCase();
-      // 1. Controllo Locale
+      // 1. Controllo Locale (se non forzato)
       const localUsers = getUsers();
-      if (localUsers[normalized]) {
+      if (!forceSync && localUsers[normalized]) {
         setActiveEmail(normalized);
         setError(null);
         setBiometricEmail(normalized);
         return;
       }
 
-      // 2. Se non c'è, cerca nel Cloud (Ripristino)
+      // 2. Se non c'è O se forziamo il sync, cerca nel Cloud
       setIsLoading(true);
       try {
         const cloudResult = await loadFromCloud(normalized);
@@ -430,6 +430,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               className="text-sm font-semibold text-indigo-600 dark:text-electric-violet hover:text-indigo-500 dark:hover:text-electric-violet/80 transition-colors"
             >
               Cambia Utente
+            </button>
+            <button
+              onClick={() => handleEmailSubmit(activeEmail)}
+              className="text-sm font-semibold text-indigo-600 dark:text-electric-violet hover:text-indigo-500 dark:hover:text-electric-violet/80 transition-colors"
+              title="Aggiorna PIN dal cloud"
+            >
+              Sync Dati
             </button>
             <button
               onClick={onGoToForgotPassword}
