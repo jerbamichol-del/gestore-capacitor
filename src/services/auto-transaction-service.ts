@@ -55,7 +55,7 @@ export class AutoTransactionService {
   /**
    * Save a hash to the permanent ignored list
    */
-  private static addIgnoredHash(hash: string): void {
+  static addIgnoredHash(hash: string): void {
     const ignored = this.getIgnoredHashes();
     ignored[hash] = Date.now();
     localStorage.setItem(this.IGNORED_HASHES_KEY, JSON.stringify(ignored));

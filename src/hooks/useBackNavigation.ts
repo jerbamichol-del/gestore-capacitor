@@ -50,7 +50,7 @@ export const useBackNavigation = (
   };
 
   const forceNavigateHome = () => {
-    try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) { }
+    try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) { console.warn('History replace error', e); }
     window.dispatchEvent(new PopStateEvent('popstate', { state: { modal: 'home' } }));
   };
 
@@ -71,7 +71,7 @@ export const useBackNavigation = (
   useEffect(() => {
     if (!window.history.state?.modal) {
       if (Capacitor.getPlatform() === 'android') {
-        try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) { }
+        try { window.history.replaceState({ modal: 'home' }, '', window.location.pathname); } catch (e) { console.warn('History replace error', e); }
         return;
       }
       window.history.replaceState({ modal: 'exit_guard' }, '');

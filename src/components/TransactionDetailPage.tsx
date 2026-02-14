@@ -312,7 +312,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
 
     if (name === 'recurrenceCount') {
       const num = parseInt(value, 10);
-      onFormChange({ [name]: isNaN(num) || num <= 0 ? undefined : num } as any);
+      onFormChange({ recurrenceCount: isNaN(num) || num <= 0 ? undefined : num });
       return;
     }
 
@@ -378,7 +378,7 @@ const TransactionDetailPage: React.FC<TransactionDetailPageProps> = ({
 
   const handleApplyRecurrence = () => {
     onFormChange({
-      recurrence: tempRecurrence as any,
+      recurrence: tempRecurrence,
       recurrenceInterval: tempRecurrenceInterval || 1,
       recurrenceDays: tempRecurrence === 'weekly' ? tempRecurrenceDays : undefined,
       monthlyRecurrenceType: tempRecurrence === 'monthly' ? tempMonthlyRecurrenceType : undefined,

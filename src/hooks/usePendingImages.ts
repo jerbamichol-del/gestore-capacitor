@@ -9,7 +9,7 @@ export const usePendingImages = (isOnline: boolean, showToast: any) => {
   const [pendingImages, setPendingImages] = useState<OfflineImage[]>([]);
   const [syncingImageId, setSyncingImageId] = useState<string | null>(null);
   const [imageForAnalysis, setImageForAnalysis] = useState<ExtendedOfflineImage | null>(null);
-  
+
   const pendingImagesCountRef = useRef(0);
   const sharedImageIdRef = useRef<string | null>(null);
 
@@ -24,25 +24,25 @@ export const usePendingImages = (isOnline: boolean, showToast: any) => {
   }, []);
 
   const handleSharedFile = async (file: File) => {
-      try {
-          showToast({ message: 'Elaborazione immagine condivisa...', type: 'info' });
-          const { base64: base64Image, mimeType } = await processImageFile(file);
-          const newImage: OfflineImage = { id: crypto.randomUUID(), base64Image, mimeType, timestamp: Date.now() };
-          if (isOnline) {
-              setImageForAnalysis(newImage); 
-          } else {
-              await addImageToQueue(newImage);
-              refreshPendingImages();
-              showToast({ message: 'Salvata in coda (offline).', type: 'info' });
-          }
-      } catch (e) {
-          console.error(e);
-          showToast({ message: "Errore file condiviso.", type: 'error' });
+    try {
+      showToast({ message: 'Elaborazione immagine condivisa...', type: 'info' });
+      const { base64: base64Image, mimeType } = await processImageFile(file);
+      const newImage: OfflineImage = { id: crypto.randomUUID(), base64Image, mimeType, timestamp: Date.now() };
+      if (isOnline) {
+        setImageForAnalysis(newImage);
+      } else {
+        await addImageToQueue(newImage);
+        refreshPendingImages();
+        showToast({ message: 'Salvata in coda (offline).', type: 'info' });
       }
+    } catch (e) {
+      console.error(e);
+      showToast({ message: "Errore file condiviso.", type: 'error' });
+    }
   };
 
   const handleImagePick = async (source: 'camera' | 'gallery') => {
-    try { window.history.replaceState({ modal: 'home' }, ''); } catch(e) {}
+    try { window.history.replaceState({ modal: 'home' }, ''); } catch (e) { console.warn('History replace error', e); }
     sessionStorage.setItem('preventAutoLock', 'true');
     try {
       const file = await pickImage(source);
@@ -53,7 +53,7 @@ export const usePendingImages = (isOnline: boolean, showToast: any) => {
         await addImageToQueue(newImage);
         refreshPendingImages();
       }
-    } catch (error) { /* Ignora */ } 
+    } catch (error) { /* Ignora */ }
     finally { setTimeout(() => sessionStorage.removeItem('preventAutoLock'), 2000); }
   };
 

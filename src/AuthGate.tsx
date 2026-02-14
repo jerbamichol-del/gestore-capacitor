@@ -82,7 +82,7 @@ const AuthGate: React.FC = () => {
     }).catch(() => { });
 
     return () => {
-      try { handle?.remove?.(); } catch (e) { }
+      try { handle?.remove?.(); } catch (e) { console.warn('Listener remove error', e); }
     };
   }, [applyResetFromUrl]);
 

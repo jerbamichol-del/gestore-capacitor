@@ -41,7 +41,7 @@ export const useAutoTransactions = () => {
         if (Capacitor.getPlatform() === 'android') {
           const enabled = await NotificationListenerService.init();
           setNotificationListenerEnabled(enabled);
-          
+
           if (!enabled) {
             console.log('⚠️ Notification listener not enabled.');
             console.log('ℹ️ User needs to grant notification access in Settings.');
@@ -95,7 +95,7 @@ export const useAutoTransactions = () => {
     const handleNewTransaction = (event: any) => {
       console.log('🆕 New auto-transaction detected:', event.detail);
       loadPending();
-      
+
       // Optional: Show toast notification
       const { transaction, source } = event.detail;
       if (transaction) {
@@ -118,10 +118,10 @@ export const useAutoTransactions = () => {
   // Request notification listener permission
   const requestNotificationPermission = useCallback(async () => {
     try {
-      await NotificationListenerService.openSettings();
+      await NotificationListenerService.requestPermission();
       // Check dopo 2 secondi (tempo per l'utente di abilitare)
       setTimeout(async () => {
-        const enabled = await NotificationListenerService.checkPermission();
+        const enabled = await NotificationListenerService.isEnabled();
         setNotificationListenerEnabled(enabled);
         if (enabled) {
           console.log('✅ Notification listener enabled successfully!');
@@ -137,7 +137,7 @@ export const useAutoTransactions = () => {
     try {
       const granted = await SMSTransactionParser.requestPermission();
       setSmsPermissionGranted(granted);
-      
+
       if (granted) {
         console.log('✅ SMS permission granted!');
         // Auto-scan dopo aver ottenuto il permesso

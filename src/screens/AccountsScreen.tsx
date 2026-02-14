@@ -93,7 +93,7 @@ const SwipableTransferRow: React.FC<{
             pointerId: e.pointerId,
             wasHorizontal: false
         };
-        try { itemRef.current.setPointerCapture(e.pointerId); } catch (err) { }
+        try { itemRef.current.setPointerCapture(e.pointerId); } catch (err) { console.warn('Pointer capture error', err); }
     };
 
     const cancelLongPress = () => {

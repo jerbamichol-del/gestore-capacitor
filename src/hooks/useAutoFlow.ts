@@ -7,6 +7,7 @@ import { NotificationTransactionParser } from '../services/notification-transact
 import { PendingTransaction } from '../services/notification-listener-service';
 import { Account, Expense } from '../types';
 import { toYYYYMMDD } from '../utils/date';
+import { ToastMessage } from '../types/toast.types';
 
 export type PendingConfirmOptions = {
     accountId?: string;
@@ -16,8 +17,6 @@ export type PendingConfirmOptions = {
     subcategory?: string;
     receipts?: string[];
 };
-
-export interface ToastMessage { message: string; type: 'success' | 'info' | 'error' }
 
 export function useAutoFlow(
     accounts: Account[],

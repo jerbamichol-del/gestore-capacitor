@@ -79,9 +79,7 @@ async function withRetry<T>(operation: (db: IDBPDatabase<unknown>) => Promise<T>
     }
 }
 
-// ... (Rest of existing image/auto-tx functions remain same or should be preserved) ...
-
-// =============== RAW EVENTS (Point 1 & 5: Offline-First Re-parsing) ===============
+// =============== RAW EVENTS (Offline-First Re-parsing) ===============
 
 export interface RawEvent {
     id: string; // uuid

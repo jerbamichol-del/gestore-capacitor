@@ -104,7 +104,7 @@ export function useSheetDragControlled<T extends HTMLElement>(
 
     const onMove = (x: number, y: number, e: Event) => {
       if (!g.active) return;
-      
+
       const t = performance.now();
       const dt = t - g.lastT;
       const dyInstant = y - g.lastY;
@@ -115,7 +115,7 @@ export function useSheetDragControlled<T extends HTMLElement>(
       }
       g.lastY = y;
       g.lastT = t;
-      
+
       const dx = x - g.startX;
       const dy = y - g.startY;
 
@@ -125,9 +125,9 @@ export function useSheetDragControlled<T extends HTMLElement>(
 
         const isVertical = Math.abs(dy) > Math.abs(dx);
         if (!isVertical) {
-            // Horizontal gesture, bail out.
-            g.active = false;
-            return;
+          // Horizontal gesture, bail out.
+          g.active = false;
+          return;
         }
         g.isLocked = true; // Lock to vertical gesture
       }
@@ -141,7 +141,7 @@ export function useSheetDragControlled<T extends HTMLElement>(
       }
 
       if (g.tookOver) {
-        if ('preventDefault' in e && (e as any).cancelable) e.preventDefault();
+        if ('preventDefault' in e && e.cancelable) e.preventDefault();
         setTransitionMs(0); // segue il dito 1:1 (con elastic)
         const current = Math.max(0, dy) * elastic;
         setDragY(Math.min(current, H() * 0.98));
@@ -203,17 +203,17 @@ export function useSheetDragControlled<T extends HTMLElement>(
     sheet.addEventListener('pointercancel', onPointerCancel, { passive: true });
 
     return () => {
-      sheet.removeEventListener('touchstart', onTouchStart as any);
-      sheet.removeEventListener('touchmove', onTouchMove as any);
-      sheet.removeEventListener('touchend', onTouchEnd as any);
-      sheet.removeEventListener('touchcancel', onTouchCancel as any);
+      sheet.removeEventListener('touchstart', onTouchStart as unknown as EventListener);
+      sheet.removeEventListener('touchmove', onTouchMove as unknown as EventListener);
+      sheet.removeEventListener('touchend', onTouchEnd as unknown as EventListener);
+      sheet.removeEventListener('touchcancel', onTouchCancel as unknown as EventListener);
 
-      sheet.removeEventListener('pointerdown', onPointerDown as any);
-      sheet.removeEventListener('pointermove', onPointerMove as any);
-      sheet.removeEventListener('pointerup', onPointerUp as any);
-      sheet.removeEventListener('pointercancel', onPointerCancel as any);
+      sheet.removeEventListener('pointerdown', onPointerDown as unknown as EventListener);
+      sheet.removeEventListener('pointermove', onPointerMove as unknown as EventListener);
+      sheet.removeEventListener('pointerup', onPointerUp as unknown as EventListener);
+      sheet.removeEventListener('pointercancel', onPointerCancel as unknown as EventListener);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheetRef, onClose, triggerPercent, elastic, topGuardPx, scrollableSelector, dragY, closeSpeedPxMs, openSpeedPxMs]);
 
   return { dragY, transitionMs, easing, handleTransitionEnd };

@@ -4,7 +4,7 @@ import { useBackNavigation } from './useBackNavigation';
 import { usePendingImages } from './usePendingImages';
 import { OfflineImage } from '../utils/db';
 
-export type ToastMessage = { message: string; type: 'success' | 'info' | 'error' };
+import { ToastMessage } from '../types/toast.types';
 
 export function useAppUI(isOnline: boolean) {
     // --- Toast State ---

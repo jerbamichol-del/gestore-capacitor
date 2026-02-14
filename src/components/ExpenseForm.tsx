@@ -127,7 +127,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
 
   const [activeMenu, setActiveMenu] = useState<'category' | 'subcategory' | 'account' | 'toAccount' | 'frequency' | null>(null);
 
-  const [originalExpenseState, setOriginalExpenseState] = useState<Partial<Expense> | null>(null);
+  const [originalExpenseState, setOriginalExpenseState] = useState<(Partial<Omit<Expense, 'id' | 'amount'>> & { amount?: number | string }) | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
 
@@ -310,7 +310,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ isOpen, onClose, onSubmit, in
       return;
     }
     const currentAmount = parseFloat(String(formData.amount || '0').replace(',', '.'));
-    const originalAmount = originalExpenseState.amount || 0;
+    const originalAmount = parseFloat(String(originalExpenseState.amount || 0));
     const amountChanged = Math.abs(currentAmount - originalAmount) > 0.001;
     const descriptionChanged = (formData.description || '') !== (originalExpenseState.description || '');
     const dateChanged = formData.date !== originalExpenseState.date;

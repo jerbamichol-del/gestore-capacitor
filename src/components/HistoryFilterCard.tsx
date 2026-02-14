@@ -241,8 +241,8 @@ export const PeriodNavigator: React.FC<{
       return () => {
         document.removeEventListener(
           'pointerdown',
-          handler as any,
-          { capture: true } as any,
+          handler as unknown as EventListener,
+          { capture: true }
         );
       };
     }, [isMenuOpen, onMenuToggle]);
@@ -725,7 +725,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!props.isActive) return;
 
-    tapBridge.onPointerDown(e as any);
+    tapBridge.onPointerDown(e);
 
     const target = e.target as HTMLElement;
     const canSwipeHorizontal = !!target.closest('[data-swipe-area]');
@@ -746,7 +746,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    tapBridge.onPointerMove(e as any);
+    tapBridge.onPointerMove(e);
     if (!props.isActive) return;
 
     const d = dragRef.current;
@@ -784,7 +784,7 @@ export const HistoryFilterCard: React.FC<HistoryFilterCardProps> = (props) => {
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    tapBridge.onPointerUp(e as any);
+    tapBridge.onPointerUp(e);
     const d = dragRef.current;
 
     if (!d.active) {

@@ -24,6 +24,16 @@ export class NotificationListenerWeb extends WebPlugin implements NotificationLi
     return Promise.resolve();
   }
 
+  async checkMissedNotifications(): Promise<{ missed: NotificationData[] }> {
+    console.log('checkMissedNotifications called on web - not supported');
+    return { missed: [] };
+  }
+
+  async getPendingNotifications(): Promise<{ notifications: NotificationData[]; count: number }> {
+    console.log('getPendingNotifications called on web - not supported');
+    return { notifications: [], count: 0 };
+  }
+
   async addListener(
     eventName: 'notificationReceived',
     listenerFunc: (data: NotificationData) => void

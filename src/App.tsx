@@ -140,7 +140,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
   const [isSecurityScreenOpen, setIsSecurityScreenOpen] = useState(false);
   const [isCardManagerOpen, setIsCardManagerOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
-  const [isForgotPasswordScreenOpen, setIsForgotPasswordScreenOpen] = useState(false);
+
   const [pendingSubscriptionData, setPendingSubscriptionData] = useState<Partial<Expense> | null>(null);
 
   // Event Budgets Modal State
@@ -219,7 +219,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
 
   // Handle Quick Actions (Deep Links)
   useEffect(() => {
-    CapApp.addListener('appUrlOpen', (data) => {
+    const listenerPromise = CapApp.addListener('appUrlOpen', (data) => {
       if (data.url.includes('quick') || data.url.includes('add')) {
         console.log('🚀 Quick Add triggered via Deep Link');
         // Small delay to ensure UI is ready if cold start
@@ -228,6 +228,10 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
         }, 300);
       }
     });
+
+    return () => {
+      listenerPromise.then(handle => handle.remove());
+    };
   }, [ui.nav]);
 
   // Wrapper for Add Expense to include checks
@@ -315,8 +319,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
     }
   };
 
-  const handleVoiceParsed = (data: Partial<Omit<Expense, 'id'>>) => {
-    ui.setPrefilledData(data);
+  const handleVoiceParsed = (voiceData: Partial<Omit<Expense, 'id'>>) => {
+    ui.setPrefilledData(voiceData);
     ui.nav.setIsVoiceModalOpen(false);
 
     // Open form
@@ -477,7 +481,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
             isEnabled={auto.isNotificationListenerEnabled}
           />
 
-          {ui.toast && <Toast message={ui.toast.message} type={ui.toast.type} onClose={() => ui.showToast(null as any)} />}
+          {ui.toast && <Toast message={ui.toast.message} type={ui.toast.type} onClose={() => ui.showToast(null)} />}
 
           {/* Screens */}
           {ui.nav.isRecurringScreenOpen && (

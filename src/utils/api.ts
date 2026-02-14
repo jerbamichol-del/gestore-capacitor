@@ -145,9 +145,8 @@ export const login = async (
 // Forgot password → invio email con link reset
 // =====================
 
-// ⚠️ METTI QUI il tuo URL di Apps Script (quello /exec)
-const SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbzmq-PTrMcMdrYqCRX29_S034zCaj5ttyc3tZhdhjV77wF6n99LKricFgzy7taGqKOo/exec';
+import { API_CONFIG } from '../config/api.config';
+
 
 export const forgotPassword = async (
   email: string
@@ -162,11 +161,10 @@ export const forgotPassword = async (
   }
 
   try {
-    const redirect = 'https://jerbamichol-del.github.io/gestore/reset/';
     const url =
-      `${SCRIPT_URL}?action=request` +
+      `${API_CONFIG.AUTH_SCRIPT_URL}?action=request` +
       `&email=${encodeURIComponent(normalizedEmail)}` +
-      `&redirect=${encodeURIComponent(redirect)}`;
+      `&redirect=${encodeURIComponent(API_CONFIG.REDIRECT_RESET_URL)}`;
 
     // fire-and-forget — non ci interessa la risposta
     await fetch(url, {
@@ -189,12 +187,11 @@ export const sendEmailChangeVerification = async (
   token: string
 ): Promise<{ success: boolean; message: string }> => {
   try {
-    const redirect = 'https://jerbamichol-del.github.io/gestore/';
     const url =
-      `${SCRIPT_URL}?action=verify_email_change` +
+      `${API_CONFIG.AUTH_SCRIPT_URL}?action=verify_email_change` +
       `&new_email=${encodeURIComponent(newEmail)}` +
       `&token=${encodeURIComponent(token)}` +
-      `&redirect=${encodeURIComponent(redirect)}`;
+      `&redirect=${encodeURIComponent(API_CONFIG.REDIRECT_BASE_URL)}`;
 
     await fetch(url, {
       method: 'GET',

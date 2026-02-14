@@ -1,9 +1,11 @@
 
 import { Expense, Account } from '../types';
 
+import { API_CONFIG } from '../config/api.config';
+
 // Use environment variable if available, otherwise fallback to the hardcoded URL
 // This ensures identical behavior while allowing configuration
-const CLOUD_API_URL = (import.meta as any).env?.VITE_GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzuAtweyuib21-BX4dQszoxEL5BW-nzVN2Vyum4UZvWH-TzP3GLZB5He1jFkrO6242JPA/exec';
+const CLOUD_API_URL = API_CONFIG.DATA_SCRIPT_URL;
 
 export interface AppData {
   expenses: Expense[];
@@ -39,9 +41,9 @@ export const checkUserInCloud = async (email: string): Promise<boolean> => {
 };
 
 export const saveToCloud = async (
-  email: string, 
-  data: AppData, 
-  pinHash: string, 
+  email: string,
+  data: AppData,
+  pinHash: string,
   pinSalt: string
 ): Promise<boolean> => {
   try {
@@ -69,7 +71,7 @@ export const loadFromCloud = async (email: string): Promise<CloudResponse | null
   try {
     const response = await fetch(CLOUD_API_URL, {
       method: 'POST',
-      redirect: 'follow', 
+      redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'load',

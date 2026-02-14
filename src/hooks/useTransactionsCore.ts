@@ -5,8 +5,9 @@ import { useLocalStorage } from './useLocalStorage';
 import { DEFAULT_ACCOUNTS } from '../utils/defaults';
 import { toYYYYMMDD } from '../utils/date';
 import { useRecurringExpenseGenerator } from './useRecurringExpenseGenerator';
+import { ToastMessage } from '../types/toast.types';
 
-export interface ToastMessage { message: string; type: 'success' | 'info' | 'error' }
+export type { ToastMessage };
 
 export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
     // --- Data State ---

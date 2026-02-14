@@ -238,7 +238,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     let currentHostname = '';
                     try {
                         currentHostname = new URL(event.url).hostname;
-                    } catch (e) { }
+                    } catch (e) { console.warn('Hostname parse error', e); }
 
                     const isCallbackDomain = currentHostname === 'localhost' ||
                         currentHostname === '127.0.0.1';
@@ -272,7 +272,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 } else if (currentHostname.endsWith('enablebanking.com')) {
                                     dynamicRedirectUrl = new URL(event.url).origin + '/';
                                 }
-                            } catch (e) { }
+                            } catch (e) { console.warn('Redirect URL parse error', e); }
 
                             console.log('🕵️ OAuth Debug - Redemption Strategy:');
                             console.log('   Original URL:', originalRedirectUrl);
