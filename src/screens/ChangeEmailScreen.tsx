@@ -61,6 +61,11 @@ const ChangeEmailScreen: React.FC<ChangeEmailScreenProps> = ({ currentEmail, onS
 
             // Mostra successo invece di chiamare subito onSuccess
             setIsSuccess(true);
+
+            // 🔥 Background: Tenta di eliminare i dati vecchi dal cloud
+            import('../utils/cloud').then(({ deleteUserFromCloud }) => {
+                deleteUserFromCloud(normalizedCurrentEmail).catch(console.error);
+            });
         } catch (err) {
             console.error(err);
             setVerifyError("Errore durante il salvataggio.");

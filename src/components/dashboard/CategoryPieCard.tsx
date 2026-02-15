@@ -1,21 +1,10 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
-import { getCategoryStyle } from '../../utils/categoryStyles';
+import { getCategoryStyle, ICON_BG_COLORS } from '../../utils/categoryStyles';
 import { formatCurrency } from '../icons/formatters';
+import { getCategoryColor } from '../../utils/categoryStyles'; // Re-use this for fallback
 
-export const categoryHexColors: Record<string, string> = {
-    'Trasporti': '#64748b',
-    'Casa': '#1e3a8a',
-    'Shopping': '#9333ea',
-    'Alimentari': '#84cc16',
-    'Salute': '#06b6d4',
-    'Altro': '#78350f',
-    'Beneficienza': '#dc2626',
-    'Lavoro': '#2563eb',
-    'Istruzione': '#16a34a',
-    'Tempo Libero': '#eab308',
-};
-const DEFAULT_COLOR = '#78350f';
+const DEFAULT_COLOR = '#B49A85'; // OtherIcon color
 
 const renderActiveShape = (props: any) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
@@ -45,7 +34,7 @@ const renderActiveShape = (props: any) => {
                 startAngle={startAngle}
                 endAngle={endAngle}
                 fill={fill}
-                fillOpacity={isDark ? 0.15 : 1}
+                fillOpacity={isDark ? 0.25 : 1} // Slightly more opacity for BG colors
                 stroke={isDark ? fill : "none"}
                 strokeWidth={isDark ? 3 : 0}
                 style={isDark ? { filter: `drop-shadow(0 0 5px ${shadowColor})` } : {}}
@@ -104,12 +93,22 @@ export const CategoryPieCard: React.FC<CategoryPieCardProps> = ({
                                 activeShape={renderActiveShape}
                             >
                                 {categoryData.map((entry) => {
-                                    const color = categoryHexColors[entry.name] || DEFAULT_COLOR;
+                                    const style = getCategoryStyle(entry.name);
+                                    // 1. Try to get color from ICON_BG_COLORS using the iconId
+                                    let color = style.iconId && ICON_BG_COLORS[style.iconId]
+                                        ? ICON_BG_COLORS[style.iconId]
+                                        : null;
+
+                                    // 2. If no icon match, fallback to the category's registered color (legacy or custom)
+                                    if (!color) {
+                                        color = getCategoryColor(entry.name) || DEFAULT_COLOR;
+                                    }
+
                                     return (
                                         <Cell
                                             key={`cell-${entry.name}`}
                                             fill={color}
-                                            fillOpacity={isDark ? 0.15 : 1}
+                                            fillOpacity={isDark ? 0.25 : 1}
                                             stroke={isDark ? color : "none"}
                                             strokeWidth={isDark ? 2 : 0}
                                             style={isDark ? { filter: `drop-shadow(0 0 3px ${color})` } as React.CSSProperties : {}}

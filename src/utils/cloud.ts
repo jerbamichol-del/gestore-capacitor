@@ -67,6 +67,24 @@ export const saveToCloud = async (
   }
 };
 
+export const deleteUserFromCloud = async (email: string): Promise<boolean> => {
+  try {
+    await fetch(CLOUD_API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'delete_user',
+        email
+      })
+    });
+    return true;
+  } catch (e) {
+    console.error("Errore eliminazione cloud:", e);
+    return false;
+  }
+};
+
 export const loadFromCloud = async (email: string): Promise<CloudResponse | null> => {
   try {
     const response = await fetch(CLOUD_API_URL, {
