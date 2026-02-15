@@ -98,7 +98,12 @@ const AIChatModal: React.FC<AIChatModalProps> = ({ isOpen, onClose, expenses, ac
         let foundCat = allCats.find(c => q.includes(c.toLowerCase()));
 
         if (!foundCat) {
-            const keywords = q.split(' ').filter(w => w.length > 3 && !['quanto', 'speso', 'totale', 'lista', 'dove', 'come'].includes(w));
+            const stopWords = [
+                'quanto', 'quanti', 'quante', 'speso', 'spese', 'fatto', 'totale', 'lista', 'fammi', 'vedere', 'mostra', 'mostrami',
+                'dove', 'come', 'quando', 'per', 'con', 'questo', 'questa', 'quello', 'quella', 'mese', 'anno', 'settimana',
+                'scorso', 'passato', 'corrente', 'attuale', 'adesso', 'oggi', 'ieri', 'domani', 'tutto', 'tutti'
+            ];
+            const keywords = q.split(' ').filter(w => w.length > 3 && !stopWords.includes(w));
             if (keywords.length > 0) {
                 filtered = filtered.filter(e => keywords.some(k =>
                     (e.description || '').toLowerCase().includes(k) ||
@@ -158,22 +163,46 @@ Se l'utente chiede totali o somme, calcolali con precisione basandoti SOLO sui d
 Usa formattazione Markdown (grassetti). non dilungarti troppo.
 `;
 
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
-            });
+            const MODELS = [
+                'gemini-2.0-flash',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro',
+                'gemini-1.0-pro'
+            ];
 
-            const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
+            let lastError;
 
-            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Non ho potuto generare una risposta.";
-            return { text: aiText, type: 'text' as const, data: null };
+            for (const model of MODELS) {
+                try {
+                    console.log(`🤖 Tentativo con modello: ${model}...`);
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
+
+                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!aiText) throw new Error("Risposta vuota dal modello.");
+
+                    return { text: aiText, type: 'text' as const, data: null };
+
+                } catch (error: any) {
+                    console.warn(`⚠️ Errore con ${model}:`, error.message);
+                    lastError = error;
+                    // Continue to next model
+                }
+            }
+
+            // If we get here, all models failed
+            throw lastError || new Error("Tutti i modelli hanno fallito.");
 
         } catch (error: any) {
-            console.error("Gemini Error:", error);
+            console.error("Gemini Error (All models failed):", error);
             return { text: `Errore AI: ${error.message}. Uso fallback locale... \n\n` + processQueryLocal(q).text, type: 'text' as const, data: null };
         }
     };
