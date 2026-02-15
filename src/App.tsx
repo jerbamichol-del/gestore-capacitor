@@ -510,6 +510,9 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
               accounts={data.accounts}
               recurringExpenses={data.recurringExpenses}
               onClose={() => ui.nav.closeModalWithHistory()}
+              onAddRecurringExpense={(expense) => {
+                data.setRecurringExpenses(prev => [expense, ...prev]);
+              }}
               initialSubscription={pendingSubscriptionData ? {
                 name: pendingSubscriptionData.description || pendingSubscriptionData.subcategory || '',
                 amount: Number(pendingSubscriptionData.amount),
