@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useNotificationListener } from './useNotificationListener';
 import { useSMSListener } from './useSMSListener';
@@ -8,6 +8,7 @@ import { PendingTransaction } from '../services/notification-listener-service';
 import { Account, Expense } from '../types';
 import { toYYYYMMDD } from '../utils/date';
 import { ToastMessage } from '../types/toast.types';
+import { DeduplicationService } from '../services/deduplication-service';
 
 export type PendingConfirmOptions = {
     accountId?: string;
@@ -21,7 +22,9 @@ export type PendingConfirmOptions = {
 export function useAutoFlow(
     accounts: Account[],
     handleAddExpense: (data: Omit<Expense, 'id'> | Expense) => void,
-    showToast: (msg: ToastMessage) => void
+    showToast: (msg: ToastMessage) => void,
+    expenses?: Expense[],
+    setExpenses?: React.Dispatch<React.SetStateAction<Expense[]>>
 ) {
     // --- Modals State ---
     const [isPendingTransactionsModalOpen, setIsPendingTransactionsModalOpen] = useState(false);
@@ -112,21 +115,48 @@ export function useAutoFlow(
 
                 const accountId = options?.accountId || fallbackAccountId;
 
-                const newTx: Omit<Expense, 'id'> = {
-                    description: transaction.description,
-                    amount: transaction.amount,
-                    date,
-                    time,
-                    category: selectedType === 'expense' ? (options?.category || 'Altro') : 'Altro',
-                    subcategory: selectedType === 'expense' ? (options?.subcategory || undefined) : undefined,
-                    accountId,
-                    type: selectedType,
-                    tags: ['auto-rilevata', transaction.sourceApp || 'auto'],
-                    receipts: selectedType === 'expense' ? (options?.receipts || []) : [],
-                    frequency: 'single',
-                };
+                // --- Deduplication: check if a recurring-generated expense already matches ---
+                let deduplicated = false;
+                if (selectedType === 'expense' && expenses && setExpenses) {
+                    const matchingExpense = DeduplicationService.findMatchingRecurringExpense(
+                        { description: transaction.description, amount: transaction.amount, date },
+                        expenses
+                    );
+                    if (matchingExpense) {
+                        // Update existing expense in-place with bank confirmation data
+                        setExpenses(prev => prev.map(e => {
+                            if (e.id !== matchingExpense.id) return e;
+                            return {
+                                ...e,
+                                tags: [...new Set([...(e.tags || []), 'bank-confirmed', transaction.sourceApp || 'auto'])],
+                                date, // Use bank date as authoritative
+                                time, // Use bank time
+                                accountId: accountId, // Use bank account
+                            };
+                        }));
+                        deduplicated = true;
+                        console.log('🔗 Dedup: matched bank tx to recurring expense:', matchingExpense.id, matchingExpense.description);
+                        showToast({ message: `Collegata a ricorrenza: ${matchingExpense.description}`, type: 'success' });
+                    }
+                }
 
-                handleAddExpense(newTx);
+                if (!deduplicated) {
+                    const newTx: Omit<Expense, 'id'> = {
+                        description: transaction.description,
+                        amount: transaction.amount,
+                        date,
+                        time,
+                        category: selectedType === 'expense' ? (options?.category || 'Altro') : 'Altro',
+                        subcategory: selectedType === 'expense' ? (options?.subcategory || undefined) : undefined,
+                        accountId,
+                        type: selectedType,
+                        tags: ['auto-rilevata', transaction.sourceApp || 'auto'],
+                        receipts: selectedType === 'expense' ? (options?.receipts || []) : [],
+                        frequency: 'single',
+                    };
+
+                    handleAddExpense(newTx);
+                }
 
                 // --- 🚀 AUTO-DETECT INSTALLMENTS (RATE) ---
                 const installmentMatch = transaction.description.match(/(?:rata|rate)?\s*(\d+)\s*(?:\/|su|di)\s*(\d+)/i);
@@ -178,7 +208,7 @@ export function useAutoFlow(
             console.error('Error confirming transaction:', error);
             showToast({ message: 'Errore durante la conferma.', type: 'error' });
         }
-    }, [accounts, confirmTransaction, handleAddExpense, showToast]);
+    }, [accounts, confirmTransaction, handleAddExpense, showToast, expenses, setExpenses]);
 
     const handleConfirmAsTransfer = useCallback(async (fromAccount: string, toAccount: string) => {
         if (!currentConfirmationTransaction) return;

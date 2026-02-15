@@ -125,7 +125,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
   };
 
   // 3. Auto Flow (Notifications, SMS, Confirmations)
-  const auto = useAutoFlow(data.accounts, (e) => { data.handleAddExpense(e); checkBudgetAndNotify(e); }, ui.showToast);
+  const auto = useAutoFlow(data.accounts, (e) => { data.handleAddExpense(e); checkBudgetAndNotify(e); }, ui.showToast, data.expenses, data.setExpenses);
 
   // 4. Recurring Notifications
   useRecurringNotifications(data.recurringExpenses);
