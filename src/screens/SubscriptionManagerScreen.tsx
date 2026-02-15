@@ -358,29 +358,16 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
                                     required
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Importo</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={editingSub?.amount || ''}
-                                        onChange={e => setEditingSub({ ...editingSub, amount: Number(e.target.value) })}
-                                        className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Frequenza</label>
-                                    <select
-                                        value={editingSub?.frequency || 'monthly'}
-                                        onChange={e => setEditingSub({ ...editingSub, frequency: e.target.value as 'monthly' | 'yearly' })}
-                                        className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
-                                    >
-                                        <option value="monthly">Mensile</option>
-                                        <option value="yearly">Annuale</option>
-                                    </select>
-                                </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Importo</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingSub?.amount || ''}
+                                    onChange={e => setEditingSub({ ...editingSub, amount: Number(e.target.value) })}
+                                    className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                                    required
+                                />
                             </div>
 
                             {/* Data di Rinnovo */}
@@ -478,8 +465,8 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
                                         </div>
 
                                         {/* Interval */}
-                                        <div className="flex items-center justify-center gap-2 bg-white dark:bg-midnight-card/50 p-3 rounded-lg">
-                                            <span className="text-sm text-slate-700 dark:text-slate-300">Ogni</span>
+                                        <div className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Ogni</span>
                                             <input
                                                 type="number"
                                                 value={recurrenceInterval || ''}
@@ -489,10 +476,10 @@ const SubscriptionManagerScreen: React.FC<SubscriptionManagerScreenProps> = ({
                                                     else { const num = parseInt(val, 10); if (!isNaN(num) && num > 0) setRecurrenceInterval(num); }
                                                 }}
                                                 onFocus={(e) => e.currentTarget.select()}
-                                                className="w-12 text-center text-lg font-bold text-slate-800 dark:text-white bg-transparent border-0 border-b-2 border-slate-400 focus:ring-0 focus:outline-none focus:border-indigo-500 dark:focus:border-electric-violet p-0"
+                                                className="w-16 text-center text-lg font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 rounded-md border-0 py-1 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-electric-violet"
                                                 min="1"
                                             />
-                                            <span className="text-sm text-slate-700 dark:text-slate-300">{getIntervalLabel(recurrence, recurrenceInterval)}</span>
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{getIntervalLabel(recurrence, recurrenceInterval)}</span>
                                         </div>
 
                                         {/* Weekly Days Picker */}
