@@ -179,9 +179,11 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({
 
   return (
     <div className={`relative bg-[var(--sunset-cream, #F2F4F2)] dark:bg-midnight overflow-hidden transition-colors duration-200 select-none`}>
-      <div className="absolute top-0 right-0 h-full flex items-center z-0">
-        <button onClick={() => onDelete(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa" {...tapBridge}><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button>
-      </div>
+      {!isSelectionMode && (
+        <div className="absolute top-0 right-0 h-full flex items-center z-0">
+          <button onClick={() => onDelete(expense.id)} className="w-[72px] h-full flex flex-col items-center justify-center bg-red-600 text-white text-xs font-semibold focus:outline-none focus:visible:ring-2 focus:visible:ring-inset focus:visible:ring-white" aria-label="Elimina spesa" {...tapBridge}><TrashIcon className="w-6 h-6" /><span className="text-xs mt-1">Elimina</span></button>
+        </div>
+      )}
       <div ref={itemRef} data-expense-swipe="1" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleClick} className={`relative flex items-center gap-4 py-3 px-4 ${itemBgClass} z-10 cursor-pointer transition-colors duration-200 select-none`} style={{ touchAction: 'pan-y' }}>
         {isRecurringInstance && !isSelectionMode && !isAdjustment && (<span className="absolute top-1.5 right-1.5 w-5 h-5 text-slate-900 bg-amber-100 border border-amber-400 text-[10px] font-bold rounded-full flex items-center justify-center z-20" title="Spesa Programmata">P</span>)}
         {renderIcon()}
