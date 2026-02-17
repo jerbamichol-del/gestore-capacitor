@@ -492,10 +492,19 @@ export class BankSyncService {
         console.log('Balance API response:', JSON.stringify(data, null, 2));
 
         // Enable Banking API uses balanceType (camelCase) and amount.amount structure
-        const balance = data.balances?.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
-            || data.balances?.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
-            || data.balances?.find((b: any) => b.balanceType === 'AVAILABLE' || b.balanceType === 'BOOKED')
-            || data.balances?.[0];
+        // ✅ REVOLUT FIX: Prioritize 'interimAvailable' or 'closingAvailable' if 'closingBooked' is missing
+        // Some banks use 'interimAvailable' for the current spendable balance.
+        const balances = data.balances || [];
+
+        console.log('Available balance types:', balances.map((b: any) => b.balanceType || b.balance_type).join(', '));
+
+        const balance = balances.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
+            || balances.find((b: any) => b.balanceType === 'interimAvailable' || b.balance_type === 'interimAvailable') // Revolut often uses this
+            || balances.find((b: any) => b.balanceType === 'closingAvailable' || b.balance_type === 'closingAvailable')
+            || balances.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
+            || balances.find((b: any) => b.balanceType === 'information' || b.balance_type === 'information') // Fallback
+            || balances.find((b: any) => b.balanceType === 'AVAILABLE' || b.balanceType === 'BOOKED')
+            || balances[0];
 
         if (!balance) {
             console.warn('No balance found in response');
@@ -510,7 +519,7 @@ export class BankSyncService {
             ?? balance.amount
             ?? 0;
 
-        console.log('Parsed balance value:', balanceValue);
+        console.log(`Parsed balance value (${balance.balanceType || balance.balance_type}):`, balanceValue);
         return parseFloat(String(balanceValue)) || 0;
     }
 
