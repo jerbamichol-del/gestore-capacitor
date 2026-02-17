@@ -588,6 +588,7 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
         recurringExpenses={data.recurringExpenses || []}
         eventBudgets={data.eventBudgets} // Pass new event budgets
         onNavigateToRecurring={() => { window.history.pushState({ modal: 'recurring' }, ''); ui.nav.setIsRecurringScreenOpen(true); }}
+        onNavigateToSubscriptions={() => { window.history.pushState({ modal: 'subscriptions' }, ''); ui.nav.setIsSubscriptionManagerOpen(true); }}
         onNavigateToHistory={() => { window.history.pushState({ modal: 'history' }, ''); ui.nav.setIsHistoryClosing(false); ui.nav.setIsHistoryScreenOpen(true); }}
         onNavigateToIncomes={() => {
           const action = () => {

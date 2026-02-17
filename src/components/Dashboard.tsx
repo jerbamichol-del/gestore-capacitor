@@ -14,6 +14,7 @@ import { ProgrammateDetailedIcon } from './icons/ProgrammateDetailedIcon';
 import { ExpensesDetailedIcon } from './icons/ExpensesDetailedIcon';
 import { IncomeDetailedIcon } from './icons/IncomeDetailedIcon';
 import { AccountsDetailedIcon } from './icons/AccountsDetailedIcon';
+import { SubscriptionIcon } from './icons/SubscriptionIcon';
 import { exportExpenses } from '../utils/fileHelper';
 import { useTapBridge } from '../hooks/useTapBridge';
 import { parseLocalYYYYMMDD, toYYYYMMDD } from '../utils/date';
@@ -37,6 +38,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { CategorySummaryCard } from './dashboard/CategorySummaryCard';
 import { CategoryPieCard } from './dashboard/CategoryPieCard';
 import { DashboardCardWrapper } from './dashboard/DashboardCardWrapper';
+import { UpcomingRecurringWidget } from './UpcomingRecurringWidget';
+
 
 const categoryHexColors: Record<string, string> = {
     'Trasporti': '#64748b',
@@ -95,6 +98,7 @@ interface DashboardProps {
     recurringExpenses: Expense[];
     onNavigateToRecurring: () => void;
     onNavigateToHistory: () => void;
+    onNavigateToSubscriptions?: () => void;
     onNavigateToIncomes?: () => void;
     onNavigateToAccounts?: () => void;
     onImportFile: (file: File) => void;
@@ -175,6 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     recurringExpenses,
     onNavigateToRecurring,
     onNavigateToHistory,
+    onNavigateToSubscriptions,
     onNavigateToIncomes,
     onNavigateToAccounts,
     onImportFile,
@@ -259,6 +264,11 @@ const Dashboard: React.FC<DashboardProps> = ({
     const handleNavigateToHistory = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.blur();
         onNavigateToHistory();
+    };
+
+    const handleNavigateToSubscriptions = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.blur();
+        onNavigateToSubscriptions?.();
     };
 
     const handleNavigateToIncomes = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -513,6 +523,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                     onOpenBudgetSettings={onOpenBudgetSettings}
                 />
             );
+        } else if (id === 'upcomingRecurring') {
+            cardContent = (
+                <UpcomingRecurringWidget
+                    recurringExpenses={recurringExpenses}
+                    expenses={expenses}
+                    onNavigateToRecurring={onNavigateToRecurring}
+                />
+            );
         }
 
         if (isOverlay) {
@@ -653,6 +671,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                                     </button>
                                     <button onClick={handleNavigateToHistory} className="flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-indigo-900 bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-all border border-indigo-200 dark:border-indigo-500/30">
                                         <ExpensesDetailedIcon className="w-7 h-7" /> <span className="text-sm">Spese</span>
+                                    </button>
+                                    <button onClick={handleNavigateToSubscriptions} className="flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-orange-900 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300 rounded-full hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-all border border-orange-200 dark:border-orange-500/30">
+                                        <SubscriptionIcon className="w-7 h-7" /> <span className="text-sm">Abbonamenti</span>
                                     </button>
                                     <button onClick={handleNavigateToIncomes} className={`flex-none h-10 flex items-center justify-center gap-2 px-3 text-center font-semibold text-emerald-900 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all border border-emerald-200 dark:border-emerald-500/30 ${!isBalanceVisible ? 'opacity-50 grayscale' : ''}`}>
                                         <IncomeDetailedIcon className="w-7 h-7" /> <span className="text-sm">Entrate</span>
