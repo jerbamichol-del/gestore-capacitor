@@ -313,22 +313,39 @@ const Dashboard: React.FC<DashboardProps> = ({
         const safeExpenses = expenses || [];
 
         const balances: Record<string, number> = {};
+
+        // Initialize balances
         safeAccounts.forEach(acc => {
-            balances[acc.id] = 0;
+            // ✅ PRIORITY TO CACHED BANK BALANCE
+            if (acc.cachedBalance !== undefined) {
+                balances[acc.id] = acc.cachedBalance;
+            } else {
+                balances[acc.id] = 0;
+            }
         });
 
+        // Only calculate for accounts without cached balance
         safeExpenses.forEach(e => {
             const amt = Number(e.amount) || 0;
+            const account = safeAccounts.find(a => a.id === e.accountId);
+            // SCIP CALCULATION IF ACCOUNT IS SYNCED (uses cachedBalance)
+            if (account?.cachedBalance !== undefined) return;
 
-            if (e.type === 'expense') {
-                if (balances[e.accountId] !== undefined) balances[e.accountId] -= amt;
-            } else if (e.type === 'income') {
-                if (balances[e.accountId] !== undefined) balances[e.accountId] += amt;
-            } else if (e.type === 'transfer') {
-                if (balances[e.accountId] !== undefined) balances[e.accountId] -= amt;
-                if (e.toAccountId && balances[e.toAccountId] !== undefined) balances[e.toAccountId] += amt;
-            } else if (e.type === 'adjustment') {
-                if (balances[e.accountId] !== undefined) balances[e.accountId] += amt;
+            if (balances[e.accountId] !== undefined) {
+                if (e.type === 'expense') {
+                    balances[e.accountId] -= amt;
+                } else if (e.type === 'income') {
+                    balances[e.accountId] += amt;
+                } else if (e.type === 'transfer') {
+                    balances[e.accountId] -= amt;
+                    // For transfers, check destination account too
+                    const toAccount = safeAccounts.find(a => a.id === e.toAccountId);
+                    if (e.toAccountId && balances[e.toAccountId] !== undefined && toAccount?.cachedBalance === undefined) {
+                        balances[e.toAccountId] += amt;
+                    }
+                } else if (e.type === 'adjustment') {
+                    balances[e.accountId] += amt;
+                }
             }
         });
 

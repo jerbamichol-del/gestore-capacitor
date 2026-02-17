@@ -598,13 +598,24 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                         )}
                                     </div>
                                     <div className="flex flex-col min-w-0">
-                                        <span className="font-semibold text-slate-800 dark:text-white text-lg truncate">{acc.name}</span>
-                                        {isSynced && <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tighter leading-none">Automatico</span>}
+                                        <div className="flex justify-between items-center mb-1">
+                                            <h3 className="font-bold text-slate-800 dark:text-white text-lg">{acc.name}</h3>
+                                            {/* Show connection status indicator if synced */}
+                                            {acc.cachedBalance !== undefined && (
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                                    Bank Sync
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className={`text-sm font-medium ${(acc.cachedBalance !== undefined ? acc.cachedBalance : (accountBalances[acc.id] || 0)) >= 0
+                                                ? 'text-emerald-600 dark:text-emerald-400'
+                                                : 'text-red-500 dark:text-red-400'
+                                            }`}>
+                                            {formatCurrency(acc.cachedBalance !== undefined ? acc.cachedBalance : (accountBalances[acc.id] || 0))}
+                                        </p>
                                     </div>
                                 </div>
-                                <span className={`font-bold text-lg flex-shrink-0 ml-2 ${balance >= 0 ? 'text-slate-800 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
-                                    {formatCurrency(balance)}
-                                </span>
                             </div>
                         );
                     })}

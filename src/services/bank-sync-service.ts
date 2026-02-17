@@ -692,6 +692,16 @@ export class BankSyncService {
                 const bankBalance = await this.fetchBalance(acc.uid);
                 console.log(`Account ${localAccountId}: Bank balance = ${bankBalance}`);
 
+                // ✅ UPDATE LOCAL ACCOUNT WITH CACHED BALANCE
+                const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+                const accountIndex = localAccounts.findIndex((a: any) => a.id === localAccountId);
+                if (accountIndex !== -1) {
+                    localAccounts[accountIndex].cachedBalance = bankBalance;
+                    localAccounts[accountIndex].lastSyncDate = new Date().toISOString();
+                    localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
+                    console.log(`✅ Updated cached balance for ${localAccountId}: ${bankBalance}`);
+                }
+
                 const localBalance = this.calculateLocalBalance(localAccountId);
                 console.log(`Account ${localAccountId}: Local balance = ${localBalance}`);
 
@@ -707,6 +717,9 @@ export class BankSyncService {
                     adjustmentsCount++;
                 }
             }
+
+            // ✅ Notify app that accounts have changed (so UI updates balance immediately)
+            window.dispatchEvent(new CustomEvent('accounts-updated'));
 
             if (totalAdded > 0 || adjustmentsCount > 0) {
                 window.dispatchEvent(new CustomEvent('auto-transactions-updated'));

@@ -39,9 +39,25 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
                 console.error('Failed to sync expenses from storage:', e);
             }
         };
+
+        const handleAccountsRefresh = () => {
+            try {
+                const stored = localStorage.getItem('accounts_v1');
+                if (stored) {
+                    setAccounts(JSON.parse(stored));
+                }
+            } catch (e) {
+                console.error('Failed to sync accounts from storage:', e);
+            }
+        };
+
         window.addEventListener('expenses-updated', handleRefresh);
-        return () => window.removeEventListener('expenses-updated', handleRefresh);
-    }, [setExpenses]);
+        window.addEventListener('accounts-updated', handleAccountsRefresh);
+        return () => {
+            window.removeEventListener('expenses-updated', handleRefresh);
+            window.removeEventListener('accounts-updated', handleAccountsRefresh);
+        };
+    }, [setExpenses, setAccounts]);
 
     // --- Helpers ---
     const sanitizeExpenseData = useCallback((data: any, imageBase64?: string): Partial<Omit<Expense, 'id'>> => {

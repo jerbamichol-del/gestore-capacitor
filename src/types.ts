@@ -3,6 +3,8 @@ export interface Account {
   id: string;
   name: string;
   icon?: string;
+  cachedBalance?: number; // ✅ NEW: Exact balance from Bank API
+  lastSyncDate?: string;  // ✅ NEW: Timestamp of last sync
 }
 
 export interface Expense {
