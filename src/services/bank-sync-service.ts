@@ -574,16 +574,29 @@ export class BankSyncService {
 
             // 1. Hardcoded Brand Matching (High Confidence)
             const combinedInfo = [...bankNames, iban].join(' ');
+
+            // PAYPAL: Accounts often don't have IBANs, but have distinct names or email-like IDs
+            if (combinedInfo.includes('paypal')) {
+                const found = accounts.find((a: any) =>
+                    a.id === 'paypal' ||
+                    a.name.toLowerCase().includes('paypal')
+                );
+                if (found) return found.id;
+            }
+
+            // POSTE: Handle "Postepay" and "BancoPosta" variants
+            if (combinedInfo.includes('poste') || combinedInfo.includes('bancoposta')) {
+                const found = accounts.find((a: any) =>
+                    a.id === 'poste' ||
+                    a.id === 'bancoposta' ||
+                    a.id === 'postepay' ||
+                    a.name.toLowerCase().includes('poste')
+                );
+                if (found) return found.id;
+            }
+
             if (combinedInfo.includes('revolut')) {
                 const found = accounts.find((a: any) => a.id === 'revolut' || a.name.toLowerCase().includes('revolut'));
-                if (found) return found.id;
-            }
-            if (combinedInfo.includes('paypal')) {
-                const found = accounts.find((a: any) => a.id === 'paypal' || a.name.toLowerCase().includes('paypal'));
-                if (found) return found.id;
-            }
-            if (combinedInfo.includes('poste')) {
-                const found = accounts.find((a: any) => a.id === 'poste' || a.name.toLowerCase().includes('poste'));
                 if (found) return found.id;
             }
 
