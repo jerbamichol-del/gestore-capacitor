@@ -164,10 +164,10 @@ Usa formattazione Markdown (grassetti). non dilungarti troppo.
 `;
 
             const MODELS = [
-                'gemini-2.0-flash',
+                'gemini-2.5-flash',
+                'gemini-1.5-flash-latest',
                 'gemini-1.5-flash',
-                'gemini-1.5-pro',
-                'gemini-1.0-pro'
+                'gemini-1.5-pro'
             ];
 
             let lastError;
@@ -175,7 +175,7 @@ Usa formattazione Markdown (grassetti). non dilungarti troppo.
             for (const model of MODELS) {
                 try {
                     console.log(`🤖 Tentativo con modello: ${model}...`);
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
