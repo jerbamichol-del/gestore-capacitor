@@ -6,7 +6,7 @@ export const ALL_DASHBOARD_CARDS = [
     { id: 'categoryPie', title: 'Spese per Categoria' },
     { id: 'trend', title: 'Andamento Patrimoniale' },
     { id: 'goals', title: 'Obiettivi di Risparmio' },
-    { id: 'upcomingRecurring', title: 'Uscite Ricorrenti' }
+    { id: 'goals', title: 'Obiettivi di Risparmio' }
 ] as const;
 
 export type DashboardCardId = typeof ALL_DASHBOARD_CARDS[number]['id'];
@@ -21,7 +21,7 @@ export const useDashboardConfig = () => {
                     // Ensure only valid and unique keys
                     const valid = parsed.filter(id => ALL_DASHBOARD_CARDS.some(c => c.id === id));
                     // Check if new default items are missing (migration)
-                    if (!valid.includes('upcomingRecurring')) valid.splice(1, 0, 'upcomingRecurring');
+
 
                     const unique = Array.from(new Set(valid));
                     return unique.length > 0 ? unique : ALL_DASHBOARD_CARDS.map(c => c.id);
@@ -31,7 +31,7 @@ export const useDashboardConfig = () => {
             }
         }
         // Default order
-        return ['summary', 'upcomingRecurring', 'insights', 'categoryPie', 'trend', 'goals'];
+        return ['summary', 'insights', 'categoryPie', 'trend', 'goals'];
     });
 
     const toggleCard = useCallback((id: string) => {
