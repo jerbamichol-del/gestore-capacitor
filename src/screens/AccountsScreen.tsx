@@ -631,11 +631,31 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                     onTouchStart={(e) => {
                                         if (!onDeleteAccount) return;
                                         const startX = e.touches[0].clientX;
+                                        const startY = e.touches[0].clientY;
                                         const el = e.currentTarget;
                                         const currentOffset = isSwipeOpen ? -ACTION_WIDTH : 0;
                                         let moved = false;
+                                        let directionDetected: 'h' | 'v' | null = null;
+
                                         const onMove = (ev: TouchEvent) => {
                                             const dx = ev.touches[0].clientX - startX;
+                                            const dy = ev.touches[0].clientY - startY;
+
+                                            if (!directionDetected) {
+                                                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                                                    directionDetected = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+                                                } else {
+                                                    return;
+                                                }
+                                            }
+
+                                            if (directionDetected === 'v') {
+                                                // If vertical, don't allow horizontal movement
+                                                return;
+                                            }
+
+                                            // Horizontal movement
+                                            ev.stopPropagation();
                                             const offset = Math.max(-ACTION_WIDTH, Math.min(0, currentOffset + dx));
                                             el.style.transform = `translateX(${offset}px)`;
                                             el.style.transition = 'none';
@@ -646,7 +666,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                             el.removeEventListener('touchend', onEnd);
                                             el.style.transition = 'transform 0.3s ease';
                                             const dx = ev.changedTouches[0].clientX - startX;
-                                            if (moved) {
+                                            if (moved && directionDetected === 'h') {
                                                 if (currentOffset === 0 && dx < -30) {
                                                     el.style.transform = `translateX(-${ACTION_WIDTH}px)`;
                                                     setOpenAccountSwipeId(acc.id);
@@ -654,9 +674,12 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                                     el.style.transform = 'translateX(0px)';
                                                     setOpenAccountSwipeId(null);
                                                 }
+                                            } else {
+                                                // Reset transform if it was a vertical scroll or minor move
+                                                el.style.transform = isSwipeOpen ? `translateX(-${ACTION_WIDTH}px)` : 'translateX(0)';
                                             }
                                         };
-                                        el.addEventListener('touchmove', onMove);
+                                        el.addEventListener('touchmove', onMove, { passive: false });
                                         el.addEventListener('touchend', onEnd);
                                     }}
                                     style={{ transform: isSwipeOpen ? `translateX(-${ACTION_WIDTH}px)` : 'translateX(0)', transition: 'transform 0.3s ease' }}
