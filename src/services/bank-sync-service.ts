@@ -492,17 +492,18 @@ export class BankSyncService {
         console.log('Balance API response:', JSON.stringify(data, null, 2));
 
         // Enable Banking API uses balanceType (camelCase) and amount.amount structure
-        // ✅ REVOLUT FIX: Prioritize 'interimAvailable' or 'closingAvailable' if 'closingBooked' is missing
-        // Some banks use 'interimAvailable' for the current spendable balance.
+        // ✅ REVOLUT/BBVA FIX: Prioritize 'interimAvailable' or 'closingAvailable' if 'closingBooked' is missing
+        // Some Italian banks (like BBVA) might use different types or nested structures.
         const balances = data.balances || [];
 
         console.log('Available balance types:', balances.map((b: any) => b.balanceType || b.balance_type).join(', '));
 
         const balance = balances.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
-            || balances.find((b: any) => b.balanceType === 'interimAvailable' || b.balance_type === 'interimAvailable') // Revolut often uses this
+            || balances.find((b: any) => b.balanceType === 'interimAvailable' || b.balance_type === 'interimAvailable')
             || balances.find((b: any) => b.balanceType === 'closingAvailable' || b.balance_type === 'closingAvailable')
+            || balances.find((b: any) => b.balanceType === 'openingBooked' || b.balance_type === 'openingBooked')
             || balances.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
-            || balances.find((b: any) => b.balanceType === 'information' || b.balance_type === 'information') // Fallback
+            || balances.find((b: any) => b.balanceType === 'information' || b.balance_type === 'information')
             || balances.find((b: any) => b.balanceType === 'AVAILABLE' || b.balanceType === 'BOOKED')
             || balances[0];
 
@@ -516,7 +517,7 @@ export class BankSyncService {
             ?? balance.balance_amount?.amount
             ?? balance.balance_amount?.value
             ?? balance.amount?.value
-            ?? balance.amount
+            ?? (typeof balance.amount === 'number' ? balance.amount : (parseFloat(balance.amount) || 0))
             ?? 0;
 
         console.log(`Parsed balance value (${balance.balanceType || balance.balance_type}):`, balanceValue);
@@ -600,6 +601,15 @@ export class BankSyncService {
                 if (found) return found.id;
             }
 
+            // BBVA: Specific match for BBVA
+            if (combinedInfo.includes('bbva')) {
+                const found = accounts.find((a: any) =>
+                    a.id === 'bbva' ||
+                    a.name.toLowerCase().includes('bbva')
+                );
+                if (found) return found.id;
+            }
+
             // 2. Exact Name Match (Solid Confidence)
             for (const la of accounts) {
                 const localName = la.name.toLowerCase().trim();
@@ -624,11 +634,12 @@ export class BankSyncService {
                 // Never fuzzy-match to "Contanti" (cash is almost always manual)
                 if (la.id === 'cash' || localName.includes('contanti')) continue;
 
-                // Ignore very generic or short local names for fuzzy matching to avoid noise
-                if (localName.length < 5 || localName === 'conto' || localName === 'bank') continue;
+                // Ignore very generic or extremely short local names for fuzzy matching to avoid noise
+                // Reduced limit to 4 to allow "BBVA" matching
+                if (localName.length < 4 || localName === 'conto' || localName === 'bank') continue;
 
                 for (const bn of bankNames) {
-                    if (bn.length < 4) continue; // Skip too short bank-provided names
+                    if (bn.length < 3) continue; // Skip too short bank-provided names
                     if (bn.includes(localName) || localName.includes(bn)) {
                         console.log(`Fuzzy match found: ${la.id} matches bank information "${bn}"`);
                         return la.id;
