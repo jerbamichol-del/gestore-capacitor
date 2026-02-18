@@ -1,6 +1,7 @@
 
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Account, Expense } from '../types';
+import { SubscriptionService } from '../services/subscription-service';
 import { formatCurrency, formatDate } from '../components/icons/formatters';
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
 import { getAccountIcon } from '../utils/accountIcons';
@@ -22,6 +23,8 @@ interface AccountsScreenProps {
     onAddTransaction?: (expense: Omit<Expense, 'id'>) => void;
     onDeleteTransaction?: (id: string) => void;
     onDeleteTransactions?: (ids: string[]) => void;
+    onAddAccount?: (name: string) => void;
+    onDeleteAccount?: (accountId: string, targetAccountId: string, manualReassignments?: Record<string, string>) => void;
 }
 
 // Separati i tipi per permettere la combinazione
@@ -246,7 +249,7 @@ const SwipableTransferRow: React.FC<{
     );
 };
 
-const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onClose, onAddTransaction, onDeleteTransaction, onDeleteTransactions }) => {
+const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onClose, onAddTransaction, onDeleteTransaction, onDeleteTransactions, onAddAccount, onDeleteAccount }) => {
 
     // State for modification modal
     const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
@@ -256,6 +259,18 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
 
     // State for expanding total card
     const [isTotalExpanded, setIsTotalExpanded] = useState(false);
+
+    // State for add account modal
+    const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+    const [newAccountName, setNewAccountName] = useState('');
+    const addAccountInputRef = useRef<HTMLInputElement>(null);
+
+    // State for swipeable account cards
+    const [openAccountSwipeId, setOpenAccountSwipeId] = useState<string | null>(null);
+    const [deleteConfirmAccountId, setDeleteConfirmAccountId] = useState<string | null>(null);
+    const [reassignTargetId, setReassignTargetId] = useState<string | null>(null);
+    const [isIndividualReassignMode, setIsIndividualReassignMode] = useState(false);
+    const [expenseReassignments, setExpenseReassignments] = useState<Record<string, string>>({});
 
     // State for swipeable rows & selection
     const [openTransferId, setOpenTransferId] = useState<string | null>(null);
@@ -524,7 +539,18 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                         >
                             <ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-200" />
                         </button>
-                        <h1 className="text-xl font-bold text-slate-800 dark:text-white">I Miei Conti</h1>
+                        <h1 className="text-xl font-bold text-slate-800 dark:text-white flex-1">I Miei Conti</h1>
+                        {onAddAccount && (
+                            <button
+                                onClick={() => { setIsAddAccountOpen(true); setNewAccountName(''); setTimeout(() => addAccountInputRef.current?.focus(), 100); }}
+                                className="p-2 rounded-full bg-indigo-100 dark:bg-electric-violet/20 hover:bg-indigo-200 dark:hover:bg-electric-violet/30 text-indigo-600 dark:text-electric-violet transition-colors"
+                                aria-label="Aggiungi conto"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                            </button>
+                        )}
                     </>
                 )}
             </header>
@@ -581,39 +607,104 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                         const iconKey = ['paypal', 'crypto', 'revolut', 'poste'].includes(acc.id) ? acc.id : (acc.icon || acc.id);
                         const Icon = getAccountIcon(iconKey);
                         const isSynced = syncedAccountIds.includes(acc.id);
+                        const isSwipeOpen = openAccountSwipeId === acc.id;
 
                         return (
-                            <div
-                                key={acc.id}
-                                onClick={() => !isSelectionMode && handleAccountClick(acc.id)}
-                                className={`midnight-card p-4 rounded-xl shadow-sm border border-slate-200 dark:border-electric-violet/20 flex items-center justify-between transition-transform ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
-                            >
-                                <div className="flex items-center gap-4 min-w-0">
-                                    <div className="relative">
-                                        <Icon className="w-12 h-12 text-indigo-600 dark:text-electric-violet" />
-                                        {isSynced && (
-                                            <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white dark:border-midnight">
-                                                <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" /></svg>
-                                            </div>
-                                        )}
+                            <div key={acc.id} className="relative overflow-hidden rounded-xl">
+                                {/* Delete action behind the card */}
+                                {onDeleteAccount && (
+                                    <div className="absolute inset-y-0 right-0 flex items-center justify-end bg-red-500 rounded-xl" style={{ width: ACTION_WIDTH }}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmAccountId(acc.id); setOpenAccountSwipeId(null); }}
+                                            className="w-full h-full flex items-center justify-center text-white"
+                                        >
+                                            <TrashIcon className="w-6 h-6" />
+                                        </button>
                                     </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <h3 className="font-bold text-slate-800 dark:text-white text-lg">{acc.name}</h3>
-                                            {/* Show connection status indicator if synced */}
-                                            {acc.cachedBalance !== undefined && (
-                                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                                                    Bank Sync
-                                                </span>
+                                )}
+                                {/* Main card (slides left) */}
+                                <div
+                                    onClick={() => {
+                                        if (isSwipeOpen) { setOpenAccountSwipeId(null); return; }
+                                        if (!isSelectionMode) handleAccountClick(acc.id);
+                                    }}
+                                    onTouchStart={(e) => {
+                                        if (!onDeleteAccount) return;
+                                        const startX = e.touches[0].clientX;
+                                        const el = e.currentTarget;
+                                        const currentOffset = isSwipeOpen ? -ACTION_WIDTH : 0;
+                                        let moved = false;
+                                        const onMove = (ev: TouchEvent) => {
+                                            const dx = ev.touches[0].clientX - startX;
+                                            const offset = Math.max(-ACTION_WIDTH, Math.min(0, currentOffset + dx));
+                                            el.style.transform = `translateX(${offset}px)`;
+                                            el.style.transition = 'none';
+                                            if (Math.abs(dx) > 5) moved = true;
+                                        };
+                                        const onEnd = (ev: TouchEvent) => {
+                                            el.removeEventListener('touchmove', onMove);
+                                            el.removeEventListener('touchend', onEnd);
+                                            el.style.transition = 'transform 0.3s ease';
+                                            const dx = ev.changedTouches[0].clientX - startX;
+                                            if (moved) {
+                                                if (currentOffset === 0 && dx < -30) {
+                                                    el.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+                                                    setOpenAccountSwipeId(acc.id);
+                                                } else {
+                                                    el.style.transform = 'translateX(0px)';
+                                                    setOpenAccountSwipeId(null);
+                                                }
+                                            }
+                                        };
+                                        el.addEventListener('touchmove', onMove);
+                                        el.addEventListener('touchend', onEnd);
+                                    }}
+                                    style={{ transform: isSwipeOpen ? `translateX(-${ACTION_WIDTH}px)` : 'translateX(0)', transition: 'transform 0.3s ease' }}
+                                    className={`bg-white dark:bg-slate-800/80 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-electric-violet/20 flex items-center justify-between relative z-10 ${!isSelectionMode ? 'active:scale-[0.98] cursor-pointer' : 'opacity-50'}`}
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="relative">
+                                            {acc.isCustom && acc.logoUrl ? (
+                                                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
+                                                    <img
+                                                        src={acc.logoUrl}
+                                                        alt={acc.name}
+                                                        className="w-8 h-8 object-contain"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).style.display = 'none';
+                                                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                                        }}
+                                                    />
+                                                    <span className="hidden text-lg font-bold text-indigo-600 dark:text-electric-violet">
+                                                        {acc.name.charAt(0).toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <Icon className="w-12 h-12 text-indigo-600 dark:text-electric-violet" />
+                                            )}
+                                            {isSynced && (
+                                                <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full border-2 border-white dark:border-midnight">
+                                                    <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" /></svg>
+                                                </div>
                                             )}
                                         </div>
-                                        <p className={`text-sm font-medium ${(acc.cachedBalance !== undefined ? acc.cachedBalance : (accountBalances[acc.id] || 0)) >= 0
+                                        <div className="flex flex-col min-w-0">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <h3 className="font-bold text-slate-800 dark:text-white text-lg">{acc.name}</h3>
+                                                {acc.cachedBalance !== undefined && (
+                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1 ml-2">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                                        Bank Sync
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className={`text-sm font-medium ${(acc.cachedBalance !== undefined ? acc.cachedBalance : (accountBalances[acc.id] || 0)) >= 0
                                                 ? 'text-emerald-600 dark:text-emerald-400'
                                                 : 'text-red-500 dark:text-red-400'
-                                            }`}>
-                                            {formatCurrency(acc.cachedBalance !== undefined ? acc.cachedBalance : (accountBalances[acc.id] || 0))}
-                                        </p>
+                                                }`}>
+                                                {formatCurrency(acc.cachedBalance !== undefined ? acc.cachedBalance : (accountBalances[acc.id] || 0))}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -624,6 +715,237 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                 {/* Spacer */}
                 <div className="h-24" />
             </main>
+
+            {/* ADD ACCOUNT MODAL */}
+            {isAddAccountOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setIsAddAccountOpen(false)}>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200 dark:border-electric-violet/20 animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Nuovo Conto</h3>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {newAccountName.trim() ? (
+                                    <img
+                                        src={SubscriptionService.getLogoUrl(newAccountName)}
+                                        alt=""
+                                        className="w-8 h-8 object-contain"
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                ) : (
+                                    <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 0h.008v.008h-.008V7.5Z" /></svg>
+                                )}
+                            </div>
+                            <input
+                                ref={addAccountInputRef}
+                                type="text"
+                                value={newAccountName}
+                                onChange={(e) => setNewAccountName(e.target.value)}
+                                placeholder="es. N26, Hype, Satispay..."
+                                className="flex-1 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-electric-violet transition-all"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && newAccountName.trim()) {
+                                        onAddAccount?.(newAccountName);
+                                        setIsAddAccountOpen(false);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setIsAddAccountOpen(false)}
+                                className="flex-1 py-3 rounded-xl font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            >Annulla</button>
+                            <button
+                                onClick={() => {
+                                    if (newAccountName.trim()) {
+                                        onAddAccount?.(newAccountName);
+                                        setIsAddAccountOpen(false);
+                                    }
+                                }}
+                                disabled={!newAccountName.trim()}
+                                className={`flex-[2] py-3 rounded-xl font-bold shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 ${newAccountName.trim()
+                                    ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-electric-violet dark:to-electric-purple text-white hover:brightness-110 shadow-indigo-200 dark:shadow-electric-violet/20'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed shadow-none'
+                                    }`}
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                Aggiungi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DELETE ACCOUNT CONFIRMATION WITH ACCOUNT PICKER */}
+            {deleteConfirmAccountId && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => { setDeleteConfirmAccountId(null); setReassignTargetId(null); }}>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200 dark:border-electric-violet/20 animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                <TrashIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Elimina Conto</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{accounts.find(a => a.id === deleteConfirmAccountId)?.name}</p>
+                            </div>
+                        </div>
+
+                        {(() => {
+                            const orphanExpenses = expenses.filter(e => e.accountId === deleteConfirmAccountId);
+                            const orphanCount = orphanExpenses.length;
+                            const remainingAccounts = accounts.filter(a => a.id !== deleteConfirmAccountId);
+
+                            if (orphanCount > 0 && remainingAccounts.length > 0) {
+                                return (
+                                    <div className="mb-4">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <p className="text-sm text-slate-600 dark:text-slate-300">
+                                                Ci sono <span className="font-bold text-red-600 dark:text-red-400">{orphanCount}</span> spese.
+                                            </p>
+                                            <button
+                                                onClick={() => {
+                                                    setIsIndividualReassignMode(!isIndividualReassignMode);
+                                                    setExpenseReassignments({});
+                                                }}
+                                                className="text-xs font-bold text-indigo-600 dark:text-electric-violet hover:underline"
+                                            >
+                                                {isIndividualReassignMode ? 'Sposta tutte in gruppo' : 'Gestisci singolarmente'}
+                                            </button>
+                                        </div>
+
+                                        {!isIndividualReassignMode ? (
+                                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                                {remainingAccounts.map(acc => {
+                                                    const iconKey = ['paypal', 'crypto', 'revolut', 'poste'].includes(acc.id) ? acc.id : (acc.icon || acc.id);
+                                                    const Icon = getAccountIcon(iconKey);
+                                                    const isSelected = reassignTargetId === acc.id;
+                                                    return (
+                                                        <button
+                                                            key={acc.id}
+                                                            onClick={() => setReassignTargetId(acc.id)}
+                                                            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isSelected
+                                                                ? 'border-indigo-500 dark:border-electric-violet bg-indigo-50 dark:bg-electric-violet/10'
+                                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                                                                }`}
+                                                        >
+                                                            {acc.isCustom && acc.logoUrl ? (
+                                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                                    <img src={acc.logoUrl} alt="" className="w-6 h-6 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                                </div>
+                                                            ) : (
+                                                                <Icon className="w-8 h-8 text-indigo-600 dark:text-electric-violet flex-shrink-0" />
+                                                            )}
+                                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex-1 text-left line-clamp-1">{acc.name}</span>
+                                                            {isSelected && (
+                                                                <CheckIcon className="w-5 h-5 text-indigo-600 dark:text-electric-violet" />
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                                                {orphanExpenses.map(exp => (
+                                                    <div key={exp.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{exp.description || exp.category}</p>
+                                                                <p className="text-xs text-slate-500">{formatDate(parseLocalYYYYMMDD(exp.date))} • {formatCurrency(exp.amount)}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            {remainingAccounts.map(acc => {
+                                                                const isSelected = expenseReassignments[exp.id] === acc.id;
+                                                                return (
+                                                                    <button
+                                                                        key={acc.id}
+                                                                        onClick={() => setExpenseReassignments(prev => ({ ...prev, [exp.id]: acc.id }))}
+                                                                        className={`flex items-center gap-2 p-2 rounded-lg border transition-all text-left ${isSelected
+                                                                            ? 'border-indigo-500 bg-indigo-50 dark:bg-electric-violet/10 dark:border-electric-violet'
+                                                                            : 'border-slate-200 dark:border-slate-700'
+                                                                            }`}
+                                                                    >
+                                                                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 truncate">{acc.name}</span>
+                                                                        {isSelected && <CheckIcon className="w-3 h-3 text-indigo-600 dark:text-electric-violet ml-auto flex-shrink-0" />}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Sei sicuro di voler eliminare questo conto?</p>
+                                );
+                            }
+                        })()}
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setDeleteConfirmAccountId(null);
+                                    setReassignTargetId(null);
+                                    setIsIndividualReassignMode(false);
+                                    setExpenseReassignments({});
+                                }}
+                                className="flex-1 py-3 rounded-xl font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            >Annulla</button>
+                            <button
+                                onClick={() => {
+                                    if (deleteConfirmAccountId && onDeleteAccount) {
+                                        const orphanExpenses = expenses.filter(e => e.accountId === deleteConfirmAccountId);
+                                        const remaining = accounts.filter(a => a.id !== deleteConfirmAccountId);
+                                        const defaultTargetId = reassignTargetId || remaining[0]?.id;
+
+                                        // individual mode needs to ensure ALL are assigned, or fallback to defaultTargetId
+                                        // But it's better to only pass expenseReassignments if relevant
+                                        onDeleteAccount(
+                                            deleteConfirmAccountId,
+                                            defaultTargetId,
+                                            isIndividualReassignMode ? expenseReassignments : undefined
+                                        );
+
+                                        setDeleteConfirmAccountId(null);
+                                        setReassignTargetId(null);
+                                        setIsIndividualReassignMode(false);
+                                        setExpenseReassignments({});
+                                    }
+                                }}
+                                disabled={(() => {
+                                    const orphanCount = expenses.filter(e => e.accountId === deleteConfirmAccountId).length;
+                                    if (orphanCount === 0) return false;
+                                    if (isIndividualReassignMode) {
+                                        // In individual mode, all expenses MUST be assigned
+                                        const orphanIds = expenses.filter(e => e.accountId === deleteConfirmAccountId).map(e => e.id);
+                                        return !orphanIds.every(id => expenseReassignments[id]);
+                                    }
+                                    return !reassignTargetId;
+                                })()}
+                                className={`flex-[2] py-3 rounded-xl font-bold shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 ${(() => {
+                                    const orphanCount = expenses.filter(e => e.accountId === deleteConfirmAccountId).length;
+                                    if (orphanCount === 0) return false;
+                                    if (isIndividualReassignMode) {
+                                        const orphanIds = expenses.filter(e => e.accountId === deleteConfirmAccountId).map(e => e.id);
+                                        return !orphanIds.every(id => expenseReassignments[id]);
+                                    }
+                                    return !reassignTargetId;
+                                })()
+                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed shadow-none'
+                                    : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:brightness-110 shadow-red-200 dark:shadow-red-900/20'
+                                    }`}
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                                Elimina
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* MODAL EDIT SALDO FULL SCREEN */}
             {editingAccountId && (

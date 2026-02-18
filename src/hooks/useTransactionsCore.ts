@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Expense, Account, EventBudget } from '../types';
+import { SubscriptionService } from '../services/subscription-service';
 import { CategoryService } from '../services/category-service';
 import { useLocalStorage } from './useLocalStorage';
 import { DEFAULT_ACCOUNTS } from '../utils/defaults';
@@ -150,6 +151,30 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
         showToast({ message: `${ids.length} ricorrenti eliminate.`, type: 'info' });
     }, [setRecurringExpenses, showToast]);
 
+    // --- Account Management ---
+    const addAccount = useCallback((name: string) => {
+        const newAccount: Account = {
+            id: crypto.randomUUID(),
+            name: name.trim(),
+            logoUrl: SubscriptionService.getLogoUrl(name),
+            isCustom: true,
+        };
+        setAccounts(prev => [...prev, newAccount]);
+        showToast({ message: `Conto "${name}" aggiunto!`, type: 'success' });
+    }, [setAccounts, showToast]);
+
+    const deleteAccount = useCallback((accountId: string, targetAccountId: string, manualReassignments?: Record<string, string>) => {
+        setAccounts(prev => prev.filter(a => a.id !== accountId));
+        setExpenses(p => p.map(e => {
+            if (e.accountId === accountId) {
+                const manualTargetId = manualReassignments?.[e.id];
+                return { ...e, accountId: manualTargetId || targetAccountId };
+            }
+            return e;
+        }));
+        showToast({ message: 'Conto eliminato.', type: 'info' });
+    }, [setAccounts, setExpenses, showToast]);
+
     return {
         // State
         expenses,
@@ -172,6 +197,8 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
         confirmDelete,
         deleteExpenses,
         deleteRecurringExpenses,
-        sanitizeExpenseData
+        sanitizeExpenseData,
+        addAccount,
+        deleteAccount,
     };
 }

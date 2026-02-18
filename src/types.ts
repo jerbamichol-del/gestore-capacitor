@@ -3,6 +3,8 @@ export interface Account {
   id: string;
   name: string;
   icon?: string;
+  logoUrl?: string;       // Auto-fetched logo URL (Google Favicons)
+  isCustom?: boolean;     // True for user-created accounts
   cachedBalance?: number; // ✅ NEW: Exact balance from Bank API
   lastSyncDate?: string;  // ✅ NEW: Timestamp of last sync
 }

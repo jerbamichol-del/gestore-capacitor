@@ -476,9 +476,9 @@ export function PendingTransactionsModal({
       />
 
       {/* Modal - Full screen on mobile, centered on desktop */}
-      <div className="relative w-full sm:max-w-lg midnight-card sm:rounded-3xl shadow-2xl h-full sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col border border-white/10 dark:border-electric-violet/20 animate-slide-up-fade">
+      <div className="relative w-full sm:max-w-lg bg-white dark:bg-slate-900 sm:rounded-3xl shadow-2xl h-full sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col border border-slate-200 dark:border-electric-violet/20 animate-slide-up-fade">
         {/* Header */}
-        <div className="sticky top-0 bg-white/5 dark:bg-black/20 backdrop-blur-md border-b border-white/5 dark:border-white/5 px-6 py-4 z-10">
+        <div className="sticky top-0 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/50 dark:border-white/10 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
@@ -802,7 +802,7 @@ export function PendingTransactionsModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 backdrop-blur-md p-4">
+        <div className="border-t border-slate-200/50 dark:border-white/10 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md p-4">
           <div className="flex gap-3">
             <button
               onClick={() => handleIgnore(currentTransaction.id)}

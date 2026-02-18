@@ -565,6 +565,8 @@ const App: React.FC<{ onLogout: () => void; currentEmail: string; onEmailChanged
               onDeleteTransaction={data.handleDeleteRequest}
               onAddTransaction={data.handleAddExpense}
               onDeleteTransactions={data.deleteExpenses}
+              onAddAccount={data.addAccount}
+              onDeleteAccount={data.deleteAccount}
             />
           )}
 
