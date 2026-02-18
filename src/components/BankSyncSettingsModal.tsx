@@ -472,7 +472,24 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             </div>
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                                 {accountsWithBalances.map((acc, i) => (
-                                    <div key={i} className="flex flex-col p-4 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-2xl border border-sunset-coral/20 dark:border-electric-violet/20 gap-3">
+                                    <div key={i} className="flex flex-col p-4 bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-2xl border border-sunset-coral/20 dark:border-electric-violet/20 gap-3 relative group">
+                                        <button
+                                            className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-rose-500/20 text-red-400 hover:text-red-600 transition-all z-10"
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                if (window.confirm(`Vuoi davvero scollegare questa sessione (${acc.aspsp_name || acc.aspspName || 'Banca'})?`)) {
+                                                    await BankSyncService.disconnectSession(acc._sessionId);
+                                                    showToast({ message: 'Banca scollegata.', type: 'info' });
+                                                    handleTestConnection(true);
+                                                }
+                                            }}
+                                            title="Scollega questa banca"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+
                                         <div className="flex justify-between items-center">
                                             <div className="flex flex-col min-w-0 flex-1 mr-2">
                                                 <span className="text-sm font-bold truncate text-sunset-text dark:text-white">{acc.name || 'Conto'}</span>

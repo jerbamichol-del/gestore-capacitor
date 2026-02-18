@@ -321,6 +321,16 @@ export class BankSyncService {
     }
 
     /**
+     * Disconnect a specific session by ID
+     */
+    static async disconnectSession(sessionId: string): Promise<void> {
+        const sessions = await this.getSessions();
+        const filtered = sessions.filter(s => s !== sessionId);
+        localStorage.setItem('bank_sync_sessions', JSON.stringify(filtered));
+        console.log(`Disconnected bank session: ${sessionId}`);
+    }
+
+    /**
      * Get manual mappings for accounts
      */
     static getAccountMappings(): Record<string, string> {
@@ -500,6 +510,7 @@ export class BankSyncService {
 
         const balance = balances.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
             || balances.find((b: any) => b.balanceType === 'interimAvailable' || b.balance_type === 'interimAvailable')
+            || balances.find((b: any) => b.balanceType === 'interimBooked' || b.balance_type === 'interimBooked')
             || balances.find((b: any) => b.balanceType === 'closingAvailable' || b.balance_type === 'closingAvailable')
             || balances.find((b: any) => b.balanceType === 'openingBooked' || b.balance_type === 'openingBooked')
             || balances.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
@@ -512,16 +523,30 @@ export class BankSyncService {
             return 0;
         }
 
-        // Handle multiple possible formats: amount.amount, balance_amount.amount, balance_amount.value
-        const balanceValue = balance.amount?.amount
-            ?? balance.balance_amount?.amount
-            ?? balance.balance_amount?.value
-            ?? balance.amount?.value
-            ?? (typeof balance.amount === 'number' ? balance.amount : (parseFloat(balance.amount) || 0))
-            ?? 0;
+        // Handle multiple possible formats: amount.amount, amount.value, balanceAmount.amount, balance_amount.amount, etc.
+        const extractValue = (obj: any): number | null => {
+            if (obj === null || obj === undefined) return null;
+            if (typeof obj === 'number') return obj;
+            if (typeof obj === 'string') {
+                const parsed = parseFloat(obj);
+                return isNaN(parsed) ? null : parsed;
+            }
+            if (typeof obj === 'object') {
+                // Priority fields common in banking APIs
+                const val = obj.amount ?? obj.value ?? obj.amountValue ?? obj.valueAmount;
+                if (val !== undefined && val !== null) return extractValue(val);
+
+                // ISO 20022 structure: balanceAmount.amount or similar
+                const nested = obj.balanceAmount ?? obj.balance_amount ?? obj.amount;
+                if (nested !== undefined && nested !== null) return extractValue(nested);
+            }
+            return null;
+        };
+
+        const balanceValue = extractValue(balance) ?? 0;
 
         console.log(`Parsed balance value (${balance.balanceType || balance.balance_type}):`, balanceValue);
-        return parseFloat(String(balanceValue)) || 0;
+        return balanceValue;
     }
 
     /**
@@ -573,41 +598,42 @@ export class BankSyncService {
             const bankNames = Array.from(new Set([aspspName, displayName, officialName])).filter(n => n.length > 0);
             console.log(`Resolving local account for: ASPSP=${aspspName}, Display=${displayName}, Official=${officialName}, IBAN=${iban}`);
 
-            // 1. Hardcoded Brand Matching (High Confidence)
+            // 1. Hardcoded Brand Mapping (High Confidence)
             const combinedInfo = [...bankNames, iban].join(' ');
 
-            // PAYPAL: Accounts often don't have IBANs, but have distinct names or email-like IDs
-            if (combinedInfo.includes('paypal')) {
-                const found = accounts.find((a: any) =>
-                    a.id === 'paypal' ||
-                    a.name.toLowerCase().includes('paypal')
-                );
-                if (found) return found.id;
-            }
+            const internalMappings = [
+                { id: 'paypal', keywords: ['paypal'] },
+                { id: 'poste', keywords: ['poste', 'bancoposta', 'postepay'] },
+                { id: 'revolut', keywords: ['revolut'] },
+                { id: 'bbva', keywords: ['bbva', 'bilbao', 'vizcaya', 'argentaria'] },
+                { id: 'intesa', keywords: ['intesa', 'sanpaolo', 'fideuram', 'ispy'] },
+                { id: 'unicredit', keywords: ['unicredit', 'buddybank'] },
+                { id: 'sella', keywords: ['sella', 'hype'] },
+                { id: 'mps', keywords: ['monte', 'paschi', 'mps'] },
+                { id: 'bper', keywords: ['bper', 'emilia', 'romagna'] },
+                { id: 'credem', keywords: ['credem', 'emiliano'] },
+                { id: 'mediolanum', keywords: ['mediolanum'] },
+                { id: 'fineco', keywords: ['fineco'] },
+                { id: 'bpm', keywords: ['bpm', 'popolare', 'milano'] },
+                { id: 'illimity', keywords: ['illimity'] },
+                { id: 'widiba', keywords: ['widiba'] },
+                { id: 'chebanca', keywords: ['chebanca', 'mediobanca'] },
+                { id: 'ing', keywords: ['ing', 'arancio'] },
+                { id: 'n26', keywords: ['n26'] }
+            ];
 
-            // POSTE: Handle "Postepay" and "BancoPosta" variants
-            if (combinedInfo.includes('poste') || combinedInfo.includes('bancoposta')) {
-                const found = accounts.find((a: any) =>
-                    a.id === 'poste' ||
-                    a.id === 'bancoposta' ||
-                    a.id === 'postepay' ||
-                    a.name.toLowerCase().includes('poste')
-                );
-                if (found) return found.id;
-            }
-
-            if (combinedInfo.includes('revolut')) {
-                const found = accounts.find((a: any) => a.id === 'revolut' || a.name.toLowerCase().includes('revolut'));
-                if (found) return found.id;
-            }
-
-            // BBVA: Specific match for BBVA
-            if (combinedInfo.includes('bbva')) {
-                const found = accounts.find((a: any) =>
-                    a.id === 'bbva' ||
-                    a.name.toLowerCase().includes('bbva')
-                );
-                if (found) return found.id;
+            for (const brand of internalMappings) {
+                if (brand.keywords.some(k => combinedInfo.includes(k))) {
+                    const found = accounts.find((a: any) =>
+                        a.id.toLowerCase() === brand.id ||
+                        brand.keywords.some(k => a.name.toLowerCase().includes(k)) ||
+                        a.id.toLowerCase().includes(brand.id)
+                    );
+                    if (found) {
+                        console.log(`✅ Brand match found: ${brand.id} -> ${found.id} (${found.name})`);
+                        return found.id;
+                    }
+                }
             }
 
             // 2. Exact Name Match (Solid Confidence)
@@ -635,8 +661,8 @@ export class BankSyncService {
                 if (la.id === 'cash' || localName.includes('contanti')) continue;
 
                 // Ignore very generic or extremely short local names for fuzzy matching to avoid noise
-                // Reduced limit to 4 to allow "BBVA" matching
-                if (localName.length < 4 || localName === 'conto' || localName === 'bank') continue;
+                const genericWords = ['conto', 'bank', 'banca', 'corrente', 'risparmio', 'libretto', 'arancio', 'card', 'carta', 'debito', 'credito', 'prepagata'];
+                if (localName.length < 4 || genericWords.includes(localName)) continue;
 
                 for (const bn of bankNames) {
                     if (bn.length < 3) continue; // Skip too short bank-provided names
