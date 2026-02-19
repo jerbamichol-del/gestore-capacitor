@@ -100,10 +100,26 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             // If successful, try to fetch accounts
             try {
                 const accounts = await BankSyncService.fetchAccounts();
-                const withBalances = await Promise.all(accounts.map(async (acc) => ({
-                    ...acc,
-                    balance: await BankSyncService.fetchBalance(acc.uid).catch(() => null)
-                })));
+                const withBalances = await Promise.all(accounts.map(async (acc) => {
+                    let balance: number | null = null;
+                    try {
+                        balance = await BankSyncService.fetchBalance(acc.uid);
+                    } catch {
+                        // Fallback to cached balance from last successful sync
+                        try {
+                            const mappings = BankSyncService.getAccountMappings();
+                            const localId = mappings[acc.uid];
+                            if (localId) {
+                                const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+                                const localAcc = localAccounts.find((a: any) => a.id === localId);
+                                if (localAcc?.cachedBalance !== undefined) {
+                                    balance = localAcc.cachedBalance;
+                                }
+                            }
+                        } catch { /* ignore */ }
+                    }
+                    return { ...acc, balance };
+                }));
                 setAccountsWithBalances(withBalances);
                 if (!silent) {
                     showToast({

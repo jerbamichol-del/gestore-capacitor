@@ -580,8 +580,17 @@ export class BankSyncService {
             return 0;
         }
 
-        // Handle multiple possible formats: amount.amount, amount.value, balanceAmount.amount, balance_amount.amount, etc.
-        const extractValue = (obj: any): number | null => {
+        // Log each balance entry for detailed debugging
+        for (const b of balances) {
+            console.log(`Balance entry: type=${b.balanceType || b.balance_type}, data=${JSON.stringify(b)}`);
+        }
+
+        // Handle multiple possible formats
+        // Enable Banking typically returns: { balanceType: "...", balanceAmount: { amount: "123.45", currency: "EUR" } }
+        // Some banks use: { balance_type: "...", amount: { amount: "123.45" } }  
+        // Others use: { balanceType: "...", amount: { value: "123.45" } }
+        const extractValue = (obj: any, depth = 0): number | null => {
+            if (depth > 5) return null; // Safety limit
             if (obj === null || obj === undefined) return null;
             if (typeof obj === 'number') return obj;
             if (typeof obj === 'string') {
@@ -589,13 +598,27 @@ export class BankSyncService {
                 return isNaN(parsed) ? null : parsed;
             }
             if (typeof obj === 'object') {
-                // Priority fields common in banking APIs
-                const val = obj.amount ?? obj.value ?? obj.amountValue ?? obj.valueAmount;
-                if (val !== undefined && val !== null) return extractValue(val);
-
-                // ISO 20022 structure: balanceAmount.amount or similar
-                const nested = obj.balanceAmount ?? obj.balance_amount ?? obj.amount;
-                if (nested !== undefined && nested !== null) return extractValue(nested);
+                // 1. Enable Banking standard: balanceAmount.amount
+                if (obj.balanceAmount !== undefined && obj.balanceAmount !== null) {
+                    return extractValue(obj.balanceAmount, depth + 1);
+                }
+                // 2. Alternative: balance_amount (snake_case)
+                if (obj.balance_amount !== undefined && obj.balance_amount !== null) {
+                    return extractValue(obj.balance_amount, depth + 1);
+                }
+                // 3. Direct amount field (could be number, string, or nested object)
+                if (obj.amount !== undefined && obj.amount !== null) {
+                    return extractValue(obj.amount, depth + 1);
+                }
+                // 4. Value field
+                if (obj.value !== undefined && obj.value !== null) {
+                    return extractValue(obj.value, depth + 1);
+                }
+                // 5. Other naming conventions
+                const fallback = obj.amountValue ?? obj.valueAmount ?? obj.saldo ?? obj.disponibile;
+                if (fallback !== undefined && fallback !== null) {
+                    return extractValue(fallback, depth + 1);
+                }
             }
             return null;
         };

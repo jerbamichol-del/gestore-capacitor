@@ -519,7 +519,7 @@ export function PendingTransactionsModal({
         <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
 
           {/* Main Card */}
-          <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50 dark:border-white/10 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow duration-300">
+          <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50 dark:border-white/10 shadow-sm relative group hover:shadow-md transition-shadow duration-300">
             {/* Background Glow */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-sunset-peach/30 dark:bg-electric-violet/20 rounded-full blur-3xl group-hover:bg-sunset-peach/40 dark:group-hover:bg-electric-violet/30 transition-all duration-500" />
 
