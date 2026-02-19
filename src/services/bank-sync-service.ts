@@ -472,17 +472,24 @@ export class BankSyncService {
                     if (Array.isArray(data.accounts_data) && data.accounts_data.length > 0) {
                         sessionAccounts = data.accounts_data;
                     } else if (Array.isArray(data.accounts)) {
-                        for (const accountId of data.accounts) {
-                            if (typeof accountId === 'string') {
-                                const fullAcc = globalAccountsMap.get(accountId.toLowerCase());
+                        for (const accIdOrObj of data.accounts) {
+                            if (typeof accIdOrObj === 'string') {
+                                const fullAcc = globalAccountsMap.get(accIdOrObj.toLowerCase());
                                 if (fullAcc) {
                                     sessionAccounts.push(fullAcc);
                                 } else {
                                     // Fallback if not found globally
-                                    sessionAccounts.push({ uid: accountId, name: 'Conto ' + accountId });
+                                    sessionAccounts.push({ uid: accIdOrObj, name: 'Conto Trovato in Banca' });
                                 }
-                            } else if (typeof accountId === 'object') {
-                                sessionAccounts.push(accountId);
+                            } else if (typeof accIdOrObj === 'object' && accIdOrObj !== null) {
+                                // Sometimes it's already an object
+                                if (accIdOrObj.uid) {
+                                    const fullAcc = globalAccountsMap.get(String(accIdOrObj.uid).toLowerCase());
+                                    // if we found it globally we prefer that, otherwise use what session gave us
+                                    sessionAccounts.push(fullAcc ? fullAcc : accIdOrObj);
+                                } else {
+                                    sessionAccounts.push(accIdOrObj);
+                                }
                             }
                         }
                     }

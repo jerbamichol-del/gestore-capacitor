@@ -400,6 +400,13 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
         // Only open if modification is possible (onAddTransaction is provided)
         if (!onAddTransaction) return;
 
+        // Prevent editing balance of synced accounts
+        const isSynced = syncedAccountIds.includes(accountId);
+        if (isSynced) {
+            // Might want to add a toast here, but returning early is enough
+            return;
+        }
+
         setEditingAccountId(accountId);
         setNewBalanceValue('');
         setOpenTransferId(null);
