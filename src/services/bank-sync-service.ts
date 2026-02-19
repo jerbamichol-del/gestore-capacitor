@@ -424,8 +424,9 @@ export class BankSyncService {
     }
 
     /**
-     * Fetch all authorized accounts, removing only expired sessions.
-     * Accounts are de-duplicated by UID but sessions are preserved (needed for renewal).
+     * Fetch all authorized accounts, removing expired and stale sessions.
+     * Accounts are de-duplicated by UID. Sessions are preserved unless expired or
+     * stale (returning 0 accounts and not the newest session).
      */
     static async fetchAccounts(): Promise<any[]> {
         const creds = this.getCredentials();
@@ -435,6 +436,7 @@ export class BankSyncService {
         const sessions = await this.getSessions();
         let allAccounts = new Map<string, any>();
         let expiredSessions: string[] = [];
+        let emptySessions: string[] = [];
         let validSessionCount = 0;
 
         for (const sessionId of sessions) {
@@ -447,12 +449,17 @@ export class BankSyncService {
 
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.accounts_data) {
-                        console.log(`Session ${sessionId} returned ${data.accounts_data.length} accounts`);
+                    const accountsData = data.accounts_data || [];
+                    console.log(`Session ${sessionId} returned ${accountsData.length} accounts`);
+
+                    if (accountsData.length === 0) {
+                        // Session has no accounts - might be stale or still loading
+                        emptySessions.push(sessionId);
+                    } else {
                         validSessionCount++;
 
                         // De-duplicate accounts by UID (keep first seen)
-                        for (const acc of data.accounts_data) {
+                        for (const acc of accountsData) {
                             const uid = String(acc.uid).toLowerCase();
                             if (!allAccounts.has(uid)) {
                                 allAccounts.set(uid, {
@@ -475,13 +482,35 @@ export class BankSyncService {
             }
         }
 
-        // Remove only expired sessions
+        // Remove expired sessions
         for (const expiredId of expiredSessions) {
             await this.removeSession(expiredId);
         }
 
+        // Clean up stale empty sessions, but ALWAYS keep the newest one
+        // (it might still be loading accounts from bank authorization)
+        if (emptySessions.length > 0) {
+            // The last session in the list is the newest (appended on creation)
+            const newestSession = sessions[sessions.length - 1];
+            const staleEmpty = emptySessions.filter(s => s !== newestSession);
+
+            for (const staleId of staleEmpty) {
+                await this.removeSession(staleId);
+                console.log(`🧹 Removed stale empty session: ${staleId}`);
+            }
+
+            if (staleEmpty.length > 0) {
+                console.log(`🧹 Cleaned ${staleEmpty.length} stale empty sessions`);
+            }
+
+            // Log if newest session is empty (still loading)
+            if (emptySessions.includes(newestSession)) {
+                console.log(`⏳ Newest session ${newestSession} has 0 accounts (may still be loading)`);
+            }
+        }
+
         // If all sessions expired, throw specific error
-        if (expiredSessions.length > 0 && validSessionCount === 0) {
+        if (expiredSessions.length > 0 && validSessionCount === 0 && emptySessions.length === 0) {
             throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute. Ricollega la banca dalle impostazioni.');
         }
 

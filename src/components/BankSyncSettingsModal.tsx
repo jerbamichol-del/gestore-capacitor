@@ -303,8 +303,12 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                 console.log('🔄 Strategy 1: Attempting ORIGINAL URL:', originalRedirectUrl);
                                 try {
                                     await BankSyncService.authorizeSession(code, originalRedirectUrl);
-                                    showToast({ message: "Conto autorizzato!", type: 'success' });
+                                    showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
+                                    // Some banks (BBVA) need time to populate accounts
+                                    await new Promise(r => setTimeout(r, 3000));
                                     handleTestConnection();
+                                    // Retry after more time if accounts are still loading
+                                    setTimeout(() => handleTestConnection(true), 8000);
                                 } catch (authError: any) {
                                     console.warn('⚠️ Strategy 1 failed:', authError.message);
 
@@ -313,8 +317,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                         console.log('🔄 Strategy 2: Attempting DYNAMIC URL:', dynamicRedirectUrl);
                                         try {
                                             await BankSyncService.authorizeSession(code, dynamicRedirectUrl);
-                                            showToast({ message: "Conto autorizzato!", type: 'success' });
+                                            showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
+                                            await new Promise(r => setTimeout(r, 3000));
                                             handleTestConnection();
+                                            setTimeout(() => handleTestConnection(true), 8000);
                                             return; // Success
                                         } catch (e2: any) {
                                             console.warn('⚠️ Strategy 2 failed:', e2.message);
@@ -325,8 +331,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                     console.log('🔄 Strategy 3: Attempting WITHOUT URL');
                                     try {
                                         await BankSyncService.authorizeSession(code);
-                                        showToast({ message: "Conto autorizzato!", type: 'success' });
+                                        showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
+                                        await new Promise(r => setTimeout(r, 3000));
                                         handleTestConnection();
+                                        setTimeout(() => handleTestConnection(true), 8000);
                                     } catch (e3: any) {
                                         console.error('❌ Strategy 3 failed:', e3.message);
                                         showToast({ message: `Errore: ${authError.message}`, type: 'error' });
@@ -363,10 +371,12 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
             const finalize = async () => {
                 try {
                     await BankSyncService.authorizeSession(code, 'https://localhost/');
-                    showToast({ message: "Conto autorizzato con successo!", type: 'success' });
+                    showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
                     // Clean URL
                     window.history.replaceState({}, document.title, window.location.pathname);
+                    await new Promise(r => setTimeout(r, 3000));
                     handleTestConnection();
+                    setTimeout(() => handleTestConnection(true), 8000);
                 } catch (e: any) {
                     showToast({ message: `Errore sincronizzazione sessione: ${e.message}`, type: 'error' });
                 }
