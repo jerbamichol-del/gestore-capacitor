@@ -439,6 +439,23 @@ export class BankSyncService {
         let emptySessions: string[] = [];
         let validSessionCount = 0;
 
+        // ✅ Fetch all global accounts first (Standard Enable Banking way to get full objects)
+        let globalAccountsMap = new Map<string, any>();
+        try {
+            const accResponse = await this.safeFetch(`${this.BASE_URL}/accounts`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (accResponse.ok) {
+                const accData = await accResponse.json();
+                const globalAccounts = accData.accounts || accData.accounts_data || [];
+                for (const acc of globalAccounts) {
+                    globalAccountsMap.set(String(acc.uid).toLowerCase(), acc);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch global accounts from /accounts endpoint:', e);
+        }
+
         for (const sessionId of sessions) {
             try {
                 const response = await this.safeFetch(`${this.BASE_URL}/sessions/${sessionId}`, {
@@ -449,17 +466,37 @@ export class BankSyncService {
 
                 if (response.ok) {
                     const data = await response.json();
-                    const accountsData = data.accounts_data || [];
-                    console.log(`Session ${sessionId} returned ${accountsData.length} accounts`);
 
-                    if (accountsData.length === 0) {
+                    // Resolve session accounts. API might return full objects in `accounts_data` or array of UIDs in `accounts`.
+                    let sessionAccounts: any[] = [];
+                    if (Array.isArray(data.accounts_data) && data.accounts_data.length > 0) {
+                        sessionAccounts = data.accounts_data;
+                    } else if (Array.isArray(data.accounts)) {
+                        for (const accountId of data.accounts) {
+                            if (typeof accountId === 'string') {
+                                const fullAcc = globalAccountsMap.get(accountId.toLowerCase());
+                                if (fullAcc) {
+                                    sessionAccounts.push(fullAcc);
+                                } else {
+                                    // Fallback if not found globally
+                                    sessionAccounts.push({ uid: accountId, name: 'Conto ' + accountId });
+                                }
+                            } else if (typeof accountId === 'object') {
+                                sessionAccounts.push(accountId);
+                            }
+                        }
+                    }
+
+                    console.log(`Session ${sessionId} resolved ${sessionAccounts.length} accounts`);
+
+                    if (sessionAccounts.length === 0) {
                         // Session has no accounts - might be stale or still loading
                         emptySessions.push(sessionId);
                     } else {
                         validSessionCount++;
 
                         // De-duplicate accounts by UID (keep first seen)
-                        for (const acc of accountsData) {
+                        for (const acc of sessionAccounts) {
                             const uid = String(acc.uid).toLowerCase();
                             if (!allAccounts.has(uid)) {
                                 allAccounts.set(uid, {
@@ -535,20 +572,31 @@ export class BankSyncService {
         // ✅ Request both booked and pending transactions
         // This ensures users see transactions immediately (pending) and when finalized (booked)
         // The bankTransactionId-based hash prevents duplicates when status changes
-        const response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions?status=both`, {
+        let response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions?status=both`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
 
         if (!response.ok) {
-            const error = await response.text();
             // Check if session expired
             if (response.status === 401) {
                 console.warn(`Session expired for account ${accountUid}`);
                 return []; // Return empty instead of throwing
             }
-            throw new Error(`Failed to fetch transactions: ${error}`);
+
+            // Fallback for banks that don't support status=both (like BBVA)
+            console.warn(`?status=both failed with status ${response.status}, retrying without status...`);
+            response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`Failed to fetch transactions after fallback: ${error}`);
+            }
         }
 
         const data = await response.json();
@@ -623,7 +671,13 @@ export class BankSyncService {
             if (obj === null || obj === undefined) return null;
             if (typeof obj === 'number') return obj;
             if (typeof obj === 'string') {
-                const parsed = parseFloat(obj);
+                let normalized = obj;
+                if (normalized.includes(',') && normalized.includes('.')) {
+                    normalized = normalized.replace(/\./g, '').replace(',', '.');
+                } else if (normalized.includes(',')) {
+                    normalized = normalized.replace(',', '.');
+                }
+                const parsed = parseFloat(normalized);
                 return isNaN(parsed) ? null : parsed;
             }
             if (typeof obj === 'object') {
@@ -948,9 +1002,9 @@ export class BankSyncService {
             || tx.debtorName || tx.debtor_name
             || 'Transazione Bancaria';
 
-        // Truncate description to prevent UI overflow
-        if (description && description.length > 80) {
-            description = description.substring(0, 77) + '...';
+        // Truncation removed so UI can properly display the full description when expanded
+        if (description && description.trim() === '') {
+            description = 'Transazione Bancaria';
         }
 
         // ✅ CRITICAL: Extract unique transaction ID from API for stable hash generation

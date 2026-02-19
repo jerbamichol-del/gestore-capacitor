@@ -568,7 +568,7 @@ export function PendingTransactionsModal({
                 className="group cursor-pointer relative"
                 onClick={() => setExpandedDesc(prev => prev === currentTransaction.id ? null : currentTransaction.id)}
               >
-                <p className={`text-base font-medium text-slate-800 dark:text-slate-100 mb-2 leading-relaxed transition-all duration-200 ${expandedDesc === currentTransaction.id ? '' : 'line-clamp-2'
+                <p className={`text-base font-medium text-slate-800 dark:text-slate-100 mb-2 leading-relaxed transition-all duration-200 break-words whitespace-pre-wrap ${expandedDesc === currentTransaction.id ? '' : 'line-clamp-2'
                   }`}>
                   {currentTransaction.description}
                 </p>
