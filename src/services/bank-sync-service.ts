@@ -317,17 +317,93 @@ export class BankSyncService {
         localStorage.removeItem('bank_sync_sessions');
         localStorage.removeItem(this.STORAGE_KEY_ACTIVE_BANKS);
         localStorage.removeItem(this.STORAGE_KEY_MAPPINGS);
-        console.log('Cleared all bank sync sessions and mappings');
+        localStorage.removeItem('bank_sync_synced_local_ids');
+
+        // Clear cachedBalance from all local accounts
+        try {
+            const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+            let changed = false;
+            for (const acc of localAccounts) {
+                if (acc.cachedBalance !== undefined) {
+                    delete acc.cachedBalance;
+                    delete acc.lastSyncDate;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
+                window.dispatchEvent(new CustomEvent('accounts-updated'));
+                window.dispatchEvent(new CustomEvent('expenses-updated'));
+            }
+        } catch (e) {
+            console.error('Error clearing cachedBalance:', e);
+        }
+
+        console.log('Cleared all bank sync sessions, mappings, and synced state');
     }
 
     /**
-     * Disconnect a specific session by ID
+     * Disconnect a specific session by ID.
+     * Also recalculates which accounts are still synced and clears stale cachedBalance.
      */
     static async disconnectSession(sessionId: string): Promise<void> {
         const sessions = await this.getSessions();
         const filtered = sessions.filter(s => s !== sessionId);
         localStorage.setItem('bank_sync_sessions', JSON.stringify(filtered));
         console.log(`Disconnected bank session: ${sessionId}`);
+
+        // If no sessions remain, clear all synced state
+        if (filtered.length === 0) {
+            localStorage.removeItem('bank_sync_synced_local_ids');
+            // Clear cachedBalance from all local accounts
+            try {
+                const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+                let changed = false;
+                for (const acc of localAccounts) {
+                    if (acc.cachedBalance !== undefined) {
+                        delete acc.cachedBalance;
+                        delete acc.lastSyncDate;
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
+                    window.dispatchEvent(new CustomEvent('accounts-updated'));
+                    window.dispatchEvent(new CustomEvent('expenses-updated'));
+                }
+            } catch (e) {
+                console.error('Error clearing cachedBalance on disconnect:', e);
+            }
+        } else {
+            // Recalculate synced IDs by fetching remaining accounts
+            try {
+                const remainingAccounts = await this.fetchAccounts();
+                const stillSyncedIds = new Set<string>();
+                for (const acc of remainingAccounts) {
+                    const localId = this.resolveLocalAccountId(acc);
+                    stillSyncedIds.add(localId);
+                }
+                localStorage.setItem('bank_sync_synced_local_ids', JSON.stringify(Array.from(stillSyncedIds)));
+
+                // Clear cachedBalance for accounts no longer synced
+                const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+                let changed = false;
+                for (const acc of localAccounts) {
+                    if (acc.cachedBalance !== undefined && !stillSyncedIds.has(acc.id)) {
+                        delete acc.cachedBalance;
+                        delete acc.lastSyncDate;
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
+                }
+                window.dispatchEvent(new CustomEvent('accounts-updated'));
+                window.dispatchEvent(new CustomEvent('expenses-updated'));
+            } catch (e) {
+                console.error('Error recalculating synced IDs after disconnect:', e);
+            }
+        }
     }
 
     /**
@@ -348,7 +424,8 @@ export class BankSyncService {
     }
 
     /**
-     * Fetch all authorized accounts, removing expired sessions and duplicate connections
+     * Fetch all authorized accounts, removing only expired sessions.
+     * Accounts are de-duplicated by UID but sessions are preserved (needed for renewal).
      */
     static async fetchAccounts(): Promise<any[]> {
         const creds = this.getCredentials();
@@ -358,7 +435,6 @@ export class BankSyncService {
         const sessions = await this.getSessions();
         let allAccounts = new Map<string, any>();
         let expiredSessions: string[] = [];
-        let duplicateSessions: string[] = [];
         let validSessionCount = 0;
 
         for (const sessionId of sessions) {
@@ -373,9 +449,9 @@ export class BankSyncService {
                     const data = await response.json();
                     if (data.accounts_data) {
                         console.log(`Session ${sessionId} returned ${data.accounts_data.length} accounts`);
-                        let sessionHasUniqueAccount = false;
+                        validSessionCount++;
 
-                        // De-duplicate accounts by UID
+                        // De-duplicate accounts by UID (keep first seen)
                         for (const acc of data.accounts_data) {
                             const uid = String(acc.uid).toLowerCase();
                             if (!allAccounts.has(uid)) {
@@ -383,18 +459,9 @@ export class BankSyncService {
                                     ...acc,
                                     _sessionId: sessionId
                                 });
-                                sessionHasUniqueAccount = true;
                             } else {
-                                console.log(`🔄 Duplicate account ${acc.uid} already covered by another session`);
+                                console.log(`🔄 Duplicate account ${acc.uid} already covered by another session (keeping both sessions)`);
                             }
-                        }
-
-                        // If this session only provided duplicate accounts, mark it for removal
-                        if (!sessionHasUniqueAccount && data.accounts_data.length > 0) {
-                            console.log(`🗑️ Session ${sessionId} is redundant (all accounts already covered), marking for cleanup`);
-                            duplicateSessions.push(sessionId);
-                        } else {
-                            validSessionCount++;
                         }
                     }
                 } else if (response.status === 401) {
@@ -408,15 +475,9 @@ export class BankSyncService {
             }
         }
 
-        // Remove expired sessions
+        // Remove only expired sessions
         for (const expiredId of expiredSessions) {
             await this.removeSession(expiredId);
-        }
-
-        // Remove duplicate/redundant sessions
-        for (const duplicateId of duplicateSessions) {
-            await this.removeSession(duplicateId);
-            console.log(`✅ Removed redundant session: ${duplicateId}`);
         }
 
         // If all sessions expired, throw specific error
@@ -426,10 +487,6 @@ export class BankSyncService {
 
         if (expiredSessions.length > 0 && validSessionCount > 0) {
             console.warn(`${expiredSessions.length} sessioni scadute rimosse, ${validSessionCount} ancora valide`);
-        }
-
-        if (duplicateSessions.length > 0) {
-            console.log(`🧹 Pulite ${duplicateSessions.length} sessioni duplicate`);
         }
 
         return Array.from(allAccounts.values());
@@ -490,10 +547,10 @@ export class BankSyncService {
 
         if (!response.ok) {
             const error = await response.text();
-            // Check if session expired
+            // Throw on session expired so callers can decide to skip balance update
             if (response.status === 401) {
                 console.warn(`Session expired for account ${accountUid}`);
-                return 0; // Return 0 instead of throwing
+                throw new Error(`SESSION_EXPIRED: Balance unavailable for ${accountUid}`);
             }
             throw new Error(`Failed to fetch balance: ${error}`);
         }
@@ -726,32 +783,40 @@ export class BankSyncService {
                 }
 
                 // 2. Sync Balance & Reconcile
-                const bankBalance = await this.fetchBalance(acc.uid);
-                console.log(`Account ${localAccountId}: Bank balance = ${bankBalance}`);
+                let bankBalance: number | null = null;
+                try {
+                    bankBalance = await this.fetchBalance(acc.uid);
+                    console.log(`Account ${localAccountId}: Bank balance = ${bankBalance}`);
 
-                // ✅ UPDATE LOCAL ACCOUNT WITH CACHED BALANCE
-                const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
-                const accountIndex = localAccounts.findIndex((a: any) => a.id === localAccountId);
-                if (accountIndex !== -1) {
-                    localAccounts[accountIndex].cachedBalance = bankBalance;
-                    localAccounts[accountIndex].lastSyncDate = new Date().toISOString();
-                    localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
-                    console.log(`✅ Updated cached balance for ${localAccountId}: ${bankBalance}`);
+                    // ✅ UPDATE LOCAL ACCOUNT WITH CACHED BALANCE
+                    const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+                    const accountIndex = localAccounts.findIndex((a: any) => a.id === localAccountId);
+                    if (accountIndex !== -1) {
+                        localAccounts[accountIndex].cachedBalance = bankBalance;
+                        localAccounts[accountIndex].lastSyncDate = new Date().toISOString();
+                        localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
+                        console.log(`✅ Updated cached balance for ${localAccountId}: ${bankBalance}`);
+                    }
+                } catch (balanceError: any) {
+                    console.warn(`⚠️ Could not fetch balance for ${localAccountId}, keeping existing cachedBalance:`, balanceError.message);
                 }
 
-                const localBalance = this.calculateLocalBalance(localAccountId);
-                console.log(`Account ${localAccountId}: Local balance = ${localBalance}`);
+                // Only reconcile if we successfully got a balance
+                if (bankBalance !== null) {
+                    const localBalance = this.calculateLocalBalance(localAccountId);
+                    console.log(`Account ${localAccountId}: Local balance = ${localBalance}`);
 
-                const diff = bankBalance - localBalance;
-                console.log(`Account ${localAccountId}: Difference = ${diff}`);
+                    const diff = bankBalance - localBalance;
+                    console.log(`Account ${localAccountId}: Difference = ${diff}`);
 
-                if (Math.abs(diff) > 0.01) {
-                    await AutoTransactionService.addAdjustment(
-                        localAccountId,
-                        diff,
-                        `Riconciliazione Automatica ${acc.account_id?.iban || acc.accountId?.iban || acc.name || localAccountId}`
-                    );
-                    adjustmentsCount++;
+                    if (Math.abs(diff) > 0.01) {
+                        await AutoTransactionService.addAdjustment(
+                            localAccountId,
+                            diff,
+                            `Riconciliazione Automatica ${acc.account_id?.iban || acc.accountId?.iban || acc.name || localAccountId}`
+                        );
+                        adjustmentsCount++;
+                    }
                 }
             }
 
