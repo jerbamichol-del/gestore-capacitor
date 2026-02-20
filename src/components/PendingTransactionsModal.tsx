@@ -1,10 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PendingTransaction } from '../services/notification-listener-service';
 import { Account, Expense } from '../types';
 import { pickImage, processImageFile } from '../utils/fileHelper';
-import { CategoryService } from '../services/category-service';
-import { DeduplicationService } from '../services/deduplication-service';
-import { toYYYYMMDD } from '../utils/date';
+import { CategoryService } from '../services/category-service'; // ✅ Import
 
 // Type for pending transaction types (excludes 'adjustment' which is system-only)
 type PendingTransactionType = 'expense' | 'income' | 'transfer';
@@ -15,6 +13,14 @@ const getUITransactionType = (type: string): PendingTransactionType => {
     return type;
   }
   return 'expense'; // Default for 'adjustment' or any other unexpected type
+};
+
+// Helper for YYYY-MM-DD
+const toYYYYMMDD = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 interface SavedRule {
@@ -86,7 +92,7 @@ function getTextForRules(transaction: PendingTransaction): string {
 // Extract destinatario from description
 function extractDestinatario(description: string): string | null {
   // Pattern: "a [NAME]" or "to [NAME]"
-  const match = description.match(/(?:a|to)\s+([^Ôé¼\n.]+?)(?:\s+├¿|\s+has|\s+was|\.|$)/i);
+  const match = description.match(/(?:a|to)\s+([^€\n.]+?)(?:\s+è|\s+has|\s+was|\.|$)/i);
   if (match && match[1]) {
     return match[1].trim();
   }
@@ -108,6 +114,7 @@ function findMatchingRule(
 
     // EXACT match (100%)
     if (desc.includes(dest)) {
+      console.log(`✅ Exact rule match: ${dest}`);
       return { rule, confidence: 100 };
     }
 
@@ -115,6 +122,7 @@ function findMatchingRule(
     const tokens = dest.split(' ');
     const cognome = tokens.length > 1 ? tokens[tokens.length - 1] : null;
     if (cognome && cognome.length > 3 && desc.includes(cognome)) {
+      console.log(`⚠️ Partial rule match: ${cognome}`);
       return { rule, confidence: 75 };
     }
   }
@@ -146,12 +154,11 @@ export function PendingTransactionsModal({
   // Selected type per transaction
   const [selectedTypes, setSelectedTypes] = useState<Record<string, 'expense' | 'income' | 'transfer'>>({});
 
-  // Ô£à Lock manual choice to avoid auto-reset
+  // ✅ Lock manual choice to avoid auto-reset
   const [lockedTypes, setLockedTypes] = useState<Record<string, boolean>>({});
 
   const [saveRuleFlags, setSaveRuleFlags] = useState<Record<string, boolean>>({});
   const [matchedRules, setMatchedRules] = useState<Record<string, { rule: SavedRule | null; confidence: number }>>({});
-  const [recurringMatches, setRecurringMatches] = useState<Record<string, Expense | null>>({});
 
   // Accounts for transfers
   const [transferAccounts, setTransferAccounts] = useState<Record<string, { from: string; to: string }>>({});
@@ -193,27 +200,13 @@ export function PendingTransactionsModal({
     if (!isOpen || transactions.length === 0) return;
 
     const nextMatchedRules: Record<string, { rule: SavedRule | null; confidence: number }> = {};
-    const nextRecurringMatches: Record<string, Expense | null> = {};
 
-    // Build match maps
+    // Build match map first
     transactions.forEach((transaction) => {
       const textForRules = getTextForRules(transaction);
       nextMatchedRules[transaction.id] = findMatchingRule(transaction.sourceApp || 'Note', textForRules, savedRules);
-
-      // Check for recurring match using DeduplicationService
-      // Need to construct a mock BankTransaction
-      const bankTx = {
-        description: transaction.description,
-        amount: transaction.amount,
-        date: toYYYYMMDD(new Date(transaction.createdAt))
-      };
-
-      const recurringMatch = DeduplicationService.findMatchingRecurringExpense(bankTx, expenses);
-      nextRecurringMatches[transaction.id] = recurringMatch;
     });
-
     setMatchedRules(nextMatchedRules);
-    setRecurringMatches(nextRecurringMatches);
 
     // Transfer accounts
     setTransferAccounts((prev) => {
@@ -274,7 +267,7 @@ export function PendingTransactionsModal({
       });
       return next;
     });
-  }, [isOpen, transactions, savedRules, accounts, lockedTypes, expenses]);
+  }, [isOpen, transactions, savedRules, accounts, lockedTypes]);
 
   if (!isOpen || transactions.length === 0) return null;
 
@@ -413,6 +406,7 @@ export function PendingTransactionsModal({
         const updatedRules = [...savedRules, newRule];
         saveSavedRules(updatedRules);
         setSavedRules(updatedRules);
+        console.log('✅ Saved new rule:', newRule);
       }
     }
 
@@ -440,18 +434,36 @@ export function PendingTransactionsModal({
     setTimeout(() => setProcessingId(null), 250);
   };
 
+  const handleDeleteRule = (transactionId: string) => {
+    const match = matchedRules[transactionId];
+    if (!match || !match.rule) return;
+
+    const updatedRules = savedRules.filter((r) => r.id !== match.rule!.id);
+    saveSavedRules(updatedRules);
+    setSavedRules(updatedRules);
+
+    // Reset to default type (and unlock)
+    const transaction = transactions.find((t) => t.id === transactionId);
+    if (transaction) {
+      setLockedTypes((prev) => ({ ...prev, [transactionId]: false }));
+      setSelectedTypes((prev) => ({ ...prev, [transactionId]: getUITransactionType(transaction.type) }));
+    }
+
+    // Clear matched rule
+    setMatchedRules((prev) => ({ ...prev, [transactionId]: { rule: null, confidence: 0 } }));
+
+    console.log('🗑️ Deleted rule:', match.rule.id);
+  };
+
   const selectedType = selectedTypes[currentTransaction.id] || getUITransactionType(currentTransaction.type);
   const saveRule = saveRuleFlags[currentTransaction.id] || false;
   const match = matchedRules[currentTransaction.id];
-  const recurringMatch = recurringMatches[currentTransaction.id];
   const transferAccountSelection = transferAccounts[currentTransaction.id];
-
-  // Duplicate check (only if NO recurring match found - because recurring match IS a duplicate we want to link)
-  const duplicateCandidate = !recurringMatch ? expenses.find(e =>
+  const duplicateCandidate = expenses.find(e =>
     e.amount === currentTransaction.amount &&
     (Math.abs(new Date(e.date + ' ' + (e.time || '00:00')).getTime() - currentTransaction.createdAt) < 2 * 60 * 60 * 1000 || // Within 2 hours
       e.date === toYYYYMMDD(new Date(currentTransaction.createdAt)))
-  ) : null;
+  );
 
   const isTransferValid =
     selectedType !== 'transfer' ||
@@ -471,400 +483,398 @@ export function PendingTransactionsModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-midnight/80 backdrop-blur-md transition-opacity duration-300"
+        className="fixed inset-0 bg-midnight/60 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal - Full screen on mobile, centered on desktop */}
-      <div className="relative w-full sm:max-w-lg bg-white dark:bg-slate-900 sm:rounded-3xl shadow-2xl h-full sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col border border-slate-200 dark:border-electric-violet/20 animate-slide-up-fade">
+      <div className="relative w-full sm:max-w-lg midnight-card sm:rounded-2xl shadow-xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col border border-transparent dark:border-electric-violet/30">
         {/* Header */}
-        <div className="sticky top-0 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/50 dark:border-white/10 px-6 py-4 z-10">
+        <div className="sticky top-0 midnight-card border-b border-slate-200 dark:border-electric-violet/20 px-6 py-4 z-10">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                Transazioni Rilevate
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">
-                {transactions.length} {transactions.length === 1 ? 'da verificare' : 'da verificare'}
-              </p>
-            </div>
+            <h2 className="text-xl font-semibold text-sunset-text dark:text-white">Transazioni Rilevate</h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 dark:text-slate-400 transition-colors"
+              className="text-slate-400 hover:text-slate-600 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-
-          {/* Progress Bar */}
-          <div className="mt-4 h-1 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-sunset-orange to-sunset-pink dark:from-electric-blue dark:to-electric-purple transition-all duration-300 ease-out"
-              style={{ width: `${((currentIndex + 1) / transactions.length) * 100}%` }}
-            />
-          </div>
-          <div className="text-right mt-1">
-            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-              {currentIndex + 1} di {transactions.length}
-            </span>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-sm text-slate-600 dark:text-gray-400">
+              {transactions.length} {transactions.length === 1 ? 'transazione' : 'transazioni'} da confermare
+            </p>
+            <p className="text-sm text-slate-500 dark:text-gray-400">
+              {currentIndex + 1}/{transactions.length}
+            </p>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
-
-          {/* Main Card */}
-          <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50 dark:border-white/10 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow duration-300">
-            {/* Background Glow */}
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-sunset-peach/30 dark:bg-electric-violet/20 rounded-full blur-3xl group-hover:bg-sunset-peach/40 dark:group-hover:bg-electric-violet/30 transition-all duration-500" />
-
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="bg-sunset-cream/60 dark:bg-midnight-card/50 rounded-lg p-4 border border-sunset-coral/20 dark:border-electric-violet/30">
             {/* Transaction Info */}
-            <div className="relative z-10">
-              <div className="flex items-start justify-between mb-2">
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 dark:bg-white/10 text-[10px] font-bold tracking-wider uppercase text-slate-600 dark:text-slate-300">
-                  {currentTransaction.sourceApp || 'APP'}
-                </span>
-                <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
-                  {formatDate(currentTransaction.createdAt)}
-                </span>
-              </div>
-
-              <p className="text-base font-medium text-slate-800 dark:text-slate-100 mb-2 leading-relaxed">
-                {currentTransaction.description}
-              </p>
-
-              <div className="flex items-baseline gap-1">
-                <span className={`text-3xl font-bold tracking-tight ${selectedType === 'income' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
-                  {formatAmount(currentTransaction.amount, 'Ôé¼')}
-                </span>
-                {selectedType === 'income' && <span className="text-xs font-medium text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-500/20 px-1.5 py-0.5 rounded">Entrata</span>}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{currentTransaction.sourceApp || 'APP'}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(currentTransaction.createdAt)}</span>
+                </div>
+                <p className="text-sm font-medium text-slate-900 dark:text-white mb-1 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
+                  {currentTransaction.description}
+                </p>
+                <p className={`text-lg font-bold ${selectedType === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {formatAmount(currentTransaction.amount, '€')}
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Smart Matches & Insights */}
-          <div className="mt-4 space-y-3">
-
-            {/* ­ƒöù Recurring Match Found */}
-            {recurringMatch && (
-              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-sky-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-sky-500/30 flex items-start gap-3 relative overflow-hidden">
-                <div className="absolute inset-0 bg-grid-slate-200/50 dark:bg-grid-slate-700/20 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
-                <div className="p-2 bg-white dark:bg-sky-500/20 rounded-lg text-blue-600 dark:text-sky-400 relative z-10">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                </div>
-                <div className="relative z-10 flex-1">
-                  <h3 className="text-sm font-bold text-blue-900 dark:text-sky-100">Scadenza Ricorrente Trovata</h3>
-                  <p className="text-xs text-blue-700 dark:text-sky-300 mt-1">
-                    Questa spesa sembra essere <b>{recurringMatch.description}</b> prevista per il {recurringMatch.date}.
-                  </p>
-                  <p className="text-xs font-medium text-blue-800 dark:text-sky-200 mt-2">
-                    Verr├á collegata automaticamente invece di creare un duplicato.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Rule Match Info */}
-            {!recurringMatch && match && match.rule && match.confidence === 100 && (
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/30 rounded-xl flex items-center gap-3">
-                <div className="p-1.5 bg-emerald-100 dark:bg-emerald-500/20 rounded-full text-emerald-600 dark:text-emerald-400">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">Regola Applicata</p>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400/80">
-                    Riconosciuto come <b>{match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}</b> per "{match.rule.destinatario}"
-                  </p>
-                </div>
+            {match && match.rule && match.confidence === 100 && (
+              <div className="mb-3 p-2 bg-green-50 dark:bg-emerald-500/10 border border-green-200 dark:border-emerald-500/30 rounded-lg">
+                <p className="text-xs font-medium text-green-700 dark:text-emerald-400">
+                  ✅ Regola riconosciuta: {match.rule.type === 'transfer' ? 'Trasferimento' : match.rule.type === 'income' ? 'Entrata' : 'Spesa'}
+                </p>
+                <p className="text-xs text-green-600 dark:text-emerald-300/70 mt-0.5">"{match.rule.destinatario}"</p>
+              </div>
+            )}
+            {match && match.rule && match.confidence === 75 && (
+              <div className="mb-3 p-2 bg-yellow-50 dark:bg-amber-500/10 border border-yellow-200 dark:border-amber-500/30 rounded-lg">
+                <p className="text-xs font-medium text-yellow-700 dark:text-amber-400">⚠️ Possibile corrispondenza</p>
+                <p className="text-xs text-yellow-600 dark:text-amber-300/70 mt-0.5">Simile a "{match.rule.destinatario}"</p>
               </div>
             )}
 
-            {/* Warning: Possible Duplicate */}
+            {/* Duplicate Warning */}
             {duplicateCandidate && (
-              <div className="p-3 bg-red-50 dark:bg-rose-900/20 border border-red-100 dark:border-rose-800/50 rounded-xl flex items-start gap-3">
-                <div className="p-1.5 bg-red-100 dark:bg-rose-500/20 rounded-full text-red-600 dark:text-rose-400 mt-0.5">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-red-800 dark:text-rose-300">Possibile Duplicato</p>
-                  <p className="text-xs text-red-600 dark:text-rose-400/80 mt-1">
-                    Esiste gi├á una spesa simile di <b>{formatAmount(duplicateCandidate.amount, 'Ôé¼')}</b> del {duplicateCandidate.date}.
-                  </p>
-                </div>
+              <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-xs font-bold text-red-700 dark:text-red-400 flex items-center gap-1">
+                  ⚠️ Possibile Duplicato!
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-300 mt-1">
+                  Esiste già una spesa di <b>{formatAmount(duplicateCandidate.amount, '€')}</b> del {duplicateCandidate.date} ({duplicateCandidate.description}).
+                </p>
               </div>
             )}
-          </div>
 
-          <div className="mt-6 space-y-6">
+            {/* Raw Info (Time & Text) */}
+            <div className="mb-3 p-2 bg-sunset-cream/40 dark:bg-midnight-card/30 border border-sunset-coral/20 dark:border-electric-violet/20 rounded-lg">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Dettagli originali:</p>
+              <p className="text-xs text-slate-700 dark:text-slate-300 font-mono bg-sunset-cream/60 dark:bg-midnight-card/50 p-1 rounded border border-sunset-coral/10 dark:border-electric-violet/10">
+                {(currentTransaction as any).rawText || getTextForRules(currentTransaction)}
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 text-right">
+                Rilevato alle: {new Date(currentTransaction.createdAt).toLocaleTimeString()}
+              </p>
+            </div>
 
-            {/* Type Selector (Segmented Control) */}
-            <div>
-              <label className="text-xs font-medium text-slate-500 dark:text-slate-400 ml-1 mb-2 block uppercase tracking-wider">Tipo Transazione</label>
-              <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-white/5 rounded-xl">
-                {(['expense', 'income', 'transfer'] as const).map((type) => {
-                  const isSelected = selectedType === type;
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => handleTypeChange(currentTransaction.id, type)}
-                      className={`py-2 px-2 text-sm font-medium rounded-lg transition-all duration-200 ${isSelected
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                        }`}
-                    >
-                      {type === 'expense' && '­ƒÆ© Spesa'}
-                      {type === 'income' && '­ƒÆ░ Entrata'}
-                      {type === 'transfer' && '­ƒöä Giroconto'}
-                    </button>
-                  )
-                })}
+            {/* Type Selection */}
+            <div className="mb-3">
+              <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Seleziona tipo:</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleTypeChange(currentTransaction.id, 'expense')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'expense'
+                    ? 'bg-red-600 dark:bg-rose-600 text-white'
+                    : 'bg-sunset-peach/30 dark:bg-midnight-card/50 text-slate-700 dark:text-slate-300 hover:bg-sunset-peach/50 dark:hover:bg-midnight-card'
+                    }`}
+                >
+                  💸 Spesa
+                </button>
+                <button
+                  onClick={() => handleTypeChange(currentTransaction.id, 'income')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'income'
+                    ? 'bg-green-600 dark:bg-emerald-600 text-white'
+                    : 'bg-sunset-peach/30 dark:bg-midnight-card/50 text-slate-700 dark:text-slate-300 hover:bg-sunset-peach/50 dark:hover:bg-midnight-card'
+                    }`}
+                >
+                  💰 Entrata
+                </button>
+                <button
+                  onClick={() => handleTypeChange(currentTransaction.id, 'transfer')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${selectedType === 'transfer'
+                    ? 'bg-blue-600 dark:bg-sky-600 text-white'
+                    : 'bg-sunset-peach/30 dark:bg-midnight-card/50 text-slate-700 dark:text-slate-300 hover:bg-sunset-peach/50 dark:hover:bg-midnight-card'
+                    }`}
+                >
+                  🔄 Trasferimento
+                </button>
               </div>
             </div>
 
-            {/* Account Selector */}
+            {/* Account selection for expense/income */}
             {selectedType !== 'transfer' && (
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 ml-1 block uppercase tracking-wider">Conto</label>
-                <div className="relative">
-                  <select
-                    value={currentAccountId}
-                    onChange={(e) => handleAccountChange(currentTransaction.id, e.target.value)}
-                    className="w-full appearance-none bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-electric-violet/50 transition-shadow"
-                  >
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id} className="dark:bg-slate-800">
-                        {account.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
+              <div className="mb-3">
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Seleziona conto:</p>
+                <select
+                  value={currentAccountId}
+                  onChange={(e) => handleAccountChange(currentTransaction.id, e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                >
+                  <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id} className="dark:bg-midnight">
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 
-            {/* Transfer Fields */}
+            {/* Transfer Account Selection */}
             {selectedType === 'transfer' && (
-              <div className="p-4 bg-blue-50/50 dark:bg-sky-900/10 border border-blue-100 dark:border-sky-500/20 rounded-2xl space-y-4">
-                <div className="grid grid-cols-[1fr,auto,1fr] gap-2 items-center">
-                  {/* From */}
-                  <div className="bg-white dark:bg-white/5 border border-blue-200/50 dark:border-white/10 rounded-xl p-2">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Da</p>
+              <div className="mb-3 p-3 bg-blue-50 dark:bg-sky-500/10 border border-blue-200 dark:border-sky-500/30 rounded-lg">
+                <p className="text-xs font-medium text-blue-900 dark:text-sky-300 mb-2">Seleziona conti:</p>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-blue-700 dark:text-sky-400 font-medium block mb-1">Da (origine):</label>
                     <select
                       value={transferAccountSelection?.from || ''}
-                      onChange={(e) => handleTransferAccountChange(currentTransaction.id, 'from', e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white focus:outline-none p-0"
+                      onChange={(e) =>
+                        handleTransferAccountChange(currentTransaction.id, 'from', e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
                     >
+                      <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                       {accounts.map((account) => (
-                        <option key={account.id} value={account.id} className="dark:bg-slate-800">{account.name}</option>
+                        <option key={account.id} value={account.id} className="dark:bg-midnight">
+                          {account.name}
+                        </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Arrow */}
-                  <div className="text-blue-400 dark:text-sky-500/50">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </div>
-
-                  {/* To */}
-                  <div className="bg-white dark:bg-white/5 border border-blue-200/50 dark:border-white/10 rounded-xl p-2">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Verso</p>
+                  <div>
+                    <label className="text-xs text-blue-700 dark:text-sky-400 font-medium block mb-1">Verso (destinazione):</label>
                     <select
                       value={transferAccountSelection?.to || ''}
-                      onChange={(e) => handleTransferAccountChange(currentTransaction.id, 'to', e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-white focus:outline-none p-0"
+                      onChange={(e) =>
+                        handleTransferAccountChange(currentTransaction.id, 'to', e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
                     >
+                      <option value="" className="dark:bg-midnight">-- Seleziona conto --</option>
                       {accounts.map((account) => (
-                        <option key={account.id} value={account.id} className="dark:bg-slate-800">{account.name}</option>
+                        <option key={account.id} value={account.id} className="dark:bg-midnight">
+                          {account.name}
+                        </option>
                       ))}
                     </select>
                   </div>
+
+                  {!isTransferValid && (
+                    <p className="text-xs text-red-600 font-medium mt-1">⚠️ I conti devono essere diversi</p>
+                  )}
                 </div>
-                {!isTransferValid && (
-                  <p className="text-xs text-red-500 font-medium text-center">ÔÜá´©Å Seleziona due conti diversi</p>
-                )}
               </div>
             )}
 
-            {/* Expense Fields */}
+            {/* Expense-only fields */}
             {selectedType === 'expense' && (
-              <div className="space-y-4 pt-2">
-                {/* Category Grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 ml-1 block uppercase tracking-wider">Categoria</label>
-                    <div className="relative">
-                      <select
-                        value={expenseMeta.category || ''}
-                        onChange={(e) => handleExpenseCategoryChange(currentTransaction.id, e.target.value)}
-                        className="w-full appearance-none bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-electric-violet/50"
-                      >
-                        <option value="" className="text-slate-400">Seleziona...</option>
-                        {categoryOptions.map((cat) => (
-                          <option key={cat} value={cat} className="dark:bg-slate-800">{cat}</option>
-                        ))}
-                      </select>
-                    </div>
+              <div className="mb-3 p-3 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-sunset-coral/20 dark:border-electric-violet/20 rounded-lg">
+                <p className="text-xs font-medium text-slate-900 dark:text-white mb-2">Dettagli spesa:</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">Categoria (opzionale)</label>
+                    <select
+                      value={expenseMeta.category || ''}
+                      onChange={(e) => handleExpenseCategoryChange(currentTransaction.id, e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                      <option value="" className="dark:bg-midnight">-- Seleziona categoria --</option>
+                      {categoryOptions.map((cat) => (
+                        <option key={cat} value={cat} className="dark:bg-midnight">
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 ml-1 block uppercase tracking-wider">Sottocategoria</label>
-                    <div className="relative">
-                      <select
-                        value={expenseMeta.subcategory || ''}
-                        disabled={isSubcategoryDisabled}
-                        onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
-                        className={`w-full appearance-none border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-electric-violet/50 ${isSubcategoryDisabled
-                          ? 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-400'
-                          : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white'
-                          }`}
-                      >
-                        <option value="">Opzionale</option>
-                        {subcategoryOptions.map((sub) => (
-                          <option key={sub} value={sub} className="dark:bg-slate-800">{sub}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label className={`text-xs font-medium block mb-1 ${isSubcategoryDisabled ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>
+                      Sottocategoria (opzionale)
+                    </label>
+                    <select
+                      value={expenseMeta.subcategory || ''}
+                      disabled={isSubcategoryDisabled}
+                      onChange={(e) => handleExpenseSubcategoryChange(currentTransaction.id, e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isSubcategoryDisabled
+                        ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-600'
+                        : 'border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-800/80 text-slate-900 dark:text-white'
+                        }`}
+                    >
+                      <option value="" className="dark:bg-midnight">-- Seleziona sottocategoria --</option>
+                      {subcategoryOptions.map((sub) => (
+                        <option key={sub} value={sub} className="dark:bg-midnight">
+                          {sub}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                {/* Receipts */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wider">Ricevute</label>
-                    <div className="flex gap-2">
-                      <button onClick={() => handlePickReceipt(currentTransaction.id, 'camera')} className="p-1.5 bg-indigo-50 dark:bg-white/10 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-white/20 transition-colors">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      </button>
-                      <button onClick={() => handlePickReceipt(currentTransaction.id, 'gallery')} className="p-1.5 bg-purple-50 dark:bg-white/10 rounded-lg text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-white/20 transition-colors">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      </button>
-                    </div>
-                  </div>
+                <div className="mt-3">
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Ricevute</p>
 
                   {expenseMeta.receipts?.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
                       {expenseMeta.receipts.map((receipt, index) => (
-                        <div key={index} className="relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 group">
-                          <img src={`data:image/png;base64,${receipt}`} alt="Receipt" className="w-full h-full object-cover" />
+                        <div
+                          key={index}
+                          className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-electric-violet/30 shadow-sm aspect-video bg-slate-50 dark:bg-midnight-card/50"
+                        >
+                          <img
+                            src={`data:image/png;base64,${receipt}`}
+                            alt="Ricevuta"
+                            className="w-full h-full object-cover"
+                          />
                           <button
+                            type="button"
                             onClick={() => handleRemoveReceipt(currentTransaction.id, index)}
-                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1 right-1 p-1 bg-sunset-cream/90 dark:bg-midnight/90 text-red-600 dark:text-rose-400 rounded-full shadow-md hover:bg-red-50 dark:hover:bg-midnight transition-colors"
+                            aria-label="Rimuovi ricevuta"
                           >
-                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePickReceipt(currentTransaction.id, 'camera')}
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-electric-violet/10 text-indigo-700 dark:text-electric-violet hover:bg-indigo-100 dark:hover:bg-electric-violet/20 border border-indigo-200 dark:border-electric-violet/30 transition-colors"
+                    >
+                      Fotocamera
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePickReceipt(currentTransaction.id, 'gallery')}
+                      className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-indigo-50 dark:bg-electric-pink/10 text-indigo-700 dark:text-electric-pink hover:bg-indigo-100 dark:hover:bg-electric-pink/20 border border-indigo-200 dark:border-electric-pink/30 transition-colors"
+                    >
+                      Galleria
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Save Rule Toggle */}
-            {(!match?.rule && !recurringMatch) && (
-              <div className="flex items-center gap-3 py-2">
-                <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+            {/* Save Rule Checkbox */}
+            {!match?.rule && (
+              <div className="mb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    name="toggle"
-                    id={`toggle-${currentTransaction.id}`}
-                    className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-electric-violet"
                     checked={saveRule}
                     onChange={(e) => handleSaveRuleChange(currentTransaction.id, e.target.checked)}
-                    style={{ right: saveRule ? '0' : 'auto', left: saveRule ? 'auto' : '0' }}
+                    className="w-4 h-4 text-blue-600 border-gray-300 dark:border-electric-violet/30 rounded focus:ring-blue-500 bg-white dark:bg-midnight"
                   />
-                  <label
-                    htmlFor={`toggle-${currentTransaction.id}`}
-                    className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer transition-colors ${saveRule ? 'bg-electric-violet' : 'bg-slate-300 dark:bg-slate-700'}`}
-                  ></label>
-                </div>
-                <label htmlFor={`toggle-${currentTransaction.id}`} className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                  Ricorda questa regola
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Ricorda per il futuro</span>
                 </label>
               </div>
             )}
 
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="border-t border-slate-200/50 dark:border-white/10 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md p-4">
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleIgnore(currentTransaction.id)}
-              disabled={processingId === currentTransaction.id}
-              className="flex-1 py-3.5 px-4 rounded-xl font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-white/5 transition-colors"
-            >
-              Ignora
-            </button>
-            <button
-              onClick={() => handleConfirm(currentTransaction)}
-              disabled={!isTransferValid || processingId === currentTransaction.id}
-              className={`flex-[2] py-3.5 px-4 rounded-xl font-bold shadow-lg shadow-electric-violet/20 flex items-center justify-center gap-2 transition-all transform active:scale-[0.98] ${isTransferValid && processingId !== currentTransaction.id
-                // If recurring match -> different color/text to signify Link
-                ? recurringMatch
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-indigo-500/30'
-                  : 'bg-gradient-to-r from-sunset-orange to-sunset-pink dark:from-electric-violet dark:to-electric-purple text-white hover:brightness-110'
-                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
-                }`}
-            >
-              {processingId === currentTransaction.id ? (
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <>
-                  {recurringMatch ? (
-                    <>
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                      Collega & Conferma
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      Conferma
-                    </>
-                  )}
-                </>
+            {/* Actions */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleConfirm(currentTransaction)}
+                disabled={!isTransferValid || processingId === currentTransaction.id}
+                className={`flex-1 font-medium py-2 px-4 rounded-lg transition-colors ${isTransferValid && processingId !== currentTransaction.id
+                  ? 'bg-blue-600 dark:btn-electric hover:bg-blue-700 text-white'
+                  : 'bg-slate-300 dark:bg-midnight-card text-slate-500 dark:text-slate-500 cursor-not-allowed border dark:border-electric-violet/20'
+                  }`}
+              >
+                ✓ Conferma
+              </button>
+              <button
+                onClick={() => handleIgnore(currentTransaction.id)}
+                disabled={processingId === currentTransaction.id}
+                className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-midnight-card dark:hover:bg-midnight-card/80 dark:border dark:border-electric-violet/20 text-slate-700 dark:text-slate-300 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                ✕ Ignora
+              </button>
+              {match?.rule && (
+                <button
+                  onClick={() => handleDeleteRule(currentTransaction.id)}
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 font-medium rounded-lg transition-colors"
+                  title="Elimina regola salvata"
+                >
+                  🗑️
+                </button>
               )}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+              disabled={currentIndex === 0}
+              className="flex-1 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+            >
+              ← Precedente
+            </button>
+            <button
+              onClick={() => setCurrentIndex((i) => Math.min(transactions.length - 1, i + 1))}
+              disabled={currentIndex >= transactions.length - 1}
+              className="flex-1 bg-sunset-cream/60 dark:bg-midnight-card/50 border border-slate-300 dark:border-electric-violet/30 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Successiva →
             </button>
           </div>
         </div>
 
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-sunset-cream dark:bg-midnight border-t border-sunset-coral/20 dark:border-electric-violet/20 px-6 py-3 z-10">
+          <div className="flex gap-2">
+            {onIgnoreAll && transactions.length > 1 && (
+              <button
+                onClick={onIgnoreAll}
+                className="flex-1 text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-900/10 hover:bg-red-100 dark:hover:bg-rose-900/20 text-sm font-medium py-2 rounded-lg transition-colors"
+              >
+                Ignora Tutte ({transactions.length})
+              </button>
+            )}
+            <button onClick={onClose} className="flex-1 text-slate-500 dark:text-slate-400 text-sm font-medium py-2">
+              Chiudi
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </div >
   );
 }
 
-export function PendingTransactionsBadge({ count, onClick }: { count: number; onClick: () => void }) {
-  if (count <= 0) return null;
+// Badge component for showing pending count
+interface PendingBadgeProps {
+  count: number;
+  onClick: () => void;
+}
+
+export function PendingTransactionsBadge({ count, onClick }: PendingBadgeProps) {
+  if (count === 0) return null;
+
   return (
     <button
       onClick={onClick}
-      className="relative p-2 text-slate-400 hover:text-slate-500 transition-colors"
+      className="relative inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-full shadow-lg transition-all hover:shadow-xl"
     >
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
       </svg>
-      <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-midnight">
+      <span className="text-sm">
+        {count} {count === 1 ? 'transazione' : 'transazioni'}
+      </span>
+      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
         {count}
       </span>
     </button>
   );
 }
-

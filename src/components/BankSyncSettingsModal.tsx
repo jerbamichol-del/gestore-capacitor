@@ -308,7 +308,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                     await new Promise(r => setTimeout(r, 3000));
                                     handleTestConnection();
                                     // Retry after more time if accounts are still loading
-                                    setTimeout(() => handleTestConnection(true), 8000);
+                                    setTimeout(() => {
+                                        handleTestConnection(true);
+                                        handleSyncNow();
+                                    }, 8000);
                                 } catch (authError: any) {
                                     console.warn('⚠️ Strategy 1 failed:', authError.message);
 
@@ -320,7 +323,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                             showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
                                             await new Promise(r => setTimeout(r, 3000));
                                             handleTestConnection();
-                                            setTimeout(() => handleTestConnection(true), 8000);
+                                            setTimeout(() => {
+                                                handleTestConnection(true);
+                                                handleSyncNow();
+                                            }, 8000);
                                             return; // Success
                                         } catch (e2: any) {
                                             console.warn('⚠️ Strategy 2 failed:', e2.message);
@@ -334,7 +340,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                         showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
                                         await new Promise(r => setTimeout(r, 3000));
                                         handleTestConnection();
-                                        setTimeout(() => handleTestConnection(true), 8000);
+                                        setTimeout(() => {
+                                            handleTestConnection(true);
+                                            handleSyncNow();
+                                        }, 8000);
                                     } catch (e3: any) {
                                         console.error('❌ Strategy 3 failed:', e3.message);
                                         showToast({ message: `Errore: ${authError.message}`, type: 'error' });
@@ -376,7 +385,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     window.history.replaceState({}, document.title, window.location.pathname);
                     await new Promise(r => setTimeout(r, 3000));
                     handleTestConnection();
-                    setTimeout(() => handleTestConnection(true), 8000);
+                    setTimeout(() => {
+                        handleTestConnection(true);
+                        handleSyncNow();
+                    }, 8000);
                 } catch (e: any) {
                     showToast({ message: `Errore sincronizzazione sessione: ${e.message}`, type: 'error' });
                 }
