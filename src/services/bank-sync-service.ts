@@ -453,9 +453,32 @@ export class BankSyncService {
         let emptySessions: string[] = [];
         let validSessionCount = 0;
 
-        // ✅ Fetch all global accounts first (Standard Enable Banking way to get full objects)
+        // ✅ 1. Fetch all global accounts first (Standard Enable Banking way to get full objects)
         let globalAccountsMap = new Map<string, any>();
-        // Fetch accounts session by session to be more reliable across all providers (avoids global 404s)
+        try {
+            console.log('🌐 Fetching global accounts...');
+            const response = await this.safeFetch(`${this.BASE_URL}/accounts`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data.accounts)) {
+                    data.accounts.forEach((acc: any) => {
+                        if (acc.uid) globalAccountsMap.set(String(acc.uid).toLowerCase(), acc);
+                    });
+                    console.log(`✅ Loaded ${globalAccountsMap.size} accounts from global /accounts endpoint`);
+                }
+            } else {
+                console.warn(`⚠️ Global /accounts fetch failed (or 404): ${response.status}`);
+            }
+        } catch (e) {
+            console.error('Failed to fetch global accounts:', e);
+        }
+
+        // ✅ 2. Fetch accounts session by session
         for (const sessionId of sessions) {
             try {
                 const response = await this.safeFetch(`${this.BASE_URL}/sessions/${sessionId}`, {
@@ -467,29 +490,37 @@ export class BankSyncService {
                 if (response.ok) {
                     const data = await response.json();
 
-                    // Resolve session accounts. API might return full objects in `accounts_data` or array of UIDs in `accounts`.
+                    // Resolve session accounts. 
                     let sessionAccounts: any[] = [];
                     if (Array.isArray(data.accounts_data) && data.accounts_data.length > 0) {
                         sessionAccounts = data.accounts_data;
                     } else if (Array.isArray(data.accounts)) {
                         for (const accIdOrObj of data.accounts) {
                             if (typeof accIdOrObj === 'string') {
-                                const fullAcc = globalAccountsMap.get(accIdOrObj.toLowerCase());
+                                const uid = accIdOrObj.toLowerCase();
+                                const fullAcc = globalAccountsMap.get(uid);
                                 if (fullAcc) {
                                     sessionAccounts.push(fullAcc);
                                 } else {
-                                    // Fallback if not found globally
-                                    sessionAccounts.push({ uid: accIdOrObj, name: 'Conto Trovato in Banca' });
+                                    // Fallback: Try individual fetch
+                                    try {
+                                        console.log(`🔍 UID fallback: individual fetch for ${accIdOrObj}`);
+                                        const accRes = await this.safeFetch(`${this.BASE_URL}/accounts/${accIdOrObj}`, {
+                                            headers: { 'Authorization': `Bearer ${token}` }
+                                        });
+                                        if (accRes.ok) {
+                                            sessionAccounts.push(await accRes.json());
+                                        } else {
+                                            sessionAccounts.push({ uid: accIdOrObj, name: 'Account details unavailable' });
+                                        }
+                                    } catch (err) {
+                                        sessionAccounts.push({ uid: accIdOrObj, name: 'Account details unavailable' });
+                                    }
                                 }
                             } else if (typeof accIdOrObj === 'object' && accIdOrObj !== null) {
-                                // Sometimes it's already an object
-                                if (accIdOrObj.uid) {
-                                    const fullAcc = globalAccountsMap.get(String(accIdOrObj.uid).toLowerCase());
-                                    // if we found it globally we prefer that, otherwise use what session gave us
-                                    sessionAccounts.push(fullAcc ? fullAcc : accIdOrObj);
-                                } else {
-                                    sessionAccounts.push(accIdOrObj);
-                                }
+                                const uid = String(accIdOrObj.uid || '').toLowerCase();
+                                const fullAcc = uid ? globalAccountsMap.get(uid) : null;
+                                sessionAccounts.push(fullAcc ? { ...fullAcc, ...accIdOrObj } : accIdOrObj);
                             }
                         }
                     }
@@ -497,28 +528,17 @@ export class BankSyncService {
                     console.log(`Session ${sessionId} resolved ${sessionAccounts.length} accounts`);
 
                     if (sessionAccounts.length === 0) {
-                        // Session has no accounts - might be stale or still loading
                         emptySessions.push(sessionId);
                     } else {
                         validSessionCount++;
-
-                        // De-duplicate accounts by UID (keep first seen)
                         for (const acc of sessionAccounts) {
                             const uid = String(acc.uid).toLowerCase();
                             if (!allAccounts.has(uid)) {
-                                allAccounts.set(uid, {
-                                    ...acc,
-                                    _sessionId: sessionId
-                                });
-                            } else {
-                                console.log(`🔄 Duplicate account ${acc.uid} already covered by another session (keeping both sessions)`);
+                                allAccounts.set(uid, { ...acc, _sessionId: sessionId });
                             }
                         }
                     }
                 } else if (response.status === 401) {
-                    // Session expired
-                    const errorText = await response.text();
-                    console.warn(`Session ${sessionId} expired:`, errorText);
                     expiredSessions.push(sessionId);
                 }
             } catch (e) {
@@ -526,40 +546,17 @@ export class BankSyncService {
             }
         }
 
-        // Remove expired sessions
-        for (const expiredId of expiredSessions) {
-            await this.removeSession(expiredId);
-        }
-
-        // Clean up stale empty sessions, but ALWAYS keep the newest one
-        // (it might still be loading accounts from bank authorization)
+        // Cleanup
+        for (const expiredId of expiredSessions) await this.removeSession(expiredId);
         if (emptySessions.length > 0) {
-            // The last session in the list is the newest (appended on creation)
             const newestSession = sessions[sessions.length - 1];
-            const staleEmpty = emptySessions.filter(s => s !== newestSession);
-
-            for (const staleId of staleEmpty) {
+            for (const staleId of emptySessions.filter(s => s !== newestSession)) {
                 await this.removeSession(staleId);
-                console.log(`🧹 Removed stale empty session: ${staleId}`);
-            }
-
-            if (staleEmpty.length > 0) {
-                console.log(`🧹 Cleaned ${staleEmpty.length} stale empty sessions`);
-            }
-
-            // Log if newest session is empty (still loading)
-            if (emptySessions.includes(newestSession)) {
-                console.log(`⏳ Newest session ${newestSession} has 0 accounts (may still be loading)`);
             }
         }
 
-        // If all sessions expired, throw specific error
         if (expiredSessions.length > 0 && validSessionCount === 0 && emptySessions.length === 0) {
-            throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute. Ricollega la banca dalle impostazioni.');
-        }
-
-        if (expiredSessions.length > 0 && validSessionCount > 0) {
-            console.warn(`${expiredSessions.length} sessioni scadute rimosse, ${validSessionCount} ancora valide`);
+            throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute.');
         }
 
         return Array.from(allAccounts.values());

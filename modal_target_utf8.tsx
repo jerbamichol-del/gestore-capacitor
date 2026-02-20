@@ -143,6 +143,9 @@ export function PendingTransactionsModal({
     return () => window.removeEventListener('categories-updated', load);
   }, []);
 
+  // Description expansion state
+  const [expandedDesc, setExpandedDesc] = useState<string | null>(null);
+
   // Selected type per transaction
   const [selectedTypes, setSelectedTypes] = useState<Record<string, 'expense' | 'income' | 'transfer'>>({});
 
@@ -516,7 +519,7 @@ export function PendingTransactionsModal({
         <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
 
           {/* Main Card */}
-          <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50 dark:border-white/10 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow duration-300">
+          <div className="bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-slate-200/50 dark:border-white/10 shadow-sm relative group hover:shadow-md transition-shadow duration-300">
             {/* Background Glow */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-sunset-peach/30 dark:bg-electric-violet/20 rounded-full blur-3xl group-hover:bg-sunset-peach/40 dark:group-hover:bg-electric-violet/30 transition-all duration-500" />
 
@@ -526,14 +529,55 @@ export function PendingTransactionsModal({
                 <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 dark:bg-white/10 text-[10px] font-bold tracking-wider uppercase text-slate-600 dark:text-slate-300">
                   {currentTransaction.sourceApp || 'APP'}
                 </span>
-                <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
-                  {formatDate(currentTransaction.createdAt)}
-                </span>
+                <div className="flex items-center gap-2">
+                  {/* Navigation Arrows */}
+                  <div className="flex items-center bg-slate-100 dark:bg-white/10 rounded-lg p-0.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentIndex(prev => Math.max(0, prev - 1));
+                      }}
+                      disabled={currentIndex === 0}
+                      className="p-1 hover:bg-white dark:hover:bg-white/20 rounded-md disabled:opacity-30 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <div className="w-px h-4 bg-slate-300 dark:bg-white/20 mx-0.5" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentIndex(prev => Math.min(transactions.length - 1, prev + 1));
+                      }}
+                      disabled={currentIndex === transactions.length - 1}
+                      className="p-1 hover:bg-white dark:hover:bg-white/20 rounded-md disabled:opacity-30 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                    {formatDate(currentTransaction.createdAt)}
+                  </span>
+                </div>
               </div>
 
-              <p className="text-base font-medium text-slate-800 dark:text-slate-100 mb-2 leading-relaxed">
-                {currentTransaction.description}
-              </p>
+              <div
+                className="group cursor-pointer relative"
+                onClick={() => setExpandedDesc(prev => prev === currentTransaction.id ? null : currentTransaction.id)}
+              >
+                <p className={`text-base font-medium text-slate-800 dark:text-slate-100 mb-2 leading-relaxed transition-all duration-200 ${expandedDesc === currentTransaction.id ? '' : 'line-clamp-2'
+                  }`}>
+                  {currentTransaction.description}
+                </p>
+                {/* Expand indicator hint */}
+                <div className={`text-[10px] text-electric-violet/70 dark:text-electric-violet/50 font-medium uppercase tracking-wider mb-2 ${expandedDesc === currentTransaction.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  } transition-opacity`}>
+                  {expandedDesc === currentTransaction.id ? 'Mostra meno' : 'Mostra tutto'}
+                </div>
+              </div>
 
               <div className="flex items-baseline gap-1">
                 <span className={`text-3xl font-bold tracking-tight ${selectedType === 'income' ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
@@ -818,7 +862,7 @@ export function PendingTransactionsModal({
                 // If recurring match -> different color/text to signify Link
                 ? recurringMatch
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-indigo-500/30'
-                  : 'bg-gradient-to-r from-sunset-orange to-sunset-pink dark:from-electric-violet dark:to-electric-purple text-white hover:brightness-110'
+                  : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-electric-violet/30'
                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
                 }`}
             >
