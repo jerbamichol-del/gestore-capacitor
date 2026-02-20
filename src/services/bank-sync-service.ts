@@ -12,6 +12,7 @@ export class BankSyncService {
     private static readonly STORAGE_KEY = 'bank_sync_credentials';
     private static readonly STORAGE_KEY_ACTIVE_BANKS = 'bank_sync_active_providers';
     private static readonly STORAGE_KEY_MAPPINGS = 'bank_sync_account_mappings';
+    private static readonly STORAGE_KEY_LAST_SYNC = 'bank_sync_last_sync_timestamp';
     private static readonly BASE_URL = 'https://api.enablebanking.com';
 
     // Sync lock to prevent concurrent syncs
@@ -151,14 +152,27 @@ export class BankSyncService {
         return jwt;
     }
 
+    private static sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     /**
-     * Helper to perform fetch with better error reporting for CORS/Network issues
+     * Helper to perform fetch with better error reporting for CORS/Network issues.
+     * ✅ NEW: Implements automatic retry with exponential backoff for 429 (Too Many Requests).
      */
-    private static async safeFetch(url: string, options: RequestInit): Promise<Response> {
+    private static async safeFetch(url: string, options: RequestInit, retries = 3, backoff = 1500): Promise<Response> {
         try {
             console.log(`🌐 Fetching: ${url}`);
             const response = await fetch(url, options);
             console.log(`📡 Response status: ${response.status}`);
+
+            // Handle rate limiting (429) with retry logic
+            if (response.status === 429 && retries > 0) {
+                console.warn(`⏳ Rate limit (429) detected. Retrying in ${backoff}ms... (${retries} retries remaining)`);
+                await this.sleep(backoff);
+                return this.safeFetch(url, options, retries - 1, backoff * 2);
+            }
+
             return response;
         } catch (error: any) {
             console.error('❌ Fetch error detailed:', {
@@ -441,21 +455,7 @@ export class BankSyncService {
 
         // ✅ Fetch all global accounts first (Standard Enable Banking way to get full objects)
         let globalAccountsMap = new Map<string, any>();
-        try {
-            const accResponse = await this.safeFetch(`${this.BASE_URL}/accounts`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (accResponse.ok) {
-                const accData = await accResponse.json();
-                const globalAccounts = accData.accounts || accData.accounts_data || [];
-                for (const acc of globalAccounts) {
-                    globalAccountsMap.set(String(acc.uid).toLowerCase(), acc);
-                }
-            }
-        } catch (e) {
-            console.error('Failed to fetch global accounts from /accounts endpoint:', e);
-        }
-
+        // Fetch accounts session by session to be more reliable across all providers (avoids global 404s)
         for (const sessionId of sessions) {
             try {
                 const response = await this.safeFetch(`${this.BASE_URL}/sessions/${sessionId}`, {
@@ -853,10 +853,24 @@ export class BankSyncService {
 
     /**
      * Sync all accounts (Transactions + Balances)
-     * Includes lock to prevent concurrent syncs
+     * Includes lock to prevent concurrent syncs and throttling to avoid 429s.
+     * @param force - If true, ignores the 1-hour cooldown.
      */
-    static async syncAll(): Promise<{ transactions: number, adjustments: number }> {
-        // Prevent concurrent syncs
+    static async syncAll(force = false): Promise<{ transactions: number, adjustments: number }> {
+        // 1. Check Throttling (1 hour cooldown)
+        const lastSync = localStorage.getItem(this.STORAGE_KEY_LAST_SYNC);
+        const cooldown = 60 * 60 * 1000; // 1 hour in ms
+
+        if (!force && lastSync) {
+            const timeSinceLastSync = Date.now() - parseInt(lastSync);
+            if (timeSinceLastSync < cooldown) {
+                const minsLeft = Math.ceil((cooldown - timeSinceLastSync) / 60000);
+                console.log(`🛡️ Sync throttled. Prossimo aggiornamento tra ${minsLeft} minuti.`);
+                return { transactions: 0, adjustments: 0 };
+            }
+        }
+
+        // 2. Prevent concurrent syncs
         if (this.isSyncing) {
             console.log('⏳ Sync already in progress, skipping duplicate call');
             return { transactions: 0, adjustments: 0 };
@@ -876,7 +890,10 @@ export class BankSyncService {
             for (const acc of accounts) {
                 const localAccountId = this.resolveLocalAccountId(acc);
                 syncedLocalIds.add(localAccountId);
-                console.log(`Mapping API account ${acc.uid} to local ID: ${localAccountId}`);
+                console.log(`Processing sync for API account ${acc.uid} mapped to local ID: ${localAccountId}`);
+
+                // ✅ RATE LIMITING: Short delay before each account to avoid overwhelming bank APIs
+                await this.sleep(1000);
 
                 // Collect provider name for suppression logic
                 if (acc.aspsp_name) activeProviders.add(acc.aspsp_name);
@@ -914,6 +931,9 @@ export class BankSyncService {
                     console.warn(`⚠️ Could not fetch balance for ${localAccountId}, keeping existing cachedBalance:`, balanceError.message);
                 }
 
+                // ✅ Delay after balance fetch before next account or additional calls
+                await this.sleep(500);
+
                 // Only reconcile if we successfully got a balance
                 if (bankBalance !== null) {
                     const localBalance = this.calculateLocalBalance(localAccountId);
@@ -945,6 +965,9 @@ export class BankSyncService {
             if (activeProviders.size > 0) {
                 localStorage.setItem(this.STORAGE_KEY_ACTIVE_BANKS, JSON.stringify(Array.from(activeProviders)));
             }
+
+            // Update last sync timestamp
+            localStorage.setItem(this.STORAGE_KEY_LAST_SYNC, Date.now().toString());
 
             // Save specifically which LOCAL IDEs are synced to disable manual edits
             localStorage.setItem('bank_sync_synced_local_ids', JSON.stringify(Array.from(syncedLocalIds)));

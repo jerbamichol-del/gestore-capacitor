@@ -149,7 +149,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const handleSyncNow = async () => {
         setIsSyncing(true);
         try {
-            const info = await BankSyncService.syncAll();
+            const info = await BankSyncService.syncAll(true); // Force sync on manual request
             showToast({
                 message: `Sync completato: ${info.transactions} tx, ${info.adjustments} rettifiche.`,
                 type: 'success'
