@@ -646,12 +646,12 @@ export class BankSyncService {
 
         console.log('Available balance types:', balances.map((b: any) => b.balanceType || b.balance_type).join(', '));
 
-        const balance = balances.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
-            || balances.find((b: any) => b.balanceType === 'interimAvailable' || b.balance_type === 'interimAvailable')
-            || balances.find((b: any) => b.balanceType === 'interimBooked' || b.balance_type === 'interimBooked')
+        const balance = balances.find((b: any) => b.balanceType === 'interimAvailable' || b.balance_type === 'interimAvailable')
             || balances.find((b: any) => b.balanceType === 'closingAvailable' || b.balance_type === 'closingAvailable')
-            || balances.find((b: any) => b.balanceType === 'openingBooked' || b.balance_type === 'openingBooked')
+            || balances.find((b: any) => b.balanceType === 'interimBooked' || b.balance_type === 'interimBooked')
+            || balances.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
             || balances.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
+            || balances.find((b: any) => b.balanceType === 'openingBooked' || b.balance_type === 'openingBooked')
             || balances.find((b: any) => b.balanceType === 'information' || b.balance_type === 'information')
             || balances.find((b: any) => b.balanceType === 'AVAILABLE' || b.balanceType === 'BOOKED')
             || balances[0];
@@ -712,7 +712,7 @@ export class BankSyncService {
 
         const balanceValue = extractValue(balance) ?? 0;
 
-        console.log(`Parsed balance value (${balance.balanceType || balance.balance_type}):`, balanceValue);
+        console.log(`🏦 [BALANCE_DEBUG] Parsed ${balanceValue} from ${JSON.stringify(balance)}`);
         return balanceValue;
     }
 
@@ -738,105 +738,49 @@ export class BankSyncService {
         }, 0);
     }
 
-    /**
-     * Resolve the local account ID from an Enable Banking account object.
-     * Tries to find matching local storage accounts to avoid using cryptic UIDs in the UI.
-     */
-    /**
-     * Resolve the local account ID from an Enable Banking account object.
-     * Tries to find matching local storage accounts to avoid using cryptic UIDs in the UI.
-     */
     private static resolveLocalAccountId(acc: any): string {
         try {
-            const mappings = this.getAccountMappings();
-            if (mappings[acc.uid]) {
-                console.log(`Explicit mapping found for ${acc.uid} -> ${mappings[acc.uid]}`);
-                return mappings[acc.uid];
+            const mappings = JSON.parse(localStorage.getItem('bank_sync_mappings') || '{}');
+            const uid = String(acc.uid || '').toLowerCase();
+
+            // 1. Explicit Mapping
+            if (mappings[uid]) {
+                console.log(`🏦 [RESOLVE] Explicit mapping found for ${uid} -> ${mappings[uid]}`);
+                return mappings[uid];
             }
 
-            const accounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+            const bankName = (acc.name || '').toLowerCase();
+            const aspspName = (acc.aspsp_name || acc.aspspName || '').toLowerCase();
+            const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
 
-            // Extract all possible names from the bank account object
-            const aspspName = (acc.aspsp_name || acc.aspspName || '').toLowerCase().trim();
-            const displayName = (acc.display_name || acc.displayName || '').toLowerCase().trim();
-            const officialName = (acc.name || '').toLowerCase().trim();
-            const iban = (acc.account_id?.iban || acc.accountId?.iban || '').toLowerCase().trim();
+            console.log(`🏦 [RESOLVE] Searching match for bankAcc: "${bankName}" (ASPSP: "${aspspName}")`);
 
-            const bankNames = Array.from(new Set([aspspName, displayName, officialName])).filter(n => n.length > 0);
-            console.log(`Resolving local account for: ASPSP=${aspspName}, Display=${displayName}, Official=${officialName}, IBAN=${iban}`);
-
-            // 1. Hardcoded Brand Mapping (High Confidence)
-            const combinedInfo = [...bankNames, iban].join(' ');
-
-            const internalMappings = [
-                { id: 'paypal', keywords: ['paypal'] },
-                { id: 'poste', keywords: ['poste', 'bancoposta', 'postepay'] },
+            // 2. Specific Brand Keywords
+            const brands = [
                 { id: 'revolut', keywords: ['revolut'] },
+                { id: 'paypal', keywords: ['paypal', 'pay pal'] },
                 { id: 'bbva', keywords: ['bbva', 'bilbao', 'vizcaya', 'argentaria'] },
-                { id: 'intesa', keywords: ['intesa', 'sanpaolo', 'fideuram', 'ispy'] },
-                { id: 'unicredit', keywords: ['unicredit', 'buddybank'] },
-                { id: 'sella', keywords: ['sella', 'hype'] },
-                { id: 'mps', keywords: ['monte', 'paschi', 'mps'] },
-                { id: 'bper', keywords: ['bper', 'emilia', 'romagna'] },
-                { id: 'credem', keywords: ['credem', 'emiliano'] },
-                { id: 'mediolanum', keywords: ['mediolanum'] },
-                { id: 'fineco', keywords: ['fineco'] },
-                { id: 'bpm', keywords: ['bpm', 'popolare', 'milano'] },
-                { id: 'illimity', keywords: ['illimity'] },
-                { id: 'widiba', keywords: ['widiba'] },
-                { id: 'chebanca', keywords: ['chebanca', 'mediobanca'] },
-                { id: 'ing', keywords: ['ing', 'arancio'] },
-                { id: 'n26', keywords: ['n26'] }
+                { id: 'poste', keywords: ['poste', 'bancoposta', 'postepay'] },
+                { id: 'crypto', keywords: ['binance', 'coinbase', 'crypto.com', 'metamask'] }
             ];
 
-            for (const brand of internalMappings) {
-                if (brand.keywords.some(k => combinedInfo.includes(k))) {
-                    const found = accounts.find((a: any) =>
-                        a.id.toLowerCase() === brand.id ||
-                        brand.keywords.some(k => a.name.toLowerCase().includes(k)) ||
-                        a.id.toLowerCase().includes(brand.id)
-                    );
-                    if (found) {
-                        console.log(`✅ Brand match found: ${brand.id} -> ${found.id} (${found.name})`);
-                        return found.id;
+            for (const brand of brands) {
+                if (brand.keywords.some(k => bankName.includes(k) || aspspName.includes(k))) {
+                    const match = localAccounts.find((la: any) => la.id === brand.id);
+                    if (match) {
+                        console.log(`🏦 [RESOLVE] Brand match found: ${brand.id}`);
+                        return match.id;
                     }
                 }
             }
 
-            // 2. Exact Name Match (Solid Confidence)
-            for (const la of accounts) {
+            // 3. Fuzzy Match (Last resort)
+            for (const la of localAccounts) {
                 const localName = la.name.toLowerCase().trim();
-
-                // Never match to "Contanti" or "Cash" automatically unless it's a very specific intentional match
-                if (la.id === 'cash' || localName.includes('contanti')) continue;
-
-                if (bankNames.some(bn => bn === localName)) {
-                    console.log(`Exact name match found: ${la.id} (${la.name})`);
+                if (localName.length < 3) continue;
+                if (bankName.includes(localName) || localName.includes(bankName)) {
+                    console.log(`🏦 [RESOLVE] Fuzzy match found: ${la.id}`);
                     return la.id;
-                }
-            }
-
-            // 3. ID match (If internal UID matches local ID)
-            if (accounts.some((la: any) => la.id === acc.uid)) return acc.uid;
-
-            // 4. Fuzzy Match (Last resort, very strict)
-            // We want to avoid matching generic bank words with specific local accounts like "Contanti"
-            for (const la of accounts) {
-                const localName = la.name.toLowerCase().trim();
-
-                // Never fuzzy-match to "Contanti" (cash is almost always manual)
-                if (la.id === 'cash' || localName.includes('contanti')) continue;
-
-                // Ignore very generic or extremely short local names for fuzzy matching to avoid noise
-                const genericWords = ['conto', 'bank', 'banca', 'corrente', 'risparmio', 'libretto', 'arancio', 'card', 'carta', 'debito', 'credito', 'prepagata'];
-                if (localName.length < 4 || genericWords.includes(localName)) continue;
-
-                for (const bn of bankNames) {
-                    if (bn.length < 3) continue; // Skip too short bank-provided names
-                    if (bn.includes(localName) || localName.includes(bn)) {
-                        console.log(`Fuzzy match found: ${la.id} matches bank information "${bn}"`);
-                        return la.id;
-                    }
                 }
             }
 
@@ -845,18 +789,15 @@ export class BankSyncService {
         }
 
         console.warn(`Could not resolve local account for ${acc.uid}, using UID as is.`);
-        return acc.uid; // Fallback to provided UID
+        return acc.uid;
     }
 
     /**
      * Sync all accounts (Transactions + Balances)
-     * Includes lock to prevent concurrent syncs and throttling to avoid 429s.
-     * @param force - If true, ignores the 1-hour cooldown.
      */
     static async syncAll(force = false): Promise<{ transactions: number, adjustments: number }> {
-        // 1. Check Throttling (1 hour cooldown)
         const lastSync = localStorage.getItem(this.STORAGE_KEY_LAST_SYNC);
-        const cooldown = 60 * 60 * 1000; // 1 hour in ms
+        const cooldown = 60 * 60 * 1000; // 1 hour
 
         if (!force && lastSync) {
             const timeSinceLastSync = Date.now() - parseInt(lastSync);
@@ -867,205 +808,108 @@ export class BankSyncService {
             }
         }
 
-        // 2. Prevent concurrent syncs
         if (this.isSyncing) {
             console.log('⏳ Sync already in progress, skipping duplicate call');
             return { transactions: 0, adjustments: 0 };
         }
 
         this.isSyncing = true;
-
         try {
             const accounts = await this.fetchAccounts();
-            console.log('Fetched accounts:', JSON.stringify(accounts, null, 2));
             let totalAdded = 0;
             let adjustmentsCount = 0;
-            const activeProviders = new Set<string>();
-
             const syncedLocalIds = new Set<string>();
 
             for (const acc of accounts) {
                 const localAccountId = this.resolveLocalAccountId(acc);
                 syncedLocalIds.add(localAccountId);
-                console.log(`Processing sync for API account ${acc.uid} mapped to local ID: ${localAccountId}`);
 
-                // ✅ RATE LIMITING: Short delay before each account to avoid overwhelming bank APIs
                 await this.sleep(1000);
 
-                // Collect provider name for suppression logic
-                if (acc.aspsp_name) activeProviders.add(acc.aspsp_name);
-                if (acc.provider?.name) activeProviders.add(acc.provider.name);
-                if (acc.aspspName) activeProviders.add(acc.aspspName);
-                if (acc.display_name) activeProviders.add(acc.display_name);
-                if (acc.displayName) activeProviders.add(acc.displayName);
-
-                // 1. Sync Transactions - fetch RAW data and map with correct local account ID
+                // 1. Transactions
                 const rawTxs = await this.fetchRawTransactions(acc.uid);
-                console.log(`Account ${acc.uid}: ${rawTxs.length} raw transactions fetched`);
                 for (const rawTx of rawTxs) {
-                    // Map RAW API data with resolved local account ID (single mapping, correct account)
                     const mappedTx = this.mapToAutoTransaction(rawTx, localAccountId);
                     const added = await AutoTransactionService.addAutoTransaction(mappedTx);
                     if (added) totalAdded++;
                 }
 
-                // 2. Sync Balance & Reconcile
+                // 2. Balance & Reconcile
                 let bankBalance: number | null = null;
                 try {
                     bankBalance = await this.fetchBalance(acc.uid);
-                    console.log(`Account ${localAccountId}: Bank balance = ${bankBalance}`);
 
-                    // ✅ UPDATE LOCAL ACCOUNT WITH CACHED BALANCE
                     const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
                     const accountIndex = localAccounts.findIndex((a: any) => a.id === localAccountId);
                     if (accountIndex !== -1) {
                         localAccounts[accountIndex].cachedBalance = bankBalance;
                         localAccounts[accountIndex].lastSyncDate = new Date().toISOString();
                         localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
-                        console.log(`✅ Updated cached balance for ${localAccountId}: ${bankBalance}`);
                     }
                 } catch (balanceError: any) {
-                    console.warn(`⚠️ Could not fetch balance for ${localAccountId}, keeping existing cachedBalance:`, balanceError.message);
+                    console.warn(`⚠️ Could not fetch balance for ${localAccountId}:`, balanceError.message);
                 }
 
-                // ✅ Delay after balance fetch before next account or additional calls
-                await this.sleep(500);
-
-                // Only reconcile if we successfully got a balance
                 if (bankBalance !== null) {
                     const localBalance = this.calculateLocalBalance(localAccountId);
-                    console.log(`Account ${localAccountId}: Local balance = ${localBalance}`);
-
                     const diff = bankBalance - localBalance;
-                    console.log(`Account ${localAccountId}: Difference = ${diff}`);
 
                     if (Math.abs(diff) > 0.01) {
                         await AutoTransactionService.addAdjustment(
                             localAccountId,
                             diff,
-                            `Riconciliazione Automatica ${acc.account_id?.iban || acc.accountId?.iban || acc.name || localAccountId}`
+                            `Riconciliazione Automatica ${acc.name || localAccountId}`
                         );
                         adjustmentsCount++;
                     }
                 }
             }
 
-            // ✅ Notify app that accounts have changed (so UI updates balance immediately)
-            window.dispatchEvent(new CustomEvent('accounts-updated'));
-
-            if (totalAdded > 0 || adjustmentsCount > 0) {
-                window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
-                window.dispatchEvent(new CustomEvent('expenses-updated')); // Ensure screens like AccountsScreen refresh
-            }
-
-            // Save active providers for listener suppression
-            if (activeProviders.size > 0) {
-                localStorage.setItem(this.STORAGE_KEY_ACTIVE_BANKS, JSON.stringify(Array.from(activeProviders)));
-            }
-
-            // Update last sync timestamp
             localStorage.setItem(this.STORAGE_KEY_LAST_SYNC, Date.now().toString());
-
-            // Save specifically which LOCAL IDEs are synced to disable manual edits
             localStorage.setItem('bank_sync_synced_local_ids', JSON.stringify(Array.from(syncedLocalIds)));
+
+            // Notify UI
+            window.dispatchEvent(new Event('bank-sync-complete'));
+            window.dispatchEvent(new Event('accounts-updated'));
+            window.dispatchEvent(new Event('expenses-updated'));
+            window.dispatchEvent(new Event('auto-transactions-updated'));
 
             return { transactions: totalAdded, adjustments: adjustmentsCount };
         } catch (error) {
             console.error('Bank sync failed:', error);
             throw error;
         } finally {
-            // Always release the lock
             this.isSyncing = false;
         }
     }
 
-    /**
-     * Map Enable Banking transaction to our AutoTransaction format
-     * ✅ Now handles both booked and pending transactions
-     */
     private static mapToAutoTransaction(tx: any, accountUid: string): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> {
-        // ✅ Log transaction status for debugging
-        const txStatus = tx.status || tx.entryStatus || tx.entry_status || 'unknown';
-        console.log(`📊 Transaction status: ${txStatus}`);
-        console.log('Mapping transaction:', JSON.stringify(tx, null, 2));
-
-        // Handle multiple possible amount formats from Enable Banking API
-        let rawAmount: string | number = 0;
-        if (tx.transaction_amount && typeof tx.transaction_amount === 'object') {
-            rawAmount = tx.transaction_amount.amount ?? tx.transaction_amount.value ?? 0;
-        } else if (tx.transactionAmount && typeof tx.transactionAmount === 'object') {
+        let rawAmount: any = 0;
+        if (tx.transactionAmount && typeof tx.transactionAmount === 'object') {
             rawAmount = tx.transactionAmount.amount ?? tx.transactionAmount.value ?? 0;
         } else if (tx.amount && typeof tx.amount === 'object') {
             rawAmount = tx.amount.amount ?? tx.amount.value ?? 0;
-        } else if (tx.amount !== undefined) {
-            rawAmount = tx.amount;
+        } else {
+            rawAmount = tx.amount ?? 0;
         }
 
         const amount = parseFloat(String(rawAmount)) || 0;
-        console.log('Parsed transaction amount:', amount, 'from raw:', rawAmount);
-
-        // Determine type based on transaction type field or amount sign
         let type: 'expense' | 'income' = amount < 0 ? 'expense' : 'income';
-        if (tx.transactionType === 'DEBIT' || tx.creditDebitIndicator === 'DBIT' || tx.credit_debit_indicator === 'DBIT') {
-            type = 'expense';
-        } else if (tx.transactionType === 'CREDIT' || tx.creditDebitIndicator === 'CRDT' || tx.credit_debit_indicator === 'CRDT') {
-            type = 'income';
-        }
 
-        // Handle multiple date formats
-        const date = tx.bookingDate || tx.booking_date
-            || tx.transactionDate || tx.transaction_date
-            || tx.valueDate || tx.value_date
-            || new Date().toISOString().split('T')[0];
-
-        // Get description from multiple possible fields
-        let remittanceInfo = tx.remittance_information || tx.remittanceInformation;
-        if (Array.isArray(remittanceInfo)) {
-            remittanceInfo = remittanceInfo.join(' ');
-        }
-        let description = tx.description || remittanceInfo
-            || tx.remittanceInformationUnstructured
-            || tx.creditorName || tx.creditor_name
-            || tx.debtorName || tx.debtor_name
-            || 'Transazione Bancaria';
-
-        // Truncation removed so UI can properly display the full description when expanded
-        if (description && description.trim() === '') {
-            description = 'Transazione Bancaria';
-        }
-
-        // ✅ CRITICAL: Extract unique transaction ID from API for stable hash generation
-        // Enable Banking API can provide these fields as unique identifiers:
-        // - entry_reference / entryReference (most reliable)
-        // - transaction_id / transactionId
-        // - internal_transaction_id / internalTransactionId
-        // - end_to_end_id / endToEndId
-        const bankTransactionId = tx.entry_reference
-            || tx.entryReference
-            || tx.transaction_id
-            || tx.transactionId
-            || tx.internal_transaction_id
-            || tx.internalTransactionId
-            || tx.end_to_end_id
-            || tx.endToEndId
-            || undefined; // Se nessuno disponibile, il sistema userà fallback
-
-        if (bankTransactionId) {
-            console.log(`✅ Bank transaction ID found: ${bankTransactionId}`);
-        } else {
-            console.log(`⚠️ No bank transaction ID found, will use fallback hash method`);
-        }
+        const date = tx.bookingDate || tx.valueDate || new Date().toISOString().split('T')[0];
+        const description = tx.description || tx.remittanceInformationUnstructured || 'Transazione Bancaria';
+        const bankTransactionId = tx.entryReference || tx.transactionId || tx.endToEndId || undefined;
 
         return {
             type,
             amount: Math.abs(amount),
             description,
             date,
-            account: accountUid, // Using the resolved localAccountId passed here
+            account: accountUid,
             sourceType: 'bank',
             sourceApp: 'enable_banking',
             rawText: JSON.stringify(tx),
-            bankTransactionId, // ✅ NEW: Pass unique ID for stable hashing
+            bankTransactionId,
         };
     }
 }

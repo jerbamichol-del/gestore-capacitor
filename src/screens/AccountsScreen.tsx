@@ -281,6 +281,21 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
     const [sortOption, setSortOption] = useState<SortOption>('date');
     const [filterOption, setFilterOption] = useState<FilterOption>('all');
 
+    const [syncedAccountIds, setSyncedAccountIds] = useState<string[]>([]);
+    useEffect(() => {
+        const loadSyncedIds = () => {
+            const stored = localStorage.getItem('bank_sync_synced_local_ids');
+            if (stored) setSyncedAccountIds(JSON.parse(stored));
+        };
+        loadSyncedIds();
+        window.addEventListener('expenses-updated', loadSyncedIds);
+        window.addEventListener('bank-sync-complete', loadSyncedIds);
+        return () => {
+            window.removeEventListener('expenses-updated', loadSyncedIds);
+            window.removeEventListener('bank-sync-complete', loadSyncedIds);
+        };
+    }, []);
+
     const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
     const sortMenuRef = useRef<HTMLDivElement>(null);
     const sortButtonRef = useRef<HTMLButtonElement>(null);
@@ -403,7 +418,6 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
         // Prevent editing balance of synced accounts
         const isSynced = syncedAccountIds.includes(accountId);
         if (isSynced) {
-            // Might want to add a toast here, but returning early is enough
             return;
         }
 
@@ -471,17 +485,6 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
     };
 
     // --- Selection & Bulk Delete Handlers ---
-    const [syncedAccountIds, setSyncedAccountIds] = useState<string[]>([]);
-
-    useEffect(() => {
-        const loadSyncedIds = () => {
-            const stored = localStorage.getItem('bank_sync_synced_local_ids');
-            if (stored) setSyncedAccountIds(JSON.parse(stored));
-        };
-        loadSyncedIds();
-        window.addEventListener('expenses-updated', loadSyncedIds);
-        return () => window.removeEventListener('expenses-updated', loadSyncedIds);
-    }, []);
 
     const handleLongPress = (id: string) => {
         setSelectedTransferIds(new Set([id]));
