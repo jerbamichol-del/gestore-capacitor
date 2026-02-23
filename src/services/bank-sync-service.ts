@@ -740,7 +740,7 @@ export class BankSyncService {
 
     private static resolveLocalAccountId(acc: any): string {
         try {
-            const mappings = JSON.parse(localStorage.getItem('bank_sync_mappings') || '{}');
+            const mappings = JSON.parse(localStorage.getItem(this.STORAGE_KEY_MAPPINGS) || '{}');
             const uid = String(acc.uid || '').toLowerCase();
 
             // 1. Explicit Mapping

@@ -327,14 +327,21 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
     const accountBalances = useMemo(() => {
         const balances: Record<string, number> = {};
 
-        // Inizializza a 0
+        // Inizializza: priorità a cachedBalance per conti sincronizzati
         accounts.forEach(acc => {
-            balances[acc.id] = 0;
+            if (acc.cachedBalance !== undefined) {
+                balances[acc.id] = acc.cachedBalance;
+            } else {
+                balances[acc.id] = 0;
+            }
         });
 
-        // Calcola
+        // Calcola solo per conti senza cachedBalance
         expenses.forEach(e => {
             const amt = Number(e.amount) || 0;
+            const account = accounts.find(a => a.id === e.accountId);
+            // Skip se il conto usa cachedBalance dalla banca
+            if (account?.cachedBalance !== undefined) return;
 
             // Gestione Uscita (Expense)
             if (e.type === 'expense') {
@@ -354,8 +361,9 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                 if (balances[e.accountId] !== undefined) {
                     balances[e.accountId] -= amt;
                 }
-                // Aggiungi al conto di destinazione (se esiste)
-                if (e.toAccountId && balances[e.toAccountId] !== undefined) {
+                // Aggiungi al conto di destinazione (se esiste e non è sincronizzato)
+                const toAccount = accounts.find(a => a.id === e.toAccountId);
+                if (e.toAccountId && balances[e.toAccountId] !== undefined && toAccount?.cachedBalance === undefined) {
                     balances[e.toAccountId] += amt;
                 }
             }
@@ -724,7 +732,7 @@ const AccountsScreen: React.FC<AccountsScreenProps> = ({ accounts, expenses, onC
                                         <div className="flex flex-col min-w-0">
                                             <div className="flex justify-between items-center mb-1">
                                                 <h3 className="font-bold text-slate-800 dark:text-white text-lg">{acc.name}</h3>
-                                                {acc.cachedBalance !== undefined && (
+                                                {(acc.cachedBalance !== undefined || isSynced) && (
                                                     <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1 ml-2">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                                                         Bank Sync
