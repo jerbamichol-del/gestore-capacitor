@@ -459,10 +459,14 @@ export function PendingTransactionsModal({
   const saveRule = saveRuleFlags[currentTransaction.id] || false;
   const match = matchedRules[currentTransaction.id];
   const transferAccountSelection = transferAccounts[currentTransaction.id];
+  // Prefer the transaction's own date (bank booking date) over detection time (createdAt)
+  const txOwnDate = typeof currentTransaction.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(currentTransaction.date)
+    ? currentTransaction.date
+    : toYYYYMMDD(new Date(currentTransaction.createdAt));
   const duplicateCandidate = expenses.find(e =>
     e.amount === currentTransaction.amount &&
     (Math.abs(new Date(e.date + ' ' + (e.time || '00:00')).getTime() - currentTransaction.createdAt) < 2 * 60 * 60 * 1000 || // Within 2 hours
-      e.date === toYYYYMMDD(new Date(currentTransaction.createdAt)))
+      e.date === txOwnDate)
   );
 
   const isTransferValid =

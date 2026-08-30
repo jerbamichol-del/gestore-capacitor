@@ -5,6 +5,7 @@ import { saveToCloud, loadFromCloud } from '../utils/cloud';
 import { getUsers } from '../utils/api';
 import { API_CONFIG } from '../config/api.config';
 import { ToastMessage } from '../types/toast.types';
+import { BankSyncService } from '../services/bank-sync-service';
 
 const SCRIPT_URL = API_CONFIG.DATA_SCRIPT_URL;
 
@@ -51,6 +52,12 @@ export const useCloudSync = (
   useEffect(() => {
     const autoSync = async () => {
       if (isOnline && currentEmail) {
+        // Never pull from the cloud while a bank sync is writing local data:
+        // the stale cloud copy would overwrite in-flight adjustments/transactions.
+        if (BankSyncService.isSyncActive()) {
+          console.log("🏦 Bank sync in corso - pull dal cloud rimandato per evitare sovrascritture");
+          return;
+        }
         console.log("App tornata attiva: Controllo aggiornamenti...");
         await handleSyncFromCloud(true); // true = modalità silenziosa
       }
@@ -77,6 +84,13 @@ export const useCloudSync = (
   const performSave = useCallback(() => {
     if (!currentEmail || !isOnline || isSaving.current) return;
 
+    // Skip while a bank sync is writing to localStorage; the bank-sync-complete
+    // listener below saves the merged state right after it finishes.
+    if (BankSyncService.isSyncActive()) {
+      console.log("🏦 Bank sync in corso - salvataggio cloud rimandato");
+      return;
+    }
+
     const allUsers = getUsers();
     const currentUser = allUsers[currentEmail.toLowerCase()];
 
@@ -93,6 +107,20 @@ export const useCloudSync = (
       });
     }
   }, [currentEmail, isOnline, expenses, recurringExpenses, accounts]);
+
+  // Keep a stable reference to the latest performSave for event listeners
+  const performSaveRef = useRef(performSave);
+  useEffect(() => { performSaveRef.current = performSave; });
+
+  // After a bank sync completes, persist the freshly written local data
+  // (adjustments, cached balances) to the cloud.
+  useEffect(() => {
+    const onBankSyncComplete = () => {
+      setTimeout(() => performSaveRef.current(), 1000);
+    };
+    window.addEventListener('bank-sync-complete', onBankSyncComplete);
+    return () => window.removeEventListener('bank-sync-complete', onBankSyncComplete);
+  }, []);
 
   // Timer automatico (Debounce): Salva solo se ti fermi per 2 secondi
   useEffect(() => {

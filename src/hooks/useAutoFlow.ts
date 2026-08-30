@@ -60,10 +60,12 @@ export function useAutoFlow(
         options?: PendingConfirmOptions
     ) => {
         try {
-            // ✅ Fix: use createdAt (timestamp property does not exist on AutoTransaction)
-            const dt = new Date(transaction.createdAt);
-            const date = toYYYYMMDD(dt);
-            const time = dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            // Prefer the transaction's own date (bank booking_date / SMS date) when present;
+            // createdAt is only the detection time and would misdate older bank movements.
+            const hasOwnDate = typeof transaction.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(transaction.date);
+            const date = hasOwnDate ? transaction.date : toYYYYMMDD(new Date(transaction.createdAt));
+            const dt = hasOwnDate ? new Date(`${transaction.date}T00:00:00`) : new Date(transaction.createdAt);
+            const time = new Date(transaction.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
             // Find matching account (fallback)
             let fallbackAccountId = accounts[0]?.id || '';

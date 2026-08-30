@@ -19,6 +19,14 @@ export class BankSyncService {
     private static isSyncing = false;
 
     /**
+     * Whether a bank sync is currently running. Other writers (cloud sync)
+     * use this to avoid overwriting in-flight adjustments.
+     */
+    static isSyncActive(): boolean {
+        return this.isSyncing;
+    }
+
+    /**
      * Check if a specific bank is handled by API
      */
     static isBankAPIActive(bankName: string): boolean {
@@ -97,10 +105,13 @@ export class BankSyncService {
                 const totalLen = preamble.length - 4 + innerLen;
 
                 // Update lengths in preamble (Big Endian 16-bit)
+                // NOTE: the OCTET STRING length placeholder sits at offsets 24-25.
+                // Offsets 20-21 are the AlgorithmIdentifier NULL parameters (05 00)
+                // and must NOT be overwritten.
                 preamble[2] = (totalLen >> 8) & 0xff;
                 preamble[3] = totalLen & 0xff;
-                preamble[20] = (innerLen >> 8) & 0xff;
-                preamble[21] = innerLen & 0xff;
+                preamble[24] = (innerLen >> 8) & 0xff;
+                preamble[25] = innerLen & 0xff;
 
                 const wrapped = new Uint8Array(preamble.length + der.length);
                 wrapped.set(preamble);
@@ -320,18 +331,52 @@ export class BankSyncService {
         return stored ? JSON.parse(stored) : [];
     }
 
+    /**
+     * Persisted map sessionId -> ASPSP (bank) name, captured from GET /sessions/{id}.
+     * Used to rebuild the active providers list without extra API calls.
+     */
+    private static getSessionAspspNames(): Record<string, string> {
+        try {
+            return JSON.parse(localStorage.getItem('bank_sync_session_aspsp') || '{}');
+        } catch {
+            return {};
+        }
+    }
+
+    /**
+     * Rebuild and persist the list of banks currently handled via API.
+     * The notification/SMS parsers suppress events for these banks to avoid duplicates.
+     */
+    private static saveActiveProviders(): void {
+        const sessions = JSON.parse(localStorage.getItem('bank_sync_sessions') || '[]') as string[];
+        const names = this.getSessionAspspNames();
+        const active = [...new Set(
+            sessions.map(id => (names[id] || '').toLowerCase().trim()).filter(n => n.length > 0)
+        )];
+        localStorage.setItem(this.STORAGE_KEY_ACTIVE_BANKS, JSON.stringify(active));
+        console.log(`🏦 Active API providers: ${active.join(', ') || '(none)'}`);
+    }
+
     private static async removeSession(sessionId: string): Promise<void> {
         const sessions = await this.getSessions();
         const filtered = sessions.filter(s => s !== sessionId);
         localStorage.setItem('bank_sync_sessions', JSON.stringify(filtered));
+        const names = this.getSessionAspspNames();
+        if (names[sessionId]) {
+            delete names[sessionId];
+            localStorage.setItem('bank_sync_session_aspsp', JSON.stringify(names));
+        }
+        this.saveActiveProviders();
         console.log(`Removed expired session: ${sessionId}`);
     }
 
     static async clearAllSessions(): Promise<void> {
         localStorage.removeItem('bank_sync_sessions');
+        localStorage.removeItem('bank_sync_session_aspsp');
         localStorage.removeItem(this.STORAGE_KEY_ACTIVE_BANKS);
         localStorage.removeItem(this.STORAGE_KEY_MAPPINGS);
         localStorage.removeItem('bank_sync_synced_local_ids');
+        localStorage.removeItem(this.STORAGE_KEY_LAST_SYNC);
 
         // Clear cachedBalance from all local accounts
         try {
@@ -364,6 +409,12 @@ export class BankSyncService {
         const sessions = await this.getSessions();
         const filtered = sessions.filter(s => s !== sessionId);
         localStorage.setItem('bank_sync_sessions', JSON.stringify(filtered));
+        const names = this.getSessionAspspNames();
+        if (names[sessionId]) {
+            delete names[sessionId];
+            localStorage.setItem('bank_sync_session_aspsp', JSON.stringify(names));
+        }
+        this.saveActiveProviders();
         console.log(`Disconnected bank session: ${sessionId}`);
 
         // If no sessions remain, clear all synced state
@@ -490,7 +541,16 @@ export class BankSyncService {
                 if (response.ok) {
                     const data = await response.json();
 
-                    // Resolve session accounts. 
+                    // Capture the ASPSP (bank) name of this session so we can
+                    // rebuild the active-providers list for notification suppression.
+                    const sessionAspspName: string = data.aspsp?.name || data.aspsp_name || '';
+                    if (sessionAspspName) {
+                        const names = this.getSessionAspspNames();
+                        names[sessionId] = sessionAspspName;
+                        localStorage.setItem('bank_sync_session_aspsp', JSON.stringify(names));
+                    }
+
+                    // Resolve session accounts.
                     let sessionAccounts: any[] = [];
                     if (Array.isArray(data.accounts_data) && data.accounts_data.length > 0) {
                         sessionAccounts = data.accounts_data;
@@ -534,7 +594,9 @@ export class BankSyncService {
                         for (const acc of sessionAccounts) {
                             const uid = String(acc.uid).toLowerCase();
                             if (!allAccounts.has(uid)) {
-                                allAccounts.set(uid, { ...acc, _sessionId: sessionId });
+                                // Expose the session's bank name on the account so the UI
+                                // (linked-bank badges, local account resolution) can use it.
+                                allAccounts.set(uid, { aspsp_name: sessionAspspName, ...acc, _sessionId: sessionId });
                             }
                         }
                     }
@@ -555,6 +617,9 @@ export class BankSyncService {
             }
         }
 
+        // Persist which banks are now handled via API (drives notification/SMS suppression)
+        this.saveActiveProviders();
+
         if (expiredSessions.length > 0 && validSessionCount === 0 && emptySessions.length === 0) {
             throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute.');
         }
@@ -564,8 +629,11 @@ export class BankSyncService {
 
     /**
      * Fetch RAW transactions for a specific account (not mapped)
-     * Returns the raw API response for mapping in syncAll with correct local account ID
-     * ✅ Requests BOTH booked AND pending transactions for real-time visibility
+     * Returns the raw API response for mapping in syncAll with correct local account ID.
+     * Handles continuation_key pagination.
+     * Pending transactions without entry_reference are skipped: their transaction_id
+     * is unstable and the booked version (with a stable id) arrives later — importing
+     * both would create duplicates (per Enable Banking FAQ guidance).
      */
     static async fetchRawTransactions(accountUid: string): Promise<any[]> {
         const creds = this.getCredentials();
@@ -573,48 +641,65 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
 
-        // ✅ Request both booked and pending transactions
-        // This ensures users see transactions immediately (pending) and when finalized (booked)
-        // The bankTransactionId-based hash prevents duplicates when status changes
-        let response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions?status=both`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const MAX_PAGES = 12;
+        const transactions: any[] = [];
+        let continuationKey: string | null = null;
+        let pages = 0;
 
-        if (!response.ok) {
-            // Check if session expired
-            if (response.status === 401) {
-                console.warn(`Session expired for account ${accountUid}`);
-                return []; // Return empty instead of throwing
+        do {
+            let url = `${this.BASE_URL}/accounts/${accountUid}/transactions`;
+            if (continuationKey) {
+                url += `?continuation_key=${encodeURIComponent(continuationKey)}`;
             }
 
-            // Fallback for banks that don't support status=both (like BBVA)
-            console.warn(`?status=both failed with status ${response.status}, retrying without status...`);
-            response = await this.safeFetch(`${this.BASE_URL}/accounts/${accountUid}/transactions`, {
+            const response = await this.safeFetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
 
             if (!response.ok) {
+                // Session expired: return what we have (possibly nothing) instead of throwing
+                if (response.status === 401) {
+                    console.warn(`Session expired for account ${accountUid}`);
+                    return transactions;
+                }
                 const error = await response.text();
-                throw new Error(`Failed to fetch transactions after fallback: ${error}`);
+                throw new Error(`Failed to fetch transactions: ${error}`);
             }
+
+            const data = await response.json();
+            const page: any[] = Array.isArray(data.transactions) ? data.transactions : [];
+            transactions.push(...page);
+            continuationKey = data.continuation_key || null;
+            pages++;
+        } while (continuationKey && pages < MAX_PAGES);
+
+        if (continuationKey) {
+            console.warn(`⚠️ Transaction list truncated after ${MAX_PAGES} pages for account ${accountUid}`);
         }
 
-        const data = await response.json();
-        console.log('Transactions API response:', JSON.stringify(data, null, 2));
-        const transactions = data.transactions || [];
-        console.log(`Found ${transactions.length} raw transactions for account ${accountUid}`);
+        // Drop pending transactions without entry_reference (unstable ids -> duplicates)
+        const isPending = (tx: any) => /PDNG|PEND/i.test(String(tx.status || tx.transaction_status || ''));
+        const hasEntryRef = (tx: any) => !!(tx.entry_reference || tx.entryReference);
+        const importable = transactions.filter(tx => {
+            if (isPending(tx) && !hasEntryRef(tx)) {
+                console.log(`⏭️ Skipping pending transaction without entry_reference: ${tx.transaction_id || tx.transactionId || '?'}`);
+                return false;
+            }
+            return true;
+        });
 
-        return transactions; // Return RAW data, not mapped
+        console.log(`Found ${transactions.length} raw transactions (${importable.length} importable) for account ${accountUid}`);
+        return importable; // Return RAW data, not mapped
     }
 
     /**
-     * Fetch balance for a specific account
+     * Fetch balance for a specific account.
+     * Returns null when the balance cannot be determined (unrecognized payload),
+     * so callers skip reconciliation instead of forcing a wrong adjustment.
      */
-    static async fetchBalance(accountUid: string): Promise<number> {
+    static async fetchBalance(accountUid: string): Promise<number | null> {
         const creds = this.getCredentials();
         if (!creds) throw new Error('Credentials not set');
 
@@ -637,7 +722,6 @@ export class BankSyncService {
         }
 
         const data = await response.json();
-        console.log('Balance API response:', JSON.stringify(data, null, 2));
 
         // Enable Banking API uses balanceType (camelCase) and amount.amount structure
         // ✅ REVOLUT/BBVA FIX: Prioritize 'interimAvailable' or 'closingAvailable' if 'closingBooked' is missing
@@ -658,7 +742,7 @@ export class BankSyncService {
 
         if (!balance) {
             console.warn('No balance found in response');
-            return 0;
+            return null;
         }
 
         // Log each balance entry for detailed debugging
@@ -710,7 +794,11 @@ export class BankSyncService {
             return null;
         };
 
-        const balanceValue = extractValue(balance) ?? 0;
+        const balanceValue = extractValue(balance);
+        if (balanceValue === null) {
+            console.warn(`🏦 Balance payload not recognized for ${accountUid}, skipping reconciliation`);
+            return null;
+        }
 
         console.log(`🏦 [BALANCE_DEBUG] Parsed ${balanceValue} from ${JSON.stringify(balance)}`);
         return balanceValue;
@@ -884,21 +972,40 @@ export class BankSyncService {
     }
 
     private static mapToAutoTransaction(tx: any, accountUid: string): Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'> {
+        // Enable Banking returns snake_case fields (transaction_amount, booking_date,
+        // entry_reference, remittance_information...). camelCase is kept as fallback
+        // for resilience against API variations.
+        const amountObj = tx.transaction_amount ?? tx.transactionAmount ?? null;
         let rawAmount: any = 0;
-        if (tx.transactionAmount && typeof tx.transactionAmount === 'object') {
-            rawAmount = tx.transactionAmount.amount ?? tx.transactionAmount.value ?? 0;
+        if (amountObj && typeof amountObj === 'object') {
+            rawAmount = amountObj.amount ?? amountObj.value ?? 0;
         } else if (tx.amount && typeof tx.amount === 'object') {
             rawAmount = tx.amount.amount ?? tx.amount.value ?? 0;
-        } else {
-            rawAmount = tx.amount ?? 0;
+        } else if (tx.amount !== undefined) {
+            rawAmount = tx.amount;
         }
 
         const amount = parseFloat(String(rawAmount)) || 0;
         let type: 'expense' | 'income' = amount < 0 ? 'expense' : 'income';
 
-        const date = tx.bookingDate || tx.valueDate || new Date().toISOString().split('T')[0];
-        const description = tx.description || tx.remittanceInformationUnstructured || 'Transazione Bancaria';
-        const bankTransactionId = tx.entryReference || tx.transactionId || tx.endToEndId || undefined;
+        const date = tx.booking_date || tx.bookingDate || tx.value_date || tx.valueDate || new Date().toISOString().split('T')[0];
+
+        // remittance_information is an array of strings in the Enable Banking API
+        let description = '';
+        const remittance = tx.remittance_information ?? tx.remittanceInformation;
+        if (Array.isArray(remittance)) {
+            description = remittance.join(' ').trim();
+        } else if (typeof remittance === 'string') {
+            description = remittance.trim();
+        }
+        if (!description) {
+            description = tx.description || tx.remittance_information_unstructured || tx.remittanceInformationUnstructured || 'Transazione Bancaria';
+        }
+
+        const bankTransactionId = tx.entry_reference || tx.entryReference
+            || tx.transaction_id || tx.transactionId
+            || tx.end_to_end_id || tx.endToEndId
+            || undefined;
 
         return {
             type,
