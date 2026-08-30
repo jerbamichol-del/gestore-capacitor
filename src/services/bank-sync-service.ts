@@ -26,6 +26,42 @@ export class BankSyncService {
         return this.isSyncing;
     }
 
+    // ---------------------------------------------------------------------
+    // Link diagnostics: the bank authorization happens inside an in-app
+    // browser where console logs are not reachable, so every step is
+    // persisted and shown in the UI ("Log collegamento").
+    // ---------------------------------------------------------------------
+    private static readonly LINK_LOG_KEY = 'bank_sync_link_log';
+    private static readonly LINK_LOG_MAX = 60;
+
+    static logLink(step: string, detail?: any): void {
+        try {
+            const log = this.getLinkLog();
+            let text = '';
+            if (detail !== undefined && detail !== null) {
+                text = typeof detail === 'string' ? detail : JSON.stringify(detail);
+                if (text.length > 600) text = text.slice(0, 600) + '…';
+            }
+            log.push({ t: new Date().toISOString(), step, detail: text });
+            localStorage.setItem(this.LINK_LOG_KEY, JSON.stringify(log.slice(-this.LINK_LOG_MAX)));
+        } catch { /* ignore */ }
+        console.log(`🔗 [LINK] ${step}${detail !== undefined ? ' — ' + (typeof detail === 'string' ? detail : JSON.stringify(detail)) : ''}`);
+    }
+
+    static getLinkLog(): { t: string, step: string, detail?: string }[] {
+        try {
+            const raw = localStorage.getItem(this.LINK_LOG_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    static clearLinkLog(): void {
+        localStorage.removeItem(this.LINK_LOG_KEY);
+    }
+
     /**
      * Check if a specific bank is handled by API
      */
@@ -268,6 +304,8 @@ export class BankSyncService {
         const state = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).substring(2));
 
         console.log(`🔐 Start auth for ${aspsp.name} (${aspsp.country}): psu_type=${psuType}, valid_until=${validUntil} (max ${maxValidity}s)`);
+        this.clearLinkLog();
+        this.logLink('POST /auth', { bank: aspsp.name, country: aspsp.country, psu_type: psuType, valid_until: validUntil, redirect_url: redirectUrl });
 
         const response = await this.safeFetch(`${this.BASE_URL}/auth`, {
             method: 'POST',
@@ -294,10 +332,12 @@ export class BankSyncService {
 
         if (!response.ok) {
             const error = await response.text();
+            this.logLink('POST /auth FALLITA', `HTTP ${response.status}: ${error}`);
             throw new Error(`Errore Start Auth (${response.status}): ${error}`);
         }
 
         const data = await response.json();
+        this.logLink('POST /auth OK', { authUrl: String(data.url || '').slice(0, 120) });
 
         // Remember which bank this authorization belongs to: the redirect back does
         // not carry the bank name, and some banks omit `aspsp` in GET /sessions.
@@ -329,6 +369,7 @@ export class BankSyncService {
             code: code.substring(0, 10) + '...',
             redirect_url: redirectUrl
         });
+        this.logLink('POST /sessions', { code: code.substring(0, 12) + '…', redirect_url: redirectUrl || '(assente)' });
 
         const response = await this.safeFetch(`${this.BASE_URL}/sessions`, {
             method: 'POST',
@@ -342,6 +383,7 @@ export class BankSyncService {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ POST /sessions failed:', response.status, errorText);
+            this.logLink('POST /sessions FALLITA', `HTTP ${response.status}: ${errorText}`);
 
             // Try to parse JSON error for better message
             try {
@@ -355,6 +397,7 @@ export class BankSyncService {
 
         const data = await response.json();
         console.log('✅ Session authorized:', data.session_id);
+        this.logLink('✅ Sessione autorizzata', { session_id: data.session_id, aspsp: data.aspsp?.name, psu_type: data.psu_type, conti: Array.isArray(data.accounts) ? data.accounts.length : 0 });
 
         // ⚠️ CRITICAL: POST /sessions is the ONLY response that returns the full
         // AccountResource objects ("some of that data is returned only once").
@@ -368,14 +411,16 @@ export class BankSyncService {
         const resolvedName = aspspName || pending?.name || '';
 
         try {
-            const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+            const accounts = (Array.isArray(data.accounts) ? data.accounts : []).filter((a: any) => a && a.uid);
             if (accounts.length > 0) {
                 const cache = this.getCachedSessionAccounts();
                 cache[sessionId] = accounts;
                 localStorage.setItem('bank_sync_session_accounts', JSON.stringify(cache));
                 console.log(`💾 Cached ${accounts.length} account(s) from POST /sessions for ${resolvedName || sessionId}`);
+                this.logLink('Conti ricevuti e salvati', accounts.map((a: any) => `${a.name || '?'} [${a.currency || '?'}] ${String(a.uid || '').slice(0, 8)}`));
             } else {
                 console.warn('⚠️ POST /sessions returned no accounts');
+                this.logLink('⚠️ POST /sessions non ha restituito conti', { psu_type: data.psu_type, aspsp: resolvedName, access: data.access });
             }
 
             if (resolvedName) {

@@ -32,6 +32,8 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const [localAccounts, setLocalAccounts] = useState<any[]>([]);
     const [accountMappings, setAccountMappings] = useState<Record<string, string>>({});
     const [lastReport, setLastReport] = useState<string | null>(null);
+    const [linkLog, setLinkLog] = useState<{ t: string, step: string, detail?: string }[]>([]);
+    const [isLinkLogOpen, setIsLinkLogOpen] = useState(false);
 
     // State for credential visibility
     const [isCredentialsLocked, setIsCredentialsLocked] = useState(false);
@@ -63,6 +65,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
             // Load last sync diagnostic report
             setLastReport(localStorage.getItem('bank_sync_last_report'));
+            setLinkLog(BankSyncService.getLinkLog());
         }
     }, [isOpen]);
 
@@ -241,13 +244,15 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
         setIsLinking(true);
         try {
-            // Use localhost as redirect, we'll intercept it with InAppBrowser on native
+            // Use localhost as redirect: it has no server, so the in-app browser
+            // fails to load it and we intercept the callback URL instead.
             const redirectUrl = 'https://localhost/';
 
             const authUrl = await BankSyncService.startAuthorization(aspsp, redirectUrl);
 
             if (Capacitor.isNativePlatform()) {
-                let authorizationCompleted = false; // Flag to prevent duplicate authorization attempts
+                let handled = false;   // the code was captured and redeemed
+                let closed = false;
 
                 const browser = InAppBrowser.create(authUrl, '_blank', {
                     location: 'yes',
@@ -258,139 +263,133 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     closebuttoncaption: 'Annulla'
                 });
 
-                browser.on('loadstart').subscribe(async (event) => {
-                    console.log('🌐 InAppBrowser loadstart:', event.url);
+                const onSuccess = async () => {
+                    showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
+                    await new Promise(r => setTimeout(r, 3000));
+                    handleTestConnection();
+                    // Some banks populate accounts with a delay: retry once more.
+                    setTimeout(() => {
+                        handleTestConnection(true);
+                        handleSyncNow();
+                    }, 8000);
+                };
 
-                    // Prevent duplicate authorization attempts
-                    if (authorizationCompleted) {
-                        console.log('⚠️ Authorization already completed, skipping...');
-                        return;
-                    }
-
-                    // Check for error first
-                    if (event.url.includes('error=')) {
-                        authorizationCompleted = true;
-                        const errorUrl = new URL(event.url);
-                        const error = errorUrl.searchParams.get('error');
-                        const errorDescription = errorUrl.searchParams.get('error_description');
-                        console.error('❌ OAuth Error:', error, errorDescription);
-                        showToast({ message: errorDescription || "Autorizzazione negata o errore.", type: 'error' });
-                        browser.close();
-                        return;
-                    }
-
-                    // 1. Strict Hostname Checking
-                    // We must capture the code ONLY when we are truly back on our redirect_uri (localhost).
-                    // Intercepting on enablebanking.com/tilisy is too early and causes 422 errors 
-                    // because the provider hasn't processed the bank's callback yet.
-                    let currentHostname = '';
+                /**
+                 * Extract the authorization code from a callback URL.
+                 * Handles query strings AND fragments (#code=...), which some banks use.
+                 */
+                const extractCode = (rawUrl: string): string | null => {
                     try {
-                        currentHostname = new URL(event.url).hostname;
-                    } catch (e) { console.warn('Hostname parse error', e); }
+                        const u = new URL(rawUrl);
+                        const fromQuery = u.searchParams.get('code');
+                        if (fromQuery) return fromQuery;
+                        if (u.hash && u.hash.includes('code=')) {
+                            const hashParams = new URLSearchParams(u.hash.replace(/^#/, ''));
+                            const fromHash = hashParams.get('code');
+                            if (fromHash) return fromHash;
+                        }
+                    } catch { /* fall through to regex */ }
+                    const m = rawUrl.match(/[?&#]code=([^&]+)/);
+                    return m ? decodeURIComponent(m[1]) : null;
+                };
 
-                    const isCallbackDomain = currentHostname === 'localhost' ||
-                        currentHostname === '127.0.0.1';
-                    // Removed enablebanking.com to avoid premature capture
+                const isCallbackUrl = (rawUrl: string): boolean => {
+                    let host = '';
+                    try { host = new URL(rawUrl).hostname; } catch { /* ignore */ }
+                    return host === 'localhost' || host === '127.0.0.1';
+                };
 
-                    if (event.url.includes('code=') && isCallbackDomain) {
-                        authorizationCompleted = true; // Set flag immediately to prevent duplicates
+                /**
+                 * Redeem the authorization code. The code is SINGLE USE: retrying with
+                 * different redirect_url values consumes it and hides the real error,
+                 * so we make exactly one attempt with the redirect_url sent to /auth
+                 * and only fall back to omitting it when the API explicitly complains
+                 * about that parameter.
+                 */
+                const redeem = async (code: string, source: string) => {
+                    if (handled) return;
+                    handled = true;
+                    BankSyncService.logLink(`Codice intercettato (${source})`, code.substring(0, 12) + '…');
 
-                        try {
-                            // Parse code from URL
-                            let code: string | null = null;
-                            const callbackUrl = new URL(event.url);
-                            code = callbackUrl.searchParams.get('code');
+                    try {
+                        await BankSyncService.authorizeSession(code, redirectUrl);
+                        if (!closed) { closed = true; browser.close(); }
+                        await onSuccess();
+                        return;
+                    } catch (err: any) {
+                        const msg = String(err?.message || '');
+                        const redirectIssue = /redirect/i.test(msg);
+                        BankSyncService.logLink('Riscatto codice fallito', msg);
 
-                            if (!code) {
-                                const match = event.url.match(/[?&]code=([^&]+)/);
-                                if (match) code = decodeURIComponent(match[1]);
-                            }
-
-                            // 2. Determine potential redirect_uris for redemption
-                            const originalRedirectUrl = redirectUrl; // 'https://localhost/'
-                            let dynamicRedirectUrl = redirectUrl;
-
+                        if (redirectIssue) {
+                            BankSyncService.logLink('Nuovo tentativo senza redirect_url');
                             try {
-                                const rawUrl = event.url;
-                                const fullyDecodedUrl = decodeURIComponent(decodeURIComponent(rawUrl));
-                                const nestedMatch = fullyDecodedUrl.match(/redirect_uri=([^& ]+)/i);
-
-                                if (nestedMatch && nestedMatch[1].startsWith('http')) {
-                                    dynamicRedirectUrl = nestedMatch[1];
-                                } else if (currentHostname.endsWith('enablebanking.com')) {
-                                    dynamicRedirectUrl = new URL(event.url).origin + '/';
-                                }
-                            } catch (e) { console.warn('Redirect URL parse error', e); }
-
-                            console.log('🕵️ OAuth Debug - Redemption Strategy:');
-                            console.log('   Original URL:', originalRedirectUrl);
-                            console.log('   Dynamic URL:', dynamicRedirectUrl);
-                            console.log('   Final Code:', code ? `${code.substring(0, 10)}...` : 'null');
-
-                            if (code) {
-                                // Strategy 1: The original URL sent to /auth
-                                console.log('🔄 Strategy 1: Attempting ORIGINAL URL:', originalRedirectUrl);
-                                try {
-                                    await BankSyncService.authorizeSession(code, originalRedirectUrl);
-                                    showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
-                                    // Some banks (BBVA) need time to populate accounts
-                                    await new Promise(r => setTimeout(r, 3000));
-                                    handleTestConnection();
-                                    // Retry after more time if accounts are still loading
-                                    setTimeout(() => {
-                                        handleTestConnection(true);
-                                        handleSyncNow();
-                                    }, 8000);
-                                } catch (authError: any) {
-                                    console.warn('⚠️ Strategy 1 failed:', authError.message);
-
-                                    // Strategy 2: The dynamic proxy URL (if different)
-                                    if (dynamicRedirectUrl !== originalRedirectUrl) {
-                                        console.log('🔄 Strategy 2: Attempting DYNAMIC URL:', dynamicRedirectUrl);
-                                        try {
-                                            await BankSyncService.authorizeSession(code, dynamicRedirectUrl);
-                                            showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
-                                            await new Promise(r => setTimeout(r, 3000));
-                                            handleTestConnection();
-                                            setTimeout(() => {
-                                                handleTestConnection(true);
-                                                handleSyncNow();
-                                            }, 8000);
-                                            return; // Success
-                                        } catch (e2: any) {
-                                            console.warn('⚠️ Strategy 2 failed:', e2.message);
-                                        }
-                                    }
-
-                                    // Strategy 3: No redirect URL
-                                    console.log('🔄 Strategy 3: Attempting WITHOUT URL');
-                                    try {
-                                        await BankSyncService.authorizeSession(code);
-                                        showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
-                                        await new Promise(r => setTimeout(r, 3000));
-                                        handleTestConnection();
-                                        setTimeout(() => {
-                                            handleTestConnection(true);
-                                            handleSyncNow();
-                                        }, 8000);
-                                    } catch (e3: any) {
-                                        console.error('❌ Strategy 3 failed:', e3.message);
-                                        showToast({ message: `Errore: ${authError.message}`, type: 'error' });
-                                    }
-                                }
-                            } else {
-                                showToast({ message: "Codice non trovato.", type: 'error' });
+                                await BankSyncService.authorizeSession(code);
+                                if (!closed) { closed = true; browser.close(); }
+                                await onSuccess();
+                                return;
+                            } catch (err2: any) {
+                                BankSyncService.logLink('Anche il tentativo senza redirect_url è fallito', String(err2?.message || ''));
                             }
-                        } catch (err: any) {
-                            console.error('❌ Authorization error:', err);
-                        } finally {
-                            browser.close();
+                        }
+
+                        if (!closed) { closed = true; browser.close(); }
+                        showToast({
+                            message: `Autorizzazione ${aspsp.name} non completata: ${msg}. Apri "Log collegamento" per i dettagli.`,
+                            type: 'error'
+                        });
+                    }
+                };
+
+                const inspect = async (rawUrl: string, phase: string) => {
+                    if (handled || !rawUrl) return;
+                    BankSyncService.logLink(`Browser ${phase}`, rawUrl.slice(0, 200));
+
+                    if (rawUrl.includes('error=') && isCallbackUrl(rawUrl)) {
+                        handled = true;
+                        let error = '', description = '';
+                        try {
+                            const u = new URL(rawUrl);
+                            error = u.searchParams.get('error') || '';
+                            description = u.searchParams.get('error_description') || '';
+                        } catch { /* ignore */ }
+                        BankSyncService.logLink('❌ Errore OAuth dalla banca', `${error} ${description}`.trim());
+                        showToast({ message: description || error || "Autorizzazione negata dalla banca.", type: 'error' });
+                        if (!closed) { closed = true; browser.close(); }
+                        return;
+                    }
+
+                    // Only redeem once we are truly back on our redirect_uri: capturing
+                    // earlier (on the provider domain) yields a code the API rejects.
+                    if (isCallbackUrl(rawUrl)) {
+                        const code = extractCode(rawUrl);
+                        if (code) {
+                            await redeem(code, phase);
+                        } else {
+                            BankSyncService.logLink('Callback raggiunta ma senza codice', rawUrl.slice(0, 200));
                         }
                     }
-                });
+                };
+
+                // loadstart is the normal path; loaderror fires because https://localhost/
+                // has no server (this is the case for several banks, BBVA included);
+                // loadstop covers webviews that only report the completed navigation.
+                browser.on('loadstart').subscribe(ev => { inspect(ev?.url || '', 'loadstart'); });
+                browser.on('loaderror').subscribe((ev: any) => { inspect(ev?.url || '', 'loaderror'); });
+                browser.on('loadstop').subscribe((ev: any) => { inspect(ev?.url || '', 'loadstop'); });
 
                 browser.on('exit').subscribe(() => {
+                    closed = true;
                     setIsLinking(false);
+                    setLinkLog(BankSyncService.getLinkLog());
+                    if (!handled) {
+                        BankSyncService.logLink('Browser chiuso senza completare l\'autorizzazione');
+                        showToast({
+                            message: `Autorizzazione ${aspsp.name} interrotta: la banca non è tornata all'app. Vedi "Log collegamento".`,
+                            type: 'error'
+                        });
+                        setLinkLog(BankSyncService.getLinkLog());
+                    }
                 });
             } else {
                 window.location.href = authUrl;
@@ -398,6 +397,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         } catch (error: any) {
             showToast({ message: `Errore autorizzazione: ${error.message}`, type: 'error' });
             setIsLinking(false);
+            setLinkLog(BankSyncService.getLinkLog());
         }
     };
 
@@ -629,6 +629,47 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             );
                         } catch { return null; }
                     })()}
+
+                    {linkLog.length > 0 && (
+                        <div className="mb-6">
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400 dark:opacity-60">Log collegamento</label>
+                                <div className="flex gap-3">
+                                    <button
+                                        className="text-xs font-bold text-sunset-coral dark:text-electric-pink uppercase"
+                                        onClick={() => setIsLinkLogOpen(v => !v)}
+                                    >
+                                        {isLinkLogOpen ? 'Nascondi' : `Mostra (${linkLog.length})`}
+                                    </button>
+                                    <button
+                                        className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase"
+                                        onClick={async () => {
+                                            const text = linkLog.map(l => `${l.t} ${l.step}${l.detail ? ' — ' + l.detail : ''}`).join('\n');
+                                            try {
+                                                await navigator.clipboard.writeText(text);
+                                                showToast({ message: 'Log copiato negli appunti.', type: 'success' });
+                                            } catch {
+                                                showToast({ message: 'Copia non disponibile su questo dispositivo.', type: 'error' });
+                                            }
+                                        }}
+                                    >
+                                        Copia
+                                    </button>
+                                </div>
+                            </div>
+                            {isLinkLogOpen && (
+                                <div className="rounded-xl border border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight-card/30 p-3 text-[11px] font-mono space-y-1 max-h-64 overflow-y-auto custom-scrollbar">
+                                    {linkLog.map((l, i) => (
+                                        <div key={i} className="break-all text-slate-700 dark:text-slate-300">
+                                            <span className="text-slate-400">{l.t.substring(11, 19)}</span>{' '}
+                                            <span className="font-bold">{l.step}</span>
+                                            {l.detail && <span className="text-slate-500 dark:text-slate-400"> — {l.detail}</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div className="mb-4">
                         <label className="text-xs font-bold uppercase block mb-2 text-slate-600 dark:text-slate-400 dark:opacity-60">Collega Nuova Banca</label>
