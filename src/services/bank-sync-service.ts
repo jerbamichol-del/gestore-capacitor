@@ -696,10 +696,13 @@ export class BankSyncService {
 
     /**
      * Fetch balance for a specific account.
-     * Returns null when the balance cannot be determined (unrecognized payload),
-     * so callers skip reconciliation instead of forcing a wrong adjustment.
+     * Returns { value, currency } or null when the balance cannot be determined.
+     * Enable Banking uses ISO 20022 balance_type codes (ITBD, CLBD, ITAV, CLAV...):
+     * booked balances are preferred because they represent the real account balance;
+     * available balances (cards/credit lines) can legitimately be 0 and previously
+     * caused wrong "0€" displays.
      */
-    static async fetchBalance(accountUid: string): Promise<number | null> {
+    static async fetchBalance(accountUid: string): Promise<{ value: number; currency: string } | null> {
         const creds = this.getCredentials();
         if (!creds) throw new Error('Credentials not set');
 
@@ -722,32 +725,38 @@ export class BankSyncService {
         }
 
         const data = await response.json();
-
-        // Enable Banking API uses balanceType (camelCase) and amount.amount structure
-        // ✅ REVOLUT/BBVA FIX: Prioritize 'interimAvailable' or 'closingAvailable' if 'closingBooked' is missing
-        // Some Italian banks (like BBVA) might use different types or nested structures.
         const balances = data.balances || [];
 
-        console.log('Available balance types:', balances.map((b: any) => b.balanceType || b.balance_type).join(', '));
+        const typeOf = (b: any) => String(b.balance_type || b.balanceType || '').trim();
+        const norm = (t: string) => t.toLowerCase().replace(/[_\s]/g, '');
+        console.log('Available balance types:', balances.map((b: any) => typeOf(b)).join(', '));
 
-        const balance = balances.find((b: any) => b.balanceType === 'interimAvailable' || b.balance_type === 'interimAvailable')
-            || balances.find((b: any) => b.balanceType === 'closingAvailable' || b.balance_type === 'closingAvailable')
-            || balances.find((b: any) => b.balanceType === 'interimBooked' || b.balance_type === 'interimBooked')
-            || balances.find((b: any) => b.balanceType === 'closingBooked' || b.balance_type === 'closingBooked')
-            || balances.find((b: any) => b.balanceType === 'expected' || b.balance_type === 'expected')
-            || balances.find((b: any) => b.balanceType === 'openingBooked' || b.balance_type === 'openingBooked')
-            || balances.find((b: any) => b.balanceType === 'information' || b.balance_type === 'information')
-            || balances.find((b: any) => b.balanceType === 'AVAILABLE' || b.balanceType === 'BOOKED')
-            || balances[0];
+        // Priority groups: ISO 20022 codes first, camelCase variants kept for resilience.
+        const PRIORITY: string[][] = [
+            ['itbd', 'interimbooked'],              // booked balance of today — the real balance
+            ['clbd', 'closingbooked', 'booked'],    // accounting balance
+            ['itav', 'interimavailable'],           // available (fallback)
+            ['clav', 'closingavailable', 'available'],
+            ['fwav', 'forwardavailable'],
+            ['valu'],
+            ['xpcd', 'expected'],
+            ['opbd', 'openingbooked'],
+            ['opav', 'openingavailable'],
+            ['prcd'],
+            ['info', 'information'],
+            ['othr', 'other'],
+        ];
+
+        let balance: any;
+        for (const group of PRIORITY) {
+            balance = balances.find((b: any) => group.includes(norm(typeOf(b))));
+            if (balance) break;
+        }
+        if (!balance) balance = balances[0];
 
         if (!balance) {
             console.warn('No balance found in response');
             return null;
-        }
-
-        // Log each balance entry for detailed debugging
-        for (const b of balances) {
-            console.log(`Balance entry: type=${b.balanceType || b.balance_type}, data=${JSON.stringify(b)}`);
         }
 
         // Handle multiple possible formats
@@ -800,8 +809,15 @@ export class BankSyncService {
             return null;
         }
 
-        console.log(`🏦 [BALANCE_DEBUG] Parsed ${balanceValue} from ${JSON.stringify(balance)}`);
-        return balanceValue;
+        const currency = String(
+            balance.balance_amount?.currency
+            ?? balance.balanceAmount?.currency
+            ?? balance.currency
+            ?? 'EUR'
+        ).toUpperCase();
+
+        console.log(`🏦 [BALANCE_DEBUG] Parsed ${balanceValue} ${currency} from type=${typeOf(balance)}`);
+        return { value: balanceValue, currency };
     }
 
     /**
@@ -908,45 +924,82 @@ export class BankSyncService {
             let adjustmentsCount = 0;
             const syncedLocalIds = new Set<string>();
 
-            for (const acc of accounts) {
+            // Keep only EUR accounts. Some banks (e.g. Revolut) expose one account per
+            // currency: importing non-EUR pockets would mix currencies into euro totals.
+            const eurAccounts = accounts.filter(acc => {
+                const cur = String(acc.currency || '').toUpperCase();
+                if (cur && cur !== 'EUR') {
+                    console.log(`⏭️ Skipping non-EUR account "${acc.name || acc.uid}" (${cur})`);
+                    return false;
+                }
+                return true;
+            });
+
+            // Group bank accounts by resolved local account: several bank accounts can
+            // map to the same local one (main + card, or multiple pockets). Balance and
+            // reconciliation must be aggregated per local account, not overwritten by
+            // whichever bank account happens to be fetched last.
+            const groups = new Map<string, any[]>();
+            for (const acc of eurAccounts) {
                 const localAccountId = this.resolveLocalAccountId(acc);
                 syncedLocalIds.add(localAccountId);
+                const list = groups.get(localAccountId) || [];
+                list.push(acc);
+                groups.set(localAccountId, list);
+            }
 
+            for (const [localAccountId, group] of groups) {
                 await this.sleep(1000);
 
-                // 1. Transactions
-                const rawTxs = await this.fetchRawTransactions(acc.uid);
-                for (const rawTx of rawTxs) {
-                    const mappedTx = this.mapToAutoTransaction(rawTx, localAccountId);
-                    const added = await AutoTransactionService.addAutoTransaction(mappedTx);
-                    if (added) totalAdded++;
+                // 1. Transactions (per bank account)
+                for (const acc of group) {
+                    let rawTxs: any[] = [];
+                    try {
+                        rawTxs = await this.fetchRawTransactions(acc.uid);
+                    } catch (txError: any) {
+                        console.warn(`⚠️ Could not fetch transactions for ${acc.name || acc.uid}:`, txError.message);
+                    }
+                    for (const rawTx of rawTxs) {
+                        const mappedTx = this.mapToAutoTransaction(rawTx, localAccountId);
+                        const added = await AutoTransactionService.addAutoTransaction(mappedTx);
+                        if (added) totalAdded++;
+                    }
                 }
 
-                // 2. Balance & Reconcile
-                let bankBalance: number | null = null;
-                try {
-                    bankBalance = await this.fetchBalance(acc.uid);
+                // 2. Balances: sum the EUR balances of every bank account in the group
+                let bankBalanceSum: number | null = null;
+                for (const acc of group) {
+                    try {
+                        const bal = await this.fetchBalance(acc.uid);
+                        if (bal !== null && bal.currency === 'EUR') {
+                            bankBalanceSum = (bankBalanceSum ?? 0) + bal.value;
+                        } else if (bal !== null) {
+                            console.log(`⏭️ Ignoring ${bal.currency} balance of "${acc.name || acc.uid}"`);
+                        }
+                    } catch (balanceError: any) {
+                        console.warn(`⚠️ Could not fetch balance for ${acc.name || acc.uid}:`, balanceError.message);
+                    }
+                }
 
+                if (bankBalanceSum !== null) {
                     const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
                     const accountIndex = localAccounts.findIndex((a: any) => a.id === localAccountId);
                     if (accountIndex !== -1) {
-                        localAccounts[accountIndex].cachedBalance = bankBalance;
+                        localAccounts[accountIndex].cachedBalance = bankBalanceSum;
                         localAccounts[accountIndex].lastSyncDate = new Date().toISOString();
                         localStorage.setItem('accounts_v1', JSON.stringify(localAccounts));
                     }
-                } catch (balanceError: any) {
-                    console.warn(`⚠️ Could not fetch balance for ${localAccountId}:`, balanceError.message);
-                }
 
-                if (bankBalance !== null) {
+                    // 3. Reconcile once per local account (against the aggregated bank balance)
                     const localBalance = this.calculateLocalBalance(localAccountId);
-                    const diff = bankBalance - localBalance;
+                    const diff = bankBalanceSum - localBalance;
 
                     if (Math.abs(diff) > 0.01) {
+                        const names = group.map(a => a.name).filter(Boolean).join(' + ');
                         await AutoTransactionService.addAdjustment(
                             localAccountId,
                             diff,
-                            `Riconciliazione Automatica ${acc.name || localAccountId}`
+                            `Riconciliazione Automatica ${names || localAccountId}`
                         );
                         adjustmentsCount++;
                     }
@@ -979,6 +1032,9 @@ export class BankSyncService {
         let rawAmount: any = 0;
         if (amountObj && typeof amountObj === 'object') {
             rawAmount = amountObj.amount ?? amountObj.value ?? 0;
+        } else if (amountObj !== null && amountObj !== undefined) {
+            // amount passed as plain number/string
+            rawAmount = amountObj;
         } else if (tx.amount && typeof tx.amount === 'object') {
             rawAmount = tx.amount.amount ?? tx.amount.value ?? 0;
         } else if (tx.amount !== undefined) {

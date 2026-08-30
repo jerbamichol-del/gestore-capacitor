@@ -102,21 +102,29 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                 const accounts = await BankSyncService.fetchAccounts();
                 const withBalances = await Promise.all(accounts.map(async (acc) => {
                     let balance: number | null = null;
-                    try {
-                        balance = await BankSyncService.fetchBalance(acc.uid);
-                    } catch {
-                        // Fallback to cached balance from last successful sync
+                    const accCurrency = String(acc.currency || '').toUpperCase();
+                    // Only fetch/display EUR balances: non-EUR pockets (e.g. Revolut
+                    // multi-currency accounts) must not be shown as euros.
+                    if (accCurrency === 'EUR' || accCurrency === '') {
                         try {
-                            const mappings = BankSyncService.getAccountMappings();
-                            const localId = mappings[acc.uid];
-                            if (localId) {
-                                const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
-                                const localAcc = localAccounts.find((a: any) => a.id === localId);
-                                if (localAcc?.cachedBalance !== undefined) {
-                                    balance = localAcc.cachedBalance;
+                            const res = await BankSyncService.fetchBalance(acc.uid);
+                            balance = res !== null && res.currency === 'EUR' ? res.value : null;
+                        } catch {
+                            // Fallback to cached balance from last successful sync
+                            try {
+                                const mappings = BankSyncService.getAccountMappings();
+                                const localId = mappings[acc.uid];
+                                if (localId) {
+                                    const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
+                                    const localAcc = localAccounts.find((a: any) => a.id === localId);
+                                    if (localAcc?.cachedBalance !== undefined) {
+                                        balance = localAcc.cachedBalance;
+                                    }
                                 }
-                            }
-                        } catch { /* ignore */ }
+                            } catch { /* ignore */ }
+                        }
+                    } else {
+                        console.log(`⏭️ Skipping non-EUR account "${acc.name || acc.uid}" (${accCurrency})`);
                     }
                     return { ...acc, balance };
                 }));
