@@ -34,6 +34,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const [lastReport, setLastReport] = useState<string | null>(null);
     const [linkLog, setLinkLog] = useState<{ t: string, step: string, detail?: string }[]>([]);
     const [isLinkLogOpen, setIsLinkLogOpen] = useState(false);
+    const [noLinkedAccountsBank, setNoLinkedAccountsBank] = useState<string | null>(null);
 
     // State for credential visibility
     const [isCredentialsLocked, setIsCredentialsLocked] = useState(false);
@@ -186,6 +187,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     type: 'error'
                 });
             } else if (msg.includes('NO_ACCOUNTS')) {
+                setNoLinkedAccountsBank('Le banche collegate');
                 showToast({
                     message: msg.replace('NO_ACCOUNTS: ', ''),
                     type: 'error'
@@ -263,15 +265,25 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     closebuttoncaption: 'Annulla'
                 });
 
-                const onSuccess = async () => {
-                    showToast({ message: "Conto autorizzato! Caricamento conti...", type: 'success' });
-                    await new Promise(r => setTimeout(r, 3000));
-                    handleTestConnection();
-                    // Some banks populate accounts with a delay: retry once more.
-                    setTimeout(() => {
-                        handleTestConnection(true);
-                        handleSyncNow();
-                    }, 8000);
+                const onSuccess = async (sessionId: string) => {
+                    // A session can be AUTHORIZED and still expose zero accounts
+                    // (Enable Banking app in restricted mode returns only the accounts
+                    // explicitly linked to the application). Verify before claiming success.
+                    const count = await BankSyncService.verifySessionAccounts(sessionId);
+                    setLinkLog(BankSyncService.getLinkLog());
+
+                    if (count === 0) {
+                        setNoLinkedAccountsBank(aspsp.name);
+                        showToast({
+                            message: `${aspsp.name}: autorizzazione riuscita ma nessun conto accessibile. Il conto va collegato all'applicazione Enable Banking (modalità restricted).`,
+                            type: 'error'
+                        });
+                        return;
+                    }
+
+                    showToast({ message: `${aspsp.name} collegata: ${count} conto/i. Sincronizzazione...`, type: 'success' });
+                    handleTestConnection(true);
+                    handleSyncNow();
                 };
 
                 /**
@@ -312,9 +324,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     BankSyncService.logLink(`Codice intercettato (${source})`, code.substring(0, 12) + '…');
 
                     try {
-                        await BankSyncService.authorizeSession(code, redirectUrl);
+                        const sessionId = await BankSyncService.authorizeSession(code, redirectUrl);
                         if (!closed) { closed = true; browser.close(); }
-                        await onSuccess();
+                        await onSuccess(sessionId);
                         return;
                     } catch (err: any) {
                         const msg = String(err?.message || '');
@@ -324,9 +336,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                         if (redirectIssue) {
                             BankSyncService.logLink('Nuovo tentativo senza redirect_url');
                             try {
-                                await BankSyncService.authorizeSession(code);
+                                const sessionId = await BankSyncService.authorizeSession(code);
                                 if (!closed) { closed = true; browser.close(); }
-                                await onSuccess();
+                                await onSuccess(sessionId);
                                 return;
                             } catch (err2: any) {
                                 BankSyncService.logLink('Anche il tentativo senza redirect_url è fallito', String(err2?.message || ''));
@@ -629,6 +641,33 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             );
                         } catch { return null; }
                     })()}
+
+                    {noLinkedAccountsBank && (
+                        <div className="mb-6 rounded-2xl border border-amber-400/60 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-4">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                                <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                    ⚠️ {noLinkedAccountsBank}: autorizzata, ma nessun conto accessibile
+                                </h4>
+                                <button
+                                    className="text-amber-700 dark:text-amber-300 text-lg leading-none"
+                                    onClick={() => setNoLinkedAccountsBank(null)}
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                            <p className="text-xs text-amber-900/90 dark:text-amber-200/90 mb-2">
+                                La banca ha confermato l'autorizzazione ma restituisce zero conti. Succede quando
+                                l'applicazione Enable Banking è attiva in <b>modalità restricted</b> (attivata con
+                                "Activate by linking accounts", senza contratto firmato): in quel caso l'API
+                                restituisce <b>solo i conti collegati all'applicazione</b> e rimuove tutti gli altri.
+                            </p>
+                            <p className="text-xs text-amber-900/90 dark:text-amber-200/90">
+                                Soluzione: vai sul <b>pannello Enable Banking</b> → la tua applicazione →
+                                <b> "Activate by linking accounts"</b> e collega anche il conto {noLinkedAccountsBank}.
+                                Ogni conto che vuoi usare va collegato singolarmente. Poi torna qui e ricollega la banca.
+                            </p>
+                        </div>
+                    )}
 
                     {linkLog.length > 0 && (
                         <div className="mb-6">

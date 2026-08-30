@@ -456,6 +456,68 @@ export class BankSyncService {
         }
     }
 
+    /**
+     * Poll GET /sessions/{id} to see how many accounts the session actually exposes.
+     *
+     * A session can be AUTHORIZED and still expose zero accounts. With an Enable
+     * Banking application activated in *restricted mode* ("Activate by linking
+     * accounts", the state before a signed contract), only accounts explicitly
+     * linked to the application are returned and every other account is stripped
+     * from the response — so authorization succeeds for any bank while its data
+     * stays unreachable. Detecting it here lets the UI say exactly that.
+     *
+     * Returns the number of accounts found (0 means nothing usable).
+     */
+    static async verifySessionAccounts(sessionId: string, attempts = 3, delayMs = 4000): Promise<number> {
+        const creds = this.getCredentials();
+        if (!creds) return 0;
+
+        for (let i = 1; i <= attempts; i++) {
+            try {
+                const token = await this.generateJWT(creds);
+                const response = await this.safeFetch(`${this.BASE_URL}/sessions/${sessionId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    this.logLink(`GET /sessions tentativo ${i} FALLITO`, `HTTP ${response.status}`);
+                } else {
+                    const data = await response.json();
+                    const uids = Array.isArray(data.accounts) ? data.accounts.length : 0;
+                    const full = Array.isArray(data.accounts_data) ? data.accounts_data.length : 0;
+                    const count = Math.max(uids, full);
+                    this.logLink(`GET /sessions tentativo ${i}`, { status: data.status, conti: count });
+
+                    if (count > 0) {
+                        // Persist whatever we got so the sync can use it right away
+                        const objects = (Array.isArray(data.accounts_data) && data.accounts_data.length > 0)
+                            ? data.accounts_data
+                            : (Array.isArray(data.accounts) ? data.accounts.map((uid: any) => ({ uid })) : []);
+                        const cache = this.getCachedSessionAccounts();
+                        cache[sessionId] = objects.filter((a: any) => a && a.uid);
+                        localStorage.setItem('bank_sync_session_accounts', JSON.stringify(cache));
+                        return count;
+                    }
+                }
+            } catch (e: any) {
+                this.logLink(`GET /sessions tentativo ${i} errore`, String(e?.message || e));
+            }
+
+            if (i < attempts) await this.sleep(delayMs);
+        }
+
+        // Nothing after every attempt: check whether the cache from POST /sessions has data
+        const cached = this.getCachedSessionAccounts()[sessionId];
+        if (Array.isArray(cached) && cached.length > 0) {
+            this.logLink('Nessun conto da GET /sessions, uso quelli salvati alla autorizzazione', cached.length);
+            return cached.length;
+        }
+
+        this.logLink('❌ Sessione autorizzata ma NESSUN conto accessibile',
+            'Causa tipica: applicazione Enable Banking in modalità RESTRICTED — vengono restituiti solo i conti collegati (linked) all\'applicazione, gli altri sono rimossi dalla risposta.');
+        return 0;
+    }
+
     private static async getSessions(): Promise<string[]> {
         const stored = localStorage.getItem('bank_sync_sessions');
         return stored ? JSON.parse(stored) : [];
@@ -789,7 +851,7 @@ export class BankSyncService {
             if (expiredSessions.length > 0) {
                 throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute. Ricollega le banche con "Collega Nuova Banca".');
             }
-            throw new Error('NO_ACCOUNTS: Le banche collegate non hanno ancora reso disponibili i conti. Riprova tra qualche minuto.');
+            throw new Error('NO_ACCOUNTS: Le banche collegate non espongono alcun conto. Se l\'app Enable Banking è attivata "by linking accounts" (modalità restricted), devi collegare quel conto specifico all\'applicazione dal pannello Enable Banking: i conti non collegati vengono rimossi dalla risposta.');
         }
 
         return Array.from(allAccounts.values());
