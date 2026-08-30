@@ -31,6 +31,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const [isLinking, setIsLinking] = useState(false);
     const [localAccounts, setLocalAccounts] = useState<any[]>([]);
     const [accountMappings, setAccountMappings] = useState<Record<string, string>>({});
+    const [lastReport, setLastReport] = useState<string | null>(null);
 
     // State for credential visibility
     const [isCredentialsLocked, setIsCredentialsLocked] = useState(false);
@@ -59,6 +60,9 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
 
             // Load current mappings
             setAccountMappings(BankSyncService.getAccountMappings());
+
+            // Load last sync diagnostic report
+            setLastReport(localStorage.getItem('bank_sync_last_report'));
         }
     }, [isOpen]);
 
@@ -158,21 +162,38 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         setIsSyncing(true);
         try {
             const info = await BankSyncService.syncAll(true); // Force sync on manual request
-            showToast({
-                message: `Sync completato: ${info.transactions} tx, ${info.adjustments} rettifiche.`,
-                type: 'success'
-            });
+            setLastReport(localStorage.getItem('bank_sync_last_report'));
+            if (info.accounts === 0 && (info as any).skipped === 0) {
+                showToast({
+                    message: 'Nessun conto bancario processato. Controlla "Dettagli ultimo sync" qui sotto.',
+                    type: 'error'
+                });
+            } else {
+                let msg = `Sync completato: ${info.transactions} tx, ${info.adjustments} rettifiche, ${info.accounts} conti`;
+                if ((info as any).skipped > 0) msg += `, ${(info as any).skipped} conti non-EUR ignorati`;
+                showToast({ message: msg + '.', type: 'success' });
+            }
             // Update balances in UI
             handleTestConnection(true);
         } catch (error: any) {
-            // Check for session expired error
-            if (error.message?.includes('SESSION_EXPIRED')) {
+            const msg = error.message || '';
+            if (msg.includes('NO_SESSIONS')) {
+                showToast({
+                    message: 'Nessuna banca collegata: usa "Collega Nuova Banca" qui sotto per autorizzarne una.',
+                    type: 'error'
+                });
+            } else if (msg.includes('NO_ACCOUNTS')) {
+                showToast({
+                    message: msg.replace('NO_ACCOUNTS: ', ''),
+                    type: 'error'
+                });
+            } else if (msg.includes('SESSION_EXPIRED')) {
                 showToast({
                     message: 'Sessione bancaria scaduta. Ricollega la banca cliccando "Cerca Banche".',
                     type: 'error'
                 });
             } else {
-                showToast({ message: `Errore sync: ${error.message}`, type: 'error' });
+                showToast({ message: `Errore sync: ${msg}`, type: 'error' });
             }
         } finally {
             setIsSyncing(false);
@@ -576,6 +597,38 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             </div>
                         </div>
                     )}
+
+                    {lastReport && (() => {
+                        try {
+                            const report = JSON.parse(lastReport);
+                            return (
+                                <div className="mb-6">
+                                    <label className="text-xs font-bold uppercase block mb-2 text-slate-600 dark:text-slate-400 dark:opacity-60">Dettagli ultimo sync</label>
+                                    <div className="rounded-xl border border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight-card/30 p-3 text-xs space-y-2">
+                                        <div className="text-slate-500 dark:text-slate-400">
+                                            {new Date(report.timestamp).toLocaleString('it-IT')} — {report.accountsProcessed} conti processati, {report.totals?.transactions ?? 0} transazioni, {report.totals?.adjustments ?? 0} rettifiche
+                                        </div>
+                                        {report.accounts?.map((a: any, i: number) => (
+                                            <div key={i} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pb-1 border-b border-slate-200/60 dark:border-electric-violet/10">
+                                                <span className="font-bold text-slate-800 dark:text-white">{a.name || a.uid}</span>
+                                                {a.bank && <span className="text-slate-500 dark:text-slate-400">({a.bank})</span>}
+                                                <span className="text-slate-500 dark:text-slate-400">[{a.currency}]</span>
+                                                <span className={a.status === 'ok' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>{a.status}</span>
+                                                <span className="text-slate-500 dark:text-slate-400">tx: {a.transactionsAdded}</span>
+                                                {a.balance !== null && <span className="text-slate-500 dark:text-slate-400">saldo: {a.balance} {a.balanceCurrency}</span>}
+                                                {!a.localAccountFound && <span className="text-rose-500 dark:text-rose-400">⚠️ non collegato a un conto locale</span>}
+                                            </div>
+                                        ))}
+                                        {report.skipped?.map((s: any, i: number) => (
+                                            <div key={`s${i}`} className="text-slate-500 dark:text-slate-400">
+                                                ⏭️ {s.name || s.uid} {s.bank && `(${s.bank})`} [{s.currency}] — {s.reason}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        } catch { return null; }
+                    })()}
 
                     <div className="mb-4">
                         <label className="text-xs font-bold uppercase block mb-2 text-slate-600 dark:text-slate-400 dark:opacity-60">Collega Nuova Banca</label>

@@ -499,10 +499,13 @@ export class BankSyncService {
 
         const token = await this.generateJWT(creds);
         const sessions = await this.getSessions();
+
+        if (sessions.length === 0) {
+            throw new Error('NO_SESSIONS: Nessuna banca collegata. Usa "Collega Nuova Banca" per autorizzarne una.');
+        }
+
         let allAccounts = new Map<string, any>();
         let expiredSessions: string[] = [];
-        let emptySessions: string[] = [];
-        let validSessionCount = 0;
 
         // ✅ 1. Fetch all global accounts first (Standard Enable Banking way to get full objects)
         let globalAccountsMap = new Map<string, any>();
@@ -553,7 +556,13 @@ export class BankSyncService {
                     // Resolve session accounts.
                     let sessionAccounts: any[] = [];
                     if (Array.isArray(data.accounts_data) && data.accounts_data.length > 0) {
-                        sessionAccounts = data.accounts_data;
+                        // accounts_data items can be sparse (uid only): enrich them
+                        // with the full objects from the global /accounts endpoint.
+                        for (const acc of data.accounts_data) {
+                            const uid = String(acc?.uid || '').toLowerCase();
+                            const full = uid ? globalAccountsMap.get(uid) : null;
+                            sessionAccounts.push(full ? { ...full, ...acc } : acc);
+                        }
                     } else if (Array.isArray(data.accounts)) {
                         for (const accIdOrObj of data.accounts) {
                             if (typeof accIdOrObj === 'string') {
@@ -585,12 +594,14 @@ export class BankSyncService {
                         }
                     }
 
-                    console.log(`Session ${sessionId} resolved ${sessionAccounts.length} accounts`);
+                    console.log(`Session ${sessionId} (${sessionAspspName || '?'}) resolved ${sessionAccounts.length} accounts`);
 
                     if (sessionAccounts.length === 0) {
-                        emptySessions.push(sessionId);
+                        // Do NOT delete the session: some banks (e.g. BBVA) legitimately
+                        // return an empty account list for a while after authorization.
+                        // Deleting a valid consent here was destroying working banks.
+                        console.warn(`⚠️ Session ${sessionId} returned 0 accounts (session kept, will retry next sync)`);
                     } else {
-                        validSessionCount++;
                         for (const acc of sessionAccounts) {
                             const uid = String(acc.uid).toLowerCase();
                             if (!allAccounts.has(uid)) {
@@ -608,20 +619,17 @@ export class BankSyncService {
             }
         }
 
-        // Cleanup
+        // Cleanup ONLY sessions that are truly expired (401): empty ones are kept.
         for (const expiredId of expiredSessions) await this.removeSession(expiredId);
-        if (emptySessions.length > 0) {
-            const newestSession = sessions[sessions.length - 1];
-            for (const staleId of emptySessions.filter(s => s !== newestSession)) {
-                await this.removeSession(staleId);
-            }
-        }
 
         // Persist which banks are now handled via API (drives notification/SMS suppression)
         this.saveActiveProviders();
 
-        if (expiredSessions.length > 0 && validSessionCount === 0 && emptySessions.length === 0) {
-            throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute.');
+        if (allAccounts.size === 0) {
+            if (expiredSessions.length > 0) {
+                throw new Error('SESSION_EXPIRED: Tutte le sessioni bancarie sono scadute. Ricollega le banche con "Collega Nuova Banca".');
+            }
+            throw new Error('NO_ACCOUNTS: Le banche collegate non hanno ancora reso disponibili i conti. Riprova tra qualche minuto.');
         }
 
         return Array.from(allAccounts.values());
@@ -899,7 +907,7 @@ export class BankSyncService {
     /**
      * Sync all accounts (Transactions + Balances)
      */
-    static async syncAll(force = false): Promise<{ transactions: number, adjustments: number }> {
+    static async syncAll(force = false): Promise<{ transactions: number, adjustments: number, accounts: number, skipped: number }> {
         const lastSync = localStorage.getItem(this.STORAGE_KEY_LAST_SYNC);
         const cooldown = 60 * 60 * 1000; // 1 hour
 
@@ -908,13 +916,13 @@ export class BankSyncService {
             if (timeSinceLastSync < cooldown) {
                 const minsLeft = Math.ceil((cooldown - timeSinceLastSync) / 60000);
                 console.log(`🛡️ Sync throttled. Prossimo aggiornamento tra ${minsLeft} minuti.`);
-                return { transactions: 0, adjustments: 0 };
+                return { transactions: 0, adjustments: 0, accounts: 0, skipped: 0 };
             }
         }
 
         if (this.isSyncing) {
             console.log('⏳ Sync already in progress, skipping duplicate call');
-            return { transactions: 0, adjustments: 0 };
+            return { transactions: 0, adjustments: 0, accounts: 0, skipped: 0 };
         }
 
         this.isSyncing = true;
@@ -924,12 +932,22 @@ export class BankSyncService {
             let adjustmentsCount = 0;
             const syncedLocalIds = new Set<string>();
 
+            // Diagnostic report of what this sync actually did, per bank account.
+            // Stored in localStorage and shown in the Bank Sync modal ("Dettagli ultimo sync").
+            const reportAccounts: any[] = [];
+            const reportSkipped: any[] = [];
+
+            const localAccountIds = new Set<string>(
+                (JSON.parse(localStorage.getItem('accounts_v1') || '[]') as any[]).map(a => a.id)
+            );
+
             // Keep only EUR accounts. Some banks (e.g. Revolut) expose one account per
             // currency: importing non-EUR pockets would mix currencies into euro totals.
             const eurAccounts = accounts.filter(acc => {
                 const cur = String(acc.currency || '').toUpperCase();
                 if (cur && cur !== 'EUR') {
                     console.log(`⏭️ Skipping non-EUR account "${acc.name || acc.uid}" (${cur})`);
+                    reportSkipped.push({ name: acc.name || '', bank: acc.aspsp_name || '', uid: acc.uid, currency: cur, reason: 'valuta non EUR' });
                     return false;
                 }
                 return true;
@@ -953,17 +971,31 @@ export class BankSyncService {
 
                 // 1. Transactions (per bank account)
                 for (const acc of group) {
+                    const entry: any = {
+                        bank: acc.aspsp_name || '',
+                        name: acc.name || '',
+                        uid: acc.uid,
+                        currency: String(acc.currency || 'EUR').toUpperCase(),
+                        localAccountId,
+                        localAccountFound: localAccountIds.has(localAccountId),
+                        transactionsAdded: 0,
+                        balance: null,
+                        balanceCurrency: null,
+                        status: 'ok'
+                    };
                     let rawTxs: any[] = [];
                     try {
                         rawTxs = await this.fetchRawTransactions(acc.uid);
                     } catch (txError: any) {
                         console.warn(`⚠️ Could not fetch transactions for ${acc.name || acc.uid}:`, txError.message);
+                        entry.status = 'errore transazioni';
                     }
                     for (const rawTx of rawTxs) {
                         const mappedTx = this.mapToAutoTransaction(rawTx, localAccountId);
                         const added = await AutoTransactionService.addAutoTransaction(mappedTx);
-                        if (added) totalAdded++;
+                        if (added) { totalAdded++; entry.transactionsAdded++; }
                     }
+                    reportAccounts.push(entry);
                 }
 
                 // 2. Balances: sum the EUR balances of every bank account in the group
@@ -971,13 +1003,22 @@ export class BankSyncService {
                 for (const acc of group) {
                     try {
                         const bal = await this.fetchBalance(acc.uid);
-                        if (bal !== null && bal.currency === 'EUR') {
-                            bankBalanceSum = (bankBalanceSum ?? 0) + bal.value;
-                        } else if (bal !== null) {
-                            console.log(`⏭️ Ignoring ${bal.currency} balance of "${acc.name || acc.uid}"`);
+                        const entry = reportAccounts.find(e => e.uid === acc.uid);
+                        if (bal !== null) {
+                            if (entry) { entry.balance = bal.value; entry.balanceCurrency = bal.currency; }
+                            if (bal.currency === 'EUR') {
+                                bankBalanceSum = (bankBalanceSum ?? 0) + bal.value;
+                            } else {
+                                console.log(`⏭️ Ignoring ${bal.currency} balance of "${acc.name || acc.uid}"`);
+                                if (entry && entry.status === 'ok') entry.status = `saldo in ${bal.currency} ignorato`;
+                            }
+                        } else if (entry && entry.status === 'ok') {
+                            entry.status = 'saldo non disponibile';
                         }
                     } catch (balanceError: any) {
                         console.warn(`⚠️ Could not fetch balance for ${acc.name || acc.uid}:`, balanceError.message);
+                        const entry = reportAccounts.find(e => e.uid === acc.uid);
+                        if (entry && entry.status === 'ok') entry.status = 'errore saldo';
                     }
                 }
 
@@ -1008,6 +1049,14 @@ export class BankSyncService {
 
             localStorage.setItem(this.STORAGE_KEY_LAST_SYNC, Date.now().toString());
             localStorage.setItem('bank_sync_synced_local_ids', JSON.stringify(Array.from(syncedLocalIds)));
+            localStorage.setItem('bank_sync_last_report', JSON.stringify({
+                timestamp: new Date().toISOString(),
+                accountsProcessed: reportAccounts.length,
+                accountsSkipped: reportSkipped.length,
+                accounts: reportAccounts,
+                skipped: reportSkipped,
+                totals: { transactions: totalAdded, adjustments: adjustmentsCount }
+            }));
 
             // Notify UI
             window.dispatchEvent(new Event('bank-sync-complete'));
@@ -1015,7 +1064,12 @@ export class BankSyncService {
             window.dispatchEvent(new Event('expenses-updated'));
             window.dispatchEvent(new Event('auto-transactions-updated'));
 
-            return { transactions: totalAdded, adjustments: adjustmentsCount };
+            return {
+                transactions: totalAdded,
+                adjustments: adjustmentsCount,
+                accounts: reportAccounts.length,
+                skipped: reportSkipped.length
+            };
         } catch (error) {
             console.error('Bank sync failed:', error);
             throw error;
