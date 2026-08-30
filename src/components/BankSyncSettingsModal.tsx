@@ -224,7 +224,8 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     }, [searchQuery, aspsps]);
 
     const handleLinkBank = async (aspsp: any) => {
-        // Block if bank is already linked
+        // Warn (but do not block) if the bank looks already linked: re-linking is the
+        // way to repair a broken/incomplete consent.
         const isAlreadyLinked = accountsWithBalances.some(acc => {
             const accAspspName = (acc.aspsp_name || acc.aspspName || '').toLowerCase().trim();
             const searchAspspName = (aspsp.name || '').toLowerCase().trim();
@@ -232,11 +233,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
         });
 
         if (isAlreadyLinked) {
-            showToast({
-                message: `La banca ${aspsp.name} è già collegata. Scollega prima la sessione esistente se vuoi ricollegarla.`,
-                type: 'error'
-            });
-            return;
+            const proceed = window.confirm(
+                `${aspsp.name} sembra già collegata. Vuoi ri-autorizzarla comunque? (utile se i conti non vengono letti)`
+            );
+            if (!proceed) return;
         }
 
         setIsLinking(true);
@@ -665,7 +665,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                             key={i}
                                             className="w-full flex items-center justify-between p-3 hover:bg-sunset-peach/30 dark:hover:bg-midnight-card/50 rounded-lg transition-colors group bg-sunset-cream/60 dark:bg-midnight-card border border-transparent hover:border-sunset-coral/30 dark:hover:border-electric-violet/30"
                                             onClick={() => handleLinkBank(b)}
-                                            disabled={isLinking || isAlreadyLinked}
+                                            disabled={isLinking}
                                         >
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                                 {b.logo && <img src={b.logo} alt="" className="w-6 h-6 rounded-md flex-shrink-0 bg-white dark:bg-slate-200 p-0.5 object-contain" />}

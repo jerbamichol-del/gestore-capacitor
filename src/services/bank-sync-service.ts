@@ -233,13 +233,42 @@ export class BankSyncService {
     }
 
     /**
-     * Start authorization process for a bank
+     * Start authorization process for a bank.
+     *
+     * Two per-bank constraints from the Enable Banking API must be honoured or the
+     * authorization silently yields no accounts (or is rejected outright):
+     *  - `access.valid_until` cannot exceed now + the ASPSP's maximum_consent_validity
+     *    (seconds). Banks like BBVA allow far less than 90 days.
+     *  - `psu_type` default depends on the connector, so it must be sent explicitly;
+     *    asking for "business" on a personal account returns an empty account list.
      */
-    static async startAuthorization(aspsp: { name: string, country: string }, redirectUrl: string): Promise<string> {
+    static async startAuthorization(
+        aspsp: { name: string, country: string, psu_types?: string[], maximum_consent_validity?: number },
+        redirectUrl: string
+    ): Promise<string> {
         const creds = this.getCredentials();
         if (!creds) throw new Error('Credentials not set');
 
         const token = await this.generateJWT(creds);
+
+        // Clamp consent validity to what the bank supports (default 90 days).
+        const NINETY_DAYS_S = 90 * 24 * 60 * 60;
+        const maxValidity = typeof aspsp.maximum_consent_validity === 'number' && aspsp.maximum_consent_validity > 0
+            ? aspsp.maximum_consent_validity
+            : NINETY_DAYS_S;
+        // Small safety margin so the request is never rejected for being 1s too long.
+        const validitySeconds = Math.max(60, Math.min(NINETY_DAYS_S, maxValidity - 60));
+        const validUntil = new Date(Date.now() + validitySeconds * 1000).toISOString();
+
+        // Pick a supported PSU type, preferring personal.
+        const supported = Array.isArray(aspsp.psu_types) ? aspsp.psu_types : [];
+        const psuType = supported.includes('personal') ? 'personal'
+            : (supported.length > 0 ? supported[0] : 'personal');
+
+        const state = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).substring(2));
+
+        console.log(`🔐 Start auth for ${aspsp.name} (${aspsp.country}): psu_type=${psuType}, valid_until=${validUntil} (max ${maxValidity}s)`);
+
         const response = await this.safeFetch(`${this.BASE_URL}/auth`, {
             method: 'POST',
             headers: {
@@ -252,9 +281,11 @@ export class BankSyncService {
                     country: aspsp.country
                 },
                 redirect_url: redirectUrl,
-                state: Math.random().toString(36).substring(7),
+                state,
+                psu_type: psuType,
+                language: 'it',
                 access: {
-                    valid_until: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                    valid_until: validUntil,
                     balances: true,
                     transactions: true
                 }
@@ -267,6 +298,15 @@ export class BankSyncService {
         }
 
         const data = await response.json();
+
+        // Remember which bank this authorization belongs to: the redirect back does
+        // not carry the bank name, and some banks omit `aspsp` in GET /sessions.
+        try {
+            localStorage.setItem('bank_sync_pending_aspsp', JSON.stringify({
+                name: aspsp.name, country: aspsp.country, state, psu_type: psuType
+            }));
+        } catch { /* ignore */ }
+
         return data.url; // Redirect user to this URL
     }
 
@@ -316,14 +356,59 @@ export class BankSyncService {
         const data = await response.json();
         console.log('✅ Session authorized:', data.session_id);
 
-        // Store session ID in list of sessions
-        const sessions = await this.getSessions();
-        if (!sessions.includes(data.session_id)) {
-            sessions.push(data.session_id);
-            localStorage.setItem('bank_sync_sessions', JSON.stringify(sessions));
+        // ⚠️ CRITICAL: POST /sessions is the ONLY response that returns the full
+        // AccountResource objects ("some of that data is returned only once").
+        // GET /sessions/{id} may return an empty account list for some banks
+        // (BBVA), so caching them here is what makes those banks work at all.
+        const sessionId: string = data.session_id;
+        const aspspName: string = data.aspsp?.name || '';
+        const pending = (() => {
+            try { return JSON.parse(localStorage.getItem('bank_sync_pending_aspsp') || 'null'); } catch { return null; }
+        })();
+        const resolvedName = aspspName || pending?.name || '';
+
+        try {
+            const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+            if (accounts.length > 0) {
+                const cache = this.getCachedSessionAccounts();
+                cache[sessionId] = accounts;
+                localStorage.setItem('bank_sync_session_accounts', JSON.stringify(cache));
+                console.log(`💾 Cached ${accounts.length} account(s) from POST /sessions for ${resolvedName || sessionId}`);
+            } else {
+                console.warn('⚠️ POST /sessions returned no accounts');
+            }
+
+            if (resolvedName) {
+                const names = this.getSessionAspspNames();
+                names[sessionId] = resolvedName;
+                localStorage.setItem('bank_sync_session_aspsp', JSON.stringify(names));
+            }
+            localStorage.removeItem('bank_sync_pending_aspsp');
+        } catch (e) {
+            console.error('Failed to cache session accounts:', e);
         }
 
-        return data.session_id;
+        // Store session ID in list of sessions
+        const sessions = await this.getSessions();
+        if (!sessions.includes(sessionId)) {
+            sessions.push(sessionId);
+            localStorage.setItem('bank_sync_sessions', JSON.stringify(sessions));
+        }
+        this.saveActiveProviders();
+
+        return sessionId;
+    }
+
+    /**
+     * Accounts captured from POST /sessions, keyed by session id.
+     * Used as the source of truth for banks whose GET /sessions/{id} omits them.
+     */
+    private static getCachedSessionAccounts(): Record<string, any[]> {
+        try {
+            return JSON.parse(localStorage.getItem('bank_sync_session_accounts') || '{}');
+        } catch {
+            return {};
+        }
     }
 
     private static async getSessions(): Promise<string[]> {
@@ -366,6 +451,11 @@ export class BankSyncService {
             delete names[sessionId];
             localStorage.setItem('bank_sync_session_aspsp', JSON.stringify(names));
         }
+        const cache = this.getCachedSessionAccounts();
+        if (cache[sessionId]) {
+            delete cache[sessionId];
+            localStorage.setItem('bank_sync_session_accounts', JSON.stringify(cache));
+        }
         this.saveActiveProviders();
         console.log(`Removed expired session: ${sessionId}`);
     }
@@ -373,6 +463,9 @@ export class BankSyncService {
     static async clearAllSessions(): Promise<void> {
         localStorage.removeItem('bank_sync_sessions');
         localStorage.removeItem('bank_sync_session_aspsp');
+        localStorage.removeItem('bank_sync_session_accounts');
+        localStorage.removeItem('bank_sync_pending_aspsp');
+        localStorage.removeItem('bank_sync_last_report');
         localStorage.removeItem(this.STORAGE_KEY_ACTIVE_BANKS);
         localStorage.removeItem(this.STORAGE_KEY_MAPPINGS);
         localStorage.removeItem('bank_sync_synced_local_ids');
@@ -506,6 +599,8 @@ export class BankSyncService {
 
         let allAccounts = new Map<string, any>();
         let expiredSessions: string[] = [];
+        const cachedSessionAccounts = this.getCachedSessionAccounts();
+        let cacheDirty = false;
 
         // ✅ 1. Fetch all global accounts first (Standard Enable Banking way to get full objects)
         let globalAccountsMap = new Map<string, any>();
@@ -596,6 +691,20 @@ export class BankSyncService {
 
                     console.log(`Session ${sessionId} (${sessionAspspName || '?'}) resolved ${sessionAccounts.length} accounts`);
 
+                    // Fall back to the accounts captured at authorization time.
+                    // Required for banks (BBVA) whose GET /sessions/{id} omits them.
+                    if (sessionAccounts.length === 0) {
+                        const cached = cachedSessionAccounts[sessionId];
+                        if (Array.isArray(cached) && cached.length > 0) {
+                            sessionAccounts = cached;
+                            console.log(`💾 Using ${cached.length} cached account(s) from authorization for session ${sessionId}`);
+                        }
+                    } else {
+                        // Refresh the cache with the freshest data
+                        cachedSessionAccounts[sessionId] = sessionAccounts;
+                        cacheDirty = true;
+                    }
+
                     if (sessionAccounts.length === 0) {
                         // Do NOT delete the session: some banks (e.g. BBVA) legitimately
                         // return an empty account list for a while after authorization.
@@ -621,6 +730,12 @@ export class BankSyncService {
 
         // Cleanup ONLY sessions that are truly expired (401): empty ones are kept.
         for (const expiredId of expiredSessions) await this.removeSession(expiredId);
+
+        if (cacheDirty) {
+            try {
+                localStorage.setItem('bank_sync_session_accounts', JSON.stringify(cachedSessionAccounts));
+            } catch { /* ignore */ }
+        }
 
         // Persist which banks are now handled via API (drives notification/SMS suppression)
         this.saveActiveProviders();
@@ -850,57 +965,105 @@ export class BankSyncService {
         }, 0);
     }
 
+    /** Normalize a name for matching: lowercase, no accents, no punctuation. */
+    private static normalizeName(s: string): string {
+        return String(s || '')
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim();
+    }
+
+    /**
+     * Resolve which local account a bank account belongs to.
+     * Works for any bank: the ASPSP name is matched as well as the account name,
+     * so banks without a hardcoded brand entry (UniCredit, Intesa, BNL...) resolve too.
+     */
     private static resolveLocalAccountId(acc: any): string {
         try {
             const mappings = JSON.parse(localStorage.getItem(this.STORAGE_KEY_MAPPINGS) || '{}');
-            const uid = String(acc.uid || '').toLowerCase();
+            const uid = String(acc.uid || '');
+            const uidLower = uid.toLowerCase();
 
-            // 1. Explicit Mapping
-            if (mappings[uid]) {
-                console.log(`🏦 [RESOLVE] Explicit mapping found for ${uid} -> ${mappings[uid]}`);
-                return mappings[uid];
+            // 1. Explicit Mapping (accept both original and lowercase key)
+            if (mappings[uid] || mappings[uidLower]) {
+                const mapped = mappings[uid] || mappings[uidLower];
+                console.log(`🏦 [RESOLVE] Explicit mapping found for ${uidLower} -> ${mapped}`);
+                return mapped;
             }
 
-            const bankName = (acc.name || '').toLowerCase();
-            const aspspName = (acc.aspsp_name || acc.aspspName || '').toLowerCase();
+            const accName = this.normalizeName(acc.name);
+            const aspspName = this.normalizeName(acc.aspsp_name || acc.aspspName);
+            const product = this.normalizeName(acc.product);
+            const haystack = `${aspspName} ${accName} ${product}`.trim();
             const localAccounts = JSON.parse(localStorage.getItem('accounts_v1') || '[]');
 
-            console.log(`🏦 [RESOLVE] Searching match for bankAcc: "${bankName}" (ASPSP: "${aspspName}")`);
+            console.log(`🏦 [RESOLVE] Matching bank account "${accName}" / ASPSP "${aspspName}"`);
 
-            // 2. Specific Brand Keywords
+            // 2. Brand aliases: map bank naming to well-known local account ids.
             const brands = [
                 { id: 'revolut', keywords: ['revolut'] },
                 { id: 'paypal', keywords: ['paypal', 'pay pal'] },
                 { id: 'bbva', keywords: ['bbva', 'bilbao', 'vizcaya', 'argentaria'] },
-                { id: 'poste', keywords: ['poste', 'bancoposta', 'postepay'] },
-                { id: 'crypto', keywords: ['binance', 'coinbase', 'crypto.com', 'metamask'] }
+                { id: 'poste', keywords: ['poste', 'bancoposta', 'postepay', 'posteitaliane'] },
+                { id: 'unicredit', keywords: ['unicredit', 'uni credit'] },
+                { id: 'intesa', keywords: ['intesa', 'sanpaolo', 'san paolo'] },
+                { id: 'bnl', keywords: ['bnl', 'bnp paribas'] },
+                { id: 'fineco', keywords: ['fineco'] },
+                { id: 'hype', keywords: ['hype'] },
+                { id: 'n26', keywords: ['n26'] },
+                { id: 'wise', keywords: ['wise', 'transferwise'] },
+                { id: 'satispay', keywords: ['satispay'] },
+                { id: 'crypto', keywords: ['binance', 'coinbase', 'crypto com', 'metamask', 'kraken'] }
             ];
 
             for (const brand of brands) {
-                if (brand.keywords.some(k => bankName.includes(k) || aspspName.includes(k))) {
+                if (brand.keywords.some(k => haystack.includes(k))) {
                     const match = localAccounts.find((la: any) => la.id === brand.id);
                     if (match) {
-                        console.log(`🏦 [RESOLVE] Brand match found: ${brand.id}`);
+                        console.log(`🏦 [RESOLVE] Brand match: ${brand.id}`);
                         return match.id;
+                    }
+                    // Also try matching a custom local account whose name contains the brand
+                    const byName = localAccounts.find((la: any) => this.normalizeName(la.name).includes(brand.keywords[0]));
+                    if (byName) {
+                        console.log(`🏦 [RESOLVE] Brand match by local name: ${byName.id}`);
+                        return byName.id;
                     }
                 }
             }
 
-            // 3. Fuzzy Match (Last resort)
+            // 3. Generic name matching (works for any bank, scored best-match).
+            let best: { id: string, score: number } | null = null;
             for (const la of localAccounts) {
-                const localName = la.name.toLowerCase().trim();
+                const localName = this.normalizeName(la.name);
                 if (localName.length < 3) continue;
-                if (bankName.includes(localName) || localName.includes(bankName)) {
-                    console.log(`🏦 [RESOLVE] Fuzzy match found: ${la.id}`);
-                    return la.id;
+
+                let score = 0;
+                if (aspspName && (aspspName.includes(localName) || localName.includes(aspspName))) score = 3;
+                else if (accName && (accName.includes(localName) || localName.includes(accName))) score = 2;
+                else {
+                    // Token overlap: at least one word of 4+ chars in common
+                    const localTokens = localName.split(' ').filter(t => t.length >= 4);
+                    const shared = localTokens.filter(t => haystack.includes(t));
+                    if (shared.length > 0) score = 1;
                 }
+
+                if (score > 0 && (!best || score > best.score)) {
+                    best = { id: la.id, score };
+                }
+            }
+
+            if (best) {
+                console.log(`🏦 [RESOLVE] Name match: ${best.id} (score ${best.score})`);
+                return best.id;
             }
 
         } catch (e) {
             console.error('Error in resolveLocalAccountId:', e);
         }
 
-        console.warn(`Could not resolve local account for ${acc.uid}, using UID as is.`);
+        console.warn(`⚠️ Could not resolve a local account for ${acc.uid} ("${acc.name || ''}" / "${acc.aspsp_name || ''}"). Use the manual mapping in Sync Bancario.`);
         return acc.uid;
     }
 
