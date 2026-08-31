@@ -36,6 +36,11 @@ export interface AutoTransaction {
   createdAt: number;
   confirmedAt?: number;
   validationWarnings?: string[]; // Array di warning generati dal validatore
+
+  // ✅ Auto-registrazione: esito della registrazione automatica
+  // 'registered' | 'linked-recurring' | 'review-transfer'
+  autoOutcome?: string;
+  autoConfirmed?: boolean;
 }
 
 export interface BankConfig {

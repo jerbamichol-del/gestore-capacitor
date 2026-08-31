@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SkeletonListItem } from './Skeleton';
 import { BankSyncService, BankSyncCredentials } from '../services/bank-sync-service';
+import { AutoConfirmService, AutoConfirmSettings } from '../services/auto-confirm-service';
 import { Capacitor } from '@capacitor/core';
 import { InAppBrowser } from '@awesome-cordova-plugins/in-app-browser';
 import { App } from '@capacitor/app';
@@ -35,6 +36,7 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
     const [linkLog, setLinkLog] = useState<{ t: string, step: string, detail?: string }[]>([]);
     const [isLinkLogOpen, setIsLinkLogOpen] = useState(false);
     const [noLinkedAccountsBank, setNoLinkedAccountsBank] = useState<string | null>(null);
+    const [autoConfirmSettings, setAutoConfirmSettings] = useState<AutoConfirmSettings>(AutoConfirmService.getSettings());
 
     // State for credential visibility
     const [isCredentialsLocked, setIsCredentialsLocked] = useState(false);
@@ -173,7 +175,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                     type: 'error'
                 });
             } else {
-                let msg = `Sync completato: ${info.transactions} tx, ${info.adjustments} rettifiche, ${info.accounts} conti`;
+                let msg = `Sync: ${info.transactions} movimenti, ${info.adjustments} rettifiche`;
+                if ((info as any).autoRegistered > 0) msg += `, ${(info as any).autoRegistered} registrati automaticamente`;
+                if ((info as any).autoLinked > 0) msg += `, ${(info as any).autoLinked} collegati a ricorrenze`;
+                if ((info as any).toReview > 0) msg += `, ${(info as any).toReview} da rivedere`;
                 if ((info as any).skipped > 0) msg += `, ${(info as any).skipped} conti non-EUR ignorati`;
                 showToast({ message: msg + '.', type: 'success' });
             }
@@ -618,7 +623,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                     <label className="text-xs font-bold uppercase block mb-2 text-slate-600 dark:text-slate-400 dark:opacity-60">Dettagli ultimo sync</label>
                                     <div className="rounded-xl border border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight-card/30 p-3 text-xs space-y-2">
                                         <div className="text-slate-500 dark:text-slate-400">
-                                            {new Date(report.timestamp).toLocaleString('it-IT')} — {report.accountsProcessed} conti processati, {report.totals?.transactions ?? 0} transazioni, {report.totals?.adjustments ?? 0} rettifiche
+                                            {new Date(report.timestamp).toLocaleString('it-IT')} — {report.accountsProcessed} conti processati, {report.totals?.transactions ?? 0} movimenti, {report.totals?.adjustments ?? 0} rettifiche
+                                            {report.totals?.autoRegistered > 0 && `, ${report.totals.autoRegistered} auto-registrati`}
+                                            {report.totals?.autoLinked > 0 && `, ${report.totals.autoLinked} collegati a ricorrenze`}
+                                            {report.totals?.toReview > 0 && `, ${report.totals.toReview} da rivedere`}
                                         </div>
                                         {report.accounts?.map((a: any, i: number) => (
                                             <div key={i} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pb-1 border-b border-slate-200/60 dark:border-electric-violet/10">
@@ -626,7 +634,10 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                                                 {a.bank && <span className="text-slate-500 dark:text-slate-400">({a.bank})</span>}
                                                 <span className="text-slate-500 dark:text-slate-400">[{a.currency}]</span>
                                                 <span className={a.status === 'ok' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>{a.status}</span>
-                                                <span className="text-slate-500 dark:text-slate-400">tx: {a.transactionsAdded}</span>
+                                                <span className="text-slate-500 dark:text-slate-400">mov: {a.transactionsAdded}</span>
+                                                {a.autoRegistered > 0 && <span className="text-emerald-600 dark:text-emerald-400">⚡ {a.autoRegistered} reg.</span>}
+                                                {a.autoLinked > 0 && <span className="text-sky-600 dark:text-sky-400">🔗 {a.autoLinked} ricor.</span>}
+                                                {a.toReview > 0 && <span className="text-amber-600 dark:text-amber-400">✋ {a.toReview} rivedere</span>}
                                                 {a.balance !== null && <span className="text-slate-500 dark:text-slate-400">saldo: {a.balance} {a.balanceCurrency}</span>}
                                                 {!a.localAccountFound && <span className="text-rose-500 dark:text-rose-400">⚠️ non collegato a un conto locale</span>}
                                             </div>
@@ -709,6 +720,45 @@ export const BankSyncSettingsModal: React.FC<BankSyncSettingsModalProps> = ({
                             )}
                         </div>
                     )}
+
+                    <div className="mb-6">
+                        <label className="text-xs font-bold uppercase block mb-2 text-slate-600 dark:text-slate-400 dark:opacity-60">Registrazione automatica</label>
+                        <div className="rounded-2xl border border-slate-200 dark:border-electric-violet/20 bg-sunset-cream/40 dark:bg-midnight-card/30 p-4 space-y-3">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                I movimenti bancari affidabili vengono registrati da soli; restano in coda solo i possibili
+                                giroconti tra i tuoi conti. La categoria viene imparata quando la assegni nello storico.
+                            </p>
+                            {([
+                                ['bank', 'Conti bancari (Enable Banking)'],
+                                ['notification', 'Notifiche delle app bancarie'],
+                                ['sms', 'SMS bancari']
+                            ] as const).map(([source, label]) => (
+                                <div key={source} className="flex items-center justify-between gap-3">
+                                    <span className="text-sm text-slate-800 dark:text-slate-200">{label}</span>
+                                    <button
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+                                            autoConfirmSettings[source] === 'auto'
+                                                ? 'bg-emerald-500 text-white border-emerald-500'
+                                                : 'bg-transparent text-slate-600 dark:text-slate-300 border-slate-300 dark:border-electric-violet/30'
+                                        }`}
+                                        onClick={() => {
+                                            const next = autoConfirmSettings[source] === 'auto' ? 'review' : 'auto';
+                                            AutoConfirmService.setSourceMode(source, next);
+                                            setAutoConfirmSettings(AutoConfirmService.getSettings());
+                                            showToast({
+                                                message: next === 'auto'
+                                                    ? `${label}: registrazione automatica attiva.`
+                                                    : `${label}: richiederà conferma manuale.`,
+                                                type: 'info'
+                                            });
+                                        }}
+                                    >
+                                        {autoConfirmSettings[source] === 'auto' ? '⚡ Automatico' : '✋ Da confermare'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
                     <div className="mb-4">
                         <label className="text-xs font-bold uppercase block mb-2 text-slate-600 dark:text-slate-400 dark:opacity-60">Collega Nuova Banca</label>

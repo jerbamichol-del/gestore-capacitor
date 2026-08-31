@@ -6,6 +6,7 @@ import { useLocalStorage } from './useLocalStorage';
 import { DEFAULT_ACCOUNTS } from '../utils/defaults';
 import { toYYYYMMDD } from '../utils/date';
 import { useRecurringExpenseGenerator } from './useRecurringExpenseGenerator';
+import { AutoConfirmService } from '../services/auto-confirm-service';
 import { ToastMessage } from '../types/toast.types';
 
 export type { ToastMessage };
@@ -87,6 +88,31 @@ export function useTransactionsCore(showToast: (msg: ToastMessage) => void) {
         let finalData = { ...data };
         if (!finalData.type) finalData.type = 'expense';
         const todayStr = toYYYYMMDD(new Date());
+
+        // ✅ Categorie automatiche per le spese bancarie:
+        // 1) se è una spesa bancaria auto-registrata ancora da categorizzare,
+        //    applica la regola imparata per quel negoziante (se esiste);
+        // 2) quando l'utente assegna una categoria, impara la regola per quel
+        //    negoziante così i prossimi movimenti della stessa attività
+        //    verranno categorizzati da soli.
+        const desc = (finalData as any).description as string | undefined;
+        const assignedCategory = (finalData as any).category as string | undefined;
+        const tags = Array.isArray((finalData as any).tags) ? (finalData as any).tags as string[] : [];
+        const isAutoBankExpense = finalData.type === 'expense' && tags.includes('bank') && tags.includes('auto');
+
+        if (finalData.type === 'expense' && desc) {
+            if (isAutoBankExpense && (!assignedCategory || assignedCategory === 'Da Categorizzare')) {
+                const rule = AutoConfirmService.findCategoryRule(desc);
+                if (rule) {
+                    (finalData as any).category = rule.category;
+                    if (rule.subcategory) (finalData as any).subcategory = rule.subcategory;
+                }
+            } else if (assignedCategory && assignedCategory !== 'Da Categorizzare') {
+                try {
+                    AutoConfirmService.learnCategoryRule(desc, assignedCategory, (finalData as any).subcategory);
+                } catch { /* non bloccare mai il salvataggio */ }
+            }
+        }
 
         // Normalize single occurrence recurring expense
         if (

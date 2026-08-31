@@ -254,6 +254,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
   const [filterCategories, setFilterCategories] = useState<Set<string>>(new Set());
   const [filterDescription, setFilterDescription] = useState('');
   const [filterAmountRange, setFilterAmountRange] = useState<{ min: string; max: string }>({ min: '', max: '' });
+  const [onlyUncategorized, setOnlyUncategorized] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('date');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
   const sortButtonRef = useRef<HTMLButtonElement>(null);
@@ -333,9 +334,18 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
     if (filterDescription.trim()) { const q = filterDescription.toLowerCase(); result = result.filter(e => (e.description || '').toLowerCase().includes(q)); }
     if (filterAmountRange.min) { const min = parseFloat(filterAmountRange.min); if (!isNaN(min)) result = result.filter(e => Math.abs(e.amount) >= min); }
     if (filterAmountRange.max) { const max = parseFloat(filterAmountRange.max); if (!isNaN(max)) result = result.filter(e => Math.abs(e.amount) <= max); }
+    if (onlyUncategorized) result = result.filter(e => !e.category || e.category === 'Da Categorizzare');
 
     return result;
-  }, [expenses, activeFilterMode, dateFilter, customRange, periodType, periodDate, filterAccount, filterCategories, filterDescription, filterAmountRange, filterType]);
+  }, [expenses, activeFilterMode, dateFilter, customRange, periodType, periodDate, filterAccount, filterCategories, filterDescription, filterAmountRange, filterType, onlyUncategorized]);
+
+  const uncategorizedCount = useMemo(
+    () => (expenses || []).filter(e =>
+      e.type === (filterType || 'expense') &&
+      (!e.category || e.category === 'Da Categorizzare')
+    ).length,
+    [expenses, filterType]
+  );
 
   const groupedExpenses = useMemo(() => {
     const sorted = [...(filteredExpenses || [])].sort((a, b) => {
@@ -388,6 +398,19 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ expenses, accounts, onEdi
           <>
             <button onClick={handleClose} className="p-2 -ml-2 rounded-full hover:bg-sunset-peach/30 dark:hover:bg-midnight-card transition-colors" aria-label="Indietro"><ArrowLeftIcon className="w-6 h-6 text-slate-700 dark:text-slate-200" /></button>
             <h1 className="text-xl font-bold text-slate-800 dark:text-white flex-1">{isIncomeMode ? 'Storico Entrate' : 'Storico Spese'}</h1>
+            {!isIncomeMode && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setOnlyUncategorized(v => !v); }}
+                className={`mr-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border ${
+                  onlyUncategorized
+                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                    : 'border-amber-400/60 dark:border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+                }`}
+                aria-label="Filtra da categorizzare"
+              >
+                Da categorizzare{uncategorizedCount > 0 ? ` (${uncategorizedCount})` : ''}
+              </button>
+            )}
             <div className="relative">
               <button ref={sortButtonRef} onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }} className={`p-2 rounded-full transition-colors ${sortOption !== 'date' ? 'bg-electric-violet/20 text-electric-violet shadow-sm shadow-electric-violet/20' : 'hover:bg-sunset-peach/30 dark:hover:bg-midnight-card text-slate-600 dark:text-slate-400'}`} aria-label="Ordina spese"><ArrowsUpDownIcon className="w-6 h-6" /></button>
               {isSortMenuOpen && (

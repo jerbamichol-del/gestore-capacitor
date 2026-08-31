@@ -6,6 +6,7 @@ import { BankConfig } from '../types/transaction';
 import { Capacitor } from '@capacitor/core';
 import SMSReader from '../plugins/sms-reader';
 import { BankSyncService } from './bank-sync-service';
+import { AutoConfirmService } from './auto-confirm-service';
 
 // Configurazioni banche italiane
 const BANK_CONFIGS: BankConfig[] = [
@@ -158,8 +159,10 @@ export class SMSTransactionParser {
           );
 
           if (!isDuplicate) {
-            // Add to database
-            await AutoTransactionService.addAutoTransaction(transaction);
+            // Add to database (auto-registered if the user enabled it for SMS)
+            await AutoTransactionService.addAutoTransaction(transaction, {
+              autoConfirm: AutoConfirmService.shouldAutoConfirm('sms')
+            });
             transactions.push(transaction as AutoTransaction);
             console.log(`✅ Added transaction: ${transaction.description} - €${transaction.amount}`);
           } else {

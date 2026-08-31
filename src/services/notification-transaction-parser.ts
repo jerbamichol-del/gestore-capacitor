@@ -4,6 +4,7 @@ import { AutoTransaction } from '../types/transaction';
 import { AutoTransactionService } from './auto-transaction-service';
 import { BankConfig } from '../types/transaction';
 import { BankSyncService } from './bank-sync-service';
+import { AutoConfirmService } from './auto-confirm-service';
 
 // ✅ BANK/FINANCIAL ACCOUNTS KEYWORDS
 // Used to detect transfers between own accounts
@@ -176,8 +177,11 @@ export class NotificationTransactionParser {
         confirmationType: 'transfer_or_expense' as const
       };
 
-      // Add as pending (will show dialog to user)
-      const added = await AutoTransactionService.addAutoTransaction(pendingTransaction);
+      // Add as pending (will show dialog to user). Transfers are never
+      // auto-registered: choosing the accounts involved is a user decision.
+      const added = await AutoTransactionService.addAutoTransaction(pendingTransaction, {
+        autoConfirm: false
+      });
 
       if (added) {
         console.log(`✅ Pending transaction added - awaiting user confirmation`);
@@ -194,8 +198,11 @@ export class NotificationTransactionParser {
     //   return null;
     // }
 
-    // Normal flow: add transaction directly
-    const added = await AutoTransactionService.addAutoTransaction(parsed);
+    // Normal flow: if the user enabled auto-registration for this source,
+    // notifications are registered directly too (transfer candidates above
+    // still go through manual review regardless).
+    const autoConfirm = AutoConfirmService.shouldAutoConfirm('notification');
+    const added = await AutoTransactionService.addAutoTransaction(parsed, { autoConfirm });
 
     if (added) {
       console.log(`✅ Auto transaction added from ${appName} notification`);

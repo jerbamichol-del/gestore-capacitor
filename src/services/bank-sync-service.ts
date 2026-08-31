@@ -1,6 +1,7 @@
 import * as jose from 'jose';
 import { AutoTransaction } from '../types/transaction';
 import { AutoTransactionService } from './auto-transaction-service';
+import { AutoConfirmService } from './auto-confirm-service';
 
 export interface BankSyncCredentials {
     appId: string;
@@ -1177,7 +1178,10 @@ export class BankSyncService {
     /**
      * Sync all accounts (Transactions + Balances)
      */
-    static async syncAll(force = false): Promise<{ transactions: number, adjustments: number, accounts: number, skipped: number }> {
+    static async syncAll(force = false): Promise<{
+        transactions: number, adjustments: number, accounts: number, skipped: number,
+        autoRegistered: number, autoLinked: number, toReview: number
+    }> {
         const lastSync = localStorage.getItem(this.STORAGE_KEY_LAST_SYNC);
         const cooldown = 60 * 60 * 1000; // 1 hour
 
@@ -1186,13 +1190,13 @@ export class BankSyncService {
             if (timeSinceLastSync < cooldown) {
                 const minsLeft = Math.ceil((cooldown - timeSinceLastSync) / 60000);
                 console.log(`🛡️ Sync throttled. Prossimo aggiornamento tra ${minsLeft} minuti.`);
-                return { transactions: 0, adjustments: 0, accounts: 0, skipped: 0 };
+                return { transactions: 0, adjustments: 0, accounts: 0, skipped: 0, autoRegistered: 0, autoLinked: 0, toReview: 0 };
             }
         }
 
         if (this.isSyncing) {
             console.log('⏳ Sync already in progress, skipping duplicate call');
-            return { transactions: 0, adjustments: 0, accounts: 0, skipped: 0 };
+            return { transactions: 0, adjustments: 0, accounts: 0, skipped: 0, autoRegistered: 0, autoLinked: 0, toReview: 0 };
         }
 
         this.isSyncing = true;
@@ -1249,6 +1253,9 @@ export class BankSyncService {
                         localAccountId,
                         localAccountFound: localAccountIds.has(localAccountId),
                         transactionsAdded: 0,
+                        autoRegistered: 0,
+                        autoLinked: 0,
+                        toReview: 0,
                         balance: null,
                         balanceCurrency: null,
                         status: 'ok'
@@ -1260,10 +1267,17 @@ export class BankSyncService {
                         console.warn(`⚠️ Could not fetch transactions for ${acc.name || acc.uid}:`, txError.message);
                         entry.status = 'errore transazioni';
                     }
+                    const bankAutoConfirm = AutoConfirmService.shouldAutoConfirm('bank');
                     for (const rawTx of rawTxs) {
                         const mappedTx = this.mapToAutoTransaction(rawTx, localAccountId);
-                        const added = await AutoTransactionService.addAutoTransaction(mappedTx);
-                        if (added) { totalAdded++; entry.transactionsAdded++; }
+                        const added = await AutoTransactionService.addAutoTransaction(mappedTx, { autoConfirm: bankAutoConfirm });
+                        if (added) {
+                            totalAdded++;
+                            entry.transactionsAdded++;
+                            if (added.autoOutcome === 'registered') entry.autoRegistered++;
+                            else if (added.autoOutcome === 'linked-recurring') entry.autoLinked++;
+                            else entry.toReview++;
+                        }
                     }
                     reportAccounts.push(entry);
                 }
@@ -1319,14 +1333,22 @@ export class BankSyncService {
 
             localStorage.setItem(this.STORAGE_KEY_LAST_SYNC, Date.now().toString());
             localStorage.setItem('bank_sync_synced_local_ids', JSON.stringify(Array.from(syncedLocalIds)));
+
+            const autoRegistered = reportAccounts.reduce((n, a) => n + (a.autoRegistered || 0), 0);
+            const autoLinked = reportAccounts.reduce((n, a) => n + (a.autoLinked || 0), 0);
+            const toReview = reportAccounts.reduce((n, a) => n + (a.toReview || 0), 0);
+
             localStorage.setItem('bank_sync_last_report', JSON.stringify({
                 timestamp: new Date().toISOString(),
                 accountsProcessed: reportAccounts.length,
                 accountsSkipped: reportSkipped.length,
                 accounts: reportAccounts,
                 skipped: reportSkipped,
-                totals: { transactions: totalAdded, adjustments: adjustmentsCount }
+                totals: { transactions: totalAdded, adjustments: adjustmentsCount, autoRegistered, autoLinked, toReview }
             }));
+
+            // One summary notification instead of one per auto-registered movement
+            await AutoTransactionService.notifyAutoSummary(autoRegistered, autoLinked);
 
             // Notify UI
             window.dispatchEvent(new Event('bank-sync-complete'));
@@ -1338,7 +1360,10 @@ export class BankSyncService {
                 transactions: totalAdded,
                 adjustments: adjustmentsCount,
                 accounts: reportAccounts.length,
-                skipped: reportSkipped.length
+                skipped: reportSkipped.length,
+                autoRegistered,
+                autoLinked,
+                toReview
             };
         } catch (error) {
             console.error('Bank sync failed:', error);

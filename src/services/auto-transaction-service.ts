@@ -13,6 +13,8 @@ import { md5, normalizeForHash } from '../utils/hash';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Expense } from '../types';
 import { ValidatorService } from './validator-service';
+import { DeduplicationService } from './deduplication-service';
+import { AutoConfirmService } from './auto-confirm-service';
 
 export class AutoTransactionService {
   private static readonly IGNORED_HASHES_KEY = 'auto_transactions_ignored_hashes';
@@ -110,10 +112,19 @@ export class AutoTransactionService {
   }
 
   /**
-   * Aggiungi transazione automatica (con check duplicati)
+   * Aggiungi transazione automatica (con check duplicati).
+   *
+   * Con opts.autoConfirm la transazione viene registrata direttamente nelle spese
+   * quando è affidabile (dati bancari con identificatore stabile):
+   *  - collegata a una spesa già generata da una ricorrenza → quest'ultima viene
+   *    marcata come confermata dalla banca (nessun nuovo movimento);
+   *  - possibile giroconto tra conti propri → resta in coda di revisione;
+   *  - altrimenti → spesa/entrata creata subito, categoria dalle regole apprese
+   *    o "Da Categorizzare".
    */
   static async addAutoTransaction(
-    data: Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'>
+    data: Omit<AutoTransaction, 'id' | 'createdAt' | 'sourceHash' | 'status'>,
+    opts: { autoConfirm?: boolean } = {}
   ): Promise<AutoTransaction | null> {
 
     const hash = this.generateTransactionHash(
@@ -124,8 +135,30 @@ export class AutoTransactionService {
       data.bankTransactionId // ✅ Pass unique bank ID if available
     );
 
+    // Permanent ignore list always wins
+    if (this.isHashIgnored(hash)) {
+      console.log('⏭️ Transaction hash in permanent ignore list, skipping');
+      return null;
+    }
+
     // Check duplicato (Primary Hash)
-    if (await this.isDuplicate(hash)) {
+    const existing = await getAutoTransactionByHash(hash);
+    if (existing) {
+      // Upgrade path: a bank transaction left pending by older builds gets
+      // auto-registered now that auto mode is enabled.
+      if (opts.autoConfirm && existing.status === 'pending' && existing.sourceType === 'bank') {
+        const upgrade = await this.tryAutoRegister(existing);
+        if (upgrade.registered) {
+          await updateAutoTransaction(existing.id, {
+            status: 'confirmed',
+            confirmedAt: Date.now(),
+            autoConfirmed: true,
+            autoOutcome: upgrade.reason
+          });
+          console.log(`⏫ Upgraded pending bank transaction to auto-confirmed (${upgrade.reason}):`, existing.description);
+          return { ...existing, status: 'confirmed', autoConfirmed: true, autoOutcome: upgrade.reason };
+        }
+      }
       console.log('⚠️ Duplicate transaction detected (Primary Hash), skipping:', { hash, desc: data.description });
       return null;
     }
@@ -159,12 +192,31 @@ export class AutoTransactionService {
       validationWarnings: warnings
     };
 
+    // ✅ Auto-registration path
+    if (opts.autoConfirm) {
+      const outcome = await this.tryAutoRegister(transaction);
+      if (outcome.registered) {
+        transaction.status = 'confirmed';
+        transaction.confirmedAt = Date.now();
+        transaction.autoConfirmed = true;
+        transaction.autoOutcome = outcome.reason;
+        await dbAddAutoTransaction(transaction);
+        window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
+        return transaction;
+      }
+      // Not registered (e.g. transfer candidate): falls through to the review queue
+      transaction.autoOutcome = outcome.reason;
+    }
+
     await dbAddAutoTransaction(transaction);
 
     console.log('✅ New auto transaction added:', transaction);
 
-    // Notifica utente
-    await this.notifyNewTransaction(transaction);
+    // Notifica utente (solo per la coda di revisione: le auto-registrate
+    // vengono riassunte in una notifica unica a fine sync)
+    if (!transaction.autoConfirmed) {
+      await this.notifyNewTransaction(transaction);
+    }
 
     // ✅ NEW: Dispatch custom event for confirmation-required transactions
     if (transaction.requiresConfirmation) {
@@ -178,6 +230,89 @@ export class AutoTransactionService {
     window.dispatchEvent(new CustomEvent('auto-transactions-updated'));
 
     return transaction;
+  }
+
+  /**
+   * Notifica di riepilogo dopo un sync con auto-registrazione
+   */
+  static async notifyAutoSummary(registered: number, linked: number): Promise<void> {
+    if (registered + linked === 0) return;
+    const parts: string[] = [];
+    if (registered > 0) parts.push(`${registered} movimenti registrati`);
+    if (linked > 0) parts.push(`${linked} collegati a ricorrenze`);
+    try {
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: Date.now(),
+          title: '🏦 Sync bancario completato',
+          body: parts.join(', '),
+          smallIcon: 'ic_stat_notification'
+        }]
+      });
+    } catch (error) {
+      console.error('Failed to send summary notification:', error);
+    }
+  }
+
+  /**
+   * Tenta la registrazione automatica di una transazione bancaria.
+   * Restituisce registered=false quando la transazione va in coda di revisione.
+   */
+  private static async tryAutoRegister(tx: AutoTransaction): Promise<{ registered: boolean, reason: string }> {
+    try {
+      const expenses: Expense[] = JSON.parse(localStorage.getItem('expenses_v2') || '[]');
+
+      // 1. Se corrisponde a una spesa generata da una ricorrenza, non duplicare:
+      //    marca quella esistente come confermata dalla banca.
+      if (tx.type === 'expense') {
+        const match = DeduplicationService.findMatchingRecurringExpense(
+          { description: tx.description, amount: tx.amount, date: tx.date },
+          expenses
+        );
+        if (match) {
+          const updated = expenses.map(e => e.id === match.id
+            ? { ...e, tags: [...new Set([...(e.tags || []), 'bank-confirmed'])] }
+            : e);
+          localStorage.setItem('expenses_v2', JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent('expenses-updated'));
+          console.log('🔗 Auto-linked bank transaction to recurring expense:', match.description);
+          return { registered: true, reason: 'linked-recurring' };
+        }
+      }
+
+      // 2. Possibile giroconto tra conti propri: decisione dell'utente
+      if (AutoConfirmService.isTransferCandidate(tx.description)) {
+        console.log('🔁 Transfer candidate sent to review queue:', tx.description);
+        return { registered: false, reason: 'review-transfer' };
+      }
+
+      // 3. Registrazione diretta (categoria dalle regole apprese o Da Categorizzare)
+      const rule = AutoConfirmService.findCategoryRule(tx.description);
+      const category = tx.type === 'expense' ? (rule?.category || 'Da Categorizzare') : 'Altro';
+
+      const expense: Expense = {
+        id: crypto.randomUUID(),
+        type: tx.type as 'expense' | 'income',
+        amount: tx.amount,
+        description: tx.description,
+        date: tx.date,
+        accountId: tx.account,
+        category,
+        subcategory: rule?.subcategory,
+        tags: ['auto', 'bank', ...(rule ? ['auto-categoria'] : [])],
+        frequency: 'single'
+      };
+
+      expenses.unshift(expense);
+      localStorage.setItem('expenses_v2', JSON.stringify(expenses));
+      window.dispatchEvent(new CustomEvent('expenses-updated'));
+      console.log(`⚡ Auto-registered ${tx.type} €${tx.amount} (${category}): ${tx.description}`);
+      return { registered: true, reason: 'registered' };
+
+    } catch (e) {
+      console.error('Auto-registration failed, falling back to review queue:', e);
+      return { registered: false, reason: 'error' };
+    }
   }
 
   /**
